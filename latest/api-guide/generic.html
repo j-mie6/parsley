@@ -24,6 +24,7 @@
   
   <link rel="stylesheet" type="text/css" href="../../helium/site/icofont.min.css" />
     <link rel="stylesheet" type="text/css" href="../../helium/site/laika-helium.css" />
+    <link rel="stylesheet" type="text/css" href="../../css/parsley-style.css" />
   <script src="../../helium/site/laika-helium.js"></script>
     <script src="../../helium/site/laika-versions.js"></script>
   <script>initVersions("../../", "/api-guide/generic.html", "latest", null);</script>
@@ -149,7 +150,7 @@
 </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Foo</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Int</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Int</span><span>)
 </span><span class="comment">// with px, py of type Parsley[Int]
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = (</span><span class="identifier">px</span><span>, </span><span class="identifier">py</span><span>).</span><span class="identifier">zipped</span><span>(</span><span class="type-name">Foo</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>))
-</span><span class="comment">// p: Parsley[Foo] = parsley.Parsley@672d260a</span></code></pre>
+</span><span class="comment">// p: Parsley[Foo] = parsley.Parsley@5a823867</span></code></pre>
         <p>These work fine for the most part, however, there are couple of problems with this:</p>
         <ol class="arabic">
           <li>In Scala 3, <code>Foo(_, _)</code> actually needs to be written as <code>Foo.apply</code>, which introduces some (minor) noise;
@@ -176,7 +177,7 @@
         with <code>Parsley</code> values. If we assume that the companion object of <code>Foo</code> has been turned into such a
         bridge (definition below), the above example can be written as:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">q</span><span> = </span><span class="type-name">Foo</span><span>(</span><span class="identifier">px</span><span>, </span><span class="identifier">py</span><span>)
-</span><span class="comment">// q: Parsley[Foo] = parsley.Parsley@558a12bf</span></code></pre>
+</span><span class="comment">// q: Parsley[Foo] = parsley.Parsley@507d489c</span></code></pre>
         <p>In this version, the act of constructing the <code>Foo</code> value has been abstracted behind the bridge, <code>Foo</code>:
         this means that the underlying implementation can vary without changing the parser.</p>
         <p><span class="paragraph"> What are <em>Generic Bridges</em>? </span>
@@ -247,7 +248,7 @@
         giving it access to <code>from</code> and <code>&lt;#</code> only (no <code>apply</code> for this one!). What this means is that
         you can now write the following:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">nullLit</span><span> = </span><span class="type-name">NullLit</span><span> &lt;# </span><span class="string-literal">&quot;null&quot;</span><span>
-</span><span class="comment">// nullLit: Parsley[Expr] = parsley.Parsley@37b27bc3
+</span><span class="comment">// nullLit: Parsley[Expr] = parsley.Parsley@69fc3a9
 </span><span class="identifier">nullLit</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;null&quot;</span><span>)
 </span><span class="comment">// res2: parsley.Result[String, Expr] = Success(NullLit)</span></code></pre>
         <p>Without any further configuration, notice that the result of parsing <code>&quot;null&quot;</code> is indeed <code>NullLit</code>,
@@ -314,7 +315,7 @@
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="comment">// from `parsley-cats`, produces `NonEmptyList` instead of `List`
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">cats</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">sepBy1</span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">tupleOrParens</span><span> = </span><span class="type-name">TupleOrParens</span><span>(</span><span class="string-literal">&quot;(&quot;</span><span> ~&gt; </span><span class="identifier">sepBy1</span><span>(</span><span class="identifier">nullLit</span><span>, </span><span class="string-literal">&quot;,&quot;</span><span>) &lt;~ </span><span class="string-literal">&quot;)&quot;</span><span>)
-</span><span class="comment">// tupleOrParens: Parsley[Expr] = parsley.Parsley@586d819c
+</span><span class="comment">// tupleOrParens: Parsley[Expr] = parsley.Parsley@64050674
 </span><span class="identifier">tupleOrParens</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;(null)&quot;</span><span>)
 </span><span class="comment">// res4: parsley.Result[String, Expr] = Success(NullLit)
 </span><span class="identifier">tupleOrParens</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;(null,null)&quot;</span><span>)
