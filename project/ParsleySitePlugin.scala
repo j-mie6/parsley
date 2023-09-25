@@ -33,6 +33,7 @@ object ParsleySitePlugin extends AutoPlugin {
                 topBarHeight = LengthUnit.px(50),
                 //contentWidth = LengthUnit.px(1075), //px(860)
             )
+            .site.internalCSS(Path.Root / "css")
             .site.mainNavigation(
                 depth = 3,
                 includePageSections = false,
