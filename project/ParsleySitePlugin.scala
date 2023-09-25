@@ -1,7 +1,6 @@
 package parsley.build
 
-import laika.rewrite.link.{ApiLinks, LinkConfig, SourceLinks}
-import laika.rewrite.{Version, Versions}
+import laika.config._
 import laika.sbt.LaikaConfig
 import laika.ast._
 import laika.helium.Helium
@@ -64,12 +63,10 @@ object ParsleySitePlugin extends AutoPlugin {
                 description = Some("The Wiki can be downloaded as a PDF: formatting is not guaranteed to be consistent with the website."),
                 includeEPUB = false,
             )
-            .site.versions(Versions(
-                currentVersion = Version(s"${tlBaseVersion.value}.x", "latest", canonical = true, label = Some("stable")),
-                olderVersions = Seq.empty,
-                newerVersions = Seq.empty,
+            .site.versions(Versions
+              .forCurrentVersion(Version(s"${tlBaseVersion.value}.x", "latest").withLabel("stable").setCanonical)
                 //renderUnversioned = false // Use this when backporting fixes to older docs
-            ))
+            )
             .site.themeColors(
                 primary = ForestGreen.darker,
                 secondary = DarkPink,
@@ -175,8 +172,8 @@ object Icon {
 }
 
 object Renderers {
-    import laika.render.HTMLFormatter
-    val backticksToCode: PartialFunction[(HTMLFormatter, Element), String] = {
+    import laika.api.format.TagFormatter
+    val backticksToCode: PartialFunction[(TagFormatter, Element), String] = {
         // TODO: generalise to work with backticks within code
         case (fmt, Text(content, opt)) if content.startsWith("`") && content.endsWith("`") =>
             val tickless = content.init.tail
@@ -185,7 +182,7 @@ object Renderers {
                 // FIXME: on the updated laika, this doesn't properly address the backticks problem, because of the new sanitisation
                 case Some(TemplateSpanSequence(TemplateString(cousin, _) +: _, _)) if cousin.endsWith("<title>") =>
                     fmt.text(tickless)
-                case _ => fmt.withoutIndentation(_.textElement("code", opt, tickless))
+                case _ => fmt.withoutIndentation(_.textElement("code", Text(tickless).withOptions(opt)))
             }
     }
 }
