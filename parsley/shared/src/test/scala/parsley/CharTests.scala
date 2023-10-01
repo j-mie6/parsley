@@ -104,6 +104,7 @@ class CharTests extends ParsleyTest {
     "digit parsers" should "accept the appropriate characters" in {
         for (c <- ('0' to '9') ++ ('\u0660' to '\u0669') ++ ('\uff10' to '\uff19')) {
             digit.parse(c.toString) shouldBe Success(c)
+            letterOrDigit.parse(c.toString) shouldBe Success(c)
             hexDigit.parse(c.toString) shouldBe Success(c)
             val d = c.asDigit
             if (d >= 0 && d < 2) { val _ = bit.parse(c.toString) shouldBe Success(c) }

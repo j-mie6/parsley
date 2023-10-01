@@ -97,6 +97,7 @@ class UnicodeTests extends ParsleyTest {
         for (c <- ('0' to '9') ++ ('\u0660' to '\u0669') ++ ('\uff10' to '\uff19')) {
             digit.parse(c.toString) shouldBe Success(c)
             hexDigit.parse(c.toString) shouldBe Success(c)
+            letterOrDigit.parse(c.toString) shouldBe Success(c)
             val d = c.asDigit
             if (d >= 0 && d < 2) { val _ = bit.parse(c.toString) shouldBe Success(c) }
             if (d >= 0 && d < 8) { val _ = octDigit.parse(c.toString) shouldBe Success(c) }
@@ -142,7 +143,7 @@ class UnicodeTests extends ParsleyTest {
         cases(unicode.noneOf(97 to 97))("a" -> None, "\n" -> Some('\n'), "b" -> Some('b'))
     }
 
-    "charUtf16" should "handle BMP characters" in {
+    "char" should "handle BMP characters" in {
         cases(char('a'))("a" -> Some('a'))
         cases(char('λ'))("λ" -> Some('λ'))
     }

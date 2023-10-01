@@ -47,6 +47,9 @@ class StringTests extends ParsleyTest {
         stringPositionCheck(2, "a\t\t") shouldBe Success((1, 9))
         stringPositionCheck(2, "aa\t") shouldBe Success((1, 9))
     }
+    it should "reject the empty string" in {
+        an [IllegalArgumentException] shouldBe thrownBy (string(""))
+    }
 
     "strings" should "have longest match behaviour" in cases(strings("hell", "hello", "h"), noEof = true)(
         "hello" -> Some("hello"),

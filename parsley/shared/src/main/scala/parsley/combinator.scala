@@ -111,6 +111,7 @@ object combinator {
     def choice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceRightOption(_ <|> _).getOrElse(empty)
 
     // TODO: deprecate in 4.5.0
+    // $COVERAGE-OFF$
     /** This combinator tries to parse each of the parsers `ps` in order, until one of them succeeds.
       *
       * Finds the first parser in `ps` which succeeds, returning its result. If none of the parsers
@@ -140,6 +141,7 @@ object combinator {
       * @note this combinator is not particularly efficient, because it may unnecessarily backtrack for each alternative.
       */
     def attemptChoice[A](ps: Parsley[A]*): Parsley[A] = atomicChoice(ps: _*)
+    // $COVERAGE-ON$
 
     /** This combinator tries to parse each of the parsers `ps` in order, until one of them succeeds.
       *
@@ -860,10 +862,10 @@ object combinator {
         notFollowedBy(end) *> (p <::> manyUntil(p, end))
     }
 
-    // TODO: find a way to make this redundant
-    private [parsley] def skipSomeUntil(p: Parsley[_], end: Parsley[_]): Parsley[Unit] = {
-        notFollowedBy(end) *> (p *> skipManyUntil(p, end))
-    }
+    // TODO: remove
+    // $COVERAGE-OFF$
+    private [parsley] def skipSomeUntil(p: Parsley[_], end: Parsley[_]): Parsley[Unit] = notFollowedBy(end) *> (p *> skipManyUntil(p, end))
+    // $COVERAGE-ON$
 
     /** This combinator parses one of `thenP` or `elseP` depending on the result of parsing `condP`.
       *

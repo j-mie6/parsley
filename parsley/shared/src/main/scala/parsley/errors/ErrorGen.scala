@@ -139,13 +139,13 @@ object VanillaGen {
   *
   * @since 4.4.0
   */
-class SpecialisedGen[-A] extends ErrorGen[A] {
+abstract class SpecialisedGen[-A] extends ErrorGen[A] {
     /** What should the messages of the error message be based on the result the
       * offending parser produced?
       *
       * @since 4.4.0
       */
-    def messages(@unused x: A): Seq[String] = Seq.empty
+    def messages(x: A): Seq[String]
 
     private [errors] override def internal: LazyParsley[((A, Int)) => Nothing] = new singletons.SpecialisedGen(this)
 }

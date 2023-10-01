@@ -9,7 +9,7 @@ import org.scalatest.Assertion
 import org.typelevel.scalaccompat.annotation.unused
 import parsley.{Parsley, ParsleyTest}
 import parsley.debug.FullBreak
-import parsley.errors.{DefaultErrorBuilder, ErrorBuilder, Token}
+import parsley.errors, errors.{DefaultErrorBuilder, ErrorBuilder, Token}
 import parsley.internal.collection.immutable.Trie
 import parsley.internal.deepembedding.ContOps
 import parsley.internal.deepembedding.Sign
@@ -134,9 +134,10 @@ class VisitorTests extends ParsleyTest {
         new Chainl(dummyParser, dontEval, dontEval).testV
         new Chainr[Nothing, Nothing](dummyParser, dontEval, crash).testV
         new SepEndBy1(dummyParser, dontEval).testV
+        new Filter[Any](dummyParser, _ => false, dontEval).testV
+        new MapFilter[Any, Nothing](dummyParser, _ => None, dontEval).testV
     }
 
-    //FIXME: add more tests
     they should "all return the constant unit object from the test visitor" in {
         // The lazy parsers have been tested for this in the laziness preservation test.
         new Pure(()).testV
@@ -160,6 +161,10 @@ class VisitorTests extends ParsleyTest {
         Parsley.empty.internal.testV
         new Fail(dummyCaretWidth).testV
         new Unexpected("qux", dummyCaretWidth).testV
+        new VanillaGen(new errors.VanillaGen).testV
+        new SpecialisedGen[Any](new errors.SpecialisedGen[Any] {
+            def messages(x: Any) = Seq.empty
+        }).testV
         new EscapeMapped(Trie.empty[Int], Set("quux")).testV
         new EscapeAtMost(0, 0).testV
         new EscapeOneOfExactly(0, Nil, dummySFConfig[Int]()).testV
@@ -174,9 +179,13 @@ class VisitorTests extends ParsleyTest {
         new <|>(dummyParser, dummyParser).testV
         new >>=[Nothing, Nothing](dummyParser, crash).testV
         new Many(dummyParser).testV
+        new ChainPre(dummyParser, dummyParser).testV
+        new Span(dummyParser).testV
+        new Profile(dummyParser, "", null).testV
         new ManyUntil(dummyParser).testV
         new SkipManyUntil(dummyParser).testV
         new ErrorLabel(dummyParser, Seq("bazola")).testV
+        new ErrorHide(dummyParser).testV
         new ErrorExplain(dummyParser, "ztesch").testV
         new ErrorAmend(dummyParser, false).testV
         new ErrorEntrench(dummyParser).testV
