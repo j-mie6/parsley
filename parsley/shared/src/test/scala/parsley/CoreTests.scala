@@ -149,7 +149,7 @@ class CoreTests extends ParsleyTest {
     }
     it should "not be affected by an empty on the left" in {
         inside((Parsley.empty <|> 'a').parse("b")) {
-            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs, 1))) =>
                 unex should contain (Raw("b"))
                 exs should contain only (Raw("a"))
                 rs shouldBe empty
@@ -177,7 +177,7 @@ class CoreTests extends ParsleyTest {
     "lookAhead" should "consume no input on success" in {
         lookAhead('a').parse("a") should not be a [Failure[_]]
         inside((lookAhead('a') *> 'b').parse("ab")) {
-            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs, 1))) =>
                 unex should contain (Raw("a"))
                 exs should contain only (Raw("b"))
                 rs shouldBe empty

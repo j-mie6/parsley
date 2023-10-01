@@ -307,7 +307,7 @@ class SpaceTests extends ParsleyTest {
         val hintMaker = many(string("a"))
         val p = hintMaker <* hintKiller <* eof
         inside(p.parse("aaaa! :(")) {
-            case Failure(TestError(_, VanillaError(_, expecteds, _))) =>
+            case Failure(TestError(_, VanillaError(_, expecteds, _, _))) =>
                 expecteds shouldNot contain (Raw("a"))
         }
     }

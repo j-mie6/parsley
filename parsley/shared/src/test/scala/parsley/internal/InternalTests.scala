@@ -125,7 +125,7 @@ class InternalTests extends ParsleyTest {
         val p = atomic(string("abc")) <|> string("b") <|> string("abd") <|> string("cbe")
         assume(p.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) >= 1)
         inside(p.parse("abe")) {
-            case Failure(TestError(_, VanillaError(_, es, _))) => es.size shouldBe 3
+            case Failure(TestError(_, VanillaError(_, es, _, _))) => es.size shouldBe 3
         }
     }
 

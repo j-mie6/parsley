@@ -16,7 +16,7 @@ class CharTests extends ParsleyTest {
     }
     it should "fail if the input has run out, expecting any character" in {
         inside(item.parse("")) {
-            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs, 1))) =>
                 unex should contain (EndOfInput)
                 exs should contain only (Named("any character"))
                 rs shouldBe empty
