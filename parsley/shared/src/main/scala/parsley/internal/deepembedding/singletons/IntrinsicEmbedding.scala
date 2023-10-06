@@ -8,10 +8,9 @@ package parsley.internal.deepembedding.singletons
 import parsley.registers.Reg
 import parsley.token.errors.LabelConfig
 
-import parsley.internal.deepembedding.backend.StrictParsley.InstrBuffer
+import parsley.internal.deepembedding.backend.StrictParsley, StrictParsley.InstrBuffer
 import parsley.internal.deepembedding.frontend.{LazyParsleyIVisitor, UsesRegister}
 import parsley.internal.machine.instructions
-import parsley.internal.deepembedding.backend.StrictParsley
 
 private [parsley] final class CharTok[A](private val c: Char, private val x: A, val expected: LabelConfig) extends Singleton[A] {
     // $COVERAGE-OFF$

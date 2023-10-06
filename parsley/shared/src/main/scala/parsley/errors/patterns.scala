@@ -6,7 +6,7 @@
 package parsley.errors
 
 import parsley.Parsley, Parsley.{atomic, select, unit}
-import parsley.errors.combinator.{ErrorMethods, amend}
+import parsley.errors.combinator.{amend, ErrorMethods}
 import parsley.position.withWidth
 
 /** This module contains combinators that help facilitate the error message generational patterns ''Verified Errors'' and ''Preventative Errors''.
@@ -108,7 +108,6 @@ object patterns {
           */
         def verifiedUnexpected(reason: A => String): Parsley[Nothing] = this.verifiedWithVanillaRaw(x => Some(reason(x)))
 
-        // TODO: test
         /** Ensures this parser does not succeed, failing with an error as described by the given `ErrorGen` object.
           *
           * If this parser succeeds, input is consumed and this combinator will fail, producing an error message using
@@ -120,7 +119,7 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
-        def verifiedWith(err: ErrorGen[A]) = amend(err(withWidth(atomic(con(p)).newHide)))
+        def verifiedWith(err: ErrorGen[A]): Parsley[Nothing] = amend(err(withWidth(atomic(con(p)).newHide)))
 
         @inline private def verifiedWithVanilla(unexGen: A => VanillaGen.UnexpectedItem, reasonGen: A => Option[String]) = verifiedWith {
             new VanillaGen[A] {
@@ -153,7 +152,6 @@ object patterns {
       *     allow for backtracking if this parser succeeds (and therefore fails).
       */
     implicit final class PreventativeErrors[P, A](p: P)(implicit con: P => Parsley[A]) {
-        // TODO: test
         /** Ensures this parser does not succeed, failing with a specialised error based on this parsers result if it does.
           *
           * If this parser succeeds, input is consumed and this combinator will fail, producing an error message
@@ -169,7 +167,6 @@ object patterns {
             override def messages(x: A) = msggen(x)
         })
 
-        // TODO: test
         /** Ensures this parser does not succeed, failing with a fixed specialised error if it does.
           *
           * If this parser succeeds, input is consumed and this combinator will fail, producing an error message with the
@@ -184,7 +181,6 @@ object patterns {
           */
         def preventativeFail(msg0: String, msgs: String*): Parsley[Unit] = this.preventativeFail(_ => msg0 +: msgs)
 
-        // TODO: test
         /** Ensures this parser does not succeed, failing with a vanilla error with an unexpected message and caret spanning the parse and a reason generated
           * from this parser's result.
           *
@@ -200,7 +196,6 @@ object patterns {
           */
         def preventativeExplain(reason: A => String, labels: String*): Parsley[Unit] = this.preventWithVanillaRaw(x => Some(reason(x)), labels: _*)
 
-        // TODO: test
         /** Ensures this parser does not succeed, failing with a vanilla error with an unexpected message and caret spanning the parse and a given reason.
           *
           * If this parser succeeds, input is consumed and this combinator will fail, producing an unexpected message the same width as
@@ -215,7 +210,6 @@ object patterns {
           */
         def preventativeExplain(reason: String, labels: String*): Parsley[Unit] = this.preventativeExplain(_ => reason, labels: _*)
 
-        // TODO: test
         /** Ensures this parser does not succeed, failing with an error as described by the given `ErrorGen` object.
           *
           * If this parser succeeds, input is consumed and this combinator will fail, producing an error message using
@@ -228,7 +222,7 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
-        def preventWith(err: ErrorGen[A], labels: String*) = {
+        def preventWith(err: ErrorGen[A], labels: String*): Parsley[Unit] = {
             val inner: Parsley[Either[(A, Int), Unit]] = withWidth(atomic(con(p)).newHide) <+> unit
             val labelledErr = labels match {
                 case l1 +: ls       => err.parser.label(l1, ls: _*)

@@ -745,7 +745,6 @@ object combinator {
         @deprecated("better argument currying now, don't use", "4.4.0-RC2")
         private [parsley] def mapFilterWith[B](f: A => Option[B], errGen: ErrorGen[A]): Parsley[B] = combinator.mapFilterWith(con(p))(f, errGen)
         // $COVERAGE-ON$
-        // TODO: test
         /** This combinator conditionally transforms the result of this parser with a given function, generating an error with the
           * given error generator if the function returns `None` given the result of this parser.
           *

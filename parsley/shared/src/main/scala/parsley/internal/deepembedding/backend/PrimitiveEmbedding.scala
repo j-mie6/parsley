@@ -63,7 +63,7 @@ private [deepembedding] final class Let[A] extends StrictParsley[A] {
     // $COVERAGE-ON$
 }
 private [deepembedding] final class Opaque[A](p: StrictParsley[A]) extends StrictParsley[A] {
-    def inlinable = p.inlinable
+    def inlinable: Boolean = p.inlinable
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R,Unit] = {
         // this blocks result suppression, because the ErrorGen combinators have non-inspectible control flow
         p.codeGen(producesResults = true) |> {

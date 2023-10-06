@@ -309,7 +309,7 @@ private [deepembedding] class CodeGenState(val numRegs: Int) {
       */
     def getLabel(sub: Let[_], producesResults: Boolean): Int = map.getOrElseUpdate((sub, producesResults), {
         val label = freshLabel()
-        (sub, producesResults, label ) +=: queue
+        (sub, producesResults, label) +=: queue
         label
     })
 

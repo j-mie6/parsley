@@ -10,7 +10,7 @@ import parsley.Parsley
 import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.deepembedding.singletons
 import parsley.internal.errors.{RigidCaret, UnexpectDesc}
-import parsley.internal.machine.errors.{EmptyError, ExpectedError, DefuncError, UnexpectedError}
+import parsley.internal.machine.errors.{DefuncError, EmptyError, ExpectedError, UnexpectedError}
 
 import org.typelevel.scalaccompat.annotation.unused
 

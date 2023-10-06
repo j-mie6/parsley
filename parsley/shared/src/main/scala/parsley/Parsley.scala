@@ -12,7 +12,7 @@ import parsley.expr.{chain, infix}
 import parsley.internal.deepembedding.{frontend, singletons}
 import parsley.internal.machine.Context
 
-import Parsley.{pure, emptyErr}
+import Parsley.{emptyErr, pure}
 import XCompat._ // substituteCo
 
 /**

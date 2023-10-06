@@ -98,8 +98,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     private [machine] def addHints(expecteds: Set[ExpectItem], unexpectedWidth: Int) = {
         assume(expecteds.nonEmpty, "hints must always be non-empty")
         invalidateHints()
-        // TODO: this can be optimised further
-        hints = hints.addError(new ExpectedError(this.offset, this.line, this.col, expecteds, unexpectedWidth))
+        hints = hints.addError(new ExpectedError(this.offset, this.line, this.col, expecteds, unexpectedWidth)) // TODO: this can be optimised further
     }
 
     private [machine] def updateCheckOffset() = {
@@ -251,7 +250,9 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         offset += n
         col += n
     }
-    private [machine] def pushHandler(label: Int): Unit = handlers = new HandlerStack(calls, instrs, label, stack.usize, offset, hints, hintsValidOffset, handlers)
+    private [machine] def pushHandler(label: Int): Unit = {
+        handlers = new HandlerStack(calls, instrs, label, stack.usize, offset, hints, hintsValidOffset, handlers)
+    }
     private [machine] def saveState(): Unit = states = new StateStack(offset, line, col, states)
     private [machine] def restoreState(): Unit = {
         val state = states

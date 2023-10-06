@@ -113,7 +113,7 @@ private [internal] final class LogBegin(var label: Int, override val name: Strin
     override def toString: String = s"LogBegin($label, $name)"
 }
 
-private [internal] final class LogEnd(val name: String, override val ascii: Boolean, break: Boolean, watchedRegs: Seq[(Int, String)]) extends Instr with Logger {
+private [internal] final class LogEnd(val name: String, val ascii: Boolean, break: Boolean, watchedRegs: Seq[(Int, String)]) extends Instr with Logger {
     override def apply(ctx: Context): Unit = {
         assert(ctx.running, "cannot wrap a Halt with a debug")
         ctx.debuglvl -= 1

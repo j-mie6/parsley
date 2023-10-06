@@ -209,7 +209,7 @@ private [internal] final class VanillaGen[A](gen: parsley.errors.VanillaGen[A]) 
     }
 
     // $COVERAGE-OFF$
-    override def toString: String = s"VanillaGen"
+    override def toString: String = "VanillaGen"
     // $COVERAGE-ON$
 }
 
@@ -222,6 +222,6 @@ private [internal] final class SpecialisedGen[A](gen: parsley.errors.Specialised
     }
 
     // $COVERAGE-OFF$
-    override def toString: String = s"SpecialisedGen"
+    override def toString: String = "SpecialisedGen"
     // $COVERAGE-ON$
 }

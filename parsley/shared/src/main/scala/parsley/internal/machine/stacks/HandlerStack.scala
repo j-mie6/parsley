@@ -5,8 +5,8 @@
  */
 package parsley.internal.machine.stacks
 
-import parsley.internal.machine.instructions.Instr
 import parsley.internal.machine.errors.DefuncHints
+import parsley.internal.machine.instructions.Instr
 
 private [machine] final class HandlerStack(
     val calls: CallStack,

@@ -5,13 +5,13 @@
  */
 package parsley
 
+import scala.annotation.tailrec
+import scala.collection.mutable
+
 import parsley.errors.ErrorBuilder
 import parsley.registers.Reg
 
 import parsley.internal.deepembedding.frontend
-
-import scala.annotation.tailrec
-import scala.collection.mutable
 
 /** This module contains the very useful debugging combinator, as well as breakpoints.
   *
