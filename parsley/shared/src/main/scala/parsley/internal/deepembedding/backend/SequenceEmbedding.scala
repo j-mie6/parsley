@@ -19,10 +19,9 @@ import StrictParsley.InstrBuffer
 private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], var right: StrictParsley[A]) extends StrictParsley[B] {
     def inlinable: Boolean = false
     // TODO: Refactor
-    // FIXME: Needs more interation with .safe
     override def optimise: StrictParsley[B] = (left, right) match {
         // Fusion laws
-        case (uf, ux@Pure(x)) if (uf.isInstanceOf[Pure[_]] || uf.isInstanceOf[_ <*> _]) && uf.safe && ux.safe => uf match {
+        case (uf, Pure(x)) if (uf.isInstanceOf[Pure[_]] || uf.isInstanceOf[_ <*> _]) => uf match {
             // first position fusion
             case Pure(f) => new Pure(f(x))
             // second position fusion
@@ -48,6 +47,10 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
             left = new Pure(f.compose(g)).asInstanceOf[StrictParsley[A => B]]
             right = u.asInstanceOf[StrictParsley[A]]
             this
+        // Fusion for special combinators
+        case (Pure(f), ct@CharTok(c, x)) => new CharTok(c, f(x), ct.expected)
+        case (Pure(f), ct@SupplementaryCharTok(c, x)) => new SupplementaryCharTok(c, f(x), ct.expected)
+        case (Pure(f), ct@StringTok(c, x)) => new StringTok(c, f(x), ct.expected)
         // TODO: functor law with lift2!
         // right absorption law: mzero <*> p = mzero
         case (z: MZero, _) => z
@@ -64,27 +67,19 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
         }
         // consequence of left zero law and monadic definition of <*>, preserving error properties of left
         case (u, z: MZero) => *>(u, z)
-        // interchange law: u <*> pure y == pure ($y) <*> u == ($y) <$> u (single instruction, so we benefit at code-gen)
-        case (uf, Pure(x)) =>
-            left = new Pure((f: A => B) => f(x)).asInstanceOf[StrictParsley[A => B]]
-            right = uf.asInstanceOf[StrictParsley[A]]
-            this
         case _ => this
     }
-    override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = left match {
+    override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = left match {
         // pure f <*> p = f <$> p
-        case Pure(f) => right match {
-            case ct@CharTok(c) => result(instrs += instructions.CharTokFastPerform[Char, B](c, f.asInstanceOf[Char => B], ct.expected))
-            case ct@SupplementaryCharTok(c) => result(instrs += instructions.SupplementaryCharTokFastPerform[Int, B](c, f.asInstanceOf[Int => B], ct.expected))
-            case st@StringTok(s) => result(instrs += instructions.StringTokFastPerform(s, f.asInstanceOf[String => B], st.expected))
-            case _ =>
-                suspend(right.codeGen[M, R]) |>
-                (instrs += instructions.Lift1(f))
-        }
+        case Pure(f) =>
+            suspend(right.codeGen[M, R](producesResults)) |> {
+                if (producesResults) instrs += instructions.Lift1(f)
+            }
         case _ =>
-            suspend(left.codeGen[M, R]) >>
-            suspend(right.codeGen[M, R]) |>
-            (instrs += instructions.Apply)
+            suspend(left.codeGen[M, R](producesResults)) >>
+            suspend(right.codeGen[M, R](producesResults)) |> {
+                if (producesResults) instrs += instructions.Apply
+            }
     }
     // $COVERAGE-OFF$
     final override def pretty: String = s"(${left.pretty} <*> ${right.pretty})"
@@ -93,30 +88,19 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
 
 private [deepembedding] final class >>=[A, B](val p: StrictParsley[A], private [>>=] val f: A => frontend.LazyParsley[B]) extends Unary[A, B] {
     override def optimise: StrictParsley[B] = p match {
-        // monad law 1: pure x >>= f = f x: unsafe because it might expose recursion
-        //case Pure(x) if safe => new Rec(() => f(x))
-        // char/string x = char/string x *> pure x and monad law 1
-        //case p@CharTok(c) => *>(p, new Rec(() => f(c.asInstanceOf[A]), expected))
-        //case p@StringTok(s) => *>(p, new Rec(() => f(s.asInstanceOf[A]), expected))
-        // (q *> p) >>= f = q *> (p >>= f)
-        //case u *> v => *>(u, >>=(v, f).optimise)
-        // monad law 3: (m >>= g) >>= f = m >>= (\x -> g x >>= f) Note: this *could* help if g x ended with a pure, since this would be optimised out!
-        //case (m: Parsley[T] @unchecked) >>= (g: (T => A) @unchecked) =>
-        //    p = m.asInstanceOf[Parsley[A]]
-        //    f = (x: T) => >>=(g(x), f, expected).optimise
-        //    this
-        // monadplus law (left zero)
         case z: MZero => z
         case _ => this
     }
-    override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
-        suspend(p.codeGen[M, R]) |> {
+    override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
+        suspend(p.codeGen[M, R](producesResults = true)) |> {
             instrs += instructions.DynCall[A] { x =>
                 val p = f(x)
+                // FIXME: suppress results within p, then can remove pop
                 p.demandCalleeSave(state.numRegs)
                 if (implicitly[ContOps[M]].isStackSafe) p.overflows()
                 p.instrs
             }
+            if (!producesResults) instrs += instructions.Pop
         }
     }
     // $COVERAGE-OFF$
@@ -151,6 +135,8 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
         case _          => after
     }
 
+    // TODO: Get behaves much like pure except for shifting positions
+    // TODO: can this be optimised to reduce repeated matching?
     override def optimise: StrictParsley[A] = this match {
         // Assume that this is eliminated first, so not other before or afters
         case (_: Pure[_]) **> u => u
@@ -198,7 +184,7 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
         case _ => this
     }
 
-    override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = res match {
+    override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = res match {
         case Pure(x) =>
             // peephole here involves CharTokFastPerform, StringTokFastPerform, and Exchange
             assume(after.isEmpty, "The pure in question is normalised to the end: if result is pure, after is empty.")
@@ -206,19 +192,18 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
             val last = before.last
             before.initInPlace()
             suspend(Seq.codeGenMany[M, R](before.iterator)) >> {
+                before.addOne(last) // undo the initInPlace, you'll thank me later
                 last match {
-                    case ct@CharTok(c) => result(instrs += instructions.CharTokFastPerform[Char, A](c, _ => x, ct.expected))
-                    case st@StringTok(s) => result(instrs += instructions.StringTokFastPerform(s, _ => x, st.expected))
-                    case st@Satisfy(f) => result(instrs += new instructions.SatisfyExchange(f, x, st.expected))
+                    case st@Satisfy(f) if producesResults => result(instrs += new instructions.SatisfyExchange(f, x, st.expected))
                     case _ =>
-                        suspend(last.codeGen[M, R]) |> {
-                            instrs += new instructions.Exchange(x)
+                        suspend(last.codeGen[M, R](producesResults = false)) |> {
+                            if (producesResults) instrs += new instructions.Push(x)
                         }
                 }
             }
         case _ =>
             suspend(Seq.codeGenMany[M, R](before.iterator)) >> {
-                suspend(res.codeGen[M, R]) >> {
+                suspend(res.codeGen[M, R](producesResults)) >> {
                     suspend(Seq.codeGenMany(after.iterator))
                 }
             }
@@ -234,12 +219,9 @@ private [backend] object Seq {
     }
 
     private [Seq] def codeGenMany[M[_, +_]: ContOps, R](it: Iterator[StrictParsley[_]])
-                                                      (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
+                                                       (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         if (it.hasNext) {
-            suspend(it.next().codeGen[M, R]) >> {
-                instrs += instructions.Pop
-                suspend(codeGenMany(it))
-            }
+            suspend(it.next().codeGen[M, R](producesResults = false)) >> suspend(codeGenMany(it))
         } else result(())
     }
 

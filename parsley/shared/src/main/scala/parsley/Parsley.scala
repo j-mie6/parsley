@@ -12,7 +12,7 @@ import parsley.expr.{chain, infix}
 import parsley.internal.deepembedding.{frontend, singletons}
 import parsley.internal.machine.Context
 
-import Parsley.pure
+import Parsley.{emptyErr, pure}
 import XCompat._ // substituteCo
 
 /**
@@ -85,7 +85,7 @@ import XCompat._ // substituteCo
   *
   * @define attemptreason
   *     The reason for this behaviour is that it prevents space leaks and improves error messages. If this behaviour
-  *     is not desired, use `attempt(this)` to rollback any input consumed on failure.
+  *     is not desired, use `atomic(this)` to rollback any input consumed on failure.
   *
   * @define or
   *     parses `q` if this parser fails '''without''' consuming input.
@@ -181,7 +181,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *
       * @example {{{
       * scala> import parsley.character.string
-      * scala> (string("true").as(true)).parse("true")
+      * scala> string("true").as(true).parse("true")
       * val res0 = Success(true)
       * }}}
       *
@@ -349,7 +349,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *
       * @example {{{
       * scala> import parsley.Parsley, parsley.character.char
-      * scala> val sign: Parsley[Int => Int] = char('+') #> (identity[Int] _) <|> char('-') #> (x => -x)
+      * scala> val sign: Parsley[Int => Int] = char('+').as(identity[Int] _) <|> char('-').as(x => -x)
       * scala> val nat: Parsley[Int] = ..
       * scala> val int = sign <*> nat
       * scala> int.parse("-7")
@@ -384,7 +384,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *
       * @example {{{
       *  // this has a common prefix "term" and requires backtracking
-      * val expr1 = attempt(lift2(Add, term <* char('+'), expr2)) <|> term
+      * val expr1 = atomic(lift2(Add, term <* char('+'), expr2)) <|> term
       * // common prefix factored out, and branches return a function to recombine
       * val expr2 = term <**> (char('+') *> expr2.map(y => Add(_, y)) </> (identity[Expr] _))
       * }}}
@@ -585,7 +585,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @note $autoAmend
       * @group filter
       */
-    def filter(pred: A => Boolean): Parsley[A] = new Parsley(new frontend.Filter(this.internal, pred))
+    def filter(pred: A => Boolean): Parsley[A] = parsley.errors.combinator.filterWith(this)(pred, emptyErr)
     /** This combinator filters the result of this parser using a given predicate, succeeding only if the predicate returns `false`.
       *
       * First, parse this parser. If it succeeds then take its result `x` and apply it to the predicate `pred`. If `pred(x) is
@@ -638,7 +638,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @note $autoAmend
       * @group filter
       */
-    def collect[B](pf: PartialFunction[A, B]): Parsley[B] = this.mapFilter(pf.lift)
+    def collect[B](pf: PartialFunction[A, B]): Parsley[B] = parsley.errors.combinator.collectWith(this)(pf, emptyErr)
     /** This combinator applies a function `f` to the result of this parser: if it returns a
       * `Some(y)`, `y` is returned, otherwise the parser fails.
       *
@@ -665,7 +665,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @note $autoAmend
       * @group filter
       */
-    def mapFilter[B](f: A => Option[B]): Parsley[B] = new Parsley(new frontend.MapFilter(this.internal, f))
+    def mapFilter[B](f: A => Option[B]): Parsley[B] = parsley.errors.combinator.mapFilterWith(this)(f, emptyErr)
 
     // FOLDING COMBINATORS
     /** This combinator will parse this parser '''zero''' or more times combining the results with the function `f` and base value `k` from the right.
@@ -901,6 +901,21 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       */
     def flatten[B](implicit ev: A <:< Parsley[B]): Parsley[B] = this.flatMap[B](ev)
 
+    /** This combinator ignores the result of this parser and instead returns the input parsed by it.
+      *
+      * This combinator executes this parser: if it fails, this combinator fails. Otherwise, if this
+      * parser succeeded, its result is discarded and the input it consumed in the process of parsing
+      * is returned directly. This can be used to efficiently obtain the underlying string of some parser
+      * without having to reconstruct it. One potential application is to suppress complex results of
+      * things within the `Lexer` without having to re-implement its functionality. However, it should be
+      * used judiciously.
+      *
+      * @return a parser which returns the parsed input directly.
+      * @since 4.4.0
+      * @group map
+      */
+    def span: Parsley[String] = new Parsley(new frontend.Span(this.internal))
+
     // SPECIAL METHODS
     // $COVERAGE-OFF$
     /** Forces the compilation of a parser as opposed to the regular lazy evaluation.
@@ -916,15 +931,27 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       */
     def overflows(): Unit = internal.overflows()
 
-    /** Using this method signifies that the parser it is invoked on is impure and any optimisations which assume purity
+    /** This combinator signifies that the parser it is invoked on is impure and any optimisations which assume purity
       * are disabled.
       *
+      * @example Any parsers that make use of mutable state may need to use this combinator to control
+      *          parsley's aggressive optimisations that remove results that are not needed: in this case,
+      *          the optimiser cannot see that the result of a parser is mutating some value, and may remove it.
       * @group special
       */
-    def unsafe(): Parsley[A] = {
-        internal.unsafe()
-        this
-    }
+    def impure: Parsley[A] = new Parsley(new frontend.Opaque(this.internal))
+    // TODO: deprecate in 4.5, remove 5.0
+    /** This combinator signifies that the parser it is invoked on is impure and any optimisations which assume purity
+      * are disabled.
+      *
+      * @example Any parsers that make use of mutable state may need to use this combinator to control
+      *          parsley's aggressive optimisations that remove results that are not needed: in this case,
+      *          the optimiser cannot see that the result of a parser is mutating some value, and may remove it.
+      * @note old alias for `impure`
+      * @group special
+      */
+    def unsafe(): Parsley[A] = impure
+
     // $COVERAGE-ON$
 
     // $COVERAGE-OFF$
@@ -1019,9 +1046,9 @@ object Parsley {
           *
           * @example {{{
           * // this works fine, even though all of `zipped`'s parsers are strict
-          * lazy val expr = (attempt(term) <* '+', ~expr).zipped(_ + _) <|> term
+          * lazy val expr = (atomic(term) <* '+', ~expr).zipped(_ + _) <|> term
           * // in this case, however, the following would fix the problem more elegantly:
-          * lazy val expr = (attempt(term), '+' *> expr).zipped(_ + _) <|> term
+          * lazy val expr = (atomic(term), '+' *> expr).zipped(_ + _) <|> term
           * }}}
           *
           * @return the parser `p`, but guaranteed to be lazy.
@@ -1136,6 +1163,8 @@ object Parsley {
       * @see [[Parsley.flatten `flatten`]] for details and examples.
       */
     def join[A](p: Parsley[Parsley[A]]): Parsley[A] = p.flatten
+    // $COVERAGE-OFF$
+    // TODO: deprecate in 4.5.0
     /** This combinator parses its argument `p`, but rolls back any consumed input on failure.
       *
       * If the parser `p` succeeds, then `attempt(p)` has no effect. However, if `p` failed,
@@ -1155,15 +1184,41 @@ object Parsley {
       *
       * @param p the parser to execute, if it fails, it will not have consumed input.
       * @return a parser that tries `p`, but never consumes input if it fails.
+      * @note `atomic` should be used instead.
       * @group prim
       */
-    def attempt[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.Attempt(p.internal))
+    def attempt[A](p: Parsley[A]): Parsley[A] = atomic(p)
+    // $COVERAGE-ON$
+    /** This combinator parses its argument `p`, but rolls back any consumed input on failure.
+      *
+      * If the parser `p` succeeds, then `atomic(p)` has no effect. However, if `p` failed,
+      * then any input that it consumed is rolled back. This ensures that
+      * the parser `p` is all-or-nothing when consuming input. While there are many legimate
+      * uses for all-or-nothing behaviour, one notable, if discouraged, use is to allow the
+      * `<|>` combinator to backtrack -- recall it can only parse its alternative if the
+      * first failed ''without'' consuming input. This is discouraged, however, as it can
+      * affect the complexity of the parser and harm error messages.
+      *
+      * @example {{{
+      * scala> import parsley.character.string, parsley.Parsley.atomic
+      * scala> (string("abc") <|> string("abd")).parse("abd")
+      * val res0 = Failure(..) // first parser consumed a, so no backtrack
+      * scala> (atomic(string("abc")) <|> string("abd")).parse("abd")
+      * val res1 = Success("abd") // first parser does not consume input on failure now
+      * }}}
+      *
+      * @param p the parser to execute, if it fails, it will not have consumed input.
+      * @return a parser that tries `p`, but never consumes input if it fails.
+      * @since 4.4.0
+      * @group prim
+      */
+    def atomic[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.Attempt(p.internal))
     /** This combinator parses its argument `p`, but does not consume input if it succeeds.
       *
       * If the parser `p` succeeds, then `lookAhead(p)` will roll back any input consumed
       * whilst parsing `p`. If `p` fails, however, then the whole combinator fails and
       * any input consumed '''remains consumed'''. If this behaviour is not desirable,
-      * consider pairing `lookAhead` with `attempt`.
+      * consider pairing `lookAhead` with `atomic`.
       *
       * @example {{{
       * scala> import parsley.Parsley.lookAhead, parsley.character.string
@@ -1191,7 +1246,7 @@ object Parsley {
       * {{{
       * import parsley.character.{string, letterOrDigit}
       * import parsley.Parsley.notFollowedBy
-      * def keyword(kw: String): Parsley[Unit] = attempt {
+      * def keyword(kw: String): Parsley[Unit] = atomic {
       *     string(kw) *> notFollowedBy(letterOrDigit)
       * }
       * }}}
@@ -1201,6 +1256,18 @@ object Parsley {
       * @group prim
       */
     def notFollowedBy(p: Parsley[_]): Parsley[Unit] = new Parsley(new frontend.NotFollowedBy(p.internal))
+    /** This combinator fails immediately, with a caret of the given width and no other information.
+      *
+      * By producing basically no information, this combinator is principally for adjusting the
+      * caret-width of another error, rather than the value `empty`, which is used to fail with
+      * no effect on error content.
+      *
+      * @param caretWidth the width of the caret for the error produced by this combinator.
+      * @return a parser that fails.
+      * @since 4.4.0
+      * @group basic
+      */
+    def empty(caretWidth: Int): Parsley[Nothing] = new Parsley(singletons.Empty(caretWidth))
     /** This parser fails immediately, with an unknown parse error.
       *
       * @example {{{
@@ -1210,12 +1277,13 @@ object Parsley {
       * }}}
       *
       * @return a parser that fails.
+      * @note equivalent to `empty(0)`
       * @group basic
       */
-    val empty: Parsley[Nothing] = errors.combinator.empty(0)
-    /** This combinator produces `()` without having any other effect.
+    val empty: Parsley[Nothing] = empty(0)
+    /** This parser produces `()` without having any other effect.
       *
-      * When this combinator is ran, no input is required, nor consumed, and
+      * When this parser is ran, no input is required, nor consumed, and
       * the given value will always be successfully returned. It has no other
       * effect on the state of the parser.
       *
@@ -1233,6 +1301,9 @@ object Parsley {
       * @group basic
       */
     val unit: Parsley[Unit] = pure(())
+
+    private val emptyErr = new parsley.errors.VanillaGen[Any]
+
     // $COVERAGE-OFF$
     /** This parser returns the current line number of the input without having any other effect.
       *

@@ -13,7 +13,7 @@ private [parsley] final class <*>[A, B](pf: LazyParsley[A => B], px: =>LazyParsl
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[B] = visitor.visit(this, context)(pf, px)
 }
 
-private [parsley] final class >>=[A, B](p: LazyParsley[A], private [>>=] val f: A => LazyParsley[B]) extends Unary[A, B](p) {
+private [parsley] final class >>=[A, B](p: LazyParsley[A], private val f: A => LazyParsley[B]) extends Unary[A, B](p) {
     override def make(p: StrictParsley[A]): StrictParsley[B] = new backend.>>=(p, f)
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[B] = visitor.visit(this, context)(p, f)

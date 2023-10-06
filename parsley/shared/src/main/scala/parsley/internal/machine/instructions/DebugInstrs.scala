@@ -7,6 +7,7 @@
 package parsley.internal.machine.instructions
 
 import parsley.XAssert._
+import parsley.debug.Profiler
 import parsley.errors.ErrorBuilder
 
 import parsley.internal.errors.{ExpectItem, FancyError, ParseError, TrivialError}
@@ -79,11 +80,16 @@ private [instructions] object InputSlicer {
 }
 
 private [instructions] trait Logger extends PrettyPortal with InputSlicer with Colours {
-    final protected def preludeString(dir: Direction, ctx: Context, ends: String) = {
+    final protected def preludeString(dir: Direction, ctx: Context, ends: String, watchedRegs: Seq[(Int, String)]) = {
         val input = this.slice(ctx)
         val prelude = s"${portal(dir, ctx)} (${ctx.line}, ${ctx.col}): "
         val caret = (" " * prelude.length) + this.caret(ctx)
-        indentAndUnlines(ctx, s"$prelude$input$ends", caret)
+        val regSummary = if (watchedRegs.isEmpty) Seq.empty else {
+            "watched registers:" +: watchedRegs.map {
+                case (addr, name) => s"    $name = ${ctx.regs(addr)}"
+            } :+ ""
+        }
+        indentAndUnlines(ctx, s"$prelude$input$ends" +: caret +: regSummary: _*)
     }
     final protected def doBreak(ctx: Context): Unit = {
         print(indentAndUnlines(ctx,
@@ -94,11 +100,11 @@ private [instructions] trait Logger extends PrettyPortal with InputSlicer with C
     }
 }
 
-private [internal] final class LogBegin(var label: Int, override val name: String, override val ascii: Boolean, break: Boolean)
+private [internal] final class LogBegin(var label: Int, override val name: String, override val ascii: Boolean, break: Boolean, watchedRegs: Seq[(Int, String)])
     extends InstrWithLabel with Logger {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        println(preludeString(Enter, ctx, ""))
+        println(preludeString(Enter, ctx, "", watchedRegs))
         if (break) doBreak(ctx)
         ctx.debuglvl += 1
         ctx.pushHandler(label)
@@ -107,13 +113,13 @@ private [internal] final class LogBegin(var label: Int, override val name: Strin
     override def toString: String = s"LogBegin($label, $name)"
 }
 
-private [internal] final class LogEnd(val name: String, override val ascii: Boolean, break: Boolean) extends Instr with Logger {
+private [internal] final class LogEnd(val name: String, val ascii: Boolean, break: Boolean, watchedRegs: Seq[(Int, String)]) extends Instr with Logger {
     override def apply(ctx: Context): Unit = {
         assert(ctx.running, "cannot wrap a Halt with a debug")
         ctx.debuglvl -= 1
+        ctx.handlers = ctx.handlers.tail
         val end = " " + {
             if (ctx.good) {
-                ctx.handlers = ctx.handlers.tail
                 ctx.inc()
                 green("Good")
             }
@@ -122,7 +128,7 @@ private [internal] final class LogEnd(val name: String, override val ascii: Bool
                 red("Fail")
             }
         }
-        println(preludeString(Exit, ctx, end))
+        println(preludeString(Exit, ctx, end, watchedRegs))
         if (break) doBreak(ctx)
     }
     override def toString: String = s"LogEnd($name)"
@@ -173,6 +179,7 @@ private [internal] final class LogErrEnd(override val name: String, override val
     override def apply(ctx: Context): Unit = {
         assert(ctx.running, "cannot wrap a Halt with a debug")
         ctx.debuglvl -= 1
+        ctx.handlers = ctx.handlers.tail
         @unused val currentHintsValidOffset = ctx.currentHintsValidOffset
         if (ctx.good) {
             // In this case, the currently in-flight hints should be reported
@@ -180,7 +187,6 @@ private [internal] final class LogErrEnd(override val name: String, override val
             val inFlightHints = ctx.inFlightHints.toSet
             val formattedInFlight = inFlightHints.map(_.formatExpect)
             val msgInit = s": ${green("Good")}, current hints are $formattedInFlight with"
-            ctx.handlers = ctx.handlers.tail
             if (!oldData.stillValid(ctx.currentHintsValidOffset)) {
                 println(preludeString(Exit, ctx, s"$msgInit old hints discarded (valid at offset ${ctx.currentHintsValidOffset})"))
             }
@@ -230,4 +236,29 @@ private [instructions] object LogErrEnd {
                 "}"
     }
 }
+
+private [internal] final class ProfileEnter(var label: Int, name: String, profiler: Profiler) extends InstrWithLabel {
+    private [this] val entries = profiler.entriesFor(name)
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.pushHandler(label)
+        ctx.inc()
+        entries += profiler.monotone(System.nanoTime())
+    }
+
+    override def toString: String = s"ProfileEnter($label, $name)"
+}
+
+private [internal] final class ProfileExit(name: String, profiler: Profiler) extends Instr {
+    private [this] val exits = profiler.exitsFor(name)
+    override def apply(ctx: Context): Unit = {
+        exits += profiler.monotone(System.nanoTime())
+        ctx.handlers = ctx.handlers.tail
+        if (ctx.good) ctx.inc()
+        else ctx.fail()
+    }
+
+    override def toString: String = s"ProfileExit($name)"
+}
+
 // $COVERAGE-ON$

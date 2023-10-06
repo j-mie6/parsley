@@ -44,17 +44,16 @@ private [deepembedding] trait StrictParsley[+A] {
       * @return the final array of instructions for this parser
       */
     final private [deepembedding] def generateInstructions[M[_, +_]: ContOps](numRegsUsedByParent: Int, usedRegs: Set[Reg[_]],
-                                                                             recs: Iterable[(Rec[_], M[Unit, StrictParsley[_]])])
+                                                                              bodyMap: Map[Let[_], StrictParsley[_]])
                                                                             (implicit state: CodeGenState): Array[Instr] = {
         implicit val instrs: InstrBuffer = newInstrBuffer
         perform {
-            generateCalleeSave[M, Array[Instr]](numRegsUsedByParent, this.codeGen, usedRegs) |> {
+            generateCalleeSave[M, Array[Instr]](numRegsUsedByParent, this.codeGen(producesResults = true), usedRegs) |> {
                 // When `numRegsUsedByParent` is -1 this is top level, otherwise it is a flatMap
                 instrs += (if (numRegsUsedByParent >= 0) instructions.Return else instructions.Halt)
-                val recRets = finaliseRecs(recs)
-                val letRets = finaliseLets()
+                val letRets = finaliseLets(bodyMap)
                 generateHandlers(state.handlers)
-                finaliseInstrs(instrs, state.nlabels, recRets ::: letRets)
+                finaliseInstrs(instrs, state.nlabels, letRets)
             }
         }
     }
@@ -64,10 +63,11 @@ private [deepembedding] trait StrictParsley[+A] {
       * It is fine for this method to perform peephole optimisation on the combinators and generate
       * more optimal sequences of instructions in specific circumstances.
       *
+      * @param producesResults is this parser expected to push its result onto the stack?
       * @param instrs the current buffer of instructions to generate into
       * @param state code generator state, for the generation of labels
       */
-    protected [backend] def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit]
+    protected [backend] def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit]
 
     /** This method is directly called by the "frontend" and is used to perform domain-specific
       * optimisations on this parser (usually following the laws of the parser combinators).
@@ -81,9 +81,6 @@ private [deepembedding] trait StrictParsley[+A] {
       * @note the heuristic here is that single instruction combinators should always be inlined
       */
     private [deepembedding] def inlinable: Boolean
-
-    /** Is this combinator known to be pure? */
-    final private [deepembedding] var safe = true
 
     // $COVERAGE-OFF$
     /** Pretty-prints a combinator tree, for internal debugging purposes only. */
@@ -174,45 +171,23 @@ private [deepembedding] object StrictParsley {
         else bodyGen
     }
 
-    /** Generates each of the given recursive parsers in turn into the instruction buffer.
-      * Each has already been assigned a jump-label, which is stored in the `Rec` node itself.
-      * The layout of generation is the jump-label, followed by the body, followed by a `Return`.
-      *
-      * @param recs a supply of `Rec` nodes along with the generator for their strict parsers
-      * @param instrs the instruction buffer to generate into
-      * @param state the code generation state, for label generation
-      * @return the list of return labels for each of the parsers (for TCO)
-      */
-    private def finaliseRecs[M[_, +_]: ContOps](recs: Iterable[(Rec[_], M[Unit, StrictParsley[_]])])
-                                                 (implicit instrs: InstrBuffer, state: CodeGenState): List[RetLoc] = {
-        val retLocs = mutable.ListBuffer.empty[RetLoc]
-        for ((rec, p) <- recs) {
-            instrs += new instructions.Label(rec.label)
-            perform(p.flatMap(_.codeGen))
-            val retLoc = state.freshLabel()
-            instrs += new instructions.Label(retLoc)
-            instrs += instructions.Return
-            retLocs += retLoc
-        }
-        retLocs.toList
-    }
-
     /** Generates each of the shared, non-recursive, parsers that have been ''used'' by
       * the parser. These are stored within the code generation state. This is done because
       * some of the identified shared parsers may have been inlined and so do not need to
       * be generated. The state tracks which of these parsers were actually demanded, so
       * dead-code is automatically eliminated.
       *
+      * @param bodyMap the map of lets to bodies
       * @param instrs the instruction buffer to generate into
       * @param state the code generation state, which contains the shared parsers
       * @return the list of return labels for each of the parsers (for TCO)
       */
-    private def finaliseLets[M[_, +_]: ContOps]()(implicit instrs: InstrBuffer, state: CodeGenState): List[RetLoc] = {
+    private def finaliseLets[M[_, +_]: ContOps](bodyMap: Map[Let[_], StrictParsley[_]])(implicit instrs: InstrBuffer, state: CodeGenState): List[RetLoc] = {
         val retLocs = mutable.ListBuffer.empty[RetLoc]
         while (state.more) {
-            val let = state.nextLet()
-            instrs += new instructions.Label(let.label)
-            perform[M, Unit](let.p.codeGen)
+            val (let, producesResults, label) = state.nextLet()
+            instrs += new instructions.Label(label)
+            perform[M, Unit](bodyMap(let).codeGen(producesResults))
             val retLoc = state.freshLabel()
             instrs += new instructions.Label(retLoc)
             instrs += instructions.Return
@@ -313,9 +288,9 @@ private [deepembedding] class CodeGenState(val numRegs: Int) {
     /** The next jump-label identifier. */
     private var current = 0
     /** The shared-parsers that have been referenced at some point in the generation so far. */
-    private val queue = mutable.ListBuffer.empty[Let[_]]
+    private val queue = mutable.ListBuffer.empty[(Let[_], Boolean, Int)]
     /** The mapping between a shared-parser and its generated jump-label. */
-    private val map = mutable.Map.empty[Let[_], Int]
+    private val map = mutable.Map.empty[(Let[_], Boolean), Int]
 
     /** Generates a unique jump-label. */
     def freshLabel(): Int = {
@@ -332,13 +307,14 @@ private [deepembedding] class CodeGenState(val numRegs: Int) {
       * @param sub the shared parser to collect a label for
       * @return the label assigned the given parser
       */
-    def getLabel(sub: Let[_]): Int = map.getOrElseUpdate(sub, {
-        sub +=: queue
-        freshLabel()
+    def getLabel(sub: Let[_], producesResults: Boolean): Int = map.getOrElseUpdate((sub, producesResults), {
+        val label = freshLabel()
+        (sub, producesResults, label) +=: queue
+        label
     })
 
     /** Returns the next shared-parser that has been refered during code generation */
-    def nextLet(): Let[_] = queue.remove(0)
+    def nextLet(): (Let[_], Boolean, Int) = queue.remove(0)
     /** Are there any more shared-parsers left on the processing queue? */
     def more: Boolean = queue.nonEmpty
 

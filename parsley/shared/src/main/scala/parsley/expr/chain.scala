@@ -38,7 +38,7 @@ object chain {
       * scala> sealed trait Expr
       * scala> case class Add(x: Expr, y: Expr) extends Expr
       * scala> case class Num(x: Int) extends Expr
-      * scala> val expr = chain.right1(digit.map(d => Num(d.asDigit)), char('+') #> Add)
+      * scala> val expr = chain.right1(digit.map(d => Num(d.asDigit)), char('+').as(Add))
       * scala> expr.parse("1+2+3+4")
       * val res0 = Success(Add(Num(1), Add(Num(2), Add(Num(3), Num(4)))))
       * scala> expr.parse("")
@@ -66,7 +66,7 @@ object chain {
       * scala> sealed trait Expr
       * scala> case class Add(x: Expr, y: Expr) extends Expr
       * scala> case class Num(x: Int) extends Expr
-      * scala> val expr = chain.left1(digit.map(d => Num(d.asDigit)), char('+') #> Add)
+      * scala> val expr = chain.left1(digit.map(d => Num(d.asDigit)), char('+').as(Add))
       * scala> expr.parse("1+2+3+4")
       * val res0 = Success(Add(Add(Add(Num(1), Num(2)), Num(3)), Num(4)))
       * scala> expr.parse("")
@@ -95,7 +95,7 @@ object chain {
       * scala> sealed trait Expr
       * scala> case class Add(x: Expr, y: Expr) extends Expr
       * scala> case class Num(x: Int) extends Expr
-      * scala> val expr = chain.right(digit.map(d => Num(d.asDigit)), char('+') #> Add, Num(0))
+      * scala> val expr = chain.right(digit.map(d => Num(d.asDigit)), char('+').as(Add), Num(0))
       * scala> expr.parse("1+2+3+4")
       * val res0 = Success(Add(Num(1), Add(Num(2), Add(Num(3), Num(4)))))
       * scala> expr.parse("")
@@ -126,7 +126,7 @@ object chain {
       * scala> sealed trait Expr
       * scala> case class Add(x: Expr, y: Expr) extends Expr
       * scala> case class Num(x: Int) extends Expr
-      * scala> val expr = chain.left(digit.map(d => Num(d.asDigit)), char('+') #> Add, Num(0))
+      * scala> val expr = chain.left(digit.map(d => Num(d.asDigit)), char('+').as(Add), Num(0))
       * scala> expr.parse("1+2+3+4")
       * val res0 = Success(Add(Add(Add(Num(1), Num(2)), Num(3)), Num(4)))
       * scala> expr.parse("")
@@ -158,7 +158,7 @@ object chain {
       * scala> case class Negate(x: Expr) extends Expr
       * scala> case class Id(x: Expr) extends Expr
       * scala> case class Num(x: Int) extends Expr
-      * scala> val expr = chain.prefix(char('-') #> Negate <|> char('+') #> Id, digit.map(d => Num(d.asDigit)))
+      * scala> val expr = chain.prefix(char('-').as(Negate) <|> char('+').as(Id), digit.map(d => Num(d.asDigit)))
       * scala> expr.parse("--+1")
       * val res0 = Success(Negate(Negate(Id(Num(1)))))
       * scala> expr.parse("1")
@@ -189,7 +189,7 @@ object chain {
       * scala> case class Inc(x: Expr) extends Expr
       * scala> case class Dec(x: Expr) extends Expr
       * scala> case class Num(x: Int) extends Expr
-      * scala> val expr = chain.postfix(digit.map(d => Num(d.asDigit)), string("++") #> Inc <|> string("--") #> Dec)
+      * scala> val expr = chain.postfix(digit.map(d => Num(d.asDigit)), string("++").as(Inc) <|> string("--").as(Dec))
       * scala> expr.parse("1++----")
       * val res0 = Success(Dec(Dec(Inc(Num(1)))))
       * scala> expr.parse("1")
@@ -220,7 +220,7 @@ object chain {
       * scala> case class Negate(x: Expr) extends Expr
       * scala> case class Id(x: Expr) extends Expr
       * scala> case class Num(x: Int) extends Expr
-      * scala> val expr = chain.prefix1(char('-') #> Negate <|> char('+') #> Id, digit.map(d => Num(d.asDigit)))
+      * scala> val expr = chain.prefix1(char('-').as(Negate) <|> char('+').as(Id), digit.map(d => Num(d.asDigit)))
       * scala> expr.parse("--+1")
       * val res0 = Success(Negate(Negate(Id(Num(1)))))
       * scala> expr.parse("1")
@@ -251,7 +251,7 @@ object chain {
       * scala> case class Inc(x: Expr) extends Expr
       * scala> case class Dec(x: Expr) extends Expr
       * scala> case class Num(x: Int) extends Expr
-      * scala> val expr = chain.postfix1(digit.map(d => Num(d.asDigit)), string("++") #> Inc <|> string("--") #> Dec)
+      * scala> val expr = chain.postfix1(digit.map(d => Num(d.asDigit)), string("++").as(Inc) <|> string("--").as(Dec))
       * scala> expr.parse("1++----")
       * val res0 = Success(Dec(Dec(Inc(Num(1)))))
       * scala> expr.parse("1")

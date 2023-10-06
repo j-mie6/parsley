@@ -25,16 +25,16 @@ private [backend] abstract class ScopedUnary[A, B] extends Unary[A, B] {
     def setup(label: Int): instructions.Instr
     def handlerLabel(state: CodeGenState): Int
     def instrNeedsLabel: Boolean
-    final override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
+    final override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler = handlerLabel(state)
         instrs += setup(handler)
-        suspend[M, R, Unit](p.codeGen) |> {
+        suspend[M, R, Unit](p.codeGen(producesResults)) |> {
             if (instrNeedsLabel) instrs += new instructions.Label(handler)
             instrs += instr
         }
     }
 }
 
-private [backend] abstract class ScopedUnaryWithState[A, B](doesNotProduceHints: Boolean) extends ScopedUnary[A, B] {
-    override def setup(label: Int): instructions.Instr = new instructions.PushHandlerAndState(label, doesNotProduceHints, doesNotProduceHints)
+private [backend] abstract class ScopedUnaryWithState[A, B] extends ScopedUnary[A, B] {
+    override def setup(label: Int): instructions.Instr = new instructions.PushHandlerAndState(label)
 }

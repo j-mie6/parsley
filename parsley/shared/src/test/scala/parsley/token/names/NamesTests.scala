@@ -90,7 +90,7 @@ class NamesTests extends ParsleyTest {
 
     it should "report the correct label" in {
         inside(plainNames.identifier.parseAll("HARD")) {
-            case Failure(TestError(_, VanillaError(unexpected, expecteds, reasons))) =>
+            case Failure(TestError(_, VanillaError(unexpected, expecteds, reasons, 4))) =>
                 unexpected should contain (Named("keyword HARD"))
                 expecteds should contain only (Named("identifier"))
                 reasons shouldBe empty

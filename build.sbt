@@ -16,7 +16,7 @@ val releaseFlags = Seq("-Xdisable-assertions", "-opt:l:method,inline", "-opt-inl
 val noReleaseFlagsScala3 = true // maybe some day this can be turned off...
 
 inThisBuild(List(
-  tlBaseVersion := "4.3",
+  tlBaseVersion := "4.4",
   organization := "com.github.j-mie6",
   organizationName := "Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>",
   startYear := Some(2020), // true start is 2018, but license is from 2020
@@ -40,6 +40,7 @@ inThisBuild(List(
   tlCiHeaderCheck := true,
   githubWorkflowJavaVersions := Seq(Java8, JavaLTS, JavaLatest),
   githubWorkflowAddedJobs += testCoverageJob(githubWorkflowGeneratedCacheSteps.value.toList),
+  //githubWorkflowConcurrency := None,
   // Website Configuration
   tlSitePublishBranch := Some(mainBranch),
   tlSiteApiUrl := Some(url("https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest/")),
@@ -59,7 +60,7 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
 
     resolvers ++= Opts.resolver.sonatypeOssReleases, // Will speed up MiMA during fast back-to-back releases
     libraryDependencies ++= Seq(
-        "org.scalatest" %%% "scalatest" % "3.2.16" % Test,
+        "org.scalatest" %%% "scalatest" % "3.2.17" % Test,
         "org.scalacheck" %%% "scalacheck" % "1.17.0" % Test,
         "org.scalatestplus" %%% "scalacheck-1-17" % "3.2.15.0" % Test,
     ),

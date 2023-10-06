@@ -8,6 +8,7 @@ package parsley
 import Predef.{ArrowAssoc => _, _}
 
 import parsley.combinator.{exactly => repeat, _}
+import parsley.character.item
 import parsley.Parsley._
 import parsley.registers.{forYieldP, forYieldP_, Reg}
 import parsley.implicits.character.{charLift, stringLift}
@@ -27,8 +28,8 @@ class CombinatorTests extends ParsleyTest {
         choice("a", "b", "bc", "bcd").parse("c") shouldBe a [Failure[_]]
     }
 
-    "attemptChoice" should "correctly ensure the subparsers backtrack" in {
-        attemptChoice("ac", "aba", "abc").parse("abc") should be (Success("abc"))
+    "atomicChoice" should "correctly ensure the subparsers backtrack" in {
+        atomicChoice("ac", "aba", "abc").parse("abc") should be (Success("abc"))
     }
 
     "exactly" should "be pure(Nil) for n <= 0" in {
@@ -134,7 +135,7 @@ class CombinatorTests extends ParsleyTest {
         "ab" -> None,
     )
     it must "not corrupt the stack on sep hard-fail" in {
-        ('c' <::> attempt(sepEndBy('a', "bb")).getOrElse(List('d'))).parse("cab") should be (Success(List('c', 'd')))
+        ('c' <::> atomic(sepEndBy('a', "bb")).getOrElse(List('d'))).parse("cab") should be (Success(List('c', 'd')))
     }
 
     "sepEndBy1" must "require a p" in {
@@ -207,5 +208,57 @@ class CombinatorTests extends ParsleyTest {
                   matching('c')
         abc.parse("aaabbbccc") should be (Success(List('c', 'c', 'c')))
         abc.parse("aaaabc") shouldBe a [Failure[_]]
+    }
+
+    "count" should "report how many successful parses occurred" in {
+        val p = count("ab")
+        val q = count1("ab")
+        p.parse("") shouldBe Success(0)
+        q.parse("") shouldBe a [Failure[_]]
+        p.parse("ab") shouldBe Success(1)
+        q.parse("ab") shouldBe Success(1)
+        p.parse("ababab") shouldBe Success(3)
+        q.parse("ababab") shouldBe Success(3)
+    }
+
+    it should "not allow partial results" in {
+        count("ab").parse("aba") shouldBe a [Failure[_]]
+    }
+
+    it should "allow for ranges" in {
+        val p = count(min = 2, max = 5)("ab")
+        p.parse("ab") shouldBe a [Failure[_]]
+        p.parse("abab") shouldBe Success(2)
+        p.parse("ababab") shouldBe Success(3)
+        p.parse("abababab") shouldBe Success(4)
+        p.parse("ababababab") shouldBe Success(5)
+        p.parse("abababababab") shouldBe Success(5)
+        p.parse("ababababa") shouldBe a [Failure[_]]
+        val q = count(min = 2, max = 5)(atomic("ab"))
+        q.parse("ab") shouldBe a [Failure[_]]
+        q.parse("abab") shouldBe Success(2)
+        q.parse("ababab") shouldBe Success(3)
+        q.parse("abababab") shouldBe Success(4)
+        q.parse("ababababab") shouldBe Success(5)
+        q.parse("abababababab") shouldBe Success(5)
+        q.parse("ababababa") shouldBe Success(4)
+    }
+
+    "range" should "collect results up instead of count" in {
+        val p = range(min = 2, max = 5)(item)
+        p.parse("a") shouldBe a [Failure[_]]
+        p.parse("ab") shouldBe Success(List('a', 'b'))
+        p.parse("abcd") shouldBe Success(List('a', 'b', 'c', 'd'))
+        p.parse("abcde") shouldBe Success(List('a', 'b', 'c', 'd', 'e'))
+        p.parse("abcdef") shouldBe Success(List('a', 'b', 'c', 'd', 'e'))
+    }
+
+    "range_" should "perform a range with no results" in {
+        val p = range_(min = 2, max = 5)(item)
+        (p <~ eof).parse("a") shouldBe a [Failure[_]]
+        (p <~ eof).parse("ab") shouldBe Success(())
+        (p <~ eof).parse("abcd") shouldBe Success(())
+        (p <~ eof).parse("abcde") shouldBe Success(())
+        (p <~ 'f').parse("abcdef") shouldBe Success(())
     }
 }

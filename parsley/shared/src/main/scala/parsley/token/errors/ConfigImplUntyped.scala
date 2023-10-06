@@ -65,13 +65,15 @@ private [errors] final class Label private[errors] (val labels: Seq[String]) ext
     }
     private [parsley] final override def orElse(config: LabelConfig) = this
 }
-/** This object has a factory for configurations producing labels: if the empty string is provided, this equivalent to [[Hidden `Hidden`]].
+/** This object has a factory for configurations producing labels: labels may not be empty.
   * @since 4.1.0
   * @group labels
   */
 object Label {
     def apply(label: String): LabelConfig = if (label.isEmpty) Hidden else new Label(Seq(label))
-    private [parsley] def apply(labels: String*) = if (labels.isEmpty) Hidden else new Label(labels)
+    def apply(label1: String, label2: String, labels: String*): LabelConfig = new Label(label1 +: label2 +: labels)
+    // this is required internally, will go in parsley 5
+    private [parsley] def apply(labels: String*) = new Label(labels)
 }
 
 /** This object configures labels by stating that it must be hidden.

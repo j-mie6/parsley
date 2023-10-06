@@ -5,21 +5,20 @@
  */
 package parsley
 
-import scala.collection.immutable.NumericRange
-
-import parsley.Parsley.{atomic, empty, fresh, pure}
-import parsley.combinator.{choice, skipMany, skipSome}
+import parsley.Parsley.{empty, fresh, pure}
+import parsley.combinator.{skipMany, skipSome}
 import parsley.errors.combinator.ErrorMethods
 import parsley.token.errors.{Label, LabelConfig, NotConfigured}
 
 import parsley.internal.deepembedding.singletons
 
-/** This module contains many parsers to do with reading one or more characters. Almost every parser will need something from this module.
+/** This module contains many parsers to do with reading one or more characters.
   *
   * In particular, this module contains: combinators that can read specific characters; combinators that represent character classes and their negations;
   * combinators for reading specific strings; as well as a selection of pre-made parsers to parse specific kinds of character, like digits and letters.
+  * Unlike [[parsley.character `character`]], this module handles full utf-16 codepoints, which can be up to two 16-bit characters long.
   *
-  * @since 2.2.0
+  * @since 4.4.0
   *
   * @groupprio pred 100
   * @groupname pred Character Predicates
@@ -58,69 +57,37 @@ import parsley.internal.deepembedding.singletons
   *     for `java.lang.Character` to see which Unicode version is supported by your JVM. A table of the Unicode versions
   *     up to JDK 17 can be found [[https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/Character.html here]].
   *
-  *     These parsers are only able to parse unicode characters in the range `'\u0000'` to `'\uffff'`, known as
-  *     the ''Basic Multilingual Plane (BMP)''. Unicode characters wider than a single 16-bit character should be
-  *     parsed using multi-character combinators such as `string`, or, alternatively, combinators found in [[unicode `unicode`]].
-  *
   * @groupprio string 22
   * @groupname string String Combinators
   * @groupdesc string
   *     These combinators allow for working with, or building, strings. This means that they can
-  *     parse specific strings, specific sets of strings, or can read characters repeatedly to
+  *     parse specific strings, specific sets of strings, or can read codepoints repeatedly to
   *     generate strings. They are united in all returning `String` as their result.
   *
   * @define oneOf
-  *     This combinator tries to parse any character from supplied set of characters `cs`, returning it if successful.
+  *     This combinator tries to parse any codepoint from supplied set of codepoints `cs`, returning it if successful.
   * @define noneOf
-  *     This combinator tries to parse any character '''not''' from supplied set of characters `cs`, returning it if successful.
+  *     This combinator tries to parse any codepoint '''not''' from supplied set of codepoints `cs`, returning it if successful.
   *
   * @define categories
   *     ''The full list of codepoints found in a category can be found in the
   *     [[https://www.unicode.org/Public/13.0.0/ucd/extracted/DerivedGeneralCategory.txt Unicode Character Database]]''.
   */
-object character {
-    /** This combinator tries to parse a single specific character `c` from the input.
-      *
-      * Attempts to read the given character `c` from the input stream at the current
-      * position. If this character can be found, it is consumed and returned. Otherwise,
-      * no input is consumed and this combinator will fail.
-      *
-      * @example {{{
-      * scala> import parsley.character.char
-      * scala> char('a').parse("")
-      * val res0 = Failure(..)
-      * scala> char('a').parse("a")
-      * val res1 = Success('a')
-      * scala> char('a').parse("ba")
-      * val res2 = Failure(..)
-      * }}}
-      *
-      * @param c the character to parse
-      * @return a parser that tries to read a single `c`, or fails.
-      * @note this combinator can only handle 16-bit characters: for larger codepoints,
-      *       consider using [[string `string`]] or [[unicode.char `unicode.char`]].
-      * @group core
-      */
-    def char(c: Char): Parsley[Char] = char(c, NotConfigured)
-    private def char(c: Char, label: String): Parsley[Char] = char(c, Label(label))
-    private def char(c: Char, label: LabelConfig): Parsley[Char] = new Parsley(new singletons.CharTok(c, c, label))
-
-    //TODO: deprecate in 4.5
-    // $COVERAGE-OFF$
+object unicode {
     /** This combinator tries to parse a single specific codepoint `c` from the input.
       *
-      * Like [[char `char`]], except it may consume two characters from the input,
+      * Like [[character.char `character.char`]], except it may consume two characters from the input,
       * in the case where the code-point is greater than `0xffff`. This is parsed ''atomically''
       * so that no input is consumed if the first half of the codepoint is parsed and the second
       * is not.
       *
       * @example {{{
-      * scala> import parsley.character.codePoint
-      * scala> codePoint(0x1f642).parse("")
+      * scala> import parsley.unicode.char
+      * scala> char(0x1f642).parse("")
       * val res0 = Failure(..)
-      * scala> codePoint(0x1f642).parse("🙂")
+      * scala> char(0x1f642).parse("🙂")
       * val res1 = Success(0x1f642)
-      * scala> codePoint(0x1f642).parse("b🙂")
+      * scala> char(0x1f642).parse("b🙂")
       * val res2 = Failure(..)
       * }}}
       *
@@ -128,62 +95,68 @@ object character {
       * @return
       * @group core
       */
-    def codePoint(c: Int): Parsley[Int] = unicode.char(c)
-    // $COVERAGE-ON$
+    def char(c: Int): Parsley[Int] = char(c, NotConfigured)
+    private def char(c: Int, label: String): Parsley[Int] = char(c, Label(label))
+    private def char(c: Int, label: LabelConfig): Parsley[Int] = {
+        if (Character.isBmpCodePoint(c)) new Parsley(new singletons.CharTok(c.toChar, c, label))
+        else new Parsley(new singletons.SupplementaryCharTok(c, c, label))
+    }
 
-    /** This combinator tries to parse a single character from the input that matches the given predicate.
+    // TODO: test
+    /** This combinator tries to parse a single codepoint from the input that matches the given predicate.
       *
-      * Attempts to read a character from the input and tests it against the predicate `pred`. If a character `c`
+      * Attempts to read a codepoint from the input and tests it against the predicate `pred`. If a codepoint `c`
       * can be read and `pred(c)` is true, then `c` is consumed and returned. Otherwise, no input is consumed
       * and this combinator will fail.
       *
       * @example {{{
-      * scala> import parsley.character.satisfy
-      * scala> satisfy(_.isDigit).parse("")
+      * scala> import parsley.unicode.satisfy
+      * scala> satisfy(Character.isDigit(_)).parse("")
       * val res0 = Failure(..)
-      * scala> satisfy(_.isDigit).parse("7")
-      * val res1 = Success('7')
-      * scala> satisfy(_.isDigit).parse("a5")
+      * scala> satisfy(Character.isDigit(_)).parse("7")
+      * val res1 = Success(0x37)
+      * scala> satisfy(Character.isDigit(_)).parse("a5")
       * val res2 = Failure(..)
-      * scala> def char(c: Char): Parsley[Char] = satisfy(_ == c)
+      * scala> def char(c: Int): Parsley[Int] = satisfy(_ == c)
       * }}}
       *
-      * @param pred the predicate to test the next character against, should one exist.
-      * @return a parser that tries to read a single character `c`, such that `pred(c)` is true, or fails.
-      * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[unicode.satisfy `unicode.satisfy`]].
+      * @param pred the predicate to test the next codepoint against, should one exist.
+      * @return a parser that tries to read a single codepoint `c`, such that `pred(c)` is true, or fails.
       * @group core
       */
-    def satisfy(pred: Char => Boolean): Parsley[Char] = satisfy(pred, NotConfigured)
-    private def satisfy(pred: Char => Boolean, label: String): Parsley[Char] = satisfy(pred, Label(label))
-    private def satisfy(pred: Char => Boolean, label: LabelConfig) = new Parsley(new singletons.Satisfy(pred, label))
+    def satisfy(pred: Int => Boolean): Parsley[Int] = satisfy(pred, NotConfigured)
+    private def satisfy(pred: Int => Boolean, label: String): Parsley[Int] = satisfy(pred, Label(label))
+    private def satisfy(pred: Int => Boolean, label: LabelConfig) = new Parsley(new singletons.UniSatisfy(pred, label))
 
-    /** This combinator tries to parse and process a character from the input if it is defined for the given function.
+    // TODO: test
+    /** This combinator tries to parse and process a codepoint from the input if it is defined for the given function.
       *
-      * Attempts to read a character from the input and tests to see if it is in the domain of `f`. If a character
+      * Attempts to read a codepoint from the input and tests to see if it is in the domain of `f`. If a codepoint
       * `c` can be read and `f(c)` is defined, then `c` is consumed and `f(c)` is returned. Otherwise, no input is consumed
       * and this combinator will fail.
       *
       * @example {{{
-      * scala> import parsley.character.satisfyMap
-      * scala> val digit = satisfyMap {
-      *   case c if c.isDigit => c.asDigit
+      * scala> import parsley.unicode.satisfyMap
+      * scala> val chars = satisfyMap {
+      *   case c => Character.toChars(c)
       * }
-      * scala> digit.parse("")
+      * scala> chars.parse("")
       * val res0 = Failure(..)
-      * scala> digit.parse("7")
-      * val res1 = Success(7)
-      * scala> digit.parse("a5")
-      * val res2 = Failure(..)
+      * scala> chars.parse("7")
+      * val res1 = Success(Array('7'))
+      * scala> chars.parse("🙂")
+      * val res2 = Success(Array('&#92;ud83d', '&#92;ude42'))
       * }}}
       *
-      * @param f the function to test the next character against and transform it with, should one exist.
-      * @return a parser that tries to read a single character `c`, such that `f(c)` is defined, and returns `f(c)` if so, or fails.
+      * @param f the function to test the next codepoint against and transform it with, should one exist.
+      * @return a parser that tries to read a single codepoint `c`, such that `f(c)` is defined, and returns `f(c)` if so, or fails.
       * @since 4.4.0
-      * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[unicode.satisfyMap `unicode.satisfyMap`]].
       * @group core
       */
-    def satisfyMap[A](f: PartialFunction[Char, A]): Parsley[A] = satisfy(f.isDefinedAt(_)).map(f)
+    def satisfyMap[A](pred: PartialFunction[Int, A]): Parsley[A] = satisfy(pred.isDefinedAt(_)).map(pred)
 
+    // This should always just match up, so no need to test
+    // $COVERAGE-OFF$
     /** This combinator attempts to parse a given string from the input, and fails otherwise.
       *
       * Attempts to read the given string ''completely'' from the input at the current position.
@@ -193,7 +166,7 @@ object character {
       * matched are consumed from the input.
       *
       * @example {{{
-      * scala> import parsley.character.string
+      * scala> import parsley.unicode.string
       * scala> string("abc").parse("")
       * val res0 = Failure(..)
       * scala> string("abc").parse("abcd")
@@ -207,38 +180,34 @@ object character {
       * @note the error messages generated by `string` do not reflect how far into the input it managed
       *       to get: this is because the error being positioned at the start of the string is more
       *       natural. However, input '''will''' still be consumed for purposes of backtracking.
+      * @note just an alias for [[character.string `character.string`]], to allow for more ergonomic imports.
       * @group string
       */
-    def string(s: String): Parsley[String] = string(s, NotConfigured)
-    private [parsley] def string(s: String, label: String): Parsley[String] = string(s, Label(label))
-    private [parsley] def string(s: String, label: LabelConfig): Parsley[String] = {
-        require(s.nonEmpty, "`string` may not be passed the empty string (`string(\"\")` is meaningless, perhaps you meant `pure(\"\")`?)")
-        new Parsley(new singletons.StringTok(s, s, label))
-    }
+    def string(s: String): Parsley[String] = character.string(s)
+    // $COVERAGE-ON$
 
     /** $oneOf
       *
-      * If the next character in the input is a member of the set `cs`, it is consumed
+      * If the next codepoint in the input is a member of the set `cs`, it is consumed
       * and returned. Otherwise, no input is consumed and the combinator fails.
       *
       * @example {{{
-      * scala> import parsley.character.oneOf
-      * scala> val p = oneOf(Set('a', 'b', 'c'))
+      * scala> import parsley.codepoint.oneOf
+      * scala> val p = oneOf(Set(97, 98, 99))
       * scala> p.parse("a")
-      * val res0 = Success('a')
+      * val res0 = Success(97)
       * scala> p.parse("c")
-      * val res1 = Success('c')
+      * val res1 = Success(99)
       * scala> p.parse("xb")
       * val res2 = Failure(..)
       * }}}
       *
-      * @param cs the set of characters to check.
+      * @param cs the set of codepoints to check.
       * @return a parser that parses one of the member of the set `cs`.
-      * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[unicode.oneOf(cs:Set* `unicode.oneOf`]].
       * @see [[satisfy `satisfy`]]
       * @group class
       */
-    def oneOf(cs: Set[Char]): Parsley[Char] = cs.size match {
+    def oneOf(cs: Set[Int]): Parsley[Int] = cs.size match {
         case 0 => empty
         case 1 => char(cs.head)
         case _ => satisfy(cs, {
@@ -249,56 +218,54 @@ object character {
 
     /** $oneOf
       *
-      * If the next character in the input is an element of the list of characters `cs`, it is consumed
+      * If the next codepoint in the input is an element of the list of codepoints `cs`, it is consumed
       * and returned. Otherwise, no input is consumed and the combinator fails.
       *
       * @example {{{
-      * scala> import parsley.character.oneOf
-      * scala> val p = oneOf('a', 'b', 'c')
+      * scala> import parsley.unicode.oneOf
+      * scala> val p = oneOf(97, 98, 99)
       * scala> p.parse("a")
-      * val res0 = Success('a')
+      * val res0 = Success(97)
       * scala> p.parse("c")
-      * val res1 = Success('c')
+      * val res1 = Success(99)
       * scala> p.parse("xb")
       * val res2 = Failure(..)
       * }}}
       *
-      * @param cs the characters to check.
+      * @param cs the codepoints to check.
       * @return a parser that parses one of the elements of `cs`.
-      * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[unicode.oneOf(cs:Int* `unicode.oneOf`]].
       * @see [[satisfy `satisfy`]]
       * @group class
       */
-    def oneOf(cs: Char*): Parsley[Char] = oneOf(cs.toSet)
+    def oneOf(cs: Int*): Parsley[Int] = oneOf(cs.toSet)
 
     /** $oneOf
       *
-      * If the next character in the input is within the range of characters `cs`, it is consumed
+      * If the next codepoint in the input is within the range of codepoints `cs`, it is consumed
       * and returned. Otherwise, no input is consumed and the combinator fails.
       *
       * @example {{{
-      * scala> import parsley.character.oneOf
-      * scala> val p = oneOf('a' to 'c')
+      * scala> import parsley.unicode.oneOf
+      * scala> val p = oneOf(97 to 99)
       * scala> p.parse("a")
-      * val res0 = Success('a')
+      * val res0 = Success(97)
       * scala> p.parse("b")
-      * val res1 = Success('b')
+      * val res1 = Success(98)
       * scala> p.parse("c")
-      * val res1 = Success('c')
+      * val res1 = Success(99)
       * scala> p.parse("xb")
       * val res2 = Failure(..)
       * }}}
       *
-      * @param cs the range of characters to check.
-      * @return a parser that parses a character within the range `cs`.
-      * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[unicode.oneOf(cs:Range* `unicode.oneOf`]].
+      * @param cs the range of codepoints to check.
+      * @return a parser that parses a codepoint within the range `cs`.
       * @see [[satisfy `satisfy`]]
       * @group class
       */
-    def oneOf(cs: NumericRange[Char]): Parsley[Char] = cs.size match {
+    def oneOf(cs: Range): Parsley[Int] = cs.size match {
         case 0 => empty
         case 1 => char(cs.head)
-        case _ if Math.abs(cs(0).toInt - cs(1).toInt) == 1 => satisfy(cs.contains(_),
+        case _ if Math.abs(cs(0) - cs(1)) == 1 => satisfy(cs.contains(_),
             s"one of ${renderChar(cs.min)} to ${renderChar(cs.max)}"
         )
         case _ => satisfy(cs.contains(_))
@@ -306,11 +273,11 @@ object character {
 
     /** $noneOf
       *
-      * If the next character in the input is not a member of the set `cs`, it is consumed
+      * If the next codepoint in the input is not a member of the set `cs`, it is consumed
       * and returned. Otherwise, no input is consumed and the combinator fails.
       *
       * @example {{{
-      * scala> import parsley.character.noneOf
+      * scala> import parsley.unicode.noneOf
       * scala> val p = noneOf(Set('a', 'b', 'c'))
       * scala> p.parse("a")
       * val res0 = Failure(..)
@@ -322,13 +289,12 @@ object character {
       * val res3 = Failure(..)
       * }}}
       *
-      * @param cs the set of characters to check.
-      * @return a parser that parses one character that is not a member of the set `cs`.
-      * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[unicode.noneOf(cs:Set* `unicode.noneOf`]].
+      * @param cs the set of codepoints to check.
+      * @return a parser that parses one codepoint that is not a member of the set `cs`.
       * @see [[satisfy `satisfy`]]
       * @group class
       */
-    def noneOf(cs: Set[Char]): Parsley[Char] = cs.size match {
+    def noneOf(cs: Set[Int]): Parsley[Int] = cs.size match {
         case 0 => item
         case 1 => satisfy(cs.head != _, s"anything except ${renderChar(cs.head)}")
         case _ => satisfy(!cs.contains(_), {
@@ -339,11 +305,11 @@ object character {
 
     /** $noneOf
       *
-      * If the next character in the input is not an element of the list of characters `cs`, it is consumed
+      * If the next codepoint in the input is not an element of the list of codepoints `cs`, it is consumed
       * and returned. Otherwise, no input is consumed and the combinator fails.
       *
       * @example {{{
-      * scala> import parsley.character.noneOf
+      * scala> import parsley.unicode.noneOf
       * scala> val p = noneOf('a', 'b', 'c')
       * scala> p.parse("a")
       * val res0 = Failure(..)
@@ -355,21 +321,20 @@ object character {
       * val res3 = Failure(..)
       * }}}
       *
-      * @param cs the set of characters to check.
-      * @return a parser that parses one character that is not an element of `cs`.
-      * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[unicode.noneOf(cs:Int* `unicode.noneOf`]].
+      * @param cs the set of codepoints to check.
+      * @return a parser that parses one codepoint that is not an element of `cs`.
       * @see [[satisfy `satisfy`]]
       * @group class
       */
-    def noneOf(cs: Char*): Parsley[Char] = noneOf(cs.toSet)
+    def noneOf(cs: Int*): Parsley[Int] = noneOf(cs.toSet)
 
     /** $noneOf
       *
-      * If the next character in the input is outside of the range of characters `cs`, it is consumed
+      * If the next codepoint in the input is outside of the range of codepoints `cs`, it is consumed
       * and returned. Otherwise, no input is consumed and the combinator fails.
       *
       * @example {{{
-      * scala> import parsley.character.noneOf
+      * scala> import parsley.unicode.noneOf
       * scala> val p = noneOf('a' to 'c')
       * scala> p.parse("a")
       * val res0 = Failure(..)
@@ -383,31 +348,31 @@ object character {
       * val res3 = Failure(..)
       * }}}
       *
-      * @param cs the range of characters to check.
-      * @return a parser that parses a character outside the range `cs`.
-      * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[unicode.noneOf(cs:Range* `unicode.noneOf`]].
+      * @param cs the range of codepoints to check.
+      * @return a parser that parses a codepoint outside the range `cs`.
       * @see [[satisfy `satisfy`]]
       * @group class
       */
-    def noneOf(cs: NumericRange[Char]): Parsley[Char] = cs.size match {
+    def noneOf(cs: Range): Parsley[Int] = cs.size match {
         case 0 => item
         case 1 => satisfy(cs.head != _, s"anything except ${renderChar(cs.head)}")
-        case _ if Math.abs(cs(0).toInt - cs(1).toInt) == 1 => satisfy(!cs.contains(_), {
+        case _ if Math.abs(cs(0) - cs(1)) == 1 => satisfy(!cs.contains(_), {
             s"anything outside of ${renderChar(cs.min)} to ${renderChar(cs.max)}"
         })
         case _ => satisfy(!cs.contains(_))
     }
 
+    // TODO: test?
     /** This combinator parses `pc` '''zero''' or more times, collecting its results into a string.
       *
-      * Parses `pc` repeatedly until it fails. The resulting characters are placed into a string,
-      * which is then returned. This is ''morally'' equivalent to `many(pc).map(_.mkString)`, but
+      * Parses `pc` repeatedly until it fails. The resulting codepoints are placed into a string,
+      * which is then returned. This is ''morally'' equivalent to `many(pc).flatMap(Character.chars(_)).map(_.mkString)`, but
       * it uses `StringBuilder`, which makes it much more efficient.
       *
       * @example {{{
-      * scala> import parsley.character.{letter, letterOrDigit, stringOfMany}
+      * scala> import parsley.unicode.{letter, letterOrDigit, stringOfMany}
       * scala> import parsley.implicits.zipped.Zipped2
-      * scala> val ident = (letter, stringOfMany(letterOrDigit)).zipped((c, s) => s"&#36;c&#36;s")
+      * scala> val ident = (letter, stringOfMany(letterOrDigit)).zipped((c, s) => s"&#36;{Character.toString(c)}&#36;s")
       * scala> ident.parse("abdc9d")
       * val res0 = Success("abdc9d")
       * scala> ident.parse("a")
@@ -418,27 +383,27 @@ object character {
       *
       * @param pc the parser whose results make up the string
       * @return a parser that parses a string whose letters consist of results from `pc`.
-      * @since 4.0.0
+      * @since 4.4.0
       * @group string
       */
-    def stringOfMany(pc: Parsley[Char]): Parsley[String] = {
-        val pf = pure[(StringBuilder, Char) => StringBuilder](_ += _)
+    def stringOfMany(pc: Parsley[Int]): Parsley[String] = {
+        val pf = pure(addCodepoint(_, _))
         // Can't use the regular foldLeft here, because we need a fresh StringBuilder each time.
         expr.infix.secretLeft1(fresh(new StringBuilder), pc, pf).map(_.toString)
     }
 
-    // TODO: optimise, this can be _really_ tightly implemented with a substring on the input
-    /** This combinator parses characters matching the given predicate '''zero''' or more times, collecting
+    // TODO: test
+    /** This combinator parses codepoints matching the given predicate '''zero''' or more times, collecting
       * the results into a string.
       *
-      * Repeatly reads characters that satisfy the given predicate `pred`. When no more characters
+      * Repeatly reads codepoints that satisfy the given predicate `pred`. When no more codepoints
       * can be successfully read, the results are stitched together into a `String` and returned.
       * This combinator can never fail, since `satisfy` can never fail having consumed input.
       *
       * @example {{{
-      * scala> import parsley.character.{letter, stringOfMany}
+      * scala> import parsley.unicode.{letter, stringOfMany}
       * scala> import parsley.implicits.zipped.Zipped2
-      * scala> val ident = (letter, stringOfMany(_.isLetterOrDigit)).zipped((c, s) => s"&#36;c&#36;s")
+      * scala> val ident = (letter, stringOfMany(Character.isLetterOrDigit(_))).zipped((c, s) => s"&#36;{Character.toString(c)}&#36;s")
       * scala> ident.parse("abdc9d")
       * val res0 = Success("abdc9d")
       * scala> ident.parse("a")
@@ -447,24 +412,25 @@ object character {
       * val res2 = Failure(..)
       * }}}
       *
-      * @param pred the predicate to test characters against.
-      * @return a parser that returns the span of characters satisfying `pred`
+      * @param pred the predicate to test codepoints against.
+      * @return a parser that returns the span of codepoints satisfying `pred`
       * @note this acts exactly like `stringOfMany(satisfy(pred))`, but may be more efficient.
       * @note analogous to the `megaparsec` `takeWhileP` combinator.
       * @since 4.4.0
       * @group string
       */
-    def stringOfMany(pred: Char => Boolean): Parsley[String] = skipMany(satisfy(pred)).span
+    def stringOfMany(pred: Int => Boolean): Parsley[String] = skipMany(satisfy(pred)).span//stringOfMany(satisfy(pred))
 
+    // TODO: test?
     /** This combinator parses `pc` '''one''' or more times, collecting its results into a string.
       *
-      * Parses `pc` repeatedly until it fails. The resulting characters are placed into a string,
-      * which is then returned. This is ''morally'' equivalent to `many(pc).map(_.mkString)`, but
+      * Parses `pc` repeatedly until it fails. The resulting codepoints are placed into a string,
+      * which is then returned. This is ''morally'' equivalent to `some(pc).flatMap(Character.chars(_)).map(_.mkString)`, but
       * it uses `StringBuilder`, which makes it much more efficient. The result string must have
-      * at least one character in it.
+      * at least one codepoint in it.
       *
       * @example {{{
-      * scala> import parsley.character.{letter, stringOfSome}
+      * scala> import parsley.unicode.{letter, letterOrDigit, stringOfSome}
       * scala> val ident = stringOfSome(letter)
       * scala> ident.parse("abdc9d")
       * val res0 = Success("abdc")
@@ -474,53 +440,55 @@ object character {
       *
       * @param pc the parser whose results make up the string
       * @return a parser that parses a string whose letters consist of results from `pc`.
-      * @since 4.0.0
+      * @since 4.4.0
       * @group string
       */
-    def stringOfSome(pc: Parsley[Char]): Parsley[String] = {
-        val pf = pure[(StringBuilder, Char) => StringBuilder](_ += _)
+    def stringOfSome(pc: Parsley[Int]): Parsley[String] = {
+        val pf = pure(addCodepoint(_, _))
         // Can't use the regular foldLeft1 here, because we need a fresh StringBuilder each time.
-        expr.infix.secretLeft1(pc.map(new StringBuilder += _), pc, pf).map(_.toString)
+        expr.infix.secretLeft1(pc.map(addCodepoint(new StringBuilder, _)), pc, pf).map(_.toString)
     }
 
-    // TODO: optimise, this can be _really_ tightly implemented with a substring on the input
-    /** This combinator parses characters matching the given predicate '''one''' or more times, collecting
+    // TODO: test
+    /** This combinator parses codepoints matching the given predicate '''one''' or more times, collecting
       * the results into a string.
       *
-      * Repeatly reads characters that satisfy the given predicate `pred`. When no more characters
+      * Repeatly reads codepoints that satisfy the given predicate `pred`. When no more codepoints
       * can be successfully read, the results are stitched together into a `String` and returned.
       * This combinator can never fail having consumed input, since `satisfy` can never fail having
       * consumed input.
       *
       * @example {{{
-      * scala> import parsley.character.{stringOfSome}
-      * scala> val ident = stringOfSome(_.isLetter)
+      * scala> import parsley.unicode.{letter, stringOfSome}
+      * scala> val ident = stringOfSome(Character.isLetter(_)))
       * scala> ident.parse("abdc9d")
       * val res0 = Success("abdc")
       * scala> ident.parse("")
       * val res1 = Failure(..)
       * }}}
       *
-      * @param pred the predicate to test characters against.
-      * @return a parser that returns the span of characters satisfying `pred`
+      * @param pred the predicate to test codepoints against.
+      * @return a parser that returns the span of codepoints satisfying `pred`
       * @note this acts exactly like `stringOfSome(satisfy(pred))`, but may be more efficient.
-      * @note analogous to the `megaparsec` `takeWhile1P` combinator.
+      * @note analogous to the `megaparsec` `takeWhileP1` combinator.
       * @since 4.4.0
       * @group string
       */
-    def stringOfSome(pred: Char => Boolean): Parsley[String] = skipSome(satisfy(pred)).span
+    def stringOfSome(pred: Int => Boolean): Parsley[String] = skipSome(satisfy(pred)).span//stringOfSome(satisfy(pred))
 
+    // These should always just match up, so no need to test
+    // $COVERAGE-OFF$
     /** This combinator tries to parse each of the strings `strs` (and `str0`), until one of them succeeds.
       *
       * Unlike `choice`, or more accurately `atomicChoice`, this combinator will not
-      * necessarily parse the strings in the order provided. It will avoid strings that have another string
+      * necessarily parse the strings in the order provided. It will favour strings that have another string
       * as a prefix first, so that it has ''Longest Match'' semantics. It will try to minimise backtracking
       * too, making it a much more efficient option than `atomicChoice`.
       *
       * The longest succeeding string will be returned. If no strings match then the combinator fails.
       *
       * @example {{{
-      * scala> import parsley.character.strings
+      * scala> import parsley.unicode.strings
       * scala> val p = strings("hell", "hello", "goodbye", "g", "abc")
       * scala> p.parse("hell")
       * val res0 = Success("hell")
@@ -537,21 +505,21 @@ object character {
       * @param str0 the first string to try to parse.
       * @param strs the remaining strings to try to parse.
       * @return a parser that tries to parse all the given strings returning the longest one that matches.
-      * @since 4.0.0
+      * @note just an alias for [[parsley.character.strings(str0* `character.strings`]], to allow for more ergonomic imports.
       * @group string
       */
-    def strings(str0: String, strs: String*): Parsley[String] = strings(str0 -> pure(str0), strs.map(s => s -> pure(s)): _*)
+    def strings(str0: String, strs: String*): Parsley[String] = character.strings(str0, strs: _*)
 
     /** This combinator tries to parse each of the key-value pairs `kvs` (and `kv0`), until one of them succeeds.
       *
       * Each argument to this combinator is a pair of a string and a parser to perform if that string can be parsed.
       * `strings(s0 -> p0, ...)` can be thought of as `atomicChoice(string(s0) *> p0, ...)`, however, the given
       * ordering of key-value pairs does not dictate the order in which the parses are tried. In particular, it
-      * will avoid keys that are the prefix of another key first, so that it has ''Longest Match'' semantics.
-      * It will try to minimise backtracking too, making it a much more efficient option than `atomicChoice`.
+      * will favour keys that are the prefix of another key first, so that it has ''Longest Match'' semantics.
+      * it will try to minimise backtracking too, making it a much more efficient option than `atomicChoice`.
       *
       * @example {{{
-      * scala> import parsley.character.strings
+      * scala> import parsley.unicode.strings
       * scala> val p = strings("hell" -> pure(4), "hello" -> pure(5), "goodbye" -> pure(7), "g" -> pure(1), "abc" -> pure(3))
       * scala> p.parse("hell")
       * val res0 = Success(4)
@@ -566,41 +534,31 @@ object character {
       * }}}
       *
       * @note the scope of any backtracking performed is isolated to the key itself, as it is assumed that once a
-      * key parses correctly, the branch has been committed to. Putting an `atomic` around the values will not affect
+      * key parses correctly, the branch has been committed to. Putting an `attempt` around the values will not affect
       * this behaviour.
       *
       * @param kv0 the first key-value pair to try to parse.
       * @param kvs the remaining key-value pairs to try to parse.
       * @return a parser that tries to parse all the given key-value pairs, returning the (possibly failing) result
       *         of the value that corresponds to the longest matching key.
-      * @since 4.0.0
+      * @note just an alias for [[parsley.character.strings[A](kv0* `character.strings`]], to allow for more ergonomic imports.
       * @group string
       */
-    def strings[A](kv0: (String, Parsley[A]), kvs: (String, Parsley[A])*): Parsley[A] = {
-        // this isn't the best we could do: it's possible to eliminate backtracking with a Trie...
-        // can this be done in a semantic preserving way without resorting to a new instruction?
-        // I don't think it's worth it. Down the line a general Trie-backed optimisation would be
-        // more effective.
-        val ss = kv0 +: kvs
-        choice(ss.groupBy(_._1.head).toList.sortBy(_._1).view.map(_._2).flatMap { s =>
-            val (sLast, pLast) :: rest = s.toList.sortBy(_._1.length): @unchecked
-            ((string(sLast) *> pLast) :: rest.map { case (s, p) => atomic(string(s)) *> p }).reverse
-        }.toSeq: _*)
-    }
+    def strings[A](kv0: (String, Parsley[A]), kvs: (String, Parsley[A])*): Parsley[A] = character.strings(kv0, kvs: _*)
+    // $COVERAGE-ON$
 
-    /** This parser will parse '''any''' single character from the input, failing if there is no input remaining.
+    /** This parser will parse '''any''' single codepoint from the input, failing if there is no input remaining.
       *
-      * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[unicode.item `unicode.item`]].
       * @group core
       */
-    val item: Parsley[Char] = satisfy(_ => true, "any character")
+    val item: Parsley[Int] = satisfy(_ => true, "any character")
 
-    /** This parser tries to parse a space or tab character, and returns it if successful.
+    /** This parser tries to parse a space or tab character, and returns it if successful
       *
       * @see [[isSpace `isSpace`]]
       * @group spec
       */
-    val space: Parsley[Char] = satisfy(isSpace(_), "space/tab")
+    val space: Parsley[Int] = satisfy(isSpace(_), "space/tab")
 
     /** This parser skips zero or more space characters using [[space `space`]].
       *
@@ -617,12 +575,11 @@ object character {
       *   1. a line feed (`'\n'`)
       *   1. a carriage return (`'\r'`)
       *   1. a form feed (`'\f'`)
-      *   1. a vertical tab (`'\u000B'`)
+      *   1. a vertical tab (`'\u000b'`)
       *
-      * @see [[isWhitespace `isWhitespace`]]
       * @group spec
       */
-    val whitespace: Parsley[Char] = satisfy(_.isWhitespace, "whitespace")
+    val whitespace: Parsley[Int] = satisfy(Character.isWhitespace(_), "whitespace")
 
     /** This parser skips zero or more space characters using [[whitespace `whitespace`]].
       *
@@ -637,23 +594,23 @@ object character {
       *
       * @group spec
       */
-    val newline: Parsley[Char] = char('\n', "newline")
+    val newline: Parsley[Int] = char('\n', "newline")
 
     /** This parser tries to parse a `CRLF` newline character pair, returning `'\n'` if successful.
       *
       * A `CRLF` character is the pair of carriage return (`'\r'`) and line feed (`'\n'`). These
-      * two characters will be parsed together or not at all. The parser is made atomic using `atomic`.
+      * two characters will be parsed together or not at all. The parser is made atomic using `attempt`.
       *
       * @group spec
       */
-    val crlf: Parsley[Char] = atomic(string("\r\n", "end of crlf")).as('\n')
+    val crlf: Parsley[Int] = character.crlf.as(0x0a)
 
     /** This parser will parse either a line feed (`LF`) or a `CRLF` newline, returning `'\n'` if successful.
       *
       * @group spec
       * @see [[crlf `crlf`]]
       */
-    val endOfLine: Parsley[Char] = (newline <|> crlf).label("end of line")
+    val endOfLine: Parsley[Int] = (newline <|> crlf).label("end of line")
 
     /** This parser tries to parse a tab (`'\t'`) character, and returns it if successful.
       *
@@ -661,11 +618,11 @@ object character {
       *
       * @group spec
       */
-    val tab: Parsley[Char] = char('\t', "tab")
+    val tab: Parsley[Int] = char('\t', "tab")
 
     /** This parser tries to parse an uppercase letter, and returns it if successful.
       *
-      * An uppercase letter is any character `c <= '\uffff'` whose Unicode ''Category Type'' is Uppercase Letter (`Lu`).
+      * An uppercase letter is any character whose Unicode ''Category Type'' is Uppercase Letter (`Lu`).
       * Examples of characters within this category include:
       *   - the Latin letters `'A'` through `'Z'`
       *   - Latin special character such as `'Å'`, `'Ç'`, `'Õ'`
@@ -677,11 +634,11 @@ object character {
       *
       * @group spec
       */
-    val upper: Parsley[Char] = satisfy(_.isUpper, "uppercase letter")
+    val upper: Parsley[Int] = satisfy(Character.isUpperCase(_), "uppercase letter")
 
     /** This parser tries to parse a lowercase letter, and returns it if successful.
       *
-      * A lowercase letter is any character `c <= '\uffff'` whose Unicode ''Category Type'' is Lowercase Letter (`Ll`).
+      * A lowercase letter is any character whose Unicode ''Category Type'' is Lowercase Letter (`Ll`).
       * Examples of characters within this category include:
       *   - the Latin letters `'a'` through `'z'`
       *   - Latin special character such as `'é'`, `'ß'`, `'ð'`
@@ -693,7 +650,7 @@ object character {
       *
       * @group spec
       */
-    val lower: Parsley[Char] = satisfy(_.isLower, "lowercase letter")
+    val lower: Parsley[Int] = satisfy(Character.isLowerCase(_), "lowercase letter")
 
     /** This parser tries to parse either a letter or a digit, and returns it if successful.
       *
@@ -703,11 +660,11 @@ object character {
       * @see documentation for [[digit `digit`]].
       * @group spec
       */
-    val letterOrDigit: Parsley[Char] = satisfy(_.isLetterOrDigit, "alpha-numeric character")
+    val letterOrDigit: Parsley[Int] = satisfy(Character.isLetterOrDigit(_), "alpha-numeric character")
 
     /** This parser tries to parse a letter, and returns it if successful.
       *
-      * A letter is any character `c <= '\uffff'` whose Unicode ''Category Type'' is any of the following:
+      * A letter is any character whose Unicode ''Category Type'' is any of the following:
       *   1. Uppercase Letter (`Lu`)
       *   1. Lowercase Letter (`Ll`)
       *   1. Titlecase Letter (`Lt`)
@@ -718,23 +675,23 @@ object character {
       *
       * @group spec
       */
-    val letter: Parsley[Char] = satisfy(_.isLetter, "letter")
+    val letter: Parsley[Int] = satisfy(Character.isLetter(_), "letter")
 
     /** This parser tries to parse a digit, and returns it if successful.
       *
-      * A digit is any character `c <= '\uffff'` whose Unicode ''Category Type'' is Decimal Number (`Nd`).
+      * A digit is any character whose Unicode ''Category Type'' is Decimal Number (`Nd`).
       * Examples of (inclusive) ranges within this category include:
       *   - the Latin digits `'0'` through `'9'`
       *   - the Arabic-Indic digits `'\u0660'` through `'\u0669'`
-      *   - the Extended Arabic-Indic digits `'\u06f0'` through `'\u06f9'`
-      *   - the Devangari digits `'\u0966'` through `'\u096f'`
-      *   - the Fullwidth digits `'\uff10'` through `'\uff19'`
+      *   - the Extended Arabic-Indic digits `'\u06F0'` through `'\u06F9'`
+      *   - the Devangari digits `'\u0966'` through `'\u096F'`
+      *   - the Fullwidth digits `'\uFF10'` through `'\uFF19'`
       *
       * $categories
       *
       * @group spec
       */
-    val digit: Parsley[Char] = satisfy(_.isDigit, "digit")
+    val digit: Parsley[Int] = satisfy(Character.isDigit(_), "digit")
 
     /** This parser tries to parse a hexadecimal digit, and returns it if successful.
       *
@@ -746,7 +703,7 @@ object character {
       * @see [[isHexDigit ``isHexDigit``]]
       * @group spec
       */
-    val hexDigit: Parsley[Char] = satisfy(isHexDigit(_), "hexadecimal digit")
+    val hexDigit: Parsley[Int] = satisfy(isHexDigit(_), "hexadecimal digit")
 
     /** This parser tries to parse an octal digit, and returns it if successful.
       *
@@ -755,35 +712,17 @@ object character {
       * @see [[isOctDigit ``isOctDigit``]]
       * @group spec
       */
-    val octDigit: Parsley[Char] = satisfy(isOctDigit(_), "octal digit")
+    val octDigit: Parsley[Int] = satisfy(isOctDigit(_), "octal digit")
 
-    /** This parser tries to parse a binary digit (bit) and returns it if successful.
+    /** This parser tries to parse a bit and returns it if successful.
       *
-      * A bit is either `'0'` or `'1'`.
+      * A bit (binary digit) is either `'0'` or `'1'`.
       *
       * @group spec
       */
-    val bit: Parsley[Char] = satisfy(c => Character.digit(c, 2) != -1, "bit")
+    val bit: Parsley[Int] = satisfy(c => Character.digit(c, 2) != -1, "bit")
 
     // Functions
-    // TODO: deprecate in 4.5
-    // $COVERAGE-OFF$
-    /** This function returns true if a character is a whitespace character.
-      *
-      * A whitespace character is one of:
-      *   1. a space (`' '`)
-      *   1. a tab (`'\t'`)
-      *   1. a line feed (`'\n'`)
-      *   1. a carriage return (`'\r'`)
-      *   1. a form feed (`'\f'`)
-      *   1. a vertical tab (`'\u000b'`)
-      *
-      * @see [[whitespace `whitespace`]]
-      * @group pred
-      */
-    def isWhitespace(c: Char): Boolean = c.isWhitespace
-    // $COVERAGE-ON$
-
     /** This function returns true if a character is a hexadecimal digit.
       *
       * A hexadecimal digit is one of (all inclusive ranges):
@@ -795,7 +734,7 @@ object character {
       * @see [[hexDigit `hexDigit`]]
       * @group pred
       */
-    def isHexDigit(c: Char): Boolean = Character.digit(c, 16) != -1
+    def isHexDigit(c: Int): Boolean = Character.digit(c, 16) != -1
 
     /** This function returns true if a character is an octal digit.
       *
@@ -804,28 +743,23 @@ object character {
       * @group pred
       * @see [[octDigit `octDigit`]]
       */
-    def isOctDigit(c: Char): Boolean = Character.digit(c, 8) != -1
+    def isOctDigit(c: Int): Boolean = Character.digit(c, 8) != -1
 
-    /** This function returns true if a character is either a space or a tab character.
+    /** This function returns true if a codepoint is either a space or a tab character.
       *
       * @group pred
       * @see [[space `space`]]
       */
-    def isSpace(c: Char): Boolean = c == ' ' || c == '\t'
+    def isSpace(c: Int): Boolean = c == 0x20 || c == 0x09
 
     // Sue me.
-    private def renderChar(c: Char): String = parsley.errors.helpers.renderRawString(s"$c")
+    private def renderChar(c: Int): String = parsley.errors.helpers.renderRawString(Character.toChars(c).mkString)
 
-    // $COVERAGE-OFF$
-    @deprecated("this is an old naming, which I believe was never exposed but to be safe it'll remain till 5.0.0", "4.3.0")
-    private [parsley] def charUtf16(c: Int): Parsley[Int] = unicode.char(c)
-    @deprecated("this is an old naming, which I believe was never exposed but to be safe it'll remain till 5.0.0", "4.3.0")
-    private [parsley] def satisfyUtf16(f: Int => Boolean): Parsley[Int] = unicode.satisfy(f)
-    @deprecated("this is an old naming, which I believe was never exposed but to be safe it'll remain till 5.0.0", "4.3.0")
-    private [parsley] def stringOfManyUtf16(pc: Parsley[Int]): Parsley[String] = unicode.stringOfMany(pc)
-    @deprecated("this is an old naming, which I believe was never exposed but to be safe it'll remain till 5.0.0", "4.3.0")
-    private [parsley] def stringOfSomeUtf16(pc: Parsley[Int]): Parsley[String] = unicode.stringOfSome(pc)
-    @deprecated("this is an old naming, which I believe was never exposed but to be safe it'll remain till 5.0.0", "4.3.0")
-    private [parsley] def addCodepoint(sb: StringBuilder, codepoint: Int): StringBuilder = unicode.addCodepoint(sb, codepoint)
-    // $COVERAGE-ON$
+    private [parsley] def addCodepoint(sb: StringBuilder, codepoint: Int): StringBuilder = {
+        if (Character.isSupplementaryCodePoint(codepoint)) {
+            sb += Character.highSurrogate(codepoint)
+            sb += Character.lowSurrogate(codepoint)
+        }
+        else sb += codepoint.toChar
+    }
 }

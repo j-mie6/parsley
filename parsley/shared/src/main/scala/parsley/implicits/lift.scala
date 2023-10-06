@@ -16,11 +16,11 @@ import parsley.lift._
   * scala> import parsley.character.char
   * scala> import parsley.implicits.lift.{Lift2, Lift3}
   * scala> case class Add(x: Int, y: Int)
-  * scala> val p = Add.lift(char('a') #> 4, char('b') #> 5)
+  * scala> val p = Add.lift(char('a').as(4), char('b').as(5))
   * scala> p.parse("ab")
   * val res0 = Success(Add(4, 5))
   * scala> val f = (x: Int, y: Int, z: Int) => x * y + z
-  * scala> val q = f.lift(char('a') #> 3, char('b') #> 2, char('c') #> 5)
+  * scala> val q = f.lift(char('a').as(3), char('b').as(2), char('c').as(5))
   * scala> q.parse("abc")
   * val res1 = Success(11)
   * scala> q.parse("ab")

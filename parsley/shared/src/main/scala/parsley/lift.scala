@@ -20,15 +20,15 @@ import parsley.internal.deepembedding.frontend
   * scala> import parsley.character.char
   * scala> import parsley.lift.{lift2, lift3}
   * scala> case class Add(x: Int, y: Int)
-  * scala> val p = lift2(Add, char('a') #> 4, char('b') #> 5)
+  * scala> val p = lift2(Add, char('a').as(4), char('b').as(5))
   * scala> p.parse("ab")
   * val res0 = Success(Add(4, 5))
-  * scala> val q = lift3((x: Int, y: Int, z: Int) => x * y + z, char('a') #> 3, char('b') #> 2, char('c') #> 5)
+  * scala> val q = lift3((x: Int, y: Int, z: Int) => x * y + z, char('a').as(3), char('b').as(2), char('c').as(5))
   * scala> q.parse("abc")
   * val res1 = Success(11)
   * scala> q.parse("ab")
   * val res2 = Failure(..)
-  * scala> val q2 = lift3[Int, Int, Int, Int](_ * _ + _, char('a') #> 3, char('b') #> 2, char('c') #> 5)
+  * scala> val q2 = lift3[Int, Int, Int, Int](_ * _ + _, char('a').as(3), char('b').as(2), char('c').as(5))
   * }}}
   * @since 2.2.0
   *

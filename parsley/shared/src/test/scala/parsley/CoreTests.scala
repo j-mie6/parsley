@@ -149,15 +149,15 @@ class CoreTests extends ParsleyTest {
     }
     it should "not be affected by an empty on the left" in {
         inside((Parsley.empty <|> 'a').parse("b")) {
-            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs, 1))) =>
                 unex should contain (Raw("b"))
                 exs should contain only (Raw("a"))
                 rs shouldBe empty
         }
     }
 
-    "attempt" should "cause <|> to try second alternative even if input consumed" in {
-        attempt("ab").orElse("ac").parse("ac") should not be a [Failure[_]]
+    "atomic" should "cause <|> to try second alternative even if input consumed" in {
+        atomic("ab").orElse("ac").parse("ac") should not be a [Failure[_]]
     }
 
     "notFollowedBy" must "succeed if p fails" in {
@@ -177,7 +177,7 @@ class CoreTests extends ParsleyTest {
     "lookAhead" should "consume no input on success" in {
         lookAhead('a').parse("a") should not be a [Failure[_]]
         inside((lookAhead('a') *> 'b').parse("ab")) {
-            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs, 1))) =>
                 unex should contain (Raw("a"))
                 exs should contain only (Raw("b"))
                 rs shouldBe empty
@@ -254,7 +254,7 @@ class CoreTests extends ParsleyTest {
         p.parse("") shouldBe Success(3)
     }
     they should "but not roll back if they hard fail" in {
-        val p = 3.makeReg(r1 => (attempt(r1.rollback('a' *> r1.put(2) *> Parsley.empty)) <|> unit) *> r1.get)
+        val p = 3.makeReg(r1 => (atomic(r1.rollback('a' *> r1.put(2) *> Parsley.empty)) <|> unit) *> r1.get)
         p.parse("a") shouldBe Success(2)
     }
     they should "not rollback if successful" in {
@@ -281,7 +281,7 @@ class CoreTests extends ParsleyTest {
     }
 
     it should "also appear to create a fresh register even in the presence of a hard failure" in {
-        lazy val p: Parsley[Char] = item.fillReg(c => item *> (attempt(p) <|> c.get))
+        lazy val p: Parsley[Char] = item.fillReg(c => item *> (atomic(p) <|> c.get))
         p.parse("abc") shouldBe Success('a')
     }
 
@@ -388,7 +388,7 @@ class CoreTests extends ParsleyTest {
         import parsley.combinator.{whileP, some, eof}
         val n = registers.Reg.make[Int]
         lazy val p: Parsley[Unit] = whileP(ifP(n.gets(_ % 2 == 0), some('a'), some('b')) *> n.modify(_ - 1) *> n.gets(_ != 0))
-        val q = attempt(n.put(4) *> p <* eof) | n.put(2) *> p <* eof
+        val q = atomic(n.put(4) *> p <* eof) | n.put(2) *> p <* eof
         q.parse("aaaabbb") shouldBe a [Success[_]]
     }
 
@@ -399,5 +399,10 @@ class CoreTests extends ParsleyTest {
             r.put(4) *> r.get
         }
         (p *> p).parse("") shouldBe Success(4)
+    }
+
+    "span" should "return all the input parsed by a parser, exactly as it was" in {
+        import parsley.character.whitespaces
+        whitespaces.span.parse("      \n\n\t\ta") shouldBe Success("      \n\n\t\t")
     }
 }

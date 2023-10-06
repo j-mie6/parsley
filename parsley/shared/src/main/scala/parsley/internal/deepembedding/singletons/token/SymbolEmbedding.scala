@@ -9,6 +9,7 @@ import parsley.token.errors.LabelConfig
 import parsley.token.predicate.CharPredicate
 
 import parsley.internal.collection.immutable.Trie
+import parsley.internal.deepembedding.backend.StrictParsley.InstrBuffer
 import parsley.internal.deepembedding.frontend.LazyParsleyIVisitor
 import parsley.internal.deepembedding.singletons.Singleton
 import parsley.internal.machine.instructions
@@ -18,7 +19,10 @@ private [parsley] final class SoftKeyword(private [SoftKeyword] val specific: St
     // $COVERAGE-OFF$
     override def pretty: String = s"softKeyword($specific)"
     // $COVERAGE-ON$
-    override def instr: instructions.Instr = new instructions.token.SoftKeyword(specific, letter, caseSensitive, expected, expectedEnd)
+    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
+        instrs += new instructions.token.SoftKeyword(specific, letter, caseSensitive, expected, expectedEnd)
+        if (producesResults) instrs += instructions.Push.Unit
+    }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = {
         visitor.visit(this, context)(specific, letter, caseSensitive, expected, expectedEnd)
@@ -30,7 +34,10 @@ private [parsley] final class SoftOperator(private [SoftOperator] val specific: 
     // $COVERAGE-OFF$
     override def pretty: String = s"softOperator($specific)"
     // $COVERAGE-ON$
-    override def instr: instructions.Instr = new instructions.token.SoftOperator(specific, letter, ops, expected, expectedEnd)
+    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
+        instrs += new instructions.token.SoftOperator(specific, letter, ops, expected, expectedEnd)
+        if (producesResults) instrs += instructions.Push.Unit
+    }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = {
         visitor.visit(this, context)(specific, letter, ops, expected, expectedEnd)

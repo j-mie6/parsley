@@ -5,7 +5,7 @@
  */
 package parsley.token.text
 
-import parsley.Parsley, Parsley.{attempt, empty, pure}
+import parsley.Parsley, Parsley.{atomic, empty, pure}
 import parsley.character.{bit, char, digit, hexDigit, octDigit, strings}
 import parsley.combinator.ensure
 import parsley.implicits.zipped.Zipped3
@@ -24,7 +24,7 @@ private [token] class OriginalEscape(desc: EscapeDesc, err: ErrorConfig, generic
             case e => e -> pure(desc.escTrie(e))
         }.toList match {
             case Nil => empty
-            case x::xs => attempt(strings(x, xs: _*))
+            case x::xs => atomic(strings(x, xs: _*))
         }
     }
 
@@ -59,8 +59,8 @@ private [token] class OriginalEscape(desc: EscapeDesc, err: ErrorConfig, generic
             case n :: ns  =>
                 val theseDigits = exactly(digits, m, radix, digit, reqDigits)
                 val restDigits = (
-                        (attempt(go(n-m, n, ns).map(Some(_)) <* digitsParsed.modify(_ + digits)))
-                    <|> (digitsParsed.put(digits) #> None)
+                        (atomic(go(n-m, n, ns).map(Some(_)) <* digitsParsed.modify(_ + digits)))
+                    <|> (digitsParsed.put(digits).as(None))
                 )
                 (theseDigits, restDigits, digitsParsed.get).zipped[BigInt] {
                     case (x, None, _) => x

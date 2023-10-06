@@ -19,10 +19,10 @@ import parsley.lift._
   * scala> import parsley.character.char
   * scala> import parsley.implicits.zipped.{Zipped2, Zipped3}
   * scala> case class Add(x: Int, y: Int)
-  * scala> val p = (char('a') #> 4, char('b') #> 5).zipped(Add)
+  * scala> val p = (char('a').as(4), char('b').as(5)).zipped(Add)
   * scala> p.parse("ab")
   * val res0 = Success(Add(4, 5))
-  * scala> val q = (char('a') #> 3, char('b') #> 2, char('c') #> 5).zipped((x, y, z) => x * y + z)
+  * scala> val q = (char('a').as(3), char('b').as(2), char('c').as(5)).zipped((x, y, z) => x * y + z)
   * scala> q.parse("abc")
   * val res1 = Success(11)
   * scala> q.parse("ab")

@@ -13,11 +13,6 @@ private [parsley] final class Many[A](p: LazyParsley[A]) extends Unary[A, List[A
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[List[A]] = visitor.visit(this, context)(p)
 }
-private [parsley] final class SkipMany[A](p: LazyParsley[A]) extends Unary[A, Unit](p) {
-    override def make(p: StrictParsley[A]): StrictParsley[Unit] = new backend.SkipMany(p)
-
-    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)(p)
-}
 private [parsley] final class ChainPost[A](p: LazyParsley[A], _op: =>LazyParsley[A => A]) extends Binary[A, A => A, A](p, _op) {
     override def make(p: StrictParsley[A], op: StrictParsley[A => A]): StrictParsley[A] = new backend.ChainPost(p, op)
 
@@ -27,7 +22,7 @@ private [parsley] final class ChainPre[A](p: LazyParsley[A], op: LazyParsley[A =
     final override def findLetsAux[M[_, +_]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] = {
         suspend(p.findLets[M, R](seen)) >> suspend(op.findLets(seen))
     }
-    final override def preprocess[M[_, +_]: ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] =
+    final override def preprocess[M[_, +_]: ContOps, R, A_ >: A](implicit lets: LetMap): M[R, StrictParsley[A_]] =
         for {
             p <- suspend(p.optimised[M, R, A])
             op <- suspend(op.optimised[M, R, A => A])
@@ -47,8 +42,8 @@ private [parsley] final class Chainr[A, B](p: LazyParsley[A], op: =>LazyParsley[
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[B] = visitor.visit(this, context)(p, op, wrap)
 }
-private [parsley] final class SepEndBy1[A, B](p: LazyParsley[A], sep: =>LazyParsley[B]) extends Binary[A, B, List[A]](p, sep) {
-    override def make(p: StrictParsley[A], sep: StrictParsley[B]): StrictParsley[List[A]] = new backend.SepEndBy1(p, sep)
+private [parsley] final class SepEndBy1[A](p: LazyParsley[A], sep: =>LazyParsley[_]) extends Binary[A, Any, List[A]](p, sep) {
+    override def make(p: StrictParsley[A], sep: StrictParsley[Any]): StrictParsley[List[A]] = new backend.SepEndBy1(p, sep)
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[List[A]] = visitor.visit(this, context)(p, sep)
 }

@@ -15,10 +15,10 @@ package parsley
   * scala> import parsley.character.char
   * scala> import parsley.ap.{ap2, ap3}
   * scala> case class Add(x: Int, y: Int)
-  * scala> val p = ap2(pure(Add), char('a') #> 4, char('b') #> 5)
+  * scala> val p = ap2(pure(Add), char('a').as(4), char('b').as(5))
   * scala> p.parse("ab")
   * val res0 = Success(Add(4, 5))
-  * scala> val q = ap3(pure((x: Int, y: Int, z: Int) => x * y + z), char('a') #> 3, char('b') #> 2, char('c') #> 5)
+  * scala> val q = ap3(pure((x: Int, y: Int, z: Int) => x * y + z), char('a').as(3), char('b').as(2), char('c').as(5))
   * scala> q.parse("abc")
   * val res1 = Success(11)
   * scala> q.parse("ab")

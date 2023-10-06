@@ -26,6 +26,8 @@ object mima {
         ProblemFilters.exclude[DirectMissingMethodProblem]("parsley.token.errors.*.label"),
         ProblemFilters.exclude[IncompatibleMethTypeProblem]("parsley.token.errors.*.this"),
         ProblemFilters.exclude[IncompatibleMethTypeProblem]("parsley.errors.helpers#WhitespaceOrUnprintable.unapply"),
+        ProblemFilters.exclude[DirectMissingMethodProblem]("parsley.position.internalOffsetSpan"),
+        ProblemFilters.exclude[DirectMissingMethodProblem]("parsley.position.spanWith"),
         // Expression refactor
         ProblemFilters.exclude[ReversedMissingMethodProblem]("parsley.expr.Fixity.chain"),
         ProblemFilters.exclude[ReversedMissingMethodProblem]("parsley.expr.Ops.chain"),

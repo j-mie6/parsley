@@ -89,10 +89,10 @@ private [internal] final class TokenComment private (
         // If neither comment is available we fail
         if (!ctx.moreInput || (!lineAllowed || !ctx.input.startsWith(line, ctx.offset)) && !startsMulti) ctx.expectedFail(expected = None, openingSize)
         // One of the comments must be available
-        else if (startsMulti && multiLineComment(ctx)) ctx.pushAndContinue(())
+        else if (startsMulti && multiLineComment(ctx)) ctx.inc()
         else if (startsMulti) ctx.expectedFail(expected = endOfMultiComment, unexpectedWidth = 1)
         // It clearly wasn't the multi-line comment, so we are left with single line
-        else if (singleLineComment(ctx)) ctx.pushAndContinue(())
+        else if (singleLineComment(ctx)) ctx.inc()
         else ctx.expectedFail(expected = endOfSingleComment, unexpectedWidth = 1)
     }
 
@@ -111,9 +111,9 @@ private [instructions] abstract class WhiteSpaceLike extends CommentLexer {
             val startsSingle = ctx.input.startsWith(line, ctx.offset)
             if (startsSingle && singleLineComment(ctx)) singlesOnly(ctx)
             else if (startsSingle) ctx.expectedFail(expected = endOfSingleComment, unexpectedWidth = 1)
-            else ctx.pushAndContinue(())
+            else ctx.inc()
         }
-        else ctx.pushAndContinue(())
+        else ctx.inc()
     }
 
     @tailrec private final def multisOnly(ctx: Context): Unit = {
@@ -121,7 +121,7 @@ private [instructions] abstract class WhiteSpaceLike extends CommentLexer {
         val startsMulti = ctx.moreInput && ctx.input.startsWith(start, ctx.offset)
         if (startsMulti && multiLineComment(ctx)) multisOnly(ctx)
         else if (startsMulti) ctx.expectedFail(expected = endOfMultiComment, numCodePointsEnd)
-        else ctx.pushAndContinue(())
+        else ctx.inc()
     }
 
     private [this] final val sharedPrefix = line.view.zip(start).takeWhile(Function.tupled(_ == _)).map(_._1).mkString
@@ -138,15 +138,15 @@ private [instructions] abstract class WhiteSpaceLike extends CommentLexer {
                 val startsLine = ctx.input.startsWith(factoredLine, ctx.offset + sharedPrefix.length)
                 if (startsLine && singleLineComment(ctx)) singlesAndMultis(ctx)
                 else if (startsLine) ctx.expectedFail(expected = endOfSingleComment, unexpectedWidth = 1)
-                else ctx.pushAndContinue(())
+                else ctx.inc()
             }
         }
-        else ctx.pushAndContinue(())
+        else ctx.inc()
     }
 
     final def spacesAndContinue(ctx: Context): Unit = {
         spaces(ctx)
-        ctx.pushAndContinue(())
+        ctx.inc()
     }
 
     private [this] final val impl = {

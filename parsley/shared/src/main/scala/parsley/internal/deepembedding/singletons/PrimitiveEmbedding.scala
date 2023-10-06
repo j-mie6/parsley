@@ -8,14 +8,18 @@ package parsley.internal.deepembedding.singletons
 import parsley.registers.Reg
 import parsley.token.errors.LabelConfig
 
+import parsley.internal.deepembedding.backend.StrictParsley.InstrBuffer
 import parsley.internal.deepembedding.frontend.LazyParsleyIVisitor
 import parsley.internal.machine.instructions
 
-private [parsley] final class Satisfy(private [Satisfy] val f: Char => Boolean, val expected: LabelConfig) extends Singleton[Char] {
+private [parsley] final class Satisfy(private val f: Char => Boolean, val expected: LabelConfig) extends Singleton[Char] {
     // $COVERAGE-OFF$
     override val pretty: String = "satisfy(f)"
     // $COVERAGE-ON$
-    override def instr: instructions.Instr = new instructions.Satisfies(f, expected)
+    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
+        instrs += new instructions.Satisfies(f, expected)
+        if (!producesResults) instrs += instructions.Pop
+    }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Char] = visitor.visit(this, context)(f, expected)
 }
@@ -24,7 +28,7 @@ private [parsley] object Line extends Singleton[Int] {
     // $COVERAGE-OFF$
     override val pretty: String = "line"
     // $COVERAGE-ON$
-    override val instr: instructions.Instr = instructions.Line
+    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = if (producesResults) instrs += instructions.Line
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Int] = visitor.visit(this, context)
 }
@@ -32,7 +36,7 @@ private [parsley] object Col extends Singleton[Int] {
     // $COVERAGE-OFF$
     override val pretty: String = "col"
     // $COVERAGE-ON$
-    override val instr: instructions.Instr = instructions.Col
+    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = if (producesResults) instrs += instructions.Col
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Int] = visitor.visit(this, context)
 }
@@ -40,7 +44,7 @@ private [parsley] object Offset extends Singleton[Int] {
     // $COVERAGE-OFF$
     override val pretty: String = "offset"
     // $COVERAGE-ON$
-    override val instr: instructions.Instr = instructions.Offset
+    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = if (producesResults) instrs += instructions.Offset
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Int] = visitor.visit(this, context)
 }
@@ -51,7 +55,7 @@ private [parsley] final class Get[S](reg: Reg[S]) extends Singleton[S] {
     // $COVERAGE-OFF$
     override def pretty: String = s"get($reg)"
     // $COVERAGE-ON$
-    override def instr: instructions.Instr = new instructions.Get(reg.addr)
+    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = if (producesResults) instrs += new instructions.Get(reg.addr)
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[S] = visitor.visit(this, context)(reg)
 }
