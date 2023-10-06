@@ -11,6 +11,7 @@ import parsley.implicits.character.{charLift, stringLift}
 import parsley.character.{item, digit}
 import parsley.errors.combinator.{fail => pfail, unexpected, amend, partialAmend, entrench, dislodge, amendThenDislodge, /*partialAmendThenDislodge,*/ ErrorMethods}
 import parsley.errors.patterns._
+import parsley.errors.SpecialisedGen
 
 class ErrorTests extends ParsleyTest {
     "mzero parsers" should "always fail" in {
@@ -56,7 +57,7 @@ class ErrorTests extends ParsleyTest {
         }
     }
 
-    "the collectMsg combinator" should "act like a filter then a map" in {
+    "the collect/mapFilter combinators" should "act like a filter then a map" in {
         val p = item.collectMsg("oops") {
             case '+' => 0
             case c if c.isUpper => c - 'A' + 1
@@ -72,6 +73,16 @@ class ErrorTests extends ParsleyTest {
         q.parse("+") shouldBe Success(0)
         q.parse("C") shouldBe Success(3)
         inside(q.parse("a")) { case Failure(TestError((1, 1), SpecialisedError(msgs, 1))) => msgs should contain only ("a is not appropriate") }
+
+        val errGen = new SpecialisedGen[Char] { def messages(c: Char): Seq[String] = Seq(s"$c is not appropriate") }
+        val r = item.mapFilterWith(errGen) {
+            case '+' => Some(0)
+            case c if c.isUpper => Some(c - 'A' + 1)
+            case _ => None
+        }
+        r.parse("+") shouldBe Success(0)
+        r.parse("C") shouldBe Success(3)
+        inside(r.parse("a")) { case Failure(TestError((1, 1), SpecialisedError(msgs, 1))) => msgs should contain only ("a is not appropriate") }
     }
 
     // Issue #70
@@ -266,6 +277,16 @@ class ErrorTests extends ParsleyTest {
     "fail" should "yield a raw message" in {
         inside(pfail("hi").parse("b")) { case Failure(TestError((1, 1), SpecialisedError(msgs, 1))) => msgs should contain only ("hi") }
     }
+    it should "be flexible when the width is unspecified" in {
+        inside(("abc" | pfail("hi")).parse("xyz")) {
+            case Failure(TestError((1, 1), SpecialisedError(msgs, 3))) => msgs should contain only ("hi")
+        }
+    }
+    it should "dominate otherwise" in {
+        inside(("abc" | pfail(2, "hi")).parse("xyz")) {
+            case Failure(TestError((1, 1), SpecialisedError(msgs, 2))) => msgs should contain only ("hi")
+        }
+    }
 
     "unexpected" should "yield changes to unexpected messages" in {
         inside(unexpected("bee").parse("b")) {
@@ -280,6 +301,22 @@ class ErrorTests extends ParsleyTest {
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs, 1))) =>
                 unex should contain (Named("bee"))
                 exs should contain.only(Raw("a"), Named("something less cute"))
+                rs shouldBe empty
+        }
+    }
+    it should "be flexible when the width is unspecified" in {
+        inside(("abc" | unexpected("bee")).parse("xyz")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs, 3))) =>
+                unex should contain (Named("bee"))
+                exs should contain.only(Raw("abc"))
+                rs shouldBe empty
+        }
+    }
+    it should "dominate otherwise" in {
+        inside(("abc" | unexpected(2, "bee")).parse("xyz")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs, 2))) =>
+                unex should contain (Named("bee"))
+                exs should contain.only(Raw("abc"))
                 rs shouldBe empty
         }
     }
@@ -354,6 +391,14 @@ class ErrorTests extends ParsleyTest {
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs, 1))) =>
                 unex should contain (Raw("b"))
                 exs should contain.only(Named("something, at least"), Raw("a"))
+                rs shouldBe empty
+        }
+    }
+    it should "have an effect if it's caret is wider" in {
+        inside(('a' <|> Parsley.empty(3)).parse("bcd")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs, 3))) =>
+                unex should contain (Raw("bcd"))
+                exs should contain.only(Raw("a"))
                 rs shouldBe empty
         }
     }
@@ -537,6 +582,43 @@ class ErrorTests extends ParsleyTest {
         inside("abc".verifiedUnexpected.parse("ab")) {
             case Failure(TestError((1, 1), VanillaError(None, expecteds, _, 0))) =>
                 expecteds shouldBe empty
+        }
+    }
+
+    // Preventative Errors
+    "preventativeFail" should "fail having consumed input on the parser success" in {
+        inside(optional("abc".preventativeFail(x => Seq("no, no", s"absolutely not $x"))).parse("abc")) {
+            case Failure(TestError((1, 1), SpecialisedError(msgs, 3))) =>
+                msgs should contain.only("no, no", "absolutely not abc")
+        }
+    }
+    it should "not consume input if the parser did not succeed and not fail" in {
+        "abc".preventativeFail("no, no", "absolutely not").parse("ab") shouldBe Success(())
+    }
+
+    "preventativeExplain" should "fail having consumed input on the parser success" in {
+        inside(optional("abc".preventativeExplain(x => s"$x is not allowed")).parse("abc")) {
+            case Failure(TestError((1, 1), VanillaError(unex, expecteds, reasons, 3))) =>
+                expecteds shouldBe empty
+                unex should contain (Raw("abc"))
+                reasons should contain only ("abc is not allowed")
+        }
+        inside(optional("abc".preventativeExplain(s"abc is not allowed")).parse("abc")) {
+            case Failure(TestError((1, 1), VanillaError(unex, expecteds, reasons, 3))) =>
+                expecteds shouldBe empty
+                unex should contain (Raw("abc"))
+                reasons should contain only ("abc is not allowed")
+        }
+    }
+    it should "not consume input if the parser did not succeed and not fail" in {
+        "abc".preventativeExplain(x => s"$x is not allowed").parse("ab") shouldBe Success(())
+        "abc".preventativeExplain(s"abc is not allowed").parse("ab") shouldBe Success(())
+    }
+    it should "produce labels when specified" in {
+        inside("abc".preventativeExplain(x => s"$x is not allowed", "something else").parse("abc")) {
+            case Failure(TestError((1, 1), VanillaError(Some(Raw("abc")), expecteds, reasons, 3))) =>
+                expecteds should contain only (Named("something else"))
+                reasons should contain only ("abc is not allowed")
         }
     }
 

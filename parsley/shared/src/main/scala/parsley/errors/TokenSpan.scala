@@ -36,6 +36,7 @@ object TokenSpan {
         override private [parsley] def toCaretLength(col: Int, lengthLine: Int, lengthAfters: =>List[Int]): Int = w
     }
 
+    // $COVERAGE-OFF$
     /** This span is designed to be used by token extractors that try and parse the
       * remaining input: it indicates the number of lines and columns that were
       * parsed in the process of extracting the token.
@@ -66,4 +67,5 @@ object TokenSpan {
             }
         }
     }
+    // $COVERAGE-ON$
 }
