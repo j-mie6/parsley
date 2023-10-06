@@ -455,7 +455,7 @@ jobs:
         run: sbt docs/tlSite
 
       - name: Publish site
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/wiki-improvements'
         uses: peaceiris/actions-gh-pages@v3.9.3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
