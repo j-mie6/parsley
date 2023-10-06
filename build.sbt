@@ -40,7 +40,7 @@ inThisBuild(List(
   tlCiHeaderCheck := true,
   githubWorkflowJavaVersions := Seq(Java8, JavaLTS, JavaLatest),
   githubWorkflowAddedJobs += testCoverageJob(githubWorkflowGeneratedCacheSteps.value.toList),
-  githubWorkflowConcurrency := None,
+  //githubWorkflowConcurrency := None,
   // Website Configuration
   tlSitePublishBranch := Some(mainBranch),
   tlSiteApiUrl := Some(url("https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest/")),
