@@ -5,8 +5,9 @@
  */
 package parsley
 
+import Parsley.unit
 import parsley.position._
-import parsley.character.char
+import parsley.character.{char, string}
 
 class PositionTests extends ParsleyTest {
     "line" should "start at 1" in {
@@ -42,5 +43,14 @@ class PositionTests extends ParsleyTest {
         (char('\n') ~> offset).parse("\n") shouldBe Success(1)
         (char('\t') ~> offset).parse("\t") shouldBe Success(1)
         (char('a') ~> offset).parse("a") shouldBe Success(1)
+    }
+
+    "withWidth" should "return 0 for pure things" in {
+        withWidth(unit).parse("a") shouldBe Success(((), 0))
+        (char('a') ~> withWidth(unit)).parse("a") shouldBe Success(((), 0))
+    }
+    it should "correctly span input consumption" in {
+        withWidth(string("abc")).parse("abc") shouldBe Success(("abc", 3))
+        (char('x') ~> withWidth(string("abc"))).parse("xabc") shouldBe Success(("abc", 3))
     }
 }

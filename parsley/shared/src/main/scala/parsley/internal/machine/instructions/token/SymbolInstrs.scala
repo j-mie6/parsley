@@ -80,7 +80,7 @@ private [internal] final class SoftKeyword(protected val specific: String, lette
         }
         else {
             ctx.states = ctx.states.tail
-            ctx.pushAndContinue(())
+            ctx.inc()
         }
     }
 
@@ -119,7 +119,7 @@ private [internal] final class SoftOperator(protected val specific: String, lett
             }
             else {
                 ctx.states = ctx.states.tail
-                ctx.pushAndContinue(())
+                ctx.inc()
             }
         }
     }

@@ -8,7 +8,7 @@ package parsley.internal.machine.instructions
 import parsley.internal.errors.{CaretWidth, RigidCaret, UnexpectDesc}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
-import parsley.internal.machine.errors.{ClassicFancyError, EmptyError, ExpectedError, ExpectedErrorWithReason}
+import parsley.internal.machine.errors.EmptyError
 
 private [internal] final class RelabelHints(labels: Iterable[String]) extends Instr {
     private [this] val isHide: Boolean = labels.isEmpty
@@ -20,12 +20,11 @@ private [internal] final class RelabelHints(labels: Iterable[String]) extends In
         if (isHide) ctx.popHints()
         // EOK
         // replace the head of the hints with the singleton for our label
-        else if (ctx.offset == ctx.checkStack.offset) ctx.replaceHint(labels)
+        else if (ctx.offset == ctx.handlers.check) ctx.replaceHint(labels)
         // COK
         // do nothing
         ctx.mergeHints()
         ctx.handlers = ctx.handlers.tail
-        ctx.checkStack = ctx.checkStack.tail
         ctx.inc()
     }
     // $COVERAGE-OFF$
@@ -40,13 +39,39 @@ private [internal] final class RelabelErrorAndFail(labels: Iterable[String]) ext
         ctx.errs.error = ctx.useHints {
             // only use the label if the error message is generated at the same offset
             // as the check stack saved for the start of the `label` combinator.
-            ctx.errs.error.label(labels, ctx.checkStack.offset)
+            ctx.errs.error.label(labels, ctx.handlers.check)
         }
-        ctx.checkStack = ctx.checkStack.tail
+        ctx.handlers = ctx.handlers.tail
         ctx.fail()
     }
     // $COVERAGE-OFF$
     override def toString: String = s"ApplyError($labels)"
+    // $COVERAGE-ON$
+}
+
+private [internal] object HideHints extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.popHints()
+        ctx.mergeHints()
+        ctx.handlers = ctx.handlers.tail
+        ctx.inc()
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = "HideHints"
+    // $COVERAGE-ON$
+}
+
+private [internal] object HideErrorAndFail extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ensureHandlerInstruction(ctx)
+        ctx.restoreHints()
+        ctx.errs.error = new EmptyError(ctx.offset, ctx.line, ctx.col, unexpectedWidth = 0)
+        ctx.handlers = ctx.handlers.tail
+        ctx.fail()
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = "HideErrorAndFail"
     // $COVERAGE-ON$
 }
 
@@ -66,6 +91,7 @@ private [internal] object ErrorToHints extends Instr {
 private [internal] object MergeErrorsAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         val err2 = ctx.errs.error
         ctx.errs = ctx.errs.tail
         ctx.errs.error = ctx.errs.error.merge(err2)
@@ -80,8 +106,8 @@ private [internal] object MergeErrorsAndFail extends Instr {
 private [internal] class ApplyReasonAndFail(reason: String) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
-        ctx.errs.error = ctx.errs.error.withReason(reason, ctx.checkStack.offset)
-        ctx.checkStack = ctx.checkStack.tail
+        ctx.errs.error = ctx.errs.error.withReason(reason, ctx.handlers.check)
+        ctx.handlers = ctx.handlers.tail
         ctx.fail()
     }
 
@@ -93,6 +119,7 @@ private [internal] class ApplyReasonAndFail(reason: String) extends Instr {
 private [internal] class AmendAndFail private (partial: Boolean) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         ctx.errs.error = ctx.errs.error.amend(partial, ctx.states.offset, ctx.states.line, ctx.states.col)
         ctx.states = ctx.states.tail
         ctx.fail()
@@ -111,6 +138,7 @@ private [internal] object AmendAndFail {
 private [internal] object EntrenchAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         ctx.errs.error = ctx.errs.error.entrench
         ctx.fail()
     }
@@ -123,6 +151,7 @@ private [internal] object EntrenchAndFail extends Instr {
 private [internal] class DislodgeAndFail(n: Int) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         ctx.errs.error = ctx.errs.error.dislodge(n)
         ctx.fail()
     }
@@ -135,8 +164,8 @@ private [internal] class DislodgeAndFail(n: Int) extends Instr {
 private [internal] object SetLexicalAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
-        ctx.errs.error = ctx.errs.error.markAsLexical(ctx.checkStack.offset)
-        ctx.checkStack = ctx.checkStack.tail
+        ctx.errs.error = ctx.errs.error.markAsLexical(ctx.handlers.check)
+        ctx.handlers = ctx.handlers.tail
         ctx.fail()
     }
 
@@ -166,43 +195,33 @@ private [internal] final class Unexpected(msg: String, width: CaretWidth) extend
     // $COVERAGE-ON$
 }
 
-private [internal] class MakeVerifiedError private (msggen: Either[Any => Seq[String], Option[Any => String]]) extends Instr {
+private [internal] final class VanillaGen[A](gen: parsley.errors.VanillaGen[A]) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        val state = ctx.states
-        ctx.states = ctx.states.tail
-        ctx.restoreHints()
-        // A previous success is a failure
-        ctx.handlers = ctx.handlers.tail
-        val caretWidth = ctx.offset - state.offset
-        val x = ctx.stack.upeek
-        val err = msggen match {
-            case Left(f) => new ClassicFancyError(state.offset, state.line, state.col, new RigidCaret(caretWidth), f(x): _*)
-            case Right(Some(f)) => new ExpectedErrorWithReason(state.offset, state.line, state.col, None, f(x), caretWidth)
-            case Right(None) => new ExpectedError(state.offset, state.line, state.col, None, caretWidth)
-        }
-        ctx.fail(err)
+        // stack will have an (A, Int) pair on it
+        val (x, caretWidth) = ctx.stack.pop[(A, Int)]()
+        val unex = gen.unexpected(x)
+        val reason = gen.reason(x)
+        val err = unex.makeError(ctx.offset, ctx.line, ctx.col, gen.adjustWidth(x, caretWidth))
+        // Sorry, it's faster :(
+        if (reason.isDefined) ctx.fail(err.withReason(reason.get))
+        else ctx.fail(err)
     }
+
     // $COVERAGE-OFF$
-    override def toString: String = "MakeVerifiedError"
+    override def toString: String = "VanillaGen"
     // $COVERAGE-ON$
 }
-private [internal] object MakeVerifiedError {
-    def apply[A](msggen: Either[A => Seq[String], Option[A => String]]): MakeVerifiedError = {
-        new MakeVerifiedError(msggen.asInstanceOf[Either[Any => Seq[String], Option[Any => String]]])
-    }
-}
 
-private [internal] object NoVerifiedError extends Instr {
+private [internal] final class SpecialisedGen[A](gen: parsley.errors.SpecialisedGen[A]) extends Instr {
     override def apply(ctx: Context): Unit = {
-        ensureHandlerInstruction(ctx)
-        // If a verified error goes wrong, then it should appear like nothing happened
-        ctx.restoreState()
-        ctx.restoreHints()
-        ctx.errs.error = new EmptyError(ctx.offset, ctx.line, ctx.col, unexpectedWidth = 0)
-        ctx.fail()
+        ensureRegularInstruction(ctx)
+        // stack will have an (A, Int) pair on it
+        val (x, caretWidth) = ctx.stack.pop[(A, Int)]()
+        ctx.failWithMessage(new RigidCaret(gen.adjustWidth(x, caretWidth)), gen.messages(x): _*)
     }
+
     // $COVERAGE-OFF$
-    override def toString: String = "VerifiedErrorHandler"
+    override def toString: String = "SpecialisedGen"
     // $COVERAGE-ON$
 }

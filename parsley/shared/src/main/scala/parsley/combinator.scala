@@ -6,9 +6,11 @@
 package parsley
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 
-import parsley.Parsley.{attempt, empty, notFollowedBy, pure, select, unit}
+import parsley.Parsley.{atomic, empty, fresh, notFollowedBy, pure, select, unit}
 import parsley.implicits.zipped.{Zipped2, Zipped3}
+import parsley.registers.{RegisterMaker, RegisterMethods}
 
 import parsley.internal.deepembedding.{frontend, singletons}
 
@@ -62,6 +64,12 @@ import parsley.internal.deepembedding.{frontend, singletons}
   *     it is possible to use the [[parsley.Parsley.LazyParsley.unary_~ prefix `~`]] combinator to make any individual
   *     arguments lazy as required, for example `skip(p, ~q, r)`.
   *
+  * @groupprio range 65
+  * @groupname range Range Combinators
+  * @groupdesc range
+  *     These combinators allow for the parsing of a specific parser either a specific number of times, or between a certain
+  *     amount of times.
+  *
   * @groupprio cond 75
   * @groupname cond Conditional Combinators
   * @groupdesc cond
@@ -102,6 +110,8 @@ object combinator {
       */
     def choice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceRightOption(_ <|> _).getOrElse(empty)
 
+    // TODO: deprecate in 4.5.0
+    // $COVERAGE-OFF$
     /** This combinator tries to parse each of the parsers `ps` in order, until one of them succeeds.
       *
       * Finds the first parser in `ps` which succeeds, returning its result. If none of the parsers
@@ -130,7 +140,40 @@ object combinator {
       * @see [[parsley.Parsley$.attempt `attempt`]]
       * @note this combinator is not particularly efficient, because it may unnecessarily backtrack for each alternative.
       */
-    def attemptChoice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceRightOption((p, q) => attempt(p) <|> q).getOrElse(empty)
+    def attemptChoice[A](ps: Parsley[A]*): Parsley[A] = atomicChoice(ps: _*)
+    // $COVERAGE-ON$
+
+    /** This combinator tries to parse each of the parsers `ps` in order, until one of them succeeds.
+      *
+      * Finds the first parser in `ps` which succeeds, returning its result. If none of the parsers
+      * succeed, then this combinator fails. This combinator will always try and parse each of the
+      * combinators until one succeeds, regardless of how they fail. The last argument will '''not'''
+      * be wrapped in `atomic`, as this is not necessary.
+      *
+      * @example {{{
+      * scala> import parsley.combinator.atomicChoice
+      * scala> import parsley.character.string
+      * scala> val p = atomicChoice(string("abc"), string("ab"), string("bc"), string("d"))
+      * scala> p.parse("abc")
+      * val res0 = Success("abc")
+      * scala> p.parse("ab")
+      * val res1 = Success("ab")
+      * scala> p.parse("bc")
+      * val res2 = Success("bc")
+      * scala> p.parse("x")
+      * val res3 = Failure(..)
+      * }}}
+      *
+      * @param ps the parsers to try, in order.
+      * @return a parser that tries to parse one of `ps`.
+      * @group multi
+      * @see [[parsley.Parsley.<|> `<|>`]]
+      * @see [[parsley.Parsley$.atomic `atomic`]]
+      * @since 4.4.0
+      * @note this combinator is not particularly efficient, because it may unnecessarily backtrack for each alternative: a more efficient alternative
+      *       for `String` is [[character.strings(str0* `strings`]].
+      */
+    def atomicChoice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceRightOption((p, q) => atomic(p) <|> q).getOrElse(empty)
 
     /** This combinator will parse each of `ps` in order, collecting the results.
       *
@@ -185,9 +228,9 @@ object combinator {
       * @note $strict
       */
     def traverse[A, B](f: A => Parsley[B], xs: A*): Parsley[List[B]] = sequence(xs.map(f): _*)
-    // this will be used in future!
+    // TODO: this will be used in future!
     private [parsley] def traverse5[A, B](xs: A*)(f: A => Parsley[B]): Parsley[List[B]] = traverse(f, xs: _*)
-    private [parsley] def traverse_[A](xs: A*)(f: A => Parsley[_]): Parsley[Unit] = skip(unit, xs.map(f): _*)
+    private [parsley] def traverse_[A](xs: A*)(f: A => Parsley[_]): Parsley[Unit] = skip(unit, xs.map(f): _*) // TODO: does traverse.void just work?
 
     /** This combinator will parse each of `ps` in order, discarding the results.
       *
@@ -212,33 +255,7 @@ object combinator {
       * @see [[parsley.Parsley.*> `*>`]]
       * @note $strict
       */
-    def skip(p: Parsley[_], ps: Parsley[_]*): Parsley[Unit] = ps.foldLeft(p.void)(_ <* _)
-
-    /** This combinator parses exactly `n` occurrences of `p`, returning these `n` results in a list.
-      *
-      * Parses `p` repeatedly up to `n` times. If `p` fails before `n` is reached, then this combinator
-      * fails. It is not required for `p` to fail after the `n`^th^ parse. The results produced by
-      * `p`, `x,,1,,` through `x,,n,,`, are returned as `List(x,,1,,, .., x,,n,,)`.
-      *
-      * @example {{{
-      * scala> import parsley.character.item
-      * scala> import parsley.combinator.exactly
-      * scala> val p = exactly(3, item)
-      * scala> p.parse("ab")
-      * val res0 = Failure(..)
-      * scala> p.parse("abc")
-      * val res1 = Success(List('a', 'b', 'c'))
-      * scala> p.parse("abcd")
-      * val res2 = Success(List('a', 'b', 'c'))
-      * }}}
-      *
-      * @param n the number of times to repeat `p`.
-      * @param p the parser to repeat.
-      * @return a parser that parses `p` exactly `n` times, returning a list of the results.
-      * @group misc
-      * @since 4.0.0
-      */
-    def exactly[A](n: Int, p: Parsley[A]): Parsley[List[A]] = traverse[Int, A](_ => p, (1 to n): _*)
+    def skip(p: Parsley[_], ps: Parsley[_]*): Parsley[Unit] = ps.foldLeft(p.void)(_ <* _) // TODO: does sequence.void just work?
 
     /** This combinator tries to parse `p`, wrapping its result in a `Some` if it succeeds, or returns `None` if it fails.
       *
@@ -309,9 +326,7 @@ object combinator {
       * @return a parser that tries to parse `p`, returning `x` regardless of success or failure.
       * @group opt
       */
-    def optionalAs[A](p: Parsley[_], x: A): Parsley[A] = {
-        (p #> x).getOrElse(x)
-    }
+    def optionalAs[A](p: Parsley[_], x: A): Parsley[A] = p.as(x).getOrElse(x)
 
     /** This combinator can eliminate an `Option` from the result of the parser `p`.
       *
@@ -480,7 +495,7 @@ object combinator {
       * @since 2.2.0
       * @group iter
       */
-    def skipMany(p: Parsley[_]): Parsley[Unit] = new Parsley(new frontend.SkipMany(p.internal))
+    def skipMany(p: Parsley[_]): Parsley[Unit] = many(p).void
 
     /** This combinator repeatedly parses a given parser '''one''' or more times, ignoring the results.
       *
@@ -506,7 +521,7 @@ object combinator {
       * @return a parser that parses `p` until it fails, returning unit.
       * @group iter
       */
-    def skipSome(p: Parsley[_]): Parsley[Unit] = skipManyN(1, p)
+    def skipSome(p: Parsley[_]): Parsley[Unit] = some(p).void
 
     /** This combinator repeatedly parses a given parser '''`n`''' or more times, ignoring the results.
       *
@@ -540,6 +555,60 @@ object combinator {
         }
         go(n)
     }
+
+    /** This combinator repeatedly parses a given parser '''zero''' or more times, returning how many times it succeeded.
+      *
+      * Parses a given parser, `p`, repeatedly until it fails. If `p` failed having consumed input,
+      * this combinator fails. Otherwise when `p` fails '''without consuming input''', this combinator
+      * will succeed. The number of times `p` succeeded is returned as the result.
+      *
+      * @example {{{
+      * scala> import parsley.character.string
+      * scala> import parsley.combinator.count
+      * scala> val p = count(string("ab"))
+      * scala> p.parse("")
+      * val res0 = Success(0)
+      * scala> p.parse("ab")
+      * val res1 = Success(1)
+      * scala> p.parse("abababab")
+      * val res2 = Success(4)
+      * scala> p.parse("aba")
+      * val res3 = Failure(..)
+      * }}}
+      *
+      * @param p the parser to execute multiple times.
+      * @return the number of times `p` successfully parses
+      * @group iter
+      * @since 4.4.0
+      */
+    def count(p: Parsley[_]): Parsley[Int] = p.foldLeft(0)((n, _) => n + 1)
+
+    /** This combinator repeatedly parses a given parser '''one''' or more times, returning how many times it succeeded.
+      *
+      * Parses a given parser, `p`, repeatedly until it fails. If `p` failed having consumed input,
+      * this combinator fails. Otherwise when `p` fails '''without consuming input''', this combinator
+      * will succeed. The parser `p` must succeed at least once. The number of times `p` succeeded is returned as the result.
+      *
+      * @example {{{
+      * scala> import parsley.character.string
+      * scala> import parsley.combinator.count1
+      * scala> val p = count1(string("ab"))
+      * scala> p.parse("")
+      * val res0 = Failure(..)
+      * scala> p.parse("ab")
+      * val res1 = Success(1)
+      * scala> p.parse("abababab")
+      * val res2 = Success(4)
+      * scala> p.parse("aba")
+      * val res3 = Failure(..)
+      * }}}
+      *
+      * @param p the parser to execute multiple times.
+      * @return the number of times `p` successfully parses
+      * @group iter
+      * @since 4.4.0
+      */
+    def count1(p: Parsley[_]): Parsley[Int] = p.foldLeft1(0)((n, _) => n + 1)
 
     /** This combinator parses '''zero''' or more occurrences of `p`, separated by `sep`.
       *
@@ -751,12 +820,12 @@ object combinator {
       * @group iter
       */
     def manyUntil[A](p: Parsley[A], end: Parsley[_]): Parsley[List[A]] = {
-        new Parsley(new frontend.ManyUntil((end #> ManyUntil.Stop <|> p: Parsley[Any]).internal))
+        new Parsley(new frontend.ManyUntil((end.as(ManyUntil.Stop) <|> p: Parsley[Any]).internal))
     }
 
-    // TODO: document and test before release
+    // TODO: find a way to make this redundant
     private [parsley] def skipManyUntil(p: Parsley[_], end: Parsley[_]): Parsley[Unit] = {
-        new Parsley(new frontend.SkipManyUntil((end #> ManyUntil.Stop <|> p: Parsley[Any]).internal))
+        new Parsley(new frontend.SkipManyUntil((end.as(ManyUntil.Stop) <|> p.void: Parsley[Any]).internal))
     }
 
     private [parsley] object ManyUntil {
@@ -793,10 +862,10 @@ object combinator {
         notFollowedBy(end) *> (p <::> manyUntil(p, end))
     }
 
-    // TODO: document and test before release
-    private [parsley] def skipSomeUntil(p: Parsley[_], end: Parsley[_]): Parsley[Unit] = {
-        notFollowedBy(end) *> (p *> skipManyUntil(p, end))
-    }
+    // TODO: remove
+    // $COVERAGE-OFF$
+    private [parsley] def skipSomeUntil(p: Parsley[_], end: Parsley[_]): Parsley[Unit] = notFollowedBy(end) *> (p *> skipManyUntil(p, end))
+    // $COVERAGE-ON$
 
     /** This combinator parses one of `thenP` or `elseP` depending on the result of parsing `condP`.
       *
@@ -839,15 +908,29 @@ object combinator {
       *
       * @param condP the parser that yields the condition value.
       * @param thenP the parser to execute if the condition is `true`.
-      * @return a parser that conditionally parses `thenP` or `elseP` after `condP`.
+      * @return a parser that conditionally parses `thenP` after `condP`.
       * @group cond
       */
     def when(condP: Parsley[Boolean], thenP: =>Parsley[Unit]): Parsley[Unit] = ifP(condP, thenP, unit)
 
-    // TODO: document and test before release
-    private [parsley] def ensure[A](condP: Parsley[Boolean], beforeP: =>Parsley[A]): Parsley[A] =
-        //ifP(condP, beforeP, empty)
-        condP.filter(identity) *> beforeP
+    /** This combinator verfies that the given parser returns `true`, or else fails.
+      *
+      * First, parse `p`; if it succeeds then, so long at returns `true`, this `guard(p)` succeeds. Otherwise,
+      * if `p` either fails, or returns `false`, `guard(p)` will fail.
+      *
+      * @example {{{
+      * guard(pure(true)) == unit
+      * guard(pure(false)) == empty
+      * when(p.map(!_), empty) == guard(p)
+      * }}}
+      *
+      * @param p the parser that yields the condition value.
+      * @group cond
+      */
+    def guard(p: Parsley[Boolean]): Parsley[Unit] = ifP(p, unit, empty)
+
+    // TODO: remove
+    private [parsley] def ensure[A](condP: Parsley[Boolean], beforeP: =>Parsley[A]): Parsley[A] = guard(condP) *> beforeP
 
     /** This combinator repeatedly parses `p` so long as it returns `true`.
       *
@@ -874,5 +957,132 @@ object combinator {
     def whileP(p: Parsley[Boolean]): Parsley[Unit] = {
         lazy val whilePP: Parsley[Unit] = when(p, whilePP)
         whilePP
+    }
+
+    /** This combinator parses exactly `n` occurrences of `p`, returning these `n` results in a list.
+      *
+      * Parses `p` repeatedly up to `n` times. If `p` fails before `n` is reached, then this combinator
+      * fails. It is not required for `p` to fail after the `n`^th^ parse. The results produced by
+      * `p`, `x,,1,,` through `x,,n,,`, are returned as `List(x,,1,,, .., x,,n,,)`.
+      *
+      * @example {{{
+      * scala> import parsley.character.item
+      * scala> import parsley.combinator.exactly
+      * scala> val p = exactly(3, item)
+      * scala> p.parse("ab")
+      * val res0 = Failure(..)
+      * scala> p.parse("abc")
+      * val res1 = Success(List('a', 'b', 'c'))
+      * scala> p.parse("abcd")
+      * val res2 = Success(List('a', 'b', 'c'))
+      * }}}
+      *
+      * @param n the number of times to repeat `p`.
+      * @param p the parser to repeat.
+      * @return a parser that parses `p` exactly `n` times, returning a list of the results.
+      * @group range
+      * @since 4.0.0
+      */
+    def exactly[A](n: Int, p: Parsley[A]): Parsley[List[A]] = traverse[Int, A](_ => p, (1 to n): _*)
+    private def skipExactly(n: Int, p: Parsley[_]): Parsley[Unit] = traverse_[Int](1 to n: _*)(_ => p)
+
+    /** This combinator parses between `min` and `max` occurrences of `p`, returning these `n` results in a list.
+      *
+      * Parses `p` repeatedly a minimum of `min` times and up to `max` times both inclusive. If `p` fails before
+      * `min` is reached, then this combinator fails. It is not required for `p` to fail after the `max`^th^ parse. The results produced by
+      * `p`, `x,,min,,` through `x,,max,,`, are returned as `List(x,,min,,, .., x,,max,,)`.
+      *
+      * @example {{{
+      * scala> import parsley.character.item
+      * scala> import parsley.combinator.range
+      * scala> val p = range(min=3, max=5)(item)
+      * scala> p.parse("ab")
+      * val res0 = Failure(..)
+      * scala> p.parse("abc")
+      * val res1 = Success(List('a', 'b', 'c'))
+      * scala> p.parse("abcd")
+      * val res2 = Success(List('a', 'b', 'c', 'd'))
+      * scala> p.parse("abcde")
+      * val res2 = Success(List('a', 'b', 'c', 'd', 'e'))
+      * scala> p.parse("abcdef")
+      * val res2 = Success(List('a', 'b', 'c', 'd', 'e'))
+      * }}}
+      *
+      * @param min the minimum number of times to repeat `p`, inclusive.
+      * @param max the maximum number of times to repeat `p`, inclusive.
+      * @param p the parser to repeat.
+      * @return the results of the successful parses of `p`.
+      * @group range
+      * @since 4.4.0
+      */
+    def range[A](min: Int, max: Int)(p: Parsley[A]): Parsley[List[A]] = fresh(mutable.ListBuffer.empty[A]).persist { xs =>
+        count(min, max)((xs, p).zipped(_ += _).unsafe()) ~>
+        xs.map(_.toList)
+    }
+
+    /** This combinator parses between `min` and `max` occurrences of `p` but ignoring the results.
+      *
+      * Parses `p` repeatedly a minimum of `min` times and up to `max` times both inclusive. If `p` fails before
+      * `min` is reached, then this combinator fails. It is not required for `p` to fail after the `max`^th^ parse.
+      * The results are discarded and `()` is returned instead.
+      *
+      * @example {{{
+      * scala> import parsley.character.item
+      * scala> import parsley.combinator.range_
+      * scala> val p = range_(min=3, max=5)(item)
+      * scala> p.parse("ab")
+      * val res0 = Failure(..)
+      * scala> p.parse("abc")
+      * val res1 = Success(())
+      * scala> p.parse("abcd")
+      * val res2 = Success(())
+      * scala> p.parse("abcde")
+      * val res2 = Success(())
+      * scala> p.parse("abcdef")
+      * val res2 = Success(())
+      * }}}
+      *
+      * @param min the minimum number of times to repeat `p`, inclusive.
+      * @param max the maximum number of times to repeat `p`, inclusive.
+      * @param p the parser to repeat.
+      * @group range
+      * @since 4.4.0
+      */
+    def range_(min: Int, max: Int)(p: Parsley[_]): Parsley[Unit] = count(min, max)(p).void
+
+    /** This combinator parses between `min` and `max` occurrences of `p`, returning the number of successes.
+      *
+      * Parses `p` repeatedly a minimum of `min` times and up to `max` times both inclusive. If `p` fails before
+      * `min` is reached, then this combinator fails. It is not required for `p` to fail after the `max`^th^ parse.
+      * The results are discarded and the number of successful parses of `p`, `n`, is returned instead, such that
+      * `min <= n <= max`.
+      *
+      * @example {{{
+      * scala> import parsley.character.item
+      * scala> import parsley.combinator.count
+      * scala> val p = count(min=3, max=5)(item)
+      * scala> p.parse("ab")
+      * val res0 = Failure(..)
+      * scala> p.parse("abc")
+      * val res1 = Success(3)
+      * scala> p.parse("abcd")
+      * val res2 = Success(4)
+      * scala> p.parse("abcde")
+      * val res2 = Success(5)
+      * scala> p.parse("abcdef")
+      * val res2 = Success(5)
+      * }}}
+      *
+      * @param min the minimum number of times to repeat `p`, inclusive.
+      * @param max the maximum number of times to repeat `p`, inclusive.
+      * @param p the parser to repeat.
+      * @return the number of times `p` parsed successfully.
+      * @group range
+      * @since 4.4.0
+      */
+    def count(min: Int, max: Int)(p: Parsley[_]): Parsley[Int] = min.makeReg { i =>
+        skipExactly(min, p) ~>
+        skipMany(ensure(i.gets(_ < max), p) ~> i.modify(_ + 1)) ~>
+        i.get
     }
 }

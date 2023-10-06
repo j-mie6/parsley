@@ -6,8 +6,8 @@
 package parsley.token.errors
 
 import parsley.Parsley, Parsley.empty
-import parsley.character.satisfyUtf16
 import parsley.errors.{combinator, patterns}, combinator.ErrorMethods, patterns.VerifiedErrors
+import parsley.unicode.satisfy
 
 /** This class is used to configure what error is generated when `.` is parsed as a real number.
   * @since 4.1.0
@@ -70,7 +70,7 @@ sealed abstract class VerifiedBadChars {
     private [token] def checkBadChar: Parsley[Nothing]
 }
 private final class BadCharsFail private (cs: Map[Int, Seq[String]]) extends VerifiedBadChars {
-    private [token] def checkBadChar: Parsley[Nothing] = satisfyUtf16(cs.contains).verifiedFail(cs.apply(_))
+    private [token] def checkBadChar: Parsley[Nothing] = satisfy(cs.contains).verifiedFail(cs.apply(_))
 }
 /** This object makes "bad literal chars" generate a bunch of given messages in a ''specialised'' error. Requires a map from bad characters to their messages.
   * @since 4.1.0
@@ -81,7 +81,7 @@ object BadCharsFail {
 }
 
 private final class BadCharsReason private (cs: Map[Int, String]) extends VerifiedBadChars {
-    private [token] def checkBadChar: Parsley[Nothing] = satisfyUtf16(cs.contains).verifiedUnexpected(cs.apply(_))
+    private [token] def checkBadChar: Parsley[Nothing] = satisfy(cs.contains).verifiedUnexpected(cs.apply(_))
 }
 /** This object makes "bad literal chars" generate a reason in a ''vanilla'' error. Requires a map from bad characters to their reasons.
   * @since 4.1.0

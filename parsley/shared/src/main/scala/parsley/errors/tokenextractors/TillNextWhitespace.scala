@@ -27,10 +27,18 @@ trait TillNextWhitespace { this: ErrorBuilder[_] =>
       */
     def trimToParserDemand: Boolean
 
+    /** Describes what characters are considered whitespace.
+      *
+      * Defaults to `_.isWhitespace`.
+      *
+      * @since 4.4.0
+      */
+    def isWhitespace(c: Char): Boolean = c.isWhitespace
+
     /** @see [[parsley.errors.ErrorBuilder.unexpectedToken `ErrorBuilder.unexpectedToken`]] */
     override final def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int, @unused lexicalError: Boolean): Token = {
-        if (trimToParserDemand) TillNextWhitespace.unexpectedToken(cs, amountOfInputParserWanted)
-        else TillNextWhitespace.unexpectedToken(cs)
+        if (trimToParserDemand) TillNextWhitespace.unexpectedToken(cs, amountOfInputParserWanted, isWhitespace(_))
+        else TillNextWhitespace.unexpectedToken(cs, isWhitespace(_))
     }
 }
 
@@ -45,10 +53,18 @@ object TillNextWhitespace {
       *
       * @since 4.0.0
       */
-    def unexpectedToken(cs: Iterable[Char]): Token = cs match {
+    def unexpectedToken(cs: Iterable[Char]): Token = unexpectedToken(cs, _.isWhitespace)
+
+    /** The implementation of `unexpectedToken` as done by `TillNextWhitespace`, with redundant arguments removed.
+      *
+      * This function will not trim the token to parser demand
+      *
+      * @since 4.4.0
+      */
+    def unexpectedToken(cs: Iterable[Char], isWhitespace: Char => Boolean): Token = cs match {
         case helpers.WhitespaceOrUnprintable(name) => Token.Named(name, TokenSpan.Width(1))
         // these cases automatically handle the utf-16 surrogate pairs
-        case cs => Token.Raw(extractTillNextWhitespace(cs))
+        case cs => Token.Raw(extractTillNextWhitespace(cs, isWhitespace))
     }
 
     /** The implementation of `unexpectedToken` as done by `TillNextWhitespace`, with redundant arguments removed.
@@ -57,22 +73,30 @@ object TillNextWhitespace {
       *
       * @since 4.0.0
       */
-    def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int): Token = cs match {
+    def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int): Token = unexpectedToken(cs, amountOfInputParserWanted, _.isWhitespace)
+
+    /** The implementation of `unexpectedToken` as done by `TillNextWhitespace`, with redundant arguments removed.
+      *
+      * This function will not trim the token to parser demand
+      *
+      * @since 4.4.0
+      */
+    def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int, isWhitespace: Char => Boolean): Token = cs match {
         case helpers.WhitespaceOrUnprintable(name) => Token.Named(name, TokenSpan.Width(1))
         // these cases automatically handle the utf-16 surrogate pairs
-        case cs => Token.Raw(helpers.takeCodePoints(extractTillNextWhitespace(cs), amountOfInputParserWanted))
+        case cs => Token.Raw(helpers.takeCodePoints(extractTillNextWhitespace(cs, isWhitespace), amountOfInputParserWanted))
     }
 
     // TODO: we should take to minimum of parser demand and next whitespace, this would potentially be much much cheaper
     // Assumption: there are no non-BMP whitespace characters
-    private def extractTillNextWhitespace(cs: Iterable[Char]): String = cs match {
+    private def extractTillNextWhitespace(cs: Iterable[Char], isWhitespace: Char => Boolean): String = cs match {
         case cs: WrappedString =>
             // These do not require allocation on the string
             val idx = {
-                val idx = cs.indexWhere(_.isWhitespace)
+                val idx = cs.indexWhere(isWhitespace)
                 if (idx != -1) idx else cs.length
             }
             cs.slice(0, idx).toString
-        case cs => cs.takeWhile(!_.isWhitespace).mkString
+        case cs => cs.takeWhile(!isWhitespace(_)).mkString
     }
 }

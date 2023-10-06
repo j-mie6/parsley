@@ -13,7 +13,7 @@ import parsley.token.errors.LabelConfig
 import parsley.internal.errors.ExpectItem
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
-import parsley.internal.machine.errors.ExpectedError
+import parsley.internal.machine.errors.{EmptyHints, ExpectedError}
 import parsley.internal.machine.stacks.ErrorStack
 
 private [internal] final class Lift1(f: Any => Any) extends Instr {
@@ -58,7 +58,8 @@ private [internal] final class RecoverWith[A](x: A) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
         ctx.restoreHints() // This must be before adding the error to hints
-        ctx.catchNoConsumed {
+        ctx.catchNoConsumed(ctx.handlers.check) {
+            ctx.handlers = ctx.handlers.tail
             ctx.addErrorToHintsAndPop()
             ctx.pushAndContinue(x)
         }
@@ -73,6 +74,7 @@ private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr {
         ensureHandlerInstruction(ctx)
         ctx.restoreState()
         ctx.restoreHints() // This must be before adding the error to hints
+        ctx.handlers = ctx.handlers.tail
         ctx.addErrorToHintsAndPop()
         ctx.good = true
         ctx.pushAndContinue(x)
@@ -99,9 +101,8 @@ private [internal] final class JumpTable(jumpTable: mutable.LongMap[(Int, Iterab
             val (dest, errorItems) = jumpTable.getOrElse(ctx.peekChar.toLong, (default, allErrorItems))
             ctx.pc = dest
             if (dest != default) {
-                ctx.pushCheck()
                 ctx.pushHandler(defaultPreamble)
-                ctx.saveHints(shadow = false)
+                ctx.hints = EmptyHints
             }
             addErrors(ctx, errorItems) // adds a handler
         }

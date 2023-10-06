@@ -29,8 +29,8 @@ object precedence {
       * scala> import parsley.Parsley, parsley.character.{char, digit}
       * scala> import parsley.expr.{Ops, InfixL, precedence}
       * scala> val expr = precedence(digit.map(_.asDigit))
-      *                             (Ops(InfixL)(char('*') #> (_ * _)),
-      *                              Ops(InfixL)(char('+') #> (_ + _), char('-') #> (_ - _)))
+      *                             (Ops(InfixL)(char('*').as(_ * _)),
+      *                              Ops(InfixL)(char('+').as(_ + _), char('-').as(_ - _)))
       * scala> expr.parse("1+8*7+4")
       * val res0 = Success(61)
       * }}}
@@ -57,8 +57,8 @@ object precedence {
       * @example {{{
       * scala> import parsley.Parsley, parsley.character.{char, digit}
       * scala> import parsley.expr.{Ops, InfixL, precedence}
-      * scala> val expr = precedence[Int](Ops(InfixL)(char('+') #> (_ + _), char('-') #> (_ - _))),
-      *                                   Ops(InfixL)(char('*') #> (_ * _))
+      * scala> val expr = precedence[Int](Ops(InfixL)(char('+').as(_ + _), char('-').as(_ - _))),
+      *                                   Ops(InfixL)(char('*').as(_ * _))
       *                                  (digit.map(_.asDigit)))
       * scala> expr.parse("1+8*7+4")
       * val res0 = Success(61)
@@ -94,8 +94,8 @@ object precedence {
       * scala> import parsley.Parsley, parsley.character.{char, digit}
       * scala> import parsley.expr.{Atoms, Ops, InfixL, precedence}
       * scala> val expr = precedence(Atoms(digit.map(_.asDigit)) :+
-      *                              Ops[Int](InfixL)(char('*') #> (_ * _)) :+
-      *                              Ops[Int](InfixL)(char('+') #> (_ + _), char('-') #> (_ - _)))
+      *                              Ops[Int](InfixL)(char('*').as(_ * _)) :+
+      *                              Ops[Int](InfixL)(char('+').as(_ + _), char('-').as(_ - _)))
       * scala> expr.parse("1+8*7+4")
       * val res0 = Success(61)
       * }}}

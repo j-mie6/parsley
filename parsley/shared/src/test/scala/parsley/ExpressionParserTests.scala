@@ -29,7 +29,7 @@ class ExpressionParserTests extends ParsleyTest {
         chain.postfix('1' #> 1, "++" #> ((x: Int) => x + 1)).parseAll("1+++++++++++++") shouldBe a [Failure[_]]
     }
     it must "not leave the stack in an inconsistent state on failure" in {
-        val p = chain.postfix[Int]('1' #> 1, (col.#>[Int => Int](_ + 1)) <* '+')
+        val p = chain.postfix[Int]('1' #> 1, (col.as[Int => Int](_ + 1)) <* '+')
         val q = chain.left1(p, '*' #> ((x: Int, y: Int) => x * y))
         noException should be thrownBy q.parse("1+*1+")
     }
@@ -122,8 +122,8 @@ class ExpressionParserTests extends ParsleyTest {
         cases(chain.left1("11" #> 1, "++" #> ((x: Int, y: Int) => x + y)))("11+11+11+11+11" -> None, "11++11++11++1++11" -> None)
     }
     it must "not leave the stack in an inconsistent state on failure" in {
-        val p = chain.left1('1' #> 1, (col.#>[(Int, Int) => Int](_ + _)) <* '+')
-        val q = chain.left1(p, '*'.#>[(Int, Int) => Int](_ * _))
+        val p = chain.left1('1' #> 1, (col.as[(Int, Int) => Int](_ + _)) <* '+')
+        val q = chain.left1(p, '*'.as[(Int, Int) => Int](_ * _))
         noException shouldBe thrownBy (q.parse("1+1*1+1"))
     }
     it must "correctly accept the use of a wrapping function" in {

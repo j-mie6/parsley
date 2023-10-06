@@ -9,7 +9,7 @@ import org.scalatest.Assertion
 import org.typelevel.scalaccompat.annotation.unused
 import parsley.{Parsley, ParsleyTest}
 import parsley.debug.FullBreak
-import parsley.errors.{DefaultErrorBuilder, ErrorBuilder, Token}
+import parsley.errors, errors.{DefaultErrorBuilder, ErrorBuilder, Token}
 import parsley.internal.collection.immutable.Trie
 import parsley.internal.deepembedding.ContOps
 import parsley.internal.deepembedding.Sign
@@ -53,7 +53,7 @@ class VisitorTests extends ParsleyTest {
             override protected def findLetsAux[M[_, +_] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] =
                 dontExecute()
 
-            override protected def preprocess[M[_, +_] : ContOps, R, A_ >: Nothing](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] =
+            override protected def preprocess[M[_, +_] : ContOps, R, A_ >: Nothing](implicit lets: LetMap): M[R, StrictParsley[A_]] =
                 dontExecute()
 
             override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Nothing] =
@@ -134,6 +134,8 @@ class VisitorTests extends ParsleyTest {
         new Chainl(dummyParser, dontEval, dontEval).testV
         new Chainr[Nothing, Nothing](dummyParser, dontEval, crash).testV
         new SepEndBy1(dummyParser, dontEval).testV
+        new Filter[Any](dummyParser, _ => false, dontEval).testV
+        new MapFilter[Any, Nothing](dummyParser, _ => None, dontEval).testV
     }
 
     they should "all return the constant unit object from the test visitor" in {
@@ -150,15 +152,19 @@ class VisitorTests extends ParsleyTest {
         new Comment(SpaceDesc.plain, new ErrorConfig).testV
         new Sign(Sign.CombinedType, PlusSignPresence.Optional).testV
         new NonSpecific("foo", identity[String], _ => true, _ => true, _ => false).testV
-        new CharTok(' ', dummyLabelConfig).testV
-        new SupplementaryCharTok(0, dummyLabelConfig).testV
-        new StringTok("bar", dummyLabelConfig).testV
+        new CharTok(' ', ' ', dummyLabelConfig).testV
+        new SupplementaryCharTok(0, 0, dummyLabelConfig).testV
+        new StringTok("bar", 4, dummyLabelConfig).testV
         Eof.testV
         new UniSatisfy(_ => true, dummyLabelConfig).testV
         new Modify(dummyRegister(), identity[Unit]).testV
         Parsley.empty.internal.testV
         new Fail(dummyCaretWidth).testV
         new Unexpected("qux", dummyCaretWidth).testV
+        new VanillaGen(new errors.VanillaGen).testV
+        new SpecialisedGen[Any](new errors.SpecialisedGen[Any] {
+            def messages(x: Any) = Seq.empty
+        }).testV
         new EscapeMapped(Trie.empty[Int], Set("quux")).testV
         new EscapeAtMost(0, 0).testV
         new EscapeOneOfExactly(0, Nil, dummySFConfig[Int]()).testV
@@ -168,25 +174,22 @@ class VisitorTests extends ParsleyTest {
         new Look(dummyParser).testV
         new NotFollowedBy(dummyParser).testV
         new Put(dummyRegister(), dummyParser).testV
-        new Debug(dummyParser, "fred", false, FullBreak).testV
+        new Debug(dummyParser, "fred", false, FullBreak, Seq.empty).testV
         new DebugError(dummyParser, "plugh", false, dummyErrorBuilder).testV
-        new Filter[Nothing](dummyParser, crash).testV
-        new MapFilter[Nothing, Nothing](dummyParser, crash).testV
-        new FilterOut[Nothing](dummyParser, crash).testV
-        new GuardAgainst[Nothing](dummyParser, crash).testV
-        new UnexpectedWhen[Nothing](dummyParser, crash)
         new <|>(dummyParser, dummyParser).testV
         new >>=[Nothing, Nothing](dummyParser, crash).testV
         new Many(dummyParser).testV
-        new SkipMany(dummyParser).testV
+        new ChainPre(dummyParser, dummyParser).testV
+        new Span(dummyParser).testV
+        new Profile(dummyParser, "", null).testV
         new ManyUntil(dummyParser).testV
         new SkipManyUntil(dummyParser).testV
         new ErrorLabel(dummyParser, Seq("bazola")).testV
+        new ErrorHide(dummyParser).testV
         new ErrorExplain(dummyParser, "ztesch").testV
         new ErrorAmend(dummyParser, false).testV
         new ErrorEntrench(dummyParser).testV
         new ErrorDislodge(0, dummyParser).testV
         new ErrorLexical(dummyParser).testV
-        new VerifiedError[Nothing](dummyParser, Left(crash))
     }
 }

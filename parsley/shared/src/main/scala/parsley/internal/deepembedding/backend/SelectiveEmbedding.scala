@@ -19,17 +19,23 @@ private [backend] sealed abstract class BranchLike[A, B, C, D](finaliser: Option
     def instr(label: Int): instructions.Instr
 
     def inlinable: Boolean = false
-    final override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
+    final override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val toP = state.freshLabel()
         val end = state.freshLabel()
-        suspend(b.codeGen[M, R]) >> {
+        suspend(b.codeGen[M, R](producesResults = true)) >> {
             instrs += instr(toP)
-            suspend(q.codeGen[M, R]) >> {
-                for (instr <- finaliser) instrs += instr
+            suspend(q.codeGen[M, R](producesResults)) >> {
+                for (instr <- finaliser) {
+                    if (producesResults) instrs += instr
+                    else instrs += instructions.Pop
+                }
                 instrs += new instructions.Jump(end)
                 instrs += new instructions.Label(toP)
-                suspend(p.codeGen[M, R]) |> {
-                    for (instr <- finaliser) instrs += instr
+                suspend(p.codeGen[M, R](producesResults)) |> {
+                    for (instr <- finaliser) {
+                        if (producesResults) instrs += instr
+                        else instrs += instructions.Pop
+                    }
                     instrs += new instructions.Label(end)
                 }
             }
@@ -66,58 +72,42 @@ private [deepembedding] final class If[A](val b: StrictParsley[Boolean], val p: 
     // $COVERAGE-ON$
 }
 
-private [backend] sealed abstract class FilterLike[A](instr: instructions.Instr) extends Unary[A, A] {
-    final override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
-        val handler = state.getLabel(instructions.PopStateAndFail)
-        instrs += new instructions.PushHandlerAndState(handler, saveHints = false, hideHints = false)
-        suspend(p.codeGen[M, R]) |> {
-            instrs += instr
-        }
-    }
-}
-private [deepembedding] final class Filter[A](val p: StrictParsley[A], pred: A => Boolean) extends FilterLike[A](new instructions.Filter(pred)) {
-    // $COVERAGE-OFF$
-    final override def pretty(p: String): String = s"$p.filter(?)"
-    // $COVERAGE-ON$
-}
-private [deepembedding] final class MapFilter[A, B](val p: StrictParsley[A], f: A => Option[B]) extends Unary[A, B] {
-    final override def optimise: StrictParsley[B] = p match {
-        case Pure(x) => f(x).map(new Pure(_)).getOrElse(Empty.Zero)
-        case z: MZero => z
-        case _ => this
-    }
+private [backend] sealed abstract class FilterLike[A, B] extends StrictParsley[B] {
+    protected val p: StrictParsley[A]
+    protected val err: StrictParsley[((A, Int)) => Nothing]
+    def inlinable: Boolean = false
+    protected def instr(handler: Int, jumpLabel: Int): instructions.Instr
 
-    final override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
-        val handler = state.getLabel(instructions.PopStateAndFail)
-        instrs += new instructions.PushHandlerAndState(handler, saveHints = false, hideHints = false)
-        suspend(p.codeGen[M, R]) |> {
-            instrs += new instructions.MapFilter(f)
+    final override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
+        val handler1 = state.getLabel(instructions.PopStateAndFail)
+        val handler2 = state.getLabel(instructions.AmendAndFail(false))
+        val jumpLabel = state.freshLabel()
+        instrs += new instructions.PushHandlerAndState(handler1)
+        suspend(p.codeGen[M, R](producesResults = true)) >> {
+            instrs += instr(handler2, jumpLabel)
+            suspend(err.codeGen[M, R](producesResults = true)) |> {
+                instrs += new instructions.Label(jumpLabel)
+                if (!producesResults) instrs += instructions.Pop
+            }
         }
     }
 
     // $COVERAGE-OFF$
-    final override def pretty(p: String): String = s"$p.mapFilter(?)"
+    final override def pretty: String = pretty(p.pretty, err.pretty)
+    protected def pretty(p: String, err: String): String
     // $COVERAGE-ON$
 }
 
-private [deepembedding] final class FilterOut[A](val p: StrictParsley[A], pred: PartialFunction[A, String])
-    extends FilterLike[A](new instructions.FilterOut(pred)) {
-    // $COVERAGE-OFF$
-    final override def pretty(p: String): String = s"$p.filterOut(?)"
-    // $COVERAGE-ON$
-}
-private [deepembedding] final class GuardAgainst[A](val p: StrictParsley[A], pred: PartialFunction[A, scala.Seq[String]])
-    extends FilterLike[A](instructions.GuardAgainst(pred)) {
-    // $COVERAGE-OFF$
-    final override def pretty(p: String): String = s"$p.guardAgainst(?)"
-    // $COVERAGE-ON$
+private [deepembedding] final class Filter[A](val p: StrictParsley[A], pred: A => Boolean, val err: StrictParsley[((A, Int)) => Nothing])
+    extends FilterLike[A, A] {
+    final override def instr(handler: Int, jumpLabel: Int): instructions.Instr = new instructions.Filter(pred, jumpLabel, handler)
+    final override def pretty(p: String, err: String): String = s"filterWith($p, ???, $err)"
 }
 
-private [deepembedding] final class UnexpectedWhen[A](val p: StrictParsley[A], pred: PartialFunction[A, (String, Option[String])])
-    extends FilterLike[A](instructions.UnexpectedWhen(pred)) {
-    // $COVERAGE-OFF$
-    final override def pretty(p: String): String = s"$p.unexpectedWhen(?)"
-    // $COVERAGE-ON$
+private [deepembedding] final class MapFilter[A, B](val p: StrictParsley[A], pred: A => Option[B], val err: StrictParsley[((A, Int)) => Nothing])
+    extends FilterLike[A, B] {
+    final override def instr(handler: Int, jumpLabel: Int): instructions.Instr = new instructions.MapFilter(pred, jumpLabel, handler)
+    final override def pretty(p: String, err: String): String = s"mapFilterWith($p, ???, $err)"
 }
 
 private [backend] object Branch {

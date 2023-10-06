@@ -8,6 +8,7 @@ package parsley
 import scala.collection.mutable
 
 import parsley.Parsley.{empty, fresh, pure}
+import parsley.XAssert._
 import parsley.combinator.{when, whileP}
 import parsley.exceptions.UnfilledRegisterException
 import parsley.implicits.zipped.Zipped2
@@ -126,7 +127,7 @@ object registers {
           * Without any other effect, the value `x` will be placed into this register.
           *
           * @example Put-Get Law: {{{
-          * r.put(x) *> r.get == r.put(x) #> x
+          * r.put(x) *> r.get == r.put(x).as(x)
           * }}}
           *
           * @example Put-Put Law: {{{
@@ -315,6 +316,7 @@ object registers {
       * @param con a conversion that allows values convertible to parsers to be used.
       * @group ext
       */
+    // TODO: rename?
     implicit final class RegisterMethods[P, A](p: P)(implicit con: P => Parsley[A]) {
         /** This combinator fills a fresh register with the result of this parser, this
           * register is provided to the given function, which continues the parse.
@@ -362,6 +364,7 @@ object registers {
       * @param x the value to initialise a register with.
       * @group ext
       */
+    // TODO: make AnyVal
     implicit final class RegisterMaker[A](x: A) {
         /** This combinator fills a fresh register with the this value.
           *
@@ -425,8 +428,8 @@ object registers {
       *
       * r.put(0) *>
       * many('a' *> r.modify(_+1)) *>
-      * forYieldP_[Int](r.get, pure(_ != 0), pure(_ - 1)){_ => 'b'} *>
-      * forYieldP_[Int](r.get, pure(_ != 0), pure(_ - 1)){_ => 'c'}
+      * forYieldP_[Int, Char](r.get, pure(_ != 0), pure(_ - 1)){_ => 'b'} *>
+      * forYieldP_[Int, Char](r.get, pure(_ != 0), pure(_ - 1)){_ => 'c'}
       * }}}
       *
       * This will return a list `n` `'c'` characters.
@@ -440,10 +443,10 @@ object registers {
       * @group comb
       */
     def forYieldP_[A, B](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: Parsley[A] => Parsley[B]): Parsley[List[B]] = {
-        fresh(mutable.ListBuffer.empty[B]).fillReg { acc =>
+        fresh(mutable.ListBuffer.empty[B]).persist { acc =>
             forP_(init, cond, step) { x =>
-                acc.put((acc.get, body(x)).zipped(_ += _))
-            } *> acc.gets(_.toList)
+                (acc, body(x)).zipped(_ += _).unsafe() // we don't want this optimised out, it's a mutable operation in a resultless context
+            } ~> acc.map(_.toList)
         }
     }
 
@@ -493,8 +496,8 @@ object registers {
       *
       * r.put(0) *>
       * many('a' *> r.modify(_+1)) *>
-      * forYieldP[Int](r.get, pure(_ != 0), pure(_ - 1)){'b'} *>
-      * forYieldP[Int](r.get, pure(_ != 0), pure(_ - 1)){'c'}
+      * forYieldP[Int, Char](r.get, pure(_ != 0), pure(_ - 1)){'b'} *>
+      * forYieldP[Int, Char](r.get, pure(_ != 0), pure(_ - 1)){'c'}
       * }}}
       *
       * This will return a list `n` `'c'` characters.
@@ -509,10 +512,10 @@ object registers {
       * @group comb
       */
     def forYieldP[A, B](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: =>Parsley[B]): Parsley[List[B]] = {
-        fresh(mutable.ListBuffer.empty[B]).fillReg { acc =>
+        fresh(mutable.ListBuffer.empty[B]).persist { acc =>
             forP(init, cond, step) {
-                acc.put((acc.get, body).zipped(_ += _))
-            } *> acc.gets(_.toList)
+                (acc, body).zipped(_ += _).unsafe()
+            } ~> acc.map(_.toList)
         }
     }
 }

@@ -17,8 +17,8 @@ import org.scalactic.source.Position
 case class TestError(pos: (Int, Int), lines: TestErrorLines)
 
 sealed trait TestErrorLines
-case class VanillaError(unexpected: Option[TestErrorItem], expecteds: Set[TestErrorItem], reasons: Set[String]) extends TestErrorLines
-case class SpecialisedError(msgs: Set[String]) extends TestErrorLines
+case class VanillaError(unexpected: Option[TestErrorItem], expecteds: Set[TestErrorItem], reasons: Set[String], width: Int) extends TestErrorLines
+case class SpecialisedError(msgs: Set[String], width: Int) extends TestErrorLines
 
 sealed trait TestErrorItem
 case class Raw(item: String) extends TestErrorItem
@@ -36,9 +36,9 @@ abstract class TestErrorBuilder extends ErrorBuilder[TestError] {
 
     type ErrorInfoLines = TestErrorLines
     override def vanillaError(unexpected: UnexpectedLine, expected: ExpectedLine, reasons: Messages, line: LineInfo): ErrorInfoLines = {
-        VanillaError(unexpected, expected, reasons)
+        VanillaError(unexpected, expected, reasons, line)
     }
-    override def specialisedError(msgs: Messages, line: LineInfo): ErrorInfoLines = SpecialisedError(msgs)
+    override def specialisedError(msgs: Messages, line: LineInfo): ErrorInfoLines = SpecialisedError(msgs, line)
 
     type ExpectedItems = Set[Item]
     override def combineExpectedItems(alts: Set[Item]): ExpectedItems = alts
@@ -55,8 +55,8 @@ abstract class TestErrorBuilder extends ErrorBuilder[TestError] {
     override def reason(reason: String): Message = reason
     override def message(msg: String): Message = msg
 
-    type LineInfo = Unit
-    override def lineInfo(line: String, linesBefore: Seq[String], linesAfter: Seq[String], errorPointsAt: Int, errorWidth: Int): Unit = ()
+    type LineInfo = Int
+    override def lineInfo(line: String, linesBefore: Seq[String], linesAfter: Seq[String], errorPointsAt: Int, errorWidth: Int): Int = errorWidth
 
     override val numLinesBefore: Int = 2
     override val numLinesAfter: Int = 2

@@ -27,6 +27,7 @@ private [internal] final class Satisfies(f: Char => Boolean, expected: Iterable[
 private [internal] object RestoreAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         // Pop input off head then fail to next handler
         ctx.restoreState()
         ctx.fail()
@@ -52,6 +53,7 @@ private [internal] object RestoreHintsAndState extends Instr {
 private [internal] object PopStateAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         ctx.states = ctx.states.tail
         ctx.fail()
     }
@@ -64,6 +66,7 @@ private [internal] object PopStateRestoreHintsAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
         ctx.restoreHints()
+        ctx.handlers = ctx.handlers.tail
         ctx.states = ctx.states.tail
         ctx.fail()
     }
@@ -117,7 +120,7 @@ private [internal] final class Get(reg: Int) extends Instr {
 private [internal] final class Put(reg: Int) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        ctx.writeReg(reg, ctx.stack.peekAndExchange(()))
+        ctx.writeReg(reg, ctx.stack.upop())
         ctx.inc()
     }
     // $COVERAGE-OFF$
@@ -128,11 +131,26 @@ private [internal] final class Put(reg: Int) extends Instr {
 private [internal] final class PutAndFail(reg: Int) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         ctx.writeReg(reg, ctx.stack.upeek)
         ctx.fail()
     }
     // $COVERAGE-OFF$
     override def toString: String = s"PutAndFail(r$reg)"
+    // $COVERAGE-ON$
+}
+
+private [internal] object Span extends Instr {
+    override def apply(ctx: Context): Unit = {
+        // this uses the state stack because post #132 we will need a save point to obtain the start of the input
+        ensureRegularInstruction(ctx)
+        val startOffset = ctx.states.offset
+        ctx.states = ctx.states.tail
+        ctx.handlers = ctx.handlers.tail
+        ctx.pushAndContinue(ctx.input.substring(startOffset, ctx.offset))
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = "Span"
     // $COVERAGE-ON$
 }
 
@@ -174,10 +192,8 @@ private [parsley] final class CalleeSave(var label: Int, localRegs: Set[Reg[_]],
     }
 
     private def continue(ctx: Context): Unit = {
-        if (ctx.good) {
-            ctx.handlers = ctx.handlers.tail
-            ctx.pc = label
-        }
+        ctx.handlers = ctx.handlers.tail
+        if (ctx.good) ctx.pc = label
         else ctx.fail()
     }
 

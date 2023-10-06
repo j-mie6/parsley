@@ -5,7 +5,7 @@
  */
 package parsley.token.numeric
 
-import parsley.Parsley, Parsley.{attempt, pure, unit}
+import parsley.Parsley, Parsley.{atomic, pure, unit}
 import parsley.character.oneOf
 import parsley.combinator.optional
 import parsley.errors.combinator.ErrorMethods
@@ -17,9 +17,9 @@ private [token] final class UnsignedInteger(desc: NumericDesc, err: ErrorConfig,
 
     // labelless versions
     protected [numeric] override lazy val _decimal: Parsley[BigInt] = generic.plainDecimal(desc, err.labelIntegerDecimalEnd)
-    protected [numeric] override lazy val _hexadecimal: Parsley[BigInt] = attempt('0' *> noZeroHexadecimal)
-    protected [numeric] override lazy val _octal: Parsley[BigInt] = attempt('0' *> noZeroOctal)
-    protected [numeric] override lazy val _binary: Parsley[BigInt] = attempt('0' *> noZeroBinary)
+    protected [numeric] override lazy val _hexadecimal: Parsley[BigInt] = atomic('0' *> noZeroHexadecimal)
+    protected [numeric] override lazy val _octal: Parsley[BigInt] = atomic('0' *> noZeroOctal)
+    protected [numeric] override lazy val _binary: Parsley[BigInt] = atomic('0' *> noZeroBinary)
     protected [numeric] override lazy val _number: Parsley[BigInt] = {
         if (desc.decimalIntegersOnly) decimal
         else {
@@ -36,7 +36,7 @@ private [token] final class UnsignedInteger(desc: NumericDesc, err: ErrorConfig,
                 else p
             }
             val zeroLead = '0'.label("digit") *> (addHex(addOct(addBin(decimal <|> pure(BigInt(0))))))
-            attempt(zeroLead <|> decimal)
+            atomic(zeroLead <|> decimal)
         }
     }
 
