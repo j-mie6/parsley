@@ -1,6 +1,6 @@
 {
   "versions": [
-    { "displayValue": "4.3.x", "pathSegment": "latest", "fallbackLink": "/index.html", "label": "stable", "canonical": true }
+    { "displayValue": "4.4.x", "pathSegment": "latest", "fallbackLink": "/index.html", "label": "stable", "canonical": true }
   ],
   "linkTargets": [
     { "path": "/api-guide/Parsley.html", "versions": ["latest"] },
