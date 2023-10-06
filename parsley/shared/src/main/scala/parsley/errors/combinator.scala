@@ -725,7 +725,7 @@ object combinator {
         // $COVERAGE-OFF$
         // TODO: remove in 5.0.0
         @deprecated("better argument currying now, don't use", "4.4.0-RC2")
-        def collectWith[B](pf: PartialFunction[A, B], errGen: ErrorGen[A]): Parsley[B] = combinator.collectWith(con(p))(pf, errGen)
+        private [parsley] def collectWith[B](pf: PartialFunction[A, B], errGen: ErrorGen[A]): Parsley[B] = combinator.collectWith(con(p))(pf, errGen)
         // $COVERAGE-ON$
         /** This combinator conditionally transforms the result of this parser with a given partial function, generating an error with the
           * given error generator if the function is not defined on the result of this parser.
@@ -743,7 +743,7 @@ object combinator {
         // $COVERAGE-OFF$
         // TODO: remove in 5.0.0
         @deprecated("better argument currying now, don't use", "4.4.0-RC2")
-        def mapFilterWith[B](f: A => Option[B], errGen: ErrorGen[A]): Parsley[B] = combinator.mapFilterWith(con(p))(f, errGen)
+        private [parsley] def mapFilterWith[B](f: A => Option[B], errGen: ErrorGen[A]): Parsley[B] = combinator.mapFilterWith(con(p))(f, errGen)
         // $COVERAGE-ON$
         // TODO: test
         /** This combinator conditionally transforms the result of this parser with a given function, generating an error with the
