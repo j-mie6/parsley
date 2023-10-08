@@ -26,7 +26,8 @@ object ParsleySitePlugin extends AutoPlugin {
         laikaExtensions += laikaHtmlRenderer(Renderers.backticksToCode),
         laikaConfig :=  LaikaConfig.defaults.withConfigValue(
             LinkConfig.empty.addApiLinks(tlSiteApiUrl.value.map(url => ApiLinks(baseUri = url.toExternalForm)).toSeq: _*)
-                            .addSourceLinks(scmInfo.value.map(scm => SourceLinks(baseUri = scm.browseUrl.toExternalForm, suffix = "scala")).toSeq: _*) //FIXME: not sure this works
+                            .addSourceLinks(scmInfo.value.map(scm =>
+                                SourceLinks(baseUri = s"${scm.browseUrl.toExternalForm}/tree/master/parsley/shared/src/main/scala/", suffix = "scala")).toSeq: _*)
             )
             .withRawContent,  // enable usage of raw HTML,  // enable usage of raw HTML
         tlSiteHelium := tlSiteHelium.value.site.layout(
