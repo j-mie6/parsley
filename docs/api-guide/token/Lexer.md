@@ -60,7 +60,7 @@ For handling initial whitespace in the parser (before the very first token), you
 These two categories of parser are closely linked, as described below.
 
 ### `Lexer.{lexeme, nonlexeme}.names`
-This object contains the definitions of several different parsers for dealing with values that
+This [object](@:api(parsley.token.Lexer$lexeme$$names$)) contains the definitions of several different parsers for dealing with values that
 represent names in a language, specifically identifiers and operators. These are configured
 directly by [`LexicalDesc.nameDesc`](@:api(parsley.token.descriptions.NameDesc)), however
 valid names are affected by the keywords and reserved operators as given in
@@ -118,7 +118,7 @@ importing this, string literals can themselves serve as parsers of type `Parsley
 parse symbols correctly. With this, it instead of `symbol("if")` you can simply write `"if"`.
 
 ## `Lexer.{lexeme, nonlexeme}.numeric`
-This object contains the definitions of several different parsers for handling *numeric* data:
+This [object](@:api(parsley.token.Lexer$lexeme$$numeric$)) contains the definitions of several different parsers for handling *numeric* data:
 this includes both integers and floating point numbers. The configuration for all of these parsers
 is managed by [`LexicalDesc.numericDesc`](@:api(parsley.token.descriptions.numeric.NumericDesc)).
 The members of the `numeric` object a split into three kinds:
@@ -233,6 +233,7 @@ floats: `0x0.Bp0` is the same as `0b0.1011p0`, both of which are `0.6875` in dec
 @:@
 
 ## `Lexer.{lexeme, nonlexeme}.text`
+This [object](@:api(parsley.token.Lexer$lexeme$$text$)) deals with the
 
 ## `Lexer.lexeme.{enclosing, separators}`
 These two objects just contain various shortcuts for doing things such as semi-colon separated
