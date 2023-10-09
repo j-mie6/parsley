@@ -118,8 +118,9 @@
 
   <ul class="nav-list">
     <li class="level1 nav-leaf"><a href="#distinguishing-between-lexeme-and-non-lexeme">Distinguishing Between &quot;Lexeme&quot; and &quot;Non-Lexeme&quot;</a></li>
-    <li class="level1 nav-leaf"><a href="#lexer-lexeme-nonlexeme-names"><code>Lexer.{lexeme, nonlexeme}.names</code></a></li>
-    <li class="level1 nav-leaf"><a href="#lexer-lexeme-nonlexeme-symbol"><code>Lexer.{lexeme, nonlexeme}.symbol</code></a></li>
+    <li class="level1 nav-node"><a href="#names-and-symbols">Names and Symbols</a></li>
+    <li class="level2 nav-leaf"><a href="#lexer-lexeme-nonlexeme-names"><code>Lexer.{lexeme, nonlexeme}.names</code></a></li>
+    <li class="level2 nav-leaf"><a href="#lexer-lexeme-nonlexeme-symbol"><code>Lexer.{lexeme, nonlexeme}.symbol</code></a></li>
     <li class="level1 nav-node"><a href="#lexer-lexeme-nonlexeme-numeric"><code>Lexer.{lexeme, nonlexeme}.numeric</code></a></li>
     <li class="level2 nav-leaf"><a href="#examples-of-configuration-and-valid-literals">Examples of Configuration and Valid Literals</a></li>
     <li class="level1 nav-leaf"><a href="#lexer-lexeme-nonlexeme-text"><code>Lexer.{lexeme, nonlexeme}.text</code></a></li>
@@ -177,9 +178,62 @@
           <p>For handling initial whitespace in the parser (before the very first token), you should use <code>Lexer.fully</code>.</p>
         </div>
         
-        <h2 id="lexer-lexeme-nonlexeme-names" class="section"><a class="anchor-link left" href="#lexer-lexeme-nonlexeme-names"><i class="icofont-laika link">&#xef71;</i></a><code>Lexer.{lexeme, nonlexeme}.names</code></h2>
+        <h2 id="names-and-symbols" class="section"><a class="anchor-link left" href="#names-and-symbols"><i class="icofont-laika link">&#xef71;</i></a>Names and Symbols</h2>
+        <p>These two categories of parser are closely linked, as described below.</p>
         
-        <h2 id="lexer-lexeme-nonlexeme-symbol" class="section"><a class="anchor-link left" href="#lexer-lexeme-nonlexeme-symbol"><i class="icofont-laika link">&#xef71;</i></a><code>Lexer.{lexeme, nonlexeme}.symbol</code></h2>
+        <h3 id="lexer-lexeme-nonlexeme-names" class="section"><a class="anchor-link left" href="#lexer-lexeme-nonlexeme-names"><i class="icofont-laika link">&#xef71;</i></a><code>Lexer.{lexeme, nonlexeme}.names</code></h3>
+        <p>This object contains the definitions of several different parsers for dealing with values that
+        represent names in a language, specifically identifiers and operators. These are configured
+        directly by <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/token/descriptions/NameDesc.html"><code>LexicalDesc.nameDesc</code></a>, however
+        valid names are affected by the keywords and reserved operators as given in
+        <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/token/descriptions/SymbolDesc.html"><code>LexicalDesc.symbolDesc</code></a>. Both are defined by
+        an initial letter, and then any subsequent letters.</p>
+        <div class="callout warning">
+          <i class="icofont-laika warning">&#xf026;</i>
+          <p>Note that <strong>both</strong> the start <em>and</em> end letters must be defined for an <code>identifier</code>/<code>userDefinedOperator</code>
+          to work properly. It is not the case that, say, if <code>identifierStart</code> is ommited, that
+          <code>identifierLetter</code> is used in its place.</p>
+        </div>
+        <p>In some cases, languages may have special descriptions of identifiers or operators that
+        work in specific scenarios or with specific properties. For instance: Haskell&#39;s distinction
+        between constructors, which start uppercase, and variables, which start lowercase; and
+        Scala&#39;s special treatment of operators that end in <code>:</code>. In these cases, the <code>identifier</code>
+        and <code>userDefinedOperator</code> parsers provided by <code>Names</code> allow you to refine the start letter (and
+        optionally the end letter for operators) to restrict them to a smaller subset. This
+        allows for these special cases to be handled directly.</p>
+        
+        <h3 id="lexer-lexeme-nonlexeme-symbol" class="section"><a class="anchor-link left" href="#lexer-lexeme-nonlexeme-symbol"><i class="icofont-laika link">&#xef71;</i></a><code>Lexer.{lexeme, nonlexeme}.symbol</code></h3>
+        <p>Compared with <code>names</code>, which deals with user-defined identifiers and operators, <code>symbol</code> is
+        responsible for hard-coded or reserved elements of a language. This includes keywords and
+        built-in operators, as well as specific symbols like <code>{</code>, or <code>;</code>. The description for symbols,
+        found in <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/token/descriptions/SymbolDesc.html"><code>LexicalDesc.symbolDesc</code></a>, describes
+        what the &quot;hard&quot; keywords and operators are for the language: these are <em>always</em> regarded as
+        reserved, and identifiers and user-defined operators may not take these names. However, the
+        <code>symbol</code> object also defines the <code>softKeyword</code> and <code>softOperator</code> combinators: these are
+        for keywords that are <em>contextually</em> reserved. For example, in Scala 3, the soft keyword
+        <code>opaque</code> is only considered a keyword if it appears before <code>type</code>; this means it is possible
+        to define a variable <code>val opaque = 4</code> without issue. In <code>parsley</code>, this could be performed
+        by writing <code>atomic(symbol.softKeyword(&quot;opaque&quot;) ~&gt; symbol(&quot;type&quot;))</code>. Keywords and reserved operators are
+        only legal if they are not followed by something that would turn them into part of a wider
+        identifier or user-defined operator: even if <code>if</code> is a keyword, <code>iffy</code> should not be parsed
+        as <code>if</code> then <code>fy</code>!</p>
+        <div class="callout warning">
+          <i class="icofont-laika warning">&#xf026;</i>
+          <p>Both soft and hard keywords cannot form part of a wider identifer. However, for this to
+          work it is important that <code>NameDesc.identifierLetter</code> (and/or <code>NameDesc.operatorLetter</code>) is
+          defined. If not, then <code>parsley</code> will not know what constitutes an illegal continutation of the symbol!</p>
+        </div>
+        <p>To make things easier, <code>symbol.apply(String)</code> can be used to take any literal symbol and
+        handle it properly with respect to the configuration (except soft keywords need to go
+        via <code>softKeyword</code>). If <code>if</code> is part of the <code>hardKeywords</code> set, then <code>symbol(&quot;if&quot;)</code> will
+        properly parse it, disallowing <code>iffy</code>, and so on. If the provided string is not reserved
+        in any way, it will be parsed literally, as if <code>string</code> had been used.</p>
+        <p>The <code>symbol</code> object also defines a bunch of pre-made helper parsers for some common symbols
+        like <code>;</code>, <code>,</code>, and so on. They are just defined in terms of <code>symbol.apply(String)</code> or <code>symbol.apply(Char)</code>.</p>
+        <p><span class="paragraph"> Implicits </span> <code>symbol.implicits</code> contains the function <code>implicitSymbol</code>,
+        which does the same job as <code>symbol.apply</code>, but is defined as an implicit conversion. By
+        importing this, string literals can themselves serve as parsers of type <code>Parsley[Unit]</code>, and
+        parse symbols correctly. With this, it instead of <code>symbol(&quot;if&quot;)</code> you can simply write <code>&quot;if&quot;</code>.</p>
         
         <h2 id="lexer-lexeme-nonlexeme-numeric" class="section"><a class="anchor-link left" href="#lexer-lexeme-nonlexeme-numeric"><i class="icofont-laika link">&#xef71;</i></a><code>Lexer.{lexeme, nonlexeme}.numeric</code></h2>
         <p>This object contains the definitions of several different parsers for handling <em>numeric</em> data:
