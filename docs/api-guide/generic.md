@@ -257,9 +257,7 @@ Scala only allows tuples with a maximum of 22 elements:
 val oops = (1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3)
 ```
 
-@:todo(TODO: change this to just use `range` in 4.4)
-How to adjust the parser to handle this? One possible approach is to use a `range` combinator
-(which does not exist in `parsley:@VERSION@`, it is in `parsley:4.4.0`, but for sake of example):
+How to adjust the parser to handle this? One possible approach is to use the `range` combinator:
 
 ```scala
 def nonEmptyList[A](px: Parsley[A], pxs: Parsley[List[A]]) =
