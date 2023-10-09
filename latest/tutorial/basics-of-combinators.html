@@ -505,13 +505,13 @@ scala&gt; p.parse(&quot;dead&quot;)
         <h3 id="backtracking" class="section"><a class="anchor-link left" href="#backtracking"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2.2 </span>Backtracking</h3>
         <p>In the last section, we saw that the <code>&lt;|&gt;</code> doesn&#39;t proceed with the second alternative if the
         first consumed input before failing. That is to say it doesn&#39;t <em>backtrack</em>. There is, however, a
-        combinator that permits backtracking to happen, called <code>attempt</code>. Let&#39;s see it in action:</p>
-        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>, </span><span class="type-name">Parsley</span><span>.</span><span class="identifier">attempt</span><span>
+        combinator that permits backtracking to happen, called <code>atomic</code>. Let&#39;s see it in action:</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>, </span><span class="type-name">Parsley</span><span>.</span><span class="identifier">atomic</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">stringLift</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">debug</span><span>.</span><span class="identifier">_</span><span>
 
-</span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> &lt;|&gt; </span><span class="identifier">attempt</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>) &lt;|&gt; </span><span class="string-literal">&quot;dead&quot;</span><span>
-</span><span class="keyword">val</span><span> </span><span class="identifier">q</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> &lt;|&gt; (</span><span class="identifier">attempt</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading def&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;backtrack!&quot;</span><span>) &lt;|&gt;
+</span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> &lt;|&gt; </span><span class="identifier">atomic</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>) &lt;|&gt; </span><span class="string-literal">&quot;dead&quot;</span><span>
+</span><span class="keyword">val</span><span> </span><span class="identifier">q</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> &lt;|&gt; (</span><span class="identifier">atomic</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading def&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;backtrack!&quot;</span><span>) &lt;|&gt;
                    </span><span class="string-literal">&quot;dead&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading dead&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;branch&quot;</span><span>)
 
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;dead&quot;</span><span>) </span><span class="comment">// returns Success(&quot;dead&quot;)
@@ -534,14 +534,14 @@ scala&gt; p.parse(&quot;dead&quot;)
 &lt;branch&lt; (1, 5): dead• Good
                      ^
 */</span></code></pre>
-        <p>Here we can see <code>attempt</code> in action, as well as a debug trace so you can see what&#39;s going on.
-        When we wrap the left hand side of a branch with <code>attempt</code>, when it fails we will rollback any
+        <p>Here we can see <code>atomic</code> in action, as well as a debug trace so you can see what&#39;s going on.
+        When we wrap the left hand side of a branch with <code>atomic</code>, when it fails we will rollback any
         input it consumed, which then allows the branch to accept the alternative. We can see that in the
-        debug trace. You only need to use <code>attempt</code> where you know that two branches share a common leading
-        edge. Knowing when to do this is just based on practice. Adding an <code>attempt</code> never makes a parser
+        debug trace. You only need to use <code>atomic</code> where you know that two branches share a common leading
+        edge. Knowing when to do this is just based on practice. Adding an <code>atomic</code> never makes a parser
         <em>wrong</em>, but it can make the error messages worse, and also excessive backtracking can increase
         the time complexity of the parser significantly. If you know that if a branch consumes input and
-        fails then its alternatives wouldn&#39;t succeed either, then you shouldn&#39;t be using <code>attempt</code>. It is
+        fails then its alternatives wouldn&#39;t succeed either, then you shouldn&#39;t be using <code>atomic</code>. It is
         also useful to make a specific sub-parser behave as if it were indivisible: think reading
         keywords, which are all or nothing.</p>
         
@@ -610,7 +610,7 @@ scala&gt; p.parse(&quot;dead&quot;)
           <li>Within a branch, you are free to do whatever you want, but you must ensure both branches&#39; types
           match</li>
           <li>When a branch fails having consumed input it won&#39;t take the second branch.</li>
-          <li>The <code>attempt</code> combinator can be used to enable backtracking so that consumed input is undone when
+          <li>The <code>atomic</code> combinator can be used to enable backtracking so that consumed input is undone when
           passing back through (it doesn&#39;t affect any <code>&lt;|&gt;</code>s that execute inside it, however)</li>
           <li>When parsers go wrong, <code>debug</code> is a fantastic tool to investigate it with: use it early and often!</li>
           <li>Negative and positive look-ahead can be done with <code>lookAhead</code> and <code>notFollowedBy</code></li>
@@ -648,7 +648,7 @@ scala&gt; p.parse(&quot;dead&quot;)
         <p>With the exception of <code>many</code>, which we can&#39;t define just yet, all of these handy combinators are
         implemented with everything we&#39;ve seen so far. You can find them all, and many more, in
         <code>parsley.combinator</code>.</p>
-        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>, </span><span class="type-name">Parsley</span><span>.</span><span class="identifier">attempt</span><span>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>, </span><span class="type-name">Parsley</span><span>.</span><span class="identifier">atomic</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.{</span><span class="identifier">many</span><span>, </span><span class="identifier">some</span><span>, </span><span class="identifier">optional</span><span>, </span><span class="identifier">eof</span><span>}
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">charLift</span><span>, </span><span class="identifier">stringLift</span><span>}
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">voidImplicitly</span><span>
@@ -676,7 +676,7 @@ scala&gt; p.parse(&quot;dead&quot;)
 </span><span class="keyword">val</span><span> </span><span class="identifier">r7</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">some</span><span>(</span><span class="identifier">oneOf</span><span>(</span><span class="char-literal">&#39;h&#39;</span><span>, </span><span class="char-literal">&#39;c&#39;</span><span>)) *&gt; </span><span class="string-literal">&quot;at&quot;</span><span>
 
 </span><span class="comment">// regex h(i|ello|ey)( world)?(\!|\.)?
-</span><span class="keyword">val</span><span> </span><span class="identifier">r8</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="char-literal">&#39;h&#39;</span><span> *&gt; (</span><span class="string-literal">&quot;i&quot;</span><span> &lt;|&gt; </span><span class="identifier">attempt</span><span>(</span><span class="string-literal">&quot;ello&quot;</span><span>) &lt;|&gt; </span><span class="string-literal">&quot;ey&quot;</span><span>) *&gt;
+</span><span class="keyword">val</span><span> </span><span class="identifier">r8</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="char-literal">&#39;h&#39;</span><span> *&gt; (</span><span class="string-literal">&quot;i&quot;</span><span> &lt;|&gt; </span><span class="identifier">atomic</span><span>(</span><span class="string-literal">&quot;ello&quot;</span><span>) &lt;|&gt; </span><span class="string-literal">&quot;ey&quot;</span><span>) *&gt;
                         </span><span class="identifier">optional</span><span>(</span><span class="string-literal">&quot; world&quot;</span><span>) *&gt;
                         </span><span class="identifier">optional</span><span>(</span><span class="char-literal">&#39;!&#39;</span><span> &lt;|&gt; </span><span class="char-literal">&#39;.&#39;</span><span>)</span></code></pre>
         <p>Have a play around with those in a REPL and make sure you understand how they work and what inputs
@@ -844,7 +844,7 @@ scala&gt; p.parse(&quot;dead&quot;)
         recursive, as well as a recursive call to <code>&lt;expr&gt;</code> in <code>&lt;atom&gt;</code>. Now, it&#39;s perfectly possible to
         translate this grammar almost directly, but notice in <code>&lt;expr&gt;</code> and <code>&lt;term&gt;</code> that both alternatives
         in the grammar share a common leading prefix: as we identified earlier, this would require us to
-        enable backtracking with <code>attempt</code> and will affect the time-complexity of the parse (here it would
+        enable backtracking with <code>atomic</code> and will affect the time-complexity of the parse (here it would
         be exponential!). So, as a quick refactor, we will extract the common edge and represent the
         grammar as follows (where square brackets indicate optional component):</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span>&lt;</span><span class="identifier">expr</span><span>&gt; ::= &lt;</span><span class="identifier">term</span><span>&gt; [</span><span class="string-literal">&#39;||&#39;</span><span> &lt;</span><span class="identifier">expr</span><span>&gt;]
@@ -854,7 +854,7 @@ scala&gt; p.parse(&quot;dead&quot;)
         <p>Now, this grammar can be parsed in linear time, even when translated directly. This is much better!
         However, I&#39;ll make the inefficient parser first, as it has the simpler translation (even if it&#39;s
         less efficient) and will give a sense of how the solution works out.</p>
-        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>, </span><span class="type-name">Parsley</span><span>.</span><span class="identifier">attempt</span><span>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>, </span><span class="type-name">Parsley</span><span>.</span><span class="identifier">atomic</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">stringLift</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">lift</span><span>.</span><span class="type-name">Lift2</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">zipped</span><span>.</span><span class="type-name">Zipped2</span><span>
@@ -863,11 +863,11 @@ scala&gt; p.parse(&quot;dead&quot;)
 
 </span><span class="comment">// &lt;expr&gt; ::=        &lt;term&gt;   &#39;||&#39; &lt;expr&gt;   | &lt;term&gt;
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Boolean</span><span>] =
-      </span><span class="identifier">attempt</span><span>(</span><span class="identifier">or</span><span>.</span><span class="identifier">lift</span><span>(</span><span class="identifier">term</span><span> &lt;* </span><span class="string-literal">&quot;||&quot;</span><span>, </span><span class="identifier">expr</span><span>)) &lt;|&gt; </span><span class="identifier">term</span><span>
+      </span><span class="identifier">atomic</span><span>(</span><span class="identifier">or</span><span>.</span><span class="identifier">lift</span><span>(</span><span class="identifier">term</span><span> &lt;* </span><span class="string-literal">&quot;||&quot;</span><span>, </span><span class="identifier">expr</span><span>)) &lt;|&gt; </span><span class="identifier">term</span><span>
 
 </span><span class="comment">// &lt;term&gt; ::= &lt;not&gt; &#39;&amp;&amp;&#39; &lt;term&gt;                  | &lt;not&gt;
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">term</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Boolean</span><span>] =
-      </span><span class="identifier">attempt</span><span>((</span><span class="identifier">not</span><span>, </span><span class="string-literal">&quot;&amp;&amp;&quot;</span><span> *&gt; </span><span class="identifier">term</span><span>).</span><span class="identifier">zipped</span><span>(</span><span class="identifier">_</span><span> &amp;&amp; </span><span class="identifier">_</span><span>)) &lt;|&gt; </span><span class="identifier">not</span><span>
+      </span><span class="identifier">atomic</span><span>((</span><span class="identifier">not</span><span>, </span><span class="string-literal">&quot;&amp;&amp;&quot;</span><span> *&gt; </span><span class="identifier">term</span><span>).</span><span class="identifier">zipped</span><span>(</span><span class="identifier">_</span><span> &amp;&amp; </span><span class="identifier">_</span><span>)) &lt;|&gt; </span><span class="identifier">not</span><span>
 
 </span><span class="comment">// &lt;not&gt; ::=                     &#39;!&#39;   &lt;not&gt;         | &lt;atom&gt;
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">not</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Boolean</span><span>] = </span><span class="string-literal">&quot;!&quot;</span><span> *&gt; </span><span class="identifier">not</span><span>.</span><span class="identifier">map</span><span>(!</span><span class="identifier">_</span><span>) &lt;|&gt; </span><span class="identifier">atom</span><span>
@@ -894,7 +894,7 @@ scala&gt; p.parse(&quot;dead&quot;)
         processing of the result. Notice, of course, that because <code>expr</code>, <code>term</code> and <code>not</code> are
         self-recursive, they all need explicit type signatures, and have been marked as <code>lazy</code>. This also
         allows me to use <code>atom</code> before it&#39;s defined in the lazy <code>not</code>. However, as I mentioned before, this
-        is not ideal because of the heavy backtracking implied by the use of <code>attempt</code>. The solution, as I&#39;ve
+        is not ideal because of the heavy backtracking implied by the use of <code>atomic</code>. The solution, as I&#39;ve
         said, is to implement the second grammar. This is, as we&#39;ll see, a little tricker:</p>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">stringLift</span><span>

@@ -164,7 +164,7 @@
     </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">keywords</span><span> = </span><span class="type-name">Set</span><span>(</span><span class="string-literal">&quot;while&quot;</span><span>, </span><span class="string-literal">&quot;then&quot;</span><span>, </span><span class="string-literal">&quot;else&quot;</span><span>)
 
     </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">lexeme</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">p</span><span> &lt;* </span><span class="identifier">skipWhitespace</span><span>
-    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">token</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">attempt</span><span>(</span><span class="identifier">p</span><span>))
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">token</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">atomic</span><span>(</span><span class="identifier">p</span><span>))
 
     </span><span class="keyword">val</span><span> </span><span class="identifier">identifier</span><span> =
         </span><span class="identifier">token</span><span> {
@@ -176,7 +176,7 @@
 }</span></code></pre>
         <p>To recap, the idea behind this parser is that it first reads some alpha-numeric characters, then
         converts them to a string. After this it ensures that the parsed identifier is not in <code>keywords</code>.
-        The <code>attempt</code> is wrapped round that entire block so that, if we did read a keyword, we are able to
+        The <code>atomic</code> is wrapped round that entire block so that, if we did read a keyword, we are able to
         backtrack out in case the keyword was indeed valid (for another branch). After we are done we can
         read whitespace. This time, let&#39;s take a look at the error messages when it goes wrong:</p>
         <pre><code>lexer.identifier.parse(&quot;then&quot;)
@@ -187,7 +187,7 @@
   &gt;then
        ^</code></pre>
         <p>Cool! But there is something bugging me about this message. It&#39;s pointing at column 5, but since we
-        used <code>attempt</code> in <code>token</code>, surely no input was consumed? Let&#39;s verify:</p>
+        used <code>atomic</code> in <code>token</code>, surely no input was consumed? Let&#39;s verify:</p>
         <pre><code>(lexer.identifier &lt;|&gt; &quot;then&quot;).parse(&quot;then&quot;)
 Success(&quot;then&quot;)</code></pre>
         <p>Yup, it can backtrack out, so this is perhaps a little misleading. But you can argue that, since it
@@ -294,7 +294,7 @@ Success(&quot;then&quot;)</code></pre>
                 </span><span class="string-literal">s&quot;keyword </span><span class="substitution">$v</span><span class="string-literal"> may not be used as an identifier&quot;</span><span>
         } &lt;* </span><span class="identifier">some</span><span>(</span><span class="identifier">alphaNum</span><span>)
     }.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;identifier&quot;</span><span>)</span></code></pre>
-        <p>Now, I&#39;ve missed out an <code>attempt</code> (and so used <code>lexeme</code> instead of <code>token</code>) here because I know that
+        <p>Now, I&#39;ve missed out an <code>atomic</code> (and so used <code>lexeme</code> instead of <code>token</code>) here because I know that
         if an identifier fails to read anything
         (barring keywords), it won&#39;t consume input in the process. In this parser, we first look ahead at
         the next piece of input and try and read an identifier, if we are successful, we filter it to check
@@ -435,7 +435,7 @@ Success(&quot;then&quot;)</code></pre>
 
     </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">blit</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>]] = </span><span class="string-literal">&quot;true&quot;</span><span> #&gt; </span><span class="identifier">bool</span><span>(</span><span class="boolean-literal">true</span><span>) &lt;|&gt; </span><span class="string-literal">&quot;false&quot;</span><span> #&gt; </span><span class="identifier">bool</span><span>(</span><span class="boolean-literal">false</span><span>)
     </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">comp</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>]] = (</span><span class="identifier">expr</span><span> &lt;**&gt; (</span><span class="string-literal">&quot;&lt;&quot;</span><span> #&gt; (</span><span class="identifier">less</span><span> </span><span class="identifier">_</span><span>) &lt;|&gt; </span><span class="string-literal">&quot;==&quot;</span><span> #&gt; (</span><span class="identifier">equal</span><span> </span><span class="identifier">_</span><span>))) &lt;*&gt; </span><span class="identifier">expr</span><span>
-    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">btom</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>]] = </span><span class="identifier">attempt</span><span>(</span><span class="string-literal">&quot;(&quot;</span><span> *&gt; </span><span class="identifier">pred</span><span>) &lt;* </span><span class="string-literal">&quot;)&quot;</span><span> &lt;|&gt; </span><span class="identifier">blit</span><span> &lt;|&gt; </span><span class="identifier">comp</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">btom</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>]] = </span><span class="identifier">atomic</span><span>(</span><span class="string-literal">&quot;(&quot;</span><span> *&gt; </span><span class="identifier">pred</span><span>) &lt;* </span><span class="string-literal">&quot;)&quot;</span><span> &lt;|&gt; </span><span class="identifier">blit</span><span> &lt;|&gt; </span><span class="identifier">comp</span><span>
     </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">pred</span><span> = </span><span class="identifier">precedence</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>]](</span><span class="identifier">btom</span><span>)(
         </span><span class="type-name">Ops</span><span>(</span><span class="type-name">Prefix</span><span>)(</span><span class="string-literal">&quot;not&quot;</span><span> #&gt; </span><span class="identifier">not</span><span>),
         </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixR</span><span>)(</span><span class="string-literal">&quot;&amp;&amp;&quot;</span><span> #&gt; </span><span class="identifier">and</span><span>),
@@ -538,7 +538,7 @@ Success(&quot;then&quot;)</code></pre>
         semi-colon, we could use the following instead:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">_semiCheck</span><span> =
     </span><span class="identifier">lookAhead</span><span>(</span><span class="char-literal">&#39;;&#39;</span><span>.</span><span class="identifier">hide</span><span>) *&gt; </span><span class="identifier">unexpected</span><span>(</span><span class="string-literal">&quot;semi-colon&quot;</span><span>).</span><span class="identifier">explain</span><span>(</span><span class="string-literal">&quot;...&quot;</span><span>)</span></code></pre>
-        <p>In fact, <code>lookAhead(p) *&gt; failCombinator</code> is the same as <code>attempt(amend(p *&gt; failCombinator)</code> when
+        <p>In fact, <code>lookAhead(p) *&gt; failCombinator</code> is the same as <code>atomic(amend(p *&gt; failCombinator)</code> when
         <code>p</code> doesn&#39;t fail having consumed input (which <code>&#39;;&#39;</code> on its own can&#39;t).</p>
         <p>So, where else can we apply this technique? Let&#39;s see what happens if we miss out a closing brace</p>
         <pre><code>interpreter(
@@ -652,7 +652,7 @@ Success(&quot;then&quot;)</code></pre>
         </ul>
         <p>So, since both errors produce a &quot;custom&quot; unexpected error, the <code>expr</code> proper took the priority: not
         quite what we wanted. Perhaps a natural reaction to learning this is to reverse their ordering...</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span> = </span><span class="identifier">attempt</span><span>(</span><span class="identifier">amend</span><span>(</span><span class="identifier">_noBoolCheck</span><span>(</span><span class="string-literal">&quot;booleans cannot be integers&quot;</span><span>))) &lt;|&gt; </span><span class="identifier">precedence</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>]](</span><span class="identifier">atom</span><span>)(
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span> = </span><span class="identifier">atomic</span><span>(</span><span class="identifier">amend</span><span>(</span><span class="identifier">_noBoolCheck</span><span>(</span><span class="string-literal">&quot;booleans cannot be integers&quot;</span><span>))) &lt;|&gt; </span><span class="identifier">precedence</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>]](</span><span class="identifier">atom</span><span>)(
     </span><span class="type-name">Ops</span><span>(</span><span class="type-name">Prefix</span><span>)(</span><span class="string-literal">&quot;negate&quot;</span><span> #&gt; </span><span class="identifier">negate</span><span>),
     </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> #&gt; </span><span class="identifier">mul</span><span>),
     </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> #&gt; </span><span class="identifier">add</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> #&gt; </span><span class="identifier">sub</span><span>))</span></code></pre>
@@ -696,14 +696,14 @@ Success(&quot;then&quot;)</code></pre>
         well worth really understanding why this worked out as it did. In the future, we&#39;ll have a new
         debug combinator to help illustrate this (and I&#39;ll change this page to suit).</p>
         <p>Right, so now to tackle the other place where the boolean check can occur. This will require us to
-        mark our first <code>_noBoolCheck</code> with an <code>attempt</code> to allow us to perform a second (again, we want to
+        mark our first <code>_noBoolCheck</code> with an <code>atomic</code> to allow us to perform a second (again, we want to
         delay it as long as possible). We could, of course, move the <code>_noBoolCheck</code> somewhere else so that
         exactly one dominates each use site, but when this is a &quot;last resort&quot; mechanism, it doesn&#39;t make
         much of a difference.</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">asgnStmt</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Unit</span><span>]] =
     (</span><span class="identifier">store</span><span> </span><span class="identifier">_</span><span>).</span><span class="identifier">lift</span><span>(</span><span class="identifier">identifier</span><span>,
                    </span><span class="string-literal">&quot;=&quot;</span><span> *&gt; (</span><span class="identifier">expr</span><span> &lt;|&gt; </span><span class="identifier">amend</span><span>(</span><span class="identifier">_noBoolCheck</span><span>(</span><span class="string-literal">&quot;booleans cannot be assigned to variables&quot;</span><span>))))</span></code></pre>
-        <p>With this in place (and the aforementioned <code>attempt</code>) we get an error like:</p>
+        <p>With this in place (and the aforementioned <code>atomic</code>) we get an error like:</p>
         <pre><code>(line 1, column 5):
   unexpected boolean expression
   expected arithmetic expression
