@@ -2,6 +2,12 @@
 laika.title = "`Lexer`"
 %}
 
+```scala mdoc:invisible
+import parsley.token.{Lexer, descriptions}, descriptions.{LexicalDesc, numeric, text}
+import numeric._
+import text._
+```
+
 # Lexer (`parsley.token.Lexer`)
 
 The `Lexer` class is the main-entry point to the combinator-based functionality of the `parsley.token`
@@ -142,8 +148,8 @@ The members of the `numeric` object a split into three kinds:
   Compared to `Integer`, different precisions can be chosen for `Real`, allowing for
   arbitrary-precision floats, `Float`, and `Double` results. For the stricter representations,
   there is a `doubleRounded`/`floatRounded` that just gives the nearest valid value (with no parse
-  errors), and a `double`/`float` which demands that the parsed literal is *precisely* representable
-  or else gives a parse error.
+  errors), and a `double`/`float` which demands that the parsed literal must at least be
+  between the smallest and largest numbers of the type.
 
 * [`parsley.token.numeric.Combined`](@:api(parsley.token.numeric.Combined)): values with this type
   can deal with both integers and floating-point numbers. This is done by returning one or the other
@@ -163,19 +169,39 @@ definition of `NumericDesc` provides a variety of different configurations for t
 numeric literals depending on the literal base, so it mostly suffices to look at the effects of
 these on the different bases to get a sense of what does what.
 
+```scala mdoc:silent
+val lexer = new Lexer(LexicalDesc.plain)
+```
+
 The basic configuration allows `number` to work with hexadecimal and octal literals, as well
 as decimal. These have their standard prefixes of `0x` and `0o`, respectively (or uppercase
 variants). This means that `unsigned.number` will allow literals like `0`, `0xff`, `0o45`
-and `345`. Each of these may be preceded by a `+` sign, but this is not *required*; if
-`positiveSign` is set to `PlusSignPresence.Compulsory`, positive literals would always
-require a `+`; and if it is set to `PlusSignPrecense.Illegal`, the `+` prefix can never be
-used (but `-` is fine for `signed` parsers). By default, `023` is legal, but this can be
+and `345`. For `signed`, each of these may be preceded by a `+` sign, but this is not *required*; if `positiveSign` is set to `PlusSignPresence.Compulsory`, positive literals would always require a `+`; and if it is set to `PlusSignPrecense.Illegal`, the `+` prefix can never be used (but `-` is fine regardless). By default, `023` is legal, but this can be
 disabled by setting `leadingZerosAllowed` to `false`.
+
+```scala mdoc
+val num = lexer.lexeme.numeric.signed.number
+num.parse("0")
+num.parse("0xff")
+num.parse("+0o45")
+num.parse("-345")
+```
 
 In the basic configuration, break characters are not supported. However, by setting
 `literalBreakChar` to `BreakCharDesc.Supported('_', allowedAfterNonDecimalPrefix = true)`,
 say, will allow for `1_000` or `0x_400`. Setting the second parameter to `false` will forbid
 the latter example, as the break characters may then only appear between digits.
+
+```scala mdoc:height=2
+val lexerWithBreak = new Lexer(LexicalDesc.plain.copy(
+        numericDesc = NumericDesc.plain.copy(
+            literalBreakChar = BreakCharDesc.Supported('_', allowedAfterNonDecimalPrefix = true))
+    ))
+val withBreak = lexerWithBreak.lexeme.numeric.signed.number
+withBreak.parse("1_000")
+withBreak.parse("1_")
+withBreak.parse("2__0") // no double break
+```
 
 Real numbers in the default configuration do not support literals like `.0` or `1.`, this
 behaviour must be explicitly enabled with `trailingDotAllowed` and `leadingDotAllowed`: note
@@ -188,6 +214,16 @@ it work, the exponent must be added, i.e. `0x3.142p0`, where `p0` is performing 
 For each of the non-decimal literals, the base of the exponent is configured to be `2`, hence
 `2^0` in the previous example; for decimal it is set to the usual `10`, so that `2e3` is `2*10^3`, or `2000`. Notice that literals do not *require* a point, so long as they do have
 an exponent.
+
+```scala mdoc:height=2
+val real = lexer.lexeme.numeric.real
+real.hexadecimalDouble.parse("0x3.142")
+real.hexadecimalDouble.parse("0x3.142p0")
+real.binary.parse("0b0.1011p0")
+real.decimal.parse("3.142")
+real.decimal.parse("4")
+real.decimal.parse("2e3")
+```
 
 @:callout(info)
 When a floating point literal is parsed in a non-decimal base, the meaning of each digit past
