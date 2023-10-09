@@ -322,14 +322,31 @@
         <h2 id="lexer-lexeme-nonlexeme-text" class="section"><a class="anchor-link left" href="#lexer-lexeme-nonlexeme-text"><i class="icofont-laika link">&#xef71;</i></a><code>Lexer.{lexeme, nonlexeme}.text</code></h2>
         
         <h2 id="lexer-lexeme-enclosing-separators" class="section"><a class="anchor-link left" href="#lexer-lexeme-enclosing-separators"><i class="icofont-laika link">&#xef71;</i></a><code>Lexer.lexeme.{enclosing, separators}</code></h2>
+        <p>These two objects just contain various shortcuts for doing things such as semi-colon separated
+        things, or braces enclosed things, etc. There is nothing special about them: with <code>lexer.lexeme.symbol.implicits.implicitSymbol</code> imported, <code>&quot;(&quot; ~&gt; p &lt;~ &quot;)&quot;</code> is the same as <code>lexer.lexeme.enclosing.parens(p)</code>. The choice of one style over the other is purely up to taste.</p>
         
         <h2 id="whitespace-sensitive-languages-and-lexer-space" class="section"><a class="anchor-link left" href="#whitespace-sensitive-languages-and-lexer-space"><i class="icofont-laika link">&#xef71;</i></a>Whitespace-Sensitive Languages and <code>Lexer.space</code></h2>
+        <p>Normally, the whitespace definitions used by <code>lexeme</code> are fixed as described by the
+        <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/token/descriptions/SpaceDesc.html"><code>LexicalDesc.spaceDesc</code></a>; accounting
+        for the comments and spaces themselves. However, some languages, like Python and Haskell
+        do not have constant definitions of whitespace: for instance, inside a pair of parentheses,
+        newline characters are no longer considered for the current indentation. To support this,
+        <code>parsley</code> allows for the space definition to be locally altered during parsing if
+        <code>LexicalDesc.spaceDesc.whitespaceIsContextDependent</code> is set to <code>true</code>: this <em>may</em> impact
+        the performance of the parser.</p>
         <div class="callout error">
           <i class="icofont-laika error">&#xeedd;</i>
           <p>If the <code>LexicalDesc.spaceDesc.whitespaceIsContextDependent</code> flag is turned on it is <strong>crucial</strong> that
           either the <code>Lexer.fully</code> combinator is used, <em>or</em> <code>Lexer.space.init</code> is ran as the very first thing the
           top-level parser does. Without this, the context-dependent whitespace will not be set-up correctly!</p>
         </div>
+        <p>In this mode, it is possible to use the <code>lexer.space.alter</code> combinator to <em>temporarily</em>
+        change the definition of whitespace (but not comments) within the scope of a given parser.
+        As an example:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">withNewline</span><span> = </span><span class="identifier">predicate</span><span>.</span><span class="type-name">Basic</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">isSpace</span><span>)
+</span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span> = ... | </span><span class="string-literal">&quot;(&quot;</span><span> ~&gt; </span><span class="identifier">lexer</span><span>.</span><span class="identifier">space</span><span>.</span><span class="identifier">alter</span><span>(</span><span class="identifier">withNewline</span><span>)(</span><span class="identifier">expr</span><span>) &lt;~ </span><span class="string-literal">&quot;)&quot;</span></code></pre>
+        <p>For the duration of that nested <code>expr</code> call, newlines are considered regular whitespace. This,
+        of course, is assuming that newlines were <em>not</em> considered whitespace under normal conditions.</p>
 
         
 <hr class="footer-rule"/>
