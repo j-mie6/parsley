@@ -50,9 +50,66 @@ If you cannot use `lexeme.apply`, you *must* adhere to this same convention.
 For handling initial whitespace in the parser (before the very first token), you should use `Lexer.fully`.
 @:@
 
-## `Lexer.{lexeme, nonlexeme}.names`
+## Names and Symbols
+These two categories of parser are closely linked, as described below.
 
-## `Lexer.{lexeme, nonlexeme}.symbol`
+### `Lexer.{lexeme, nonlexeme}.names`
+This object contains the definitions of several different parsers for dealing with values that
+represent names in a language, specifically identifiers and operators. These are configured
+directly by [`LexicalDesc.nameDesc`](@:api(parsley.token.descriptions.NameDesc)), however
+valid names are affected by the keywords and reserved operators as given in
+[`LexicalDesc.symbolDesc`](@:api(parsley.token.descriptions.SymbolDesc)). Both are defined by
+an initial letter, and then any subsequent letters.
+
+@:callout(warning)
+Note that **both** the start *and* end letters must be defined for an `identifier`/`userDefinedOperator`
+to work properly. It is not the case that, say, if `identifierStart` is ommited, that
+`identifierLetter` is used in its place.
+@:@
+
+In some cases, languages may have special descriptions of identifiers or operators that
+work in specific scenarios or with specific properties. For instance: Haskell's distinction
+between constructors, which start uppercase, and variables, which start lowercase; and
+Scala's special treatment of operators that end in `:`. In these cases, the `identifier`
+and `userDefinedOperator` parsers provided by `Names` allow you to refine the start letter (and
+optionally the end letter for operators) to restrict them to a smaller subset. This
+allows for these special cases to be handled directly.
+
+### `Lexer.{lexeme, nonlexeme}.symbol`
+Compared with `names`, which deals with user-defined identifiers and operators, `symbol` is
+responsible for hard-coded or reserved elements of a language. This includes keywords and
+built-in operators, as well as specific symbols like `{`, or `;`. The description for symbols,
+found in [`LexicalDesc.symbolDesc`](@:api(parsley.token.descriptions.SymbolDesc)), describes
+what the "hard" keywords and operators are for the language: these are *always* regarded as
+reserved, and identifiers and user-defined operators may not take these names. However, the
+`symbol` object also defines the `softKeyword` and `softOperator` combinators: these are
+for keywords that are *contextually* reserved. For example, in Scala 3, the soft keyword
+`opaque` is only considered a keyword if it appears before `type`; this means it is possible
+to define a variable `val opaque = 4` without issue. In `parsley`, this could be performed
+by writing `atomic(symbol.softKeyword("opaque") ~> symbol("type"))`. Keywords and reserved operators are
+only legal if they are not followed by something that would turn them into part of a wider
+identifier or user-defined operator: even if `if` is a keyword, `iffy` should not be parsed
+as `if` then `fy`!
+
+@:callout(warning)
+Both soft and hard keywords cannot form part of a wider identifer. However, for this to
+work it is important that `NameDesc.identifierLetter` (and/or `NameDesc.operatorLetter`) is
+defined. If not, then `parsley` will not know what constitutes an illegal continutation of the symbol!
+@:@
+
+To make things easier, `symbol.apply(String)` can be used to take any literal symbol and
+handle it properly with respect to the configuration (except soft keywords need to go
+via `softKeyword`). If `if` is part of the `hardKeywords` set, then `symbol("if")` will
+properly parse it, disallowing `iffy`, and so on. If the provided string is not reserved
+in any way, it will be parsed literally, as if `string` had been used.
+
+The `symbol` object also defines a bunch of pre-made helper parsers for some common symbols
+like `;`, `,`, and so on. They are just defined in terms of `symbol.apply(String)` or `symbol.apply(Char)`.
+
+@:style(paragraph) Implicits @:@ `symbol.implicits` contains the function `implicitSymbol`,
+which does the same job as `symbol.apply`, but is defined as an implicit conversion. By
+importing this, string literals can themselves serve as parsers of type `Parsley[Unit]`, and
+parse symbols correctly. With this, it instead of `symbol("if")` you can simply write `"if"`.
 
 ## `Lexer.{lexeme, nonlexeme}.numeric`
 This object contains the definitions of several different parsers for handling *numeric* data:
