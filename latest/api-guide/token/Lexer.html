@@ -265,8 +265,8 @@
             <p>Compared to <code>Integer</code>, different precisions can be chosen for <code>Real</code>, allowing for
             arbitrary-precision floats, <code>Float</code>, and <code>Double</code> results. For the stricter representations,
             there is a <code>doubleRounded</code>/<code>floatRounded</code> that just gives the nearest valid value (with no parse
-            errors), and a <code>double</code>/<code>float</code> which demands that the parsed literal is <em>precisely</em> representable
-            or else gives a parse error.</p>
+            errors), and a <code>double</code>/<code>float</code> which demands that the parsed literal must at least be
+            between the smallest and largest numbers of the type.</p>
           </li>
           <li>
             <p><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/token/numeric/Combined.html"><code>parsley.token.numeric.Combined</code></a>: values with this type
@@ -288,18 +288,41 @@
         definition of <code>NumericDesc</code> provides a variety of different configurations for the
         numeric literals depending on the literal base, so it mostly suffices to look at the effects of
         these on the different bases to get a sense of what does what.</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">lexer</span><span> = </span><span class="keyword">new</span><span> </span><span class="type-name">Lexer</span><span>(</span><span class="type-name">LexicalDesc</span><span>.</span><span class="identifier">plain</span><span>)</span></code></pre>
         <p>The basic configuration allows <code>number</code> to work with hexadecimal and octal literals, as well
         as decimal. These have their standard prefixes of <code>0x</code> and <code>0o</code>, respectively (or uppercase
         variants). This means that <code>unsigned.number</code> will allow literals like <code>0</code>, <code>0xff</code>, <code>0o45</code>
-        and <code>345</code>. Each of these may be preceded by a <code>+</code> sign, but this is not <em>required</em>; if
-        <code>positiveSign</code> is set to <code>PlusSignPresence.Compulsory</code>, positive literals would always
-        require a <code>+</code>; and if it is set to <code>PlusSignPrecense.Illegal</code>, the <code>+</code> prefix can never be
-        used (but <code>-</code> is fine for <code>signed</code> parsers). By default, <code>023</code> is legal, but this can be
+        and <code>345</code>. For <code>signed</code>, each of these may be preceded by a <code>+</code> sign, but this is not <em>required</em>; if <code>positiveSign</code> is set to <code>PlusSignPresence.Compulsory</code>, positive literals would always require a <code>+</code>; and if it is set to <code>PlusSignPrecense.Illegal</code>, the <code>+</code> prefix can never be used (but <code>-</code> is fine regardless). By default, <code>023</code> is legal, but this can be
         disabled by setting <code>leadingZerosAllowed</code> to <code>false</code>.</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">num</span><span> = </span><span class="identifier">lexer</span><span>.</span><span class="identifier">lexeme</span><span>.</span><span class="identifier">numeric</span><span>.</span><span class="identifier">signed</span><span>.</span><span class="identifier">number</span><span>
+</span><span class="comment">// num: parsley.Parsley[BigInt] = parsley.Parsley@3f2089c8
+</span><span class="identifier">num</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;0&quot;</span><span>)
+</span><span class="comment">// res0: parsley.Result[String, BigInt] = Success(x = 0)
+</span><span class="identifier">num</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;0xff&quot;</span><span>)
+</span><span class="comment">// res1: parsley.Result[String, BigInt] = Success(x = 255)
+</span><span class="identifier">num</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;+0o45&quot;</span><span>)
+</span><span class="comment">// res2: parsley.Result[String, BigInt] = Success(x = 37)
+</span><span class="identifier">num</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;-345&quot;</span><span>)
+</span><span class="comment">// res3: parsley.Result[String, BigInt] = Success(x = -345)</span></code></pre>
         <p>In the basic configuration, break characters are not supported. However, by setting
         <code>literalBreakChar</code> to <code>BreakCharDesc.Supported(&#39;_&#39;, allowedAfterNonDecimalPrefix = true)</code>,
         say, will allow for <code>1_000</code> or <code>0x_400</code>. Setting the second parameter to <code>false</code> will forbid
         the latter example, as the break characters may then only appear between digits.</p>
+        <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">lexerWithBreak</span><span> = </span><span class="keyword">new</span><span> </span><span class="type-name">Lexer</span><span>(</span><span class="type-name">LexicalDesc</span><span>.</span><span class="identifier">plain</span><span>.</span><span class="identifier">copy</span><span>(
+        </span><span class="identifier">numericDesc</span><span> = </span><span class="type-name">NumericDesc</span><span>.</span><span class="identifier">plain</span><span>.</span><span class="identifier">copy</span><span>(
+            </span><span class="identifier">literalBreakChar</span><span> = </span><span class="type-name">BreakCharDesc</span><span>.</span><span class="type-name">Supported</span><span>(</span><span class="char-literal">&#39;_&#39;</span><span>, </span><span class="identifier">allowedAfterNonDecimalPrefix</span><span> = </span><span class="boolean-literal">true</span><span>))
+    ))
+</span><span class="comment">// lexerWithBreak: Lexer = parsley.token.Lexer@3f5afcc7
+</span><span class="keyword">val</span><span> </span><span class="identifier">withBreak</span><span> = </span><span class="identifier">lexerWithBreak</span><span>.</span><span class="identifier">lexeme</span><span>.</span><span class="identifier">numeric</span><span>.</span><span class="identifier">signed</span><span>.</span><span class="identifier">number</span><span>
+</span><span class="comment">// withBreak: parsley.Parsley[BigInt] = parsley.Parsley@4587e085
+</span><span class="identifier">withBreak</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;1_000&quot;</span><span>)
+</span><span class="comment">// res4: parsley.Result[String, BigInt] = Success(x = 1000)
+</span><span class="identifier">withBreak</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;1_&quot;</span><span>)
+</span><span class="comment">// res5: parsley.Result[String, BigInt] = Failure(
+// ...
+</span><span class="identifier">withBreak</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;2__0&quot;</span><span>) </span><span class="comment">// no double break
+// res6: parsley.Result[String, BigInt] = Failure(
+// ...</span></code></pre>
         <p>Real numbers in the default configuration do not support literals like <code>.0</code> or <code>1.</code>, this
         behaviour must be explicitly enabled with <code>trailingDotAllowed</code> and <code>leadingDotAllowed</code>: note
         that <code>.</code> is not a valid literal, even with both flags enabled! By default, all four different
@@ -311,6 +334,22 @@
         For each of the non-decimal literals, the base of the exponent is configured to be <code>2</code>, hence
         <code>2^0</code> in the previous example; for decimal it is set to the usual <code>10</code>, so that <code>2e3</code> is <code>2*10^3</code>, or <code>2000</code>. Notice that literals do not <em>require</em> a point, so long as they do have
         an exponent.</p>
+        <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">real</span><span> = </span><span class="identifier">lexer</span><span>.</span><span class="identifier">lexeme</span><span>.</span><span class="identifier">numeric</span><span>.</span><span class="identifier">real</span><span>
+</span><span class="comment">// real: parsley.token.numeric.Real = parsley.token.numeric.LexemeReal@50b538e4
+</span><span class="identifier">real</span><span>.</span><span class="identifier">hexadecimalDouble</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;0x3.142&quot;</span><span>)
+</span><span class="comment">// res7: parsley.Result[String, Double] = Failure(
+// ...
+</span><span class="identifier">real</span><span>.</span><span class="identifier">hexadecimalDouble</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;0x3.142p0&quot;</span><span>)
+</span><span class="comment">// res8: parsley.Result[String, Double] = Success(x = 3.07861328125)
+</span><span class="identifier">real</span><span>.</span><span class="identifier">binary</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;0b0.1011p0&quot;</span><span>)
+</span><span class="comment">// res9: parsley.Result[String, BigDecimal] = Success(x = 0.6875)
+</span><span class="identifier">real</span><span>.</span><span class="identifier">decimal</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;3.142&quot;</span><span>)
+</span><span class="comment">// res10: parsley.Result[String, BigDecimal] = Success(x = 3.142)
+</span><span class="identifier">real</span><span>.</span><span class="identifier">decimal</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;4&quot;</span><span>)
+</span><span class="comment">// res11: parsley.Result[String, BigDecimal] = Failure(
+// ...
+</span><span class="identifier">real</span><span>.</span><span class="identifier">decimal</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;2e3&quot;</span><span>)
+</span><span class="comment">// res12: parsley.Result[String, BigDecimal] = Success(x = 2000)</span></code></pre>
         <div class="callout info">
           <i class="icofont-laika info">&#xef4e;</i>
           <p>When a floating point literal is parsed in a non-decimal base, the meaning of each digit past
