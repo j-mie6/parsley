@@ -199,11 +199,33 @@ floats: `0x0.Bp0` is the same as `0b0.1011p0`, both of which are `0.6875` in dec
 ## `Lexer.{lexeme, nonlexeme}.text`
 
 ## `Lexer.lexeme.{enclosing, separators}`
+These two objects just contain various shortcuts for doing things such as semi-colon separated
+things, or braces enclosed things, etc. There is nothing special about them: with `lexer.lexeme.symbol.implicits.implicitSymbol` imported, `"(" ~> p <~ ")"` is the same as `lexer.lexeme.enclosing.parens(p)`. The choice of one style over the other is purely up to taste.
 
 ## Whitespace-Sensitive Languages and `Lexer.space`
+Normally, the whitespace definitions used by `lexeme` are fixed as described by the
+[`LexicalDesc.spaceDesc`](@:api(parsley.token.descriptions.SpaceDesc)); accounting
+for the comments and spaces themselves. However, some languages, like Python and Haskell
+do not have constant definitions of whitespace: for instance, inside a pair of parentheses,
+newline characters are no longer considered for the current indentation. To support this,
+`parsley` allows for the space definition to be locally altered during parsing if
+`LexicalDesc.spaceDesc.whitespaceIsContextDependent` is set to `true`: this *may* impact
+the performance of the parser.
 
 @:callout(error)
 If the `LexicalDesc.spaceDesc.whitespaceIsContextDependent` flag is turned on it is **crucial** that
 either the `Lexer.fully` combinator is used, *or* `Lexer.space.init` is ran as the very first thing the
 top-level parser does. Without this, the context-dependent whitespace will not be set-up correctly!
 @:@
+
+In this mode, it is possible to use the `lexer.space.alter` combinator to *temporarily*
+change the definition of whitespace (but not comments) within the scope of a given parser.
+As an example:
+
+```scala
+val withNewline = predicate.Basic(_.isSpace)
+val expr = ... | "(" ~> lexer.space.alter(withNewline)(expr) <~ ")"
+```
+
+For the duration of that nested `expr` call, newlines are considered regular whitespace. This,
+of course, is assuming that newlines were *not* considered whitespace under normal conditions.
