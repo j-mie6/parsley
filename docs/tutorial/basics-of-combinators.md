@@ -437,15 +437,15 @@ especially in deeply nested grammars. In this case we can reach for another, eas
 ### Backtracking
 In the last section, we saw that the `<|>` doesn't proceed with the second alternative if the
 first consumed input before failing. That is to say it doesn't _backtrack_. There is, however, a
-combinator that permits backtracking to happen, called `attempt`. Let's see it in action:
+combinator that permits backtracking to happen, called `atomic`. Let's see it in action:
 
 ```scala mdoc:silent:nest
-import parsley.Parsley, Parsley.attempt
+import parsley.Parsley, Parsley.atomic
 import parsley.implicits.character.stringLift
 import parsley.debug._
 
-val p = "abc" <|> attempt("def") <|> "dead"
-val q = "abc" <|> (attempt("def".debug("reading def")).debug("backtrack!") <|>
+val p = "abc" <|> atomic("def") <|> "dead"
+val q = "abc" <|> (atomic("def".debug("reading def")).debug("backtrack!") <|>
                    "dead".debug("reading dead")).debug("branch")
 
 p.parse("dead") // returns Success("dead")
@@ -470,14 +470,14 @@ q.parse("dead")
 */
 ```
 
-Here we can see `attempt` in action, as well as a debug trace so you can see what's going on.
-When we wrap the left hand side of a branch with `attempt`, when it fails we will rollback any
+Here we can see `atomic` in action, as well as a debug trace so you can see what's going on.
+When we wrap the left hand side of a branch with `atomic`, when it fails we will rollback any
 input it consumed, which then allows the branch to accept the alternative. We can see that in the
-debug trace. You only need to use `attempt` where you know that two branches share a common leading
-edge. Knowing when to do this is just based on practice. Adding an `attempt` never makes a parser
+debug trace. You only need to use `atomic` where you know that two branches share a common leading
+edge. Knowing when to do this is just based on practice. Adding an `atomic` never makes a parser
 _wrong_, but it can make the error messages worse, and also excessive backtracking can increase
 the time complexity of the parser significantly. If you know that if a branch consumes input and
-fails then its alternatives wouldn't succeed either, then you shouldn't be using `attempt`. It is
+fails then its alternatives wouldn't succeed either, then you shouldn't be using `atomic`. It is
 also useful to make a specific sub-parser behave as if it were indivisible: think reading
 keywords, which are all or nothing.
 
@@ -549,7 +549,7 @@ consumed input, that input _remains consumed_. However, `notFollowedBy` never co
 * Within a branch, you are free to do whatever you want, but you must ensure both branches' types
   match
 * When a branch fails having consumed input it won't take the second branch.
-* The `attempt` combinator can be used to enable backtracking so that consumed input is undone when
+* The `atomic` combinator can be used to enable backtracking so that consumed input is undone when
   passing back through (it doesn't affect any `<|>`s that execute inside it, however)
 * When parsers go wrong, `debug` is a fantastic tool to investigate it with: use it early and often!
 * Negative and positive look-ahead can be done with `lookAhead` and `notFollowedBy`
@@ -592,7 +592,7 @@ implemented with everything we've seen so far. You can find them all, and many m
 `parsley.combinator`.
 
 ```scala mdoc:silent:reset
-import parsley.Parsley, Parsley.attempt
+import parsley.Parsley, Parsley.atomic
 import parsley.combinator.{many, some, optional, eof}
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.implicits.combinator.voidImplicitly
@@ -620,7 +620,7 @@ val r6: Parsley[Unit] = optional(oneOf('h', 'c')) *> "at"
 val r7: Parsley[Unit] = some(oneOf('h', 'c')) *> "at"
 
 // regex h(i|ello|ey)( world)?(\!|\.)?
-val r8: Parsley[Unit] = 'h' *> ("i" <|> attempt("ello") <|> "ey") *>
+val r8: Parsley[Unit] = 'h' *> ("i" <|> atomic("ello") <|> "ey") *>
                         optional(" world") *>
                         optional('!' <|> '.')
 ```
@@ -815,7 +815,7 @@ We can see from this already it is a very recursive grammar, with almost every r
 recursive, as well as a recursive call to `<expr>` in `<atom>`. Now, it's perfectly possible to
 translate this grammar almost directly, but notice in `<expr>` and `<term>` that both alternatives
 in the grammar share a common leading prefix: as we identified earlier, this would require us to
-enable backtracking with `attempt` and will affect the time-complexity of the parse (here it would
+enable backtracking with `atomic` and will affect the time-complexity of the parse (here it would
 be exponential!). So, as a quick refactor, we will extract the common edge and represent the
 grammar as follows (where square brackets indicate optional component):
 
@@ -831,7 +831,7 @@ However, I'll make the inefficient parser first, as it has the simpler translati
 less efficient) and will give a sense of how the solution works out.
 
 ```scala mdoc:silent
-import parsley.Parsley, Parsley.attempt
+import parsley.Parsley, Parsley.atomic
 import parsley.implicits.character.stringLift
 import parsley.implicits.lift.Lift2
 import parsley.implicits.zipped.Zipped2
@@ -840,11 +840,11 @@ val or = (x: Boolean, y: Boolean) => x || y
 
 // <expr> ::=        <term>   '||' <expr>   | <term>
 lazy val expr: Parsley[Boolean] =
-      attempt(or.lift(term <* "||", expr)) <|> term
+      atomic(or.lift(term <* "||", expr)) <|> term
 
 // <term> ::= <not> '&&' <term>                  | <not>
 lazy val term: Parsley[Boolean] =
-      attempt((not, "&&" *> term).zipped(_ && _)) <|> not
+      atomic((not, "&&" *> term).zipped(_ && _)) <|> not
 
 // <not> ::=                     '!'   <not>         | <atom>
 lazy val not: Parsley[Boolean] = "!" *> not.map(!_) <|> atom
@@ -874,7 +874,7 @@ The parser itself has a close resemblance to the original grammar, just with the
 processing of the result. Notice, of course, that because `expr`, `term` and `not` are
 self-recursive, they all need explicit type signatures, and have been marked as `lazy`. This also
 allows me to use `atom` before it's defined in the lazy `not`. However, as I mentioned before, this
-is not ideal because of the heavy backtracking implied by the use of `attempt`. The solution, as I've
+is not ideal because of the heavy backtracking implied by the use of `atomic`. The solution, as I've
 said, is to implement the second grammar. This is, as we'll see, a little tricker:
 
 ```scala mdoc:silent:reset

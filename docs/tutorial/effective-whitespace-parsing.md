@@ -14,12 +14,12 @@ recognise the grammar itself.  The two concerns usually are spaces and comments.
 comments, the combinator `combinator.manyUntil` is _very_ useful. For example:
 
 ```scala
-import parsley.Parsley, Parsley.attempt
+import parsley.Parsley, Parsley.atomic
 import parsley.character.{whitespace, string, item, endOfLine}
 import parsley.combinator.{manyUntil, skipMany}
 import parsley.errors.combinator.ErrorMethods //for hide
 
-def symbol(str: String): Parsley[String] = attempt(string(str))
+def symbol(str: String): Parsley[String] = atomic(string(str))
 
 val lineComment = symbol("//") *> manyUntil(item, endOfLine)
 val multiComment = symbol("/*") *> manyUntil(item, symbol("*/"))
@@ -38,25 +38,25 @@ parser we can start using it!
 
 ## Lexemes
 Lexemes are indivisible chunks of the input, the sort usually produced by a lexer in a
-classical setup. The `symbol` combinator I defined above forms part of this: it uses `attempt`
+classical setup. The `symbol` combinator I defined above forms part of this: it uses `atomic`
 to make an indivisible string, either you read the entire thing or none of it. The next piece
 of the puzzle is a combinator called `lexeme`, which should perform a parser and then always
 read spaces after it:
 
 ```scala
-import parsley.Parsley, Parsley.attempt
+import parsley.Parsley, Parsley.atomic
 
 ...
 
 def lexeme[A](p: Parsley[A]): Parsley[A] = p <* skipWhitespace
-def token[A](p: Parsley[A]): Parsley[A] = lexeme(attempt(p))
+def token[A](p: Parsley[A]): Parsley[A] = lexeme(atomic(p))
 
 implicit def implicitSymbol(s: String): Parsley[String] = lexeme(symbol(s))
 ```
 
 The `token` combinator is a more general form of `symbol`, that works for all parsers, handling
 them atomically _and_ consuming whitespace after. Note that it's important to consume the whitespace
-outside the scope of the `attempt`, otherwise malformed whitespace might cause backtracking for an
+outside the scope of the `atomic`, otherwise malformed whitespace might cause backtracking for an
 otherwise legal token!
 
 With the `implicitSymbol` combinator, we can now treat all string literals as lexemes. This
@@ -68,13 +68,13 @@ Now let's take the example
 from [Building Expression Parsers] and see what needs to change to finish up recognising whitespace.
 
 ```scala
-import parsley.Parsley, Parsley.attempt
+import parsley.Parsley, Parsley.atomic
 import parsley.character.{digit, whitespace, string, item, endOfLine}
 import parsley.combinator.{manyUntil, skipMany}
 import parsley.expr.{precedence, Ops, InfixL}
 import parsley.errors.combinator.ErrorMethods //for hide
 
-def symbol(str: String): Parsley[String] = attempt(string(str))
+def symbol(str: String): Parsley[String] = atomic(string(str))
 
 val lineComment = symbol("//") *> manyUntil(item, endOfLine)
 val multiComment = symbol("/*") *> manyUntil(item, symbol("*/"))
@@ -82,7 +82,7 @@ val comment = lineComment <|> multiComment
 val skipWhitespace = skipMany(whitespace <|> comment).hide
 
 def lexeme[A](p: Parsley[A]): Parsley[A] = p <* skipWhitespace
-def token[A](p: Parsley[A]): Parsley[A] = lexeme(attempt(p))
+def token[A](p: Parsley[A]): Parsley[A] = lexeme(atomic(p))
 
 implicit def implicitSymbol(s: String): Parsley[String] = lexeme(symbol(s))
 
@@ -127,14 +127,14 @@ to limit the scope of these implicits, so we can be clear about which we mean wh
 what I mean, let's restructure the code a little for the parser and ensure we don't run into any issues.
 
 ```scala
-import parsley.Parsley, Parsley.attempt
+import parsley.Parsley, Parsley.atomic
 import parsley.character.{digit, whitespace, string, item, endOfLine}
 import parsley.combinator.{manyUntil, skipMany, eof}
 import parsley.expr.{precedence, Ops, InfixL}
 import parsley.errors.combinator.ErrorMethods //for hide
 
 object lexer {
-    private def symbol(str: String): Parsley[String] = attempt(string(str))
+    private def symbol(str: String): Parsley[String] = atomic(string(str))
 
     private val lineComment = symbol("//") *> manyUntil(item, endOfLine)
     private val multiComment = symbol("/*") *> manyUntil(item, symbol("*/"))
@@ -142,7 +142,7 @@ object lexer {
     private val skipWhitespace = skipMany(whitespace <|> comment).hide
 
     private def lexeme[A](p: Parsley[A]): Parsley[A] = p <* skipWhitespace
-    private def token[A](p: Parsley[A]): Parsley[A] = lexeme(attempt(p))
+    private def token[A](p: Parsley[A]): Parsley[A] = lexeme(atomic(p))
     def fully[A](p: Parsley[A]): Parsley[A] = skipWhitespace *> p <* eof
 
     val number = token(digit.foldLeft1[BigInt](0)((n, d) => n * 10 + d.asDigit))

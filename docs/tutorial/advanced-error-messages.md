@@ -34,7 +34,7 @@ object lexer {
     private val keywords = Set("while", "then", "else")
 
     private def lexeme[A](p: Parsley[A]): Parsley[A] = p <* skipWhitespace
-    private def token[A](p: Parsley[A]): Parsley[A] = lexeme(attempt(p))
+    private def token[A](p: Parsley[A]): Parsley[A] = lexeme(atomic(p))
 
     val identifier =
         token {
@@ -48,7 +48,7 @@ object lexer {
 
 To recap, the idea behind this parser is that it first reads some alpha-numeric characters, then
 converts them to a string. After this it ensures that the parsed identifier is not in `keywords`.
-The `attempt` is wrapped round that entire block so that, if we did read a keyword, we are able to
+The `atomic` is wrapped round that entire block so that, if we did read a keyword, we are able to
 backtrack out in case the keyword was indeed valid (for another branch). After we are done we can
 read whitespace. This time, let's take a look at the error messages when it goes wrong:
 
@@ -63,7 +63,7 @@ lexer.identifier.parse("then")
 ```
 
 Cool! But there is something bugging me about this message. It's pointing at column 5, but since we
-used `attempt` in `token`, surely no input was consumed? Let's verify:
+used `atomic` in `token`, surely no input was consumed? Let's verify:
 
 ```
 (lexer.identifier <|> "then").parse("then")
@@ -211,7 +211,7 @@ val identifier =
     }.label("identifier")
 ```
 
-Now, I've missed out an `attempt` (and so used `lexeme` instead of `token`) here because I know that
+Now, I've missed out an `atomic` (and so used `lexeme` instead of `token`) here because I know that
 if an identifier fails to read anything
 (barring keywords), it won't consume input in the process. In this parser, we first look ahead at
 the next piece of input and try and read an identifier, if we are successful, we filter it to check
@@ -379,7 +379,7 @@ object interpreter {
 
     private lazy val blit: Parsley[Eval[Boolean]] = "true" #> bool(true) <|> "false" #> bool(false)
     private lazy val comp: Parsley[Eval[Boolean]] = (expr <**> ("<" #> (less _) <|> "==" #> (equal _))) <*> expr
-    private lazy val btom: Parsley[Eval[Boolean]] = attempt("(" *> pred) <* ")" <|> blit <|> comp
+    private lazy val btom: Parsley[Eval[Boolean]] = atomic("(" *> pred) <* ")" <|> blit <|> comp
     private lazy val pred = precedence[Eval[Boolean]](btom)(
         Ops(Prefix)("not" #> not),
         Ops(InfixR)("&&" #> and),
@@ -517,7 +517,7 @@ private val _semiCheck =
     lookAhead(';'.hide) *> unexpected("semi-colon").explain("...")
 ```
 
-In fact, `lookAhead(p) *> failCombinator` is the same as `attempt(amend(p *> failCombinator)` when
+In fact, `lookAhead(p) *> failCombinator` is the same as `atomic(amend(p *> failCombinator)` when
 `p` doesn't fail having consumed input (which `';'` on its own can't).
 
 So, where else can we apply this technique? Let's see what happens if we miss out a closing brace
@@ -674,7 +674,7 @@ So, since both errors produce a "custom" unexpected error, the `expr` proper too
 quite what we wanted. Perhaps a natural reaction to learning this is to reverse their ordering...
 
 ```scala
-private lazy val expr = attempt(amend(_noBoolCheck("booleans cannot be integers"))) <|> precedence[Eval[Int]](atom)(
+private lazy val expr = atomic(amend(_noBoolCheck("booleans cannot be integers"))) <|> precedence[Eval[Int]](atom)(
     Ops(Prefix)("negate" #> negate),
     Ops(InfixL)("*" #> mul),
     Ops(InfixL)("+" #> add, "-" #> sub))
@@ -733,7 +733,7 @@ well worth really understanding why this worked out as it did. In the future, we
 debug combinator to help illustrate this (and I'll change this page to suit).
 
 Right, so now to tackle the other place where the boolean check can occur. This will require us to
-mark our first `_noBoolCheck` with an `attempt` to allow us to perform a second (again, we want to
+mark our first `_noBoolCheck` with an `atomic` to allow us to perform a second (again, we want to
 delay it as long as possible). We could, of course, move the `_noBoolCheck` somewhere else so that
 exactly one dominates each use site, but when this is a "last resort" mechanism, it doesn't make
 much of a difference.
@@ -744,7 +744,7 @@ private lazy val asgnStmt: Parsley[Eval[Unit]] =
                    "=" *> (expr <|> amend(_noBoolCheck("booleans cannot be assigned to variables"))))
 ```
 
-With this in place (and the aforementioned `attempt`) we get an error like:
+With this in place (and the aforementioned `atomic`) we get an error like:
 
 ```
 (line 1, column 5):

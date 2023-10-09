@@ -67,7 +67,7 @@ itself:
 ```scala
 lazy val bad = bad ~> ...
 lazy val badExpr = Add.lift(badExpr, '+' ~> badExpr) <|> number
-lazy val goodExpr = attempt((number <~ '+', goodExpr).zipped(Add)) <|> number
+lazy val goodExpr = atomic((number <~ '+', goodExpr).zipped(Add)) <|> number
 ```
 
 The first two parsers are both examples of left-recursive parsers, which are
@@ -76,8 +76,8 @@ recursive call in a strict position, and can be fixed with `unary_~` or by
 rearranging the `'+'` parser as above:
 
 ```scala
-lazy val goodExpr = attempt((number, '+' ~> goodExpr).zipped(Add)) <|> number
-lazy val goodExpr = attempt((number <~ '+', ~goodExpr).zipped(Add)) <|> number
+lazy val goodExpr = atomic((number, '+' ~> goodExpr).zipped(Add)) <|> number
+lazy val goodExpr = atomic((number <~ '+', ~goodExpr).zipped(Add)) <|> number
 ```
 
 ### My parser seems to infinite loop and the `debug` combinator shows it spinning forever

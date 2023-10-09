@@ -8,14 +8,14 @@ In the previous post, we saw the basic principles behind handling whitespace in 
 To remind ourselves of what we ended up lets pick up where we left off:
 
 ```scala
-import parsley.Parsley, Parsley.attempt
+import parsley.Parsley, Parsley.atomic
 import parsley.character.{digit, whitespace, string, item, endOfLine}
 import parsley.combinator.{manyUntil, skipMany, eof}
 import parsley.expr.{precedence, Ops, InfixL, Prefix}
 import parsley.errors.combinator.ErrorMethods //for hide
 
 object lexer {
-    private def symbol(str: String): Parsley[String] = attempt(string(str))
+    private def symbol(str: String): Parsley[String] = atomic(string(str))
 
     private val lineComment = symbol("//") *> manyUntil(item, endOfLine)
     private val multiComment = symbol("/*") *> manyUntil(item, symbol("*/"))
@@ -23,7 +23,7 @@ object lexer {
     private val skipWhitespace = skipMany(whitespace <|> comment).hide
 
     private def lexeme[A](p: Parsley[A]): Parsley[A] = p <* skipWhitespace
-    private def token[A](p: Parsley[A]): Parsley[A] = lexeme(attempt(p))
+    private def token[A](p: Parsley[A]): Parsley[A] = lexeme(atomic(p))
     def fully[A](p: Parsley[A]): Parsley[A] = skipWhitespace *> p <* eof
 
     val number = token(digit.foldLeft1[BigInt](0)((n, d) => n * 10 + d.asDigit))
@@ -215,7 +215,7 @@ object lexer {
     val keywords = Set("negate")
     val operators = Set("*", "+", "-")
 
-    private def symbol(str: String): Parsley[String] = attempt(string(str))
+    private def symbol(str: String): Parsley[String] = atomic(string(str))
 
     private val lineComment = symbol("//") *> manyUntil(item, endOfLine)
     private val multiComment = symbol("/*") *> manyUntil(item, symbol("*/"))
@@ -223,7 +223,7 @@ object lexer {
     private val skipWhitespace = skipMany(whitespace <|> comment).hide
 
     private def lexeme[A](p: =>Parsley[A]): Parsley[A] = p <* skipWhitespace
-    private def token[A](p: =>Parsley[A]): Parsley[A] = lexeme(attempt(p))
+    private def token[A](p: =>Parsley[A]): Parsley[A] = lexeme(atomic(p))
     def fully[A](p: =>Parsley[A]): Parsley[A] = skipWhitespace *> p <* eof
 
     val number = token(digit.foldLeft1[BigInt](0)((n, d) => n * 10 + d.asDigit))

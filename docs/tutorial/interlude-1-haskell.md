@@ -380,7 +380,7 @@ Now it's finally time to tackle the parser itself. Remember, our lexer handles a
 (except newlines) for us, and our bridge constructors would handle position information for us. The
 type of the AST is going to help us make sure that the parsers are constructed in the right way. One
 concern we need to be aware of is notice areas of the grammar where ambiguity lies, and make sure
-we resolve it properly with `attempt` (and only when needed!). Let's start at the bottom and work
+we resolve it properly with `atomic` (and only when needed!). Let's start at the bottom and work
 our way up: this means tackling, in order, atoms, expressions, patterns, clauses, types,
 declarations, and then finally data.
 
@@ -388,7 +388,7 @@ declarations, and then finally data.
 Let's make a start with `<term>`. There is nothing particular special about this, but we will need
 to be careful to handle the difference between tupled expressions and parenthesised expressions.
 There are a couple of ways we can try and tackle this: the first is to write both cases out and be
-sure to `attempt` one of them, so we can back out if required. The second is to parse them as one
+sure to `atomic` one of them, so we can back out if required. The second is to parse them as one
 case together and then disambiguate which of the constructors should be used in a bridge! I'm
 going to take the first approach for now, and then we can revisit later. Now for the `<term>`
 parser:
@@ -403,15 +403,15 @@ object parser {
 
     private def count1(p: =>Parsley[_]): Parsley[Int] = p.foldLeft1(0)((n, _) => n + 1)
 
-    private val `<literal>` = attempt(HsDouble(FLOAT)) <|> HsInt(INTEGER) <|> HsString(STRING) <|> HsChar(CHAR)
+    private val `<literal>` = atomic(HsDouble(FLOAT)) <|> HsInt(INTEGER) <|> HsString(STRING) <|> HsChar(CHAR)
     private val `<var-id>` = VarId(VAR_ID)
     private val `<con-id>` = ConId(CON_ID)
 
     private val `<expr>`: Parsley[Expr] = ???
 
     private val `<term>` = (`<var-id>` <|> `<con-id>` <|> (UnitCon <# "()")
-                        <|> attempt(TupleCon("(" *> count1(",") <* ")"))
-                        <|> attempt(ParensVal("(" *> `<expr>` <* ")"))
+                        <|> atomic(TupleCon("(" *> count1(",") <* ")"))
+                        <|> atomic(ParensVal("(" *> `<expr>` <* ")"))
                         <|> TupleLit("(" *> sepBy1(`<expr>`, ",") <* ")")
                         <|> ListLit("[" *> sepBy(`<expr>`, ",") <* "]")
                         <|> `<literal>`)
@@ -517,7 +517,7 @@ and its sub grammars.
 
 ### Clauses
 These set of parsers are similar to what we saw with `<term>`. There are going to be elements of
-ambiguity in the grammar that need to be resolved with `attempt`, specifically those involving
+ambiguity in the grammar that need to be resolved with `atomic`, specifically those involving
 parentheses. But other than that there isn't anything really new here.
 
 ```scala
@@ -529,14 +529,14 @@ object parser {
     private lazy val `<clause>` =
         Clause(`<var-id>`, many(`<pat-naked>`), option(`<guard>`), "=" *> `<expr>`)
     private lazy val `<pat-naked>`: Parsley[PatNaked] =
-        (`<var-id>` <|> attempt(`<pat-con>`) <|> (UnitCon <# "()") <|> (NilCon <# "[]") <|> `<literal>` <|> (Wild <# "_")
-     <|> attempt(NestedPat("(" *> `<pat>` <* ")"))
+        (`<var-id>` <|> atomic(`<pat-con>`) <|> (UnitCon <# "()") <|> (NilCon <# "[]") <|> `<literal>` <|> (Wild <# "_")
+     <|> atomic(NestedPat("(" *> `<pat>` <* ")"))
      <|> PatTuple("(" *> sepBy1(`<pat>`, ",") <* ")")
      <|> PatList("[" *> sepBy(`<pat>`, ",") <* "]"))
     private lazy val `<pat>` = chain.right1(`<pat-paren>`, PatCons <# ":")
-    private lazy val `<pat-paren>` = attempt(`<pat-app>`) <|> `<pat-naked>`
+    private lazy val `<pat-paren>` = atomic(`<pat-app>`) <|> `<pat-naked>`
     private lazy val `<pat-app>` = PatApp(`<pat-con>`, some(`<pat-naked>`))
-    private lazy val `<pat-con>` = (attempt("(" *> (ConsCon <# ":") <* ")")
+    private lazy val `<pat-con>` = (atomic("(" *> (ConsCon <# ":") <* ")")
                                 <|> TupleCon("(" *> count1(",") <* ")")
                                 <|> `<con-id>`)
 
@@ -548,8 +548,8 @@ object parser {
 
 Like I said, nothing too interesting here. Notice, however, that for `<pat>` I have used a
 `chain.right1`: we've been used to using `precedence`, but in cases like these the `chain`s are just
-so much more simple. Don't be afraid to make use of them! There are plenty of  `attempt`s here that we
-will come back and eliminate later on: notably, the `attempt` in `<pat-paren>` is used to guard
+so much more simple. Don't be afraid to make use of them! There are plenty of  `atomic`s here that we
+will come back and eliminate later on: notably, the `atomic` in `<pat-paren>` is used to guard
 against a `<pat-con>` being parsed without any `<pat-naked>` - this needs to be parsed again in
 `<pat-naked>` itself.
 
@@ -567,23 +567,23 @@ object parser {
     private lazy val `<type-app>` = `<type-atom>`.reduceLeft(TyApp)
     private lazy val `<type-atom>` = (`<type-con>` <|> `<var-id>` <|> (UnitTy <# "()")
                                   <|> ListTy("[" *> `<type>` <* "]")
-                                  <|> attempt(ParenTy("(" *> `<type>` <* ")"))
+                                  <|> atomic(ParenTy("(" *> `<type>` <* ")"))
                                   <|> TupleTy("(" *> sepBy1(`<type>`, ",") <* ")"))
     private val `<type-con>` = (`<con-id>`
                             <|> (ListConTy <# "[]")
-                            <|> attempt("(" *> (FunConTy <# "->") <* ")")
-                            <|> attempt(TupleConTy("(" *> count1(",") <* ")")))
+                            <|> atomic("(" *> (FunConTy <# "->") <* ")")
+                            <|> atomic(TupleConTy("(" *> count1(",") <* ")")))
     ...
 }
 ```
 
 We can see another instance of `chain.right1` out in the wild here, as well as the other `reduceLeft`
-used for type application. Yet again, there is some ambiguity evidenced by the `attempt` here, and
-just like in the other instances, it's to do with parentheses. The second `attempt` in `<type-con>` is
+used for type application. Yet again, there is some ambiguity evidenced by the `atomic` here, and
+just like in the other instances, it's to do with parentheses. The second `atomic` in `<type-con>` is
 interesting: it's not clear from the rule itself why it is there. In fact, it's there because we
 need to be able to backtrack out of `<type-con>` during `<type-atom>`; however, since the ambiguity
 only arises from the tuple constructor (the function constructor doesn't cause ambiguity in this case,
-because of the existing `attempt`), we don't need to enable backtracking on the _entire_ rule.
+because of the existing `atomic`), we don't need to enable backtracking on the _entire_ rule.
 Finally we can move onto the top level parsers and start tackling the performance gotchas: this is
 the more challenging aspect of managing a parser of this size and complexity.
 
@@ -602,7 +602,7 @@ object parser {
     def parse[Err: ErrorBuilder](input: String): Result[Err, List[ProgramUnit]] =
         `<program>`.parse(input)
 
-    private lazy val `<program>` = fully(sepEndBy(`<data>` <|> attempt(`<declaration>`) <|> `<clause>`, skipSome(NEWLINE)))
+    private lazy val `<program>` = fully(sepEndBy(`<data>` <|> atomic(`<declaration>`) <|> `<clause>`, skipSome(NEWLINE)))
 
     private lazy val `<data>` = Data("data" *> `<con-id>`, many(`<var-id>`), "=" *> `<constructors>`)
     private lazy val `<constructors>` = sepBy1(`<constructor>`, "|")
@@ -616,7 +616,7 @@ object parser {
 
 We do have to be careful here, there is some overlap between `<declaration>` and `<clause>`. This,
 unfortunately, is unavoidable without more involved work, but the overlap is just a single variable
-name, so it's fairly minor. That being said, really, the scope on that `attempt` is too big: once we've
+name, so it's fairly minor. That being said, really, the scope on that `atomic` is too big: once we've
 seen the `"::"`, we _know_ for sure that everything that follows (good or bad) is a type. At the
 moment, if something bad happens in the type, it can backtrack all the way out and try reading a
 clause instead. This isn't too much of a problem for us here, since the clause will also fail and
@@ -637,7 +637,7 @@ remaining warts in this version of our parser. There are several instances of ba
 very avoidable, and others are potentially expensive. We will progress through them, in some cases
 making incremental changes. As I've said before, dealing with backtracking in an effective way is in
 most cases the trickiest part of actually writing a parser. Make sure you understand how the parser
-has been built up so far and convince yourself about why each instance of `attempt` in the previous
+has been built up so far and convince yourself about why each instance of `atomic` in the previous
 parsers has been necessary before continuing.
 
 #### Part 1: `<pat-con>`, `<type-con>`, and `<term>`
@@ -646,18 +646,18 @@ so we will start with them first. Let's remind ourselves of the three rules in q
 the parts we can handle:
 
 ```scala
-private lazy val `<pat-con>` = (attempt("(" *> (ConsCon <# ":") <* ")")
+private lazy val `<pat-con>` = (atomic("(" *> (ConsCon <# ":") <* ")")
                             <|> TupleCon("(" *> count1(",") <* ")")
                             <|> `<con-id>`)
 
 private val `<type-con>` = (`<con-id>`
                         <|> (ListConTy <# "[]")
-                        <|> attempt("(" *> (FunConTy <# "->") <* ")")
-                        <|> attempt(TupleConTy("(" *> count1(",") <* ")")))
+                        <|> atomic("(" *> (FunConTy <# "->") <* ")")
+                        <|> atomic(TupleConTy("(" *> count1(",") <* ")")))
 
 private val `<term>` = (`<var-id>` <|> `<con-id>` <|> (UnitCon <# "()")
-                    <|> attempt(TupleCon("(" *> count1(",") <* ")"))
-                    <|> attempt(ParensVal("(" *> `<expr>` <* ")"))
+                    <|> atomic(TupleCon("(" *> count1(",") <* ")"))
+                    <|> atomic(ParensVal("(" *> `<expr>` <* ")"))
                     <|> TupleLit("(" *> sepBy1(`<expr>`, ",") <* ")")
                     <|> ListLit("[" *> sepBy(`<expr>`, ",") <* "]")
                     <|> `<literal>`)
@@ -670,18 +670,18 @@ backtracking. Thankfully, these are all relatively easy to fix: we just need to 
 parentheses through the rules that contain them on the _inside_. This is a nice warm-up exercise:
 
 ```scala
-private lazy val `<pat-con>` = (attempt("(" *> (ConsCon <# ":") <* ")")
+private lazy val `<pat-con>` = (atomic("(" *> (ConsCon <# ":") <* ")")
                             <|> ("(" *> TupleCon(count1(",")) <* ")")
                             <|> `<con-id>`)
 
 private val `<type-con>` = (`<con-id>`
                         <|> (ListConTy <# "[]")
-                        <|> attempt("(" *> (FunConTy <# "->") <* ")")
-                        <|> attempt("(" *> TupleConTy(count1(",")) <* ")"))
+                        <|> atomic("(" *> (FunConTy <# "->") <* ")")
+                        <|> atomic("(" *> TupleConTy(count1(",")) <* ")"))
 
 private val `<term>` = (`<var-id>` <|> `<con-id>` <|> (UnitCon <# "()")
-                    <|> attempt("(" *> TupleCon(count1(",")) <* ")")
-                    <|> attempt("(" *> ParensVal(`<expr>`) <* ")")
+                    <|> atomic("(" *> TupleCon(count1(",")) <* ")")
+                    <|> atomic("(" *> ParensVal(`<expr>`) <* ")")
                     <|> ("(" *> TupleLit(sepBy1(`<expr>`, ",")) <* ")")
                     <|> ListLit("[" *> sepBy(`<expr>`, ",") <* "]")
                     <|> `<literal>`)
@@ -696,19 +696,19 @@ private lazy val `<pat-con>` = (("(" *> (ConsCon <# ":" <|> TupleCon(count1(",")
 
 private val `<type-con>` = (`<con-id>`
                         <|> (ListConTy <# "[]")
-                        <|> attempt("(" *> (FunConTy <# "->" <|> TupleConTy(count1(","))) <* ")"))
+                        <|> atomic("(" *> (FunConTy <# "->" <|> TupleConTy(count1(","))) <* ")"))
 
 private val `<term>` = (`<var-id>` <|> `<con-id>` <|> (UnitCon <# "()")
                     <|> ("(" *> (TupleCon(count1(","))
-                             <|> attempt(ParensVal(`<expr>`))
+                             <|> atomic(ParensVal(`<expr>`))
                              <|> TupleLit(sepBy1(`<expr>`, ","))) <* ")")
                     <|> ListLit("[" *> sepBy(`<expr>`, ",") <* "]")
                     <|> `<literal>`)
 ```
 
-This has immediately eliminated three of the `attempt`s, but one persists inside `<term>`: this is
+This has immediately eliminated three of the `atomic`s, but one persists inside `<term>`: this is
 because `ParensVal` and `TupleLit` both share an `<expr>`. This is a bit trickier to eliminate, but
-let's move on to tackling these. Note that the other `attempt` in `<type-con>` is due to a conflict
+let's move on to tackling these. Note that the other `atomic` in `<type-con>` is due to a conflict
 in the wider grammar, we can look at that in part 4.
 
 #### Part 2: `<pat-naked>`, `<type-atom>`, and `<term>` (again)
@@ -717,19 +717,19 @@ is less obvious. Let's start by recapping what the three rules are:
 
 ```scala
 private lazy val `<pat-naked>`: Parsley[PatNaked] =
-    (`<var-id>` <|> attempt(`<pat-con>`) <|> (UnitCon <# "()") <|> (NilCon <# "[]") <|> `<literal>` <|> (Wild <# "_")
- <|> attempt(NestedPat("(" *> `<pat>` <* ")"))
+    (`<var-id>` <|> atomic(`<pat-con>`) <|> (UnitCon <# "()") <|> (NilCon <# "[]") <|> `<literal>` <|> (Wild <# "_")
+ <|> atomic(NestedPat("(" *> `<pat>` <* ")"))
  <|> PatTuple("(" *> sepBy1(`<pat>`, ",") <* ")")
  <|> PatList("[" *> sepBy(`<pat>`, ",") <* "]"))
 
 private lazy val `<type-atom>` = (`<type-con>` <|> `<var-id>` <|> (UnitTy <# "()")
                               <|> ListTy("[" *> `<type>` <* "]")
-                              <|> attempt(ParenTy("(" *> `<type>` <* ")"))
+                              <|> atomic(ParenTy("(" *> `<type>` <* ")"))
                               <|> TupleTy("(" *> sepBy1(`<type>`, ",") <* ")"))
 
 private val `<term>` = (`<var-id>` <|> `<con-id>` <|> (UnitCon <# "()")
                     <|> ("(" *> (TupleCon(count1(","))
-                             <|> attempt(ParensVal(`<expr>`))
+                             <|> atomic(ParensVal(`<expr>`))
                              <|> TupleLit(sepBy1(`<expr>`, ","))) <* ")")
                     <|> ListLit("[" *> sepBy(`<expr>`, ",") <* "]")
                     <|> `<literal>`)
@@ -739,25 +739,25 @@ First, let's do what we did to `<term>` to `<pat-naked>` and `<type-atom>`:
 
 ```scala
 private lazy val `<pat-naked>`: Parsley[PatNaked] =
-    (`<var-id>` <|> attempt(`<pat-con>`) <|> (UnitCon <# "()") <|> (NilCon <# "[]") <|> `<literal>` <|> (Wild <# "_")
- <|> ("(" *> (attempt(NestedPat(`<pat>`))
+    (`<var-id>` <|> atomic(`<pat-con>`) <|> (UnitCon <# "()") <|> (NilCon <# "[]") <|> `<literal>` <|> (Wild <# "_")
+ <|> ("(" *> (atomic(NestedPat(`<pat>`))
           <|> PatTuple(sepBy1(`<pat>`, ","))) <* ")")
  <|> PatList("[" *> sepBy(`<pat>`, ",") <* "]"))
 
 private lazy val `<type-atom>` = (`<type-con>` <|> `<var-id>` <|> (UnitTy <# "()")
                               <|> ListTy("[" *> `<type>` <* "]")
-                              <|> ("(" *> (attempt(ParenTy(`<type>`))
+                              <|> ("(" *> (atomic(ParenTy(`<type>`))
                                        <|> TupleTy(sepBy1(`<type>`, ","))) <* ")"))
 
 private val `<term>` = (`<var-id>` <|> `<con-id>` <|> (UnitCon <# "()")
                     <|> ("(" *> (TupleCon(count1(","))
-                             <|> attempt(ParensVal(`<expr>`))
+                             <|> atomic(ParensVal(`<expr>`))
                              <|> TupleLit(sepBy1(`<expr>`, ","))) <* ")")
                     <|> ListLit("[" *> sepBy(`<expr>`, ",") <* "]")
                     <|> `<literal>`)
 ```
 
-Hopefully you can see that all three rules are similar to each other: they all have an `attempt`
+Hopefully you can see that all three rules are similar to each other: they all have an `atomic`
 _inside_ the factored parentheses. The problem is that they use different bridge constructors and the
 `sepBy1` does not allow for easy factoring. That being said, we could deal with this by creating... a
 new _**bridge factory**_! Let's take a look at them:
@@ -793,7 +793,7 @@ adjust our parsers:
 
 ```scala
 private lazy val `<pat-naked>`: Parsley[PatNaked] =
-    (`<var-id>` <|> attempt(`<pat-con>`) <|> (UnitCon <# "()") <|> (NilCon <# "[]") <|> `<literal>` <|> (Wild <# "_")
+    (`<var-id>` <|> atomic(`<pat-con>`) <|> (UnitCon <# "()") <|> (NilCon <# "[]") <|> `<literal>` <|> (Wild <# "_")
  <|> NestedPatOrPatTuple("(" *> sepBy1(`<pat>`, ",") <* ")")
  <|> PatList("[" *> sepBy(`<pat>`, ",") <* "]"))
 
@@ -808,7 +808,7 @@ private val `<term>` = (`<var-id>` <|> `<con-id>` <|> (UnitCon <# "()")
                     <|> `<literal>`)
 ```
 
-By making use of our special bridge factories, we've eliminated the pesky `attempt`s. I've put the
+By making use of our special bridge factories, we've eliminated the pesky `atomic`s. I've put the
 parentheses back inside the bridge factory for the `<pat-naked>` and `<type-atom>` rules, because it
 cuts down on a set of parentheses, and, in my opinion, it looks a bit cleaner.
 
@@ -822,12 +822,12 @@ val INTEGER = lexer.lexeme.numeric.natural.number
 val FLOAT = lexer.lexeme.numeric.positiveReal.number
 val INT_OR_FLOAT = lexer.lexeme.numeric.unsignedCombined.number
 */
-private val `<literal>` = attempt(HsDouble(FLOAT)) <|> HsInt(INTEGER) <|> HsString(STRING) <|> HsChar(CHAR)
+private val `<literal>` = atomic(HsDouble(FLOAT)) <|> HsInt(INTEGER) <|> HsString(STRING) <|> HsChar(CHAR)
 ```
 
 The problem here is that floats and ints share a common leading prefix: the whole number part. When
 we defined the `lexer`, I mentioned that it supports a `naturalOrFloat` token. Now it's time to make
-use of it to remove this `attempt`. Our first thought might be to make a bridge factory that can
+use of it to remove this `atomic`. Our first thought might be to make a bridge factory that can
 accomodate either of them, and that would be a fine idea:
 
 ```scala
@@ -860,13 +860,13 @@ branch(p, pure(f), pure(g)) == p.map(_.fold(f, g))
 ```
 
 #### Part 4: Loose ends
-At this point, there are four `attempt`s left in the entire parser: one in `<type-con>`, one in
+At this point, there are four `atomic`s left in the entire parser: one in `<type-con>`, one in
 `<pat-paren>`, one in `<pat-naked>`, and, finally, one in `<program>`. At this point it gets much
 harder to remove them without altering the grammar substantially. Let's see how much more we can do
 to remove them and explore some of the more dramatic changes it entails to the parser. We'll start
-with the `attempt` in `<type-con>`.
+with the `atomic` in `<type-con>`.
 
-The reason for this `attempt` is more obvious when we compare it with `<type-atom>`:
+The reason for this `atomic` is more obvious when we compare it with `<type-atom>`:
 
 ```scala
 private lazy val `<type-atom>` = (`<type-con>` <|> `<var-id>` <|> (UnitTy <# "()")
@@ -874,12 +874,12 @@ private lazy val `<type-atom>` = (`<type-con>` <|> `<var-id>` <|> (UnitTy <# "()
                               <|> ParenTyOrTupleTy("(" *> sepBy1(`<type>`, ",") <* ")"))
 private val `<type-con>` = (`<con-id>`
                         <|> (ListConTy <# "[]")
-                        <|> attempt("(" *> (FunConTy <# "->" <|> TupleConTy(count1(","))) <* ")"))
+                        <|> atomic("(" *> (FunConTy <# "->" <|> TupleConTy(count1(","))) <* ")"))
 ```
 
-The `attempt` in `<type-con>` is used to backtrack out of the parentheses, since `ParenTyOrTupleTy`
+The `atomic` in `<type-con>` is used to backtrack out of the parentheses, since `ParenTyOrTupleTy`
 will also consume them if we didn't see a `->` or a `,`. Thankfully, `<type-con>` is used in one
-place in the parser, and we are looking at it! To fix this `attempt` we just need to be destructive
+place in the parser, and we are looking at it! To fix this `atomic` we just need to be destructive
 and stop following the grammar as rigidly as we have been. Let's inline `<type-con>` into `<type-atom>`
 to start with:
 
@@ -887,7 +887,7 @@ to start with:
 private lazy val `<type-atom>` =
        (`<con-id>`
     <|> (ListConTy <# "[]")
-    <|> attempt("(" *> (FunConTy <# "->" <|> TupleConTy(count1(","))) <* ")")
+    <|> atomic("(" *> (FunConTy <# "->" <|> TupleConTy(count1(","))) <* ")")
     <|> `<var-id>` <|> (UnitTy <# "()")
     <|> ListTy("[" *> `<type>` <* "]")
     <|> ParenTyOrTupleTy("(" *> sepBy1(`<type>`, ",") <* ")"))
@@ -903,12 +903,12 @@ private lazy val `<type-atom>` =
        (`<con-id>` <|> `<var-id>`
     <|> (UnitTy <# "()") <|> (ListConTy <# "[]")
     <|> ListTy("[" *> `<type>` <* "]")
-    <|> attempt("(" *> (FunConTy <# "->" <|> TupleConTy(count1(","))) <* ")")
+    <|> atomic("(" *> (FunConTy <# "->" <|> TupleConTy(count1(","))) <* ")")
     <|> ParenTyOrTupleTy("(" *> sepBy1(`<type>`, ",") <* ")"))
 ```
 
 This parser is a bit neater, and now we can apply our favourite tricks from part 1 to resolve this
-`attempt`:
+`atomic`:
 
 ```scala
 private lazy val `<type-atom>` =
@@ -924,35 +924,35 @@ Nice! One down, three to go. Let's have a look at the two involving patterns tog
 
 ```scala
 private lazy val `<pat-naked>`: Parsley[PatNaked] =
-        (`<var-id>` <|> attempt(`<pat-con>`) <|> (UnitCon <# "()") <|> (NilCon <# "[]") <|> `<literal>` <|> (Wild <# "_")
+        (`<var-id>` <|> atomic(`<pat-con>`) <|> (UnitCon <# "()") <|> (NilCon <# "[]") <|> `<literal>` <|> (Wild <# "_")
      <|> NestedPatOrPatTuple("(" *> sepBy1(`<pat>`, ",") <* ")")
      <|> PatList("[" *> sepBy(`<pat>`, ",") <* "]"))
-private lazy val `<pat-paren>` = attempt(`<pat-app>`) <|> `<pat-naked>`
+private lazy val `<pat-paren>` = atomic(`<pat-app>`) <|> `<pat-naked>`
 private lazy val `<pat-app>` = PatApp(`<pat-con>`, some(`<pat-naked>`))
 private lazy val `<pat-con>` = (("(" *> (ConsCon <# ":" <|> TupleCon(count1(","))) <* ")")
                             <|> `<con-id>`)
 ```
 
 I've omitted the `<pat>` rule here, since it's not relevant. Right, so the interaction of these rules
-is quite intricate! The `attempt` in `<pat-paren>` is there because `<pat-app>` reads a `<pat-con>`
-and `<pat-naked>` can also read one of those. Additionally, within `<pat-naked>`, the `attempt` is
+is quite intricate! The `atomic` in `<pat-paren>` is there because `<pat-app>` reads a `<pat-con>`
+and `<pat-naked>` can also read one of those. Additionally, within `<pat-naked>`, the `atomic` is
 guarding against yet more parentheses ambiguity caused by `ConsCon`, `TupleCon`, and
-`NestedPatOrPatTuple`. Now, our first thought might be that we can eliminate the `attempt` within
+`NestedPatOrPatTuple`. Now, our first thought might be that we can eliminate the `atomic` within
 `<pat-naked>` with the same strategy we used for `<type-con>`; we certainly could, but `<pat-con>`
 is used in _two_ places, so doing so will cause duplication in the parser. This is a trade-off:
 inlining `<pat-con>` will eliminate backtracking and make the parser more efficient, but that comes
 at the cost of increased code size; in this case, in fact, the backtracking is limited to a single
 character, which is relatively cheap, _and_ the size of the rule is small, so inlining it will not
 increase the code size significantly. It doesn't really matter either way what we do, so let's
-reinforce our factoring skills and duplicate the code to eliminate the `attempt`!
+reinforce our factoring skills and duplicate the code to eliminate the `atomic`!
 
 ```scala
 private lazy val `<pat-naked>`: Parsley[PatNaked] =
         (`<var-id>` <|> `<con-id>` <|> (UnitCon <# "()") <|> (NilCon <# "[]") <|> `<literal>` <|> (Wild <# "_")
-     <|> attempt("(" *> (ConsCon <# ":" <|> TupleCon(count1(","))) <* ")")
+     <|> atomic("(" *> (ConsCon <# ":" <|> TupleCon(count1(","))) <* ")")
      <|> NestedPatOrPatTuple("(" *> sepBy1(`<pat>`, ",") <* ")")
      <|> PatList("[" *> sepBy(`<pat>`, ",") <* "]"))
-private lazy val `<pat-paren>` = attempt(`<pat-app>`) <|> `<pat-naked>`
+private lazy val `<pat-paren>` = atomic(`<pat-app>`) <|> `<pat-naked>`
 private lazy val `<pat-app>` = PatApp(`<pat-con>`, some(`<pat-naked>`))
 private lazy val `<pat-con>` = (("(" *> (ConsCon <# ":" <|> TupleCon(count1(","))) <* ")")
                             <|> `<con-id>`)
@@ -968,16 +968,16 @@ private lazy val `<pat-naked>`: Parsley[PatNaked] =
               <|> TupleCon(count1(","))
               <|> NestedPatOrPatTuple(sepBy1(`<pat>`, ","))) <* ")")
      <|> PatList("[" *> sepBy(`<pat>`, ",") <* "]"))
-private lazy val `<pat-paren>` = attempt(`<pat-app>`) <|> `<pat-naked>`
+private lazy val `<pat-paren>` = atomic(`<pat-app>`) <|> `<pat-naked>`
 private lazy val `<pat-app>` = PatApp(`<pat-con>`, some(`<pat-naked>`))
 private lazy val `<pat-con>` = (("(" *> (ConsCon <# ":" <|> TupleCon(count1(","))) <* ")")
                             <|> `<con-id>`)
 ```
 
-Nice, another `attempt` down! Now, what about the `attempt` in `<pat-paren>`? Well, it turns out
-that, by eliminating the first `attempt`, we've stopped ourselves from being able to deal with this one!
+Nice, another `atomic` down! Now, what about the `atomic` in `<pat-paren>`? Well, it turns out
+that, by eliminating the first `atomic`, we've stopped ourselves from being able to deal with this one!
 The reason is that we've cannibalised the common `<pat-con>` structure into our factored parentheses
-in `<pat-naked>`: oops! This `attempt` is actually worse than the other one, since it can backtrack
+in `<pat-naked>`: oops! This `atomic` is actually worse than the other one, since it can backtrack
 out of an entire `<pat-con>` as opposed to just a single `(`. So, could we undo what we've just done
 and fix this one instead? We certainly could; but this transformation is very violent since
 `<pat-naked>` appears in other places in the parser. That being said, lets do it!
@@ -986,10 +986,10 @@ The first step is to return to our old parser:
 
 ```scala
 private lazy val `<pat-naked>`: Parsley[PatNaked] =
-        (`<var-id>` <|> attempt(`<pat-con>`) <|> (UnitCon <# "()") <|> (NilCon <# "[]") <|> `<literal>` <|> (Wild <# "_")
+        (`<var-id>` <|> atomic(`<pat-con>`) <|> (UnitCon <# "()") <|> (NilCon <# "[]") <|> `<literal>` <|> (Wild <# "_")
      <|> NestedPatOrPatTuple("(" *> sepBy1(`<pat>`, ",") <* ")")
      <|> PatList("[" *> sepBy(`<pat>`, ",") <* "]"))
-private lazy val `<pat-paren>` = attempt(`<pat-app>`) <|> `<pat-naked>`
+private lazy val `<pat-paren>` = atomic(`<pat-app>`) <|> `<pat-naked>`
 private lazy val `<pat-app>` = PatApp(`<pat-con>`, some(`<pat-naked>`))
 private lazy val `<pat-con>` = (("(" *> (ConsCon <# ":" <|> TupleCon(count1(","))) <* ")")
                             <|> `<con-id>`)
@@ -999,12 +999,12 @@ Now, we know that the `<pat-con>` is the problematic bit here, so let's break th
 two rules:
 
 ```scala
-private lazy val `<pat-naked>` = attempt(`<pat-con>`) <|> `<pat-naked'>`
+private lazy val `<pat-naked>` = atomic(`<pat-con>`) <|> `<pat-naked'>`
 private lazy val `<pat-naked'>`: Parsley[PatNaked] =
         (`<var-id>` <|> (UnitCon <# "()") <|> (NilCon <# "[]") <|> `<literal>` <|> (Wild <# "_")
      <|> NestedPatOrPatTuple("(" *> sepBy1(`<pat>`, ",") <* ")")
      <|> PatList("[" *> sepBy(`<pat>`, ",") <* "]"))
-private lazy val `<pat-paren>` = attempt(`<pat-app>`) <|> attempt(`<pat-con>`) <|> `<pat-naked'>`
+private lazy val `<pat-paren>` = atomic(`<pat-app>`) <|> atomic(`<pat-con>`) <|> `<pat-naked'>`
 private lazy val `<pat-app>` = PatApp(`<pat-con>`, some(`<pat-naked>`))
 private lazy val `<pat-con>` = (("(" *> (ConsCon <# ":" <|> TupleCon(count1(","))) <* ")")
                             <|> `<con-id>`)
@@ -1015,13 +1015,13 @@ clear that the part we are trying to factor is the `<pat-con>`. In fact, let's d
 shuffling and move it into `<pat-app>`:
 
 ```scala
-private lazy val `<pat-naked>` = attempt(`<pat-con>`) <|> `<pat-naked'>`
+private lazy val `<pat-naked>` = atomic(`<pat-con>`) <|> `<pat-naked'>`
 private lazy val `<pat-naked'>`: Parsley[PatNaked] =
         (`<var-id>` <|> (UnitCon <# "()") <|> (NilCon <# "[]") <|> `<literal>` <|> (Wild <# "_")
      <|> NestedPatOrPatTuple("(" *> sepBy1(`<pat>`, ",") <* ")")
      <|> PatList("[" *> sepBy(`<pat>`, ",") <* "]"))
-private lazy val `<pat-paren>` = attempt(`<pat-app>`) <|> `<pat-naked'>`
-private lazy val `<pat-app>` = attempt(PatApp(`<pat-con>`, some(`<pat-naked>`))) <|> `<pat-con>`
+private lazy val `<pat-paren>` = atomic(`<pat-app>`) <|> `<pat-naked'>`
+private lazy val `<pat-app>` = atomic(PatApp(`<pat-con>`, some(`<pat-naked>`))) <|> `<pat-con>`
 private lazy val `<pat-con>` = (("(" *> (ConsCon <# ":" <|> TupleCon(count1(","))) <* ")")
                             <|> `<con-id>`)
 ```
@@ -1043,18 +1043,18 @@ Now, compared to the original `PatApp` bridge constructor, this one returns a `P
 parser looks like now:
 
 ```scala
-private lazy val `<pat-naked>` = attempt(`<pat-con>`) <|> `<pat-naked'>`
+private lazy val `<pat-naked>` = atomic(`<pat-con>`) <|> `<pat-naked'>`
 private lazy val `<pat-naked'>`: Parsley[PatNaked] =
         (`<var-id>` <|> (UnitCon <# "()") <|> (NilCon <# "[]") <|> `<literal>` <|> (Wild <# "_")
      <|> NestedPatOrPatTuple("(" *> sepBy1(`<pat>`, ",") <* ")")
      <|> PatList("[" *> sepBy(`<pat>`, ",") <* "]"))
-private lazy val `<pat-paren>` = attempt(`<pat-app>`) <|> `<pat-naked'>`
+private lazy val `<pat-paren>` = atomic(`<pat-app>`) <|> `<pat-naked'>`
 private lazy val `<pat-app>` = PatAppIfNonEmpty(`<pat-con>`, many(`<pat-naked>`))
 private lazy val `<pat-con>` = (("(" *> (ConsCon <# ":" <|> TupleCon(count1(","))) <* ")")
                             <|> `<con-id>`)
 ```
 
-Now, since we've switched to a `many`, we can actually push both of our `attempt`s down into the
+Now, since we've switched to a `many`, we can actually push both of our `atomic`s down into the
 `<pat-con>` and leave it at that:
 
 ```scala
@@ -1065,16 +1065,16 @@ private lazy val `<pat-naked'>`: Parsley[PatNaked] =
      <|> PatList("[" *> sepBy(`<pat>`, ",") <* "]"))
 private lazy val `<pat-paren>` = `<pat-app>` <|> `<pat-naked'>`
 private lazy val `<pat-app>` = PatAppIfNonEmpty(`<pat-con>`, many(`<pat-naked>`))
-private lazy val `<pat-con>` = (attempt("(" *> (ConsCon <# ":"
+private lazy val `<pat-con>` = (atomic("(" *> (ConsCon <# ":"
                                             <|> TupleCon(count1(","))) <* ")")
                             <|> `<con-id>`)
 ```
 
-So, can we remove that last `attempt`? No. At least not without a collosal amount of very destructive
+So, can we remove that last `atomic`? No. At least not without a collosal amount of very destructive
 refactoring of the grammar. What we can do, however, is make its scope ever so slightly smaller:
 
 ```scala
-private lazy val `<pat-con>` = ((attempt("(" *> (ConsCon <# ":" <|> TupleCon(count1(",")))) <* ")")
+private lazy val `<pat-con>` = ((atomic("(" *> (ConsCon <# ":" <|> TupleCon(count1(",")))) <* ")")
                             <|> `<con-id>`)
 ```
 
@@ -1082,17 +1082,17 @@ All I've done there is move it one parser to the left, that way, we commit to th
 we've seen either a `,` or a `:` and can't backtrack out of the closing bracket. That's as good as
 we're going to get. A little unsatisfying, perhaps, but it's really such a minor point.
 
-So, now what? Well, we have one final `attempt` we can look at. And it's trickier than it looks.
+So, now what? Well, we have one final `atomic` we can look at. And it's trickier than it looks.
 
 ```scala
-private lazy val `<program>` = atomic(sepEndBy(`<data>` <|> attempt(`<declaration>`) <|> `<clause>`, skipSome(NEWLINE)))
+private lazy val `<program>` = atomic(sepEndBy(`<data>` <|> atomic(`<declaration>`) <|> `<clause>`, skipSome(NEWLINE)))
 
 private lazy val `<declaration>` = Decl(`<var-id>`, "::" *> `<type>`)
 
 private lazy val `<clause>` = Clause(`<var-id>`, many(`<pat-naked>`), option(`<guard>`), "=" *> `<expr>`)
 ```
 
-I've skipped out the irrelevant `<data>` parser here. So, from the outset, this `attempt` doesn't
+I've skipped out the irrelevant `<data>` parser here. So, from the outset, this `atomic` doesn't
 look so bad: both `<declaration>` and `<clause>` share a `<var-id>`. This, in theory, should be easy
 to factor out. The problem is the bridges: when we factor out `<var-id>` we no longer have the right
 shape to use their bridges. You might think that the solution is to introduce an `Either`, like we
@@ -1195,7 +1195,7 @@ Much more straightforward, with no effect on any other bridge! This is worth con
 find yourself in this sort of position (no pun intended). That being said, in our case we have opted
 not to track position information in the parser, so I'm going to go with the `<**>` based version,
 which is slightly cleaner and a _tiny_ bit more efficient. Regardless of which method we pick, however,
-that pesky `attempt` is gone! That leaves us in a final state with a _single_ `attempt` which has a
+that pesky `atomic` is gone! That leaves us in a final state with a _single_ `atomic` which has a
 maximum backtrack of one character. In other words, this parser runs in linear-time. Excellent!
 
 ## Concluding Thoughts
@@ -1472,7 +1472,7 @@ object parser {
     import lexer._
     import implicits.implicitSymbol
     import ast._
-    import parsley.Parsley.attempt
+    import parsley.Parsley.atomic
     import parsley.combinator.{sepBy, sepBy1, many, some, option, skipMany, skipSome, sepEndBy}
     import parsley.expr.{precedence, InfixL, InfixR, Prefix, InfixN, SOps, Atoms, chain}
     import parsley.errors.ErrorBuilder
@@ -1504,7 +1504,7 @@ object parser {
     private lazy val `<pat>` = chain.right1(`<pat-paren>`, PatCons <# ":")
     private lazy val `<pat-paren>` = `<pat-app>` <|> `<pat-naked'>`
     private lazy val `<pat-app>` = PatAppIfNonEmpty(`<pat-con>`, many(`<pat-naked>`))
-    private lazy val `<pat-con>` = ((attempt("(" *> (ConsCon <# ":"
+    private lazy val `<pat-con>` = ((atomic("(" *> (ConsCon <# ":"
                                                  <|> TupleCon(count1(",")))) <* ")")
                                 <|> `<con-id>`)
 

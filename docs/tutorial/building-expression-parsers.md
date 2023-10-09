@@ -23,11 +23,11 @@ only contains `<atom>`. The `<expr>` on the left of the `'+'` denotes that addit
 more tightly to the left, which is what we expect.
 
 ## The Problem with Left-Recursion
-For a first attempt, let's directly translate this grammar into Parsley (for now, we'll
+For a first atomic, let's directly translate this grammar into Parsley (for now, we'll
 parse into an `Int`: behold, the magic of combinators!):
 
 ```scala
-import parsley.Parsley, Parsley.attempt
+import parsley.Parsley, Parsley.atomic
 import parsley.character.digit
 import parsley.implicits.character.charLift
 import parsley.implicits.zipped.Zipped2
@@ -36,7 +36,7 @@ import parsley.implicits.zipped.Zipped2
 val number = digit.foldLeft1[Int](0)((n, d) => n * 10 + d.asDigit)
 
 lazy val expr: Parsley[Int] =
-  attempt((expr <* '+', term).zipped(_ + _)) <|>
+  atomic((expr <* '+', term).zipped(_ + _)) <|>
   (expr <* '-', term).zipped(_ - _) <|>
   term
 lazy val term: Parsley[Int] =
@@ -44,15 +44,15 @@ lazy val term: Parsley[Int] =
 lazy val atom = '(' *> expr <* ')' <|> number
 ```
 
-This parser has a few glaring issues: for a start, the `attempt` is causing excessive backtracking!
+This parser has a few glaring issues: for a start, the `atomic` is causing excessive backtracking!
 While there are ways to improve this, the real problem here is
 the _left-recursion_. Imagine you are evaluating this parser, first you look at `expr`, and then
 your first task is to evaluate `expr`! In fact, due to the strictness of Parsley's combinators, this example breaks before the parser runs: on Scala 2, it will `StackOverflowError` at runtime when constructing the parser, and on Scala 3, it
 will report an infinitely recursive definition for `expr` and `term`. The solution is to turn to the `chain` combinators, but before we do that, let's
-eliminate the attempts and refactor it a little to make the transition less jarring:
+eliminate the atomics and refactor it a little to make the transition less jarring:
 
 ```scala
-import parsley.Parsley, Parsley.attempt
+import parsley.Parsley, Parsley.atomic
 import parsley.character.digit
 import parsley.implicits.character.charLift
 import parsley.implicits.zipped.Zipped2
@@ -65,7 +65,7 @@ val sub = (y: Int) => (x: Int) => x - y
 val mul = (y: Int) => (x: Int) => x * y
 
 lazy val expr: Parsley[Int] =
-  attempt(expr <**> ('+' #> add <*> term)) <|>
+  atomic(expr <**> ('+' #> add <*> term)) <|>
   expr <**> ('-' #> sub <*> term) <|>
   term
 lazy val term: Parsley[Int] =
@@ -138,7 +138,7 @@ the transformation from recursive to `chains` follows these shape:
 self <**> (op <*> next) <|> next        == chain.left1(next, op)  // flipped op
 self <**> op <*> next <|> next          == chain.left1(next, op)  // normal op
 next <**> (op <*> self </> identity)    == chain.right1(next, op) // no backtracking, op flipped
-attempt(next <**> op <*> self) <|> next == chain.right1(next, op) // backtracking, normal op
+atomic(next <**> op <*> self) <|> next == chain.right1(next, op) // backtracking, normal op
 ```
 
 In this parser, the nesting of the chains dictates the precedence order (again, terms are found _inside_

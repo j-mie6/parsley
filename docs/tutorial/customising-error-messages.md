@@ -19,13 +19,13 @@ your basic lexemes. There is nothing stopping you from using the techniques here
 messages if you wish though. Simply put: the original grammar has more room for exploration for us.
 
 ```scala
-import parsley.Parsley, Parsley.attempt
+import parsley.Parsley, Parsley.atomic
 
 object lexer {
     import parsley.character.{digit, whitespace, string, item, endOfLine}
     import parsley.combinator.{manyUntil, skipMany, eof}
 
-    private def symbol(str: String): Parsley[String] = attempt(string(str))
+    private def symbol(str: String): Parsley[String] = atomic(string(str))
     private implicit def implicitSymbol(tok: String): Parsley[String] = symbol(tok)
 
     private val lineComment = "//" *> manyUntil(item, endOfLine)
@@ -34,7 +34,7 @@ object lexer {
     private val skipWhitespace = skipMany(whitespace <|> comment)
 
     private def lexeme[A](p: =>Parsley[A]): Parsley[A] = p <* skipWhitespace
-    private def token[A](p: =>Parsley[A]): Parsley[A] = lexeme(attempt(p))
+    private def token[A](p: =>Parsley[A]): Parsley[A] = lexeme(atomic(p))
     def fully[A](p: =>Parsley[A]): Parsley[A] = skipWhitespace *> p <* eof
 
     val number = token(digit.foldLeft1[Int](0)((n, d) => n * 10 + d.asDigit))
@@ -349,14 +349,14 @@ work with this parser, here is the full code of the finished product. Obviously,
 wider parser!
 
 ```scala
-import parsley.Parsley, Parsley.attempt
+import parsley.Parsley, Parsley.atomic
 import parsley.errors.combinator._
 
 object lexer {
     import parsley.character.{digit, whitespace, string, item, endOfLine}
     import parsley.combinator.{manyUntil, skipMany, eof}
 
-    private def symbol(str: String): Parsley[String] = attempt(string(str))
+    private def symbol(str: String): Parsley[String] = atomic(string(str))
     private implicit def implicitSymbol(s: String): Parsley[String] = symbol(s)
 
     private val lineComment = "//" *> manyUntil(item, endOfLine.label("end of comment"))
@@ -365,7 +365,7 @@ object lexer {
     private val skipWhitespace = skipMany(whitespace <|> comment).hide
 
     private def lexeme[A](p: =>Parsley[A]): Parsley[A] = p <* skipWhitespace
-    private def token[A](p: =>Parsley[A]): Parsley[A] = lexeme(attempt(p))
+    private def token[A](p: =>Parsley[A]): Parsley[A] = lexeme(atomic(p))
     def fully[A](p: =>Parsley[A]): Parsley[A] = skipWhitespace *> p <* eof
 
     val number =
