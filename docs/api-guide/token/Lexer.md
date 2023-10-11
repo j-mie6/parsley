@@ -61,7 +61,7 @@ For handling initial whitespace in the parser (before the very first token), you
 These two categories of parser are closely linked, as described below.
 
 ### `Lexer.{lexeme, nonlexeme}.names`
-This [object](@:api(parsley.token.Lexer$lexeme$$names$)) contains the definitions of several different parsers for dealing with values that
+This [object](@:api(parsley.token.names.Names)) contains the definitions of several different parsers for dealing with values that
 represent names in a language, specifically identifiers and operators. These are configured
 directly by [`LexicalDesc.nameDesc`](@:api(parsley.token.descriptions.NameDesc)), however
 valid names are affected by the keywords and reserved operators as given in
@@ -83,7 +83,7 @@ optionally the end letter for operators) to restrict them to a smaller subset. T
 allows for these special cases to be handled directly.
 
 ### `Lexer.{lexeme, nonlexeme}.symbol`
-Compared with `names`, which deals with user-defined identifiers and operators, [`symbol`](@:api(parsley.token.Lexer$lexeme$$symbol$)) is
+Compared with `names`, which deals with user-defined identifiers and operators, [`symbol`](@:api(parsley.token.symbol.Symbol)) is
 responsible for hard-coded or reserved elements of a language. This includes keywords and
 built-in operators, as well as specific symbols like `{`, or `;`. The description for symbols,
 found in [`LexicalDesc.symbolDesc`](@:api(parsley.token.descriptions.SymbolDesc)), describes
