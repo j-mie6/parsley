@@ -3,7 +3,8 @@ laika.title = "`Lexer`"
 %}
 
 ```scala mdoc:invisible
-import parsley.token.{Lexer, descriptions}, descriptions.{LexicalDesc, numeric, text}
+import parsley.token.{Lexer, descriptions, predicate}, descriptions.{LexicalDesc, numeric, text}
+import predicate.CharPredicate
 import numeric._
 import text._
 ```
@@ -82,7 +83,7 @@ optionally the end letter for operators) to restrict them to a smaller subset. T
 allows for these special cases to be handled directly.
 
 ### `Lexer.{lexeme, nonlexeme}.symbol`
-Compared with `names`, which deals with user-defined identifiers and operators, `symbol` is
+Compared with `names`, which deals with user-defined identifiers and operators, [`symbol`](@:api(parsley.token.Lexer$lexeme$$symbol$)) is
 responsible for hard-coded or reserved elements of a language. This includes keywords and
 built-in operators, as well as specific symbols like `{`, or `;`. The description for symbols,
 found in [`LexicalDesc.symbolDesc`](@:api(parsley.token.descriptions.SymbolDesc)), describes
@@ -233,7 +234,139 @@ floats: `0x0.Bp0` is the same as `0b0.1011p0`, both of which are `0.6875` in dec
 @:@
 
 ## `Lexer.{lexeme, nonlexeme}.text`
-This [object](@:api(parsley.token.Lexer$lexeme$$text$)) deals with the
+This [object](@:api(parsley.token.Lexer$lexeme$$text$)) deals with the parsing of both string
+literals and character literals, configured broadby by [`LexicalDesc.textDesc`](@:api(parsley.token.descriptions.text.TextDesc)):
+
+* [`parsley.token.text.String`](@:api(parsley.token.text.String)): values with this type
+  deal with multi-character/codepoint strings. Specifically, the interface provides ways
+  of dealing with different levels of character encodings.
+
+  In practice, there are four values with this type: `text.string`, `text.rawString`,
+  `text.multiString`, and `text.rawMultiString` covering three different kinds of string:
+
+    * `text.string`: used to handle regular string literals where escape characters are
+      present. They are single-line.
+
+    * `text.multiString`/`text.rawMultiString`: handles string literals using the
+      `multiStringEnds` configuration within `LexicalDesc.textDesc`. These string literals
+      can span multiple lines.
+
+    * `text.rawString`/`text.rawMultiString`: handles string literals that do not have
+      escape characters.
+
+  @:callout(info)
+  Note that currently, whatever a string literal is started with, it must end with the
+  exact same sequence.
+  @:@
+
+* [`parsley.token.text.Character`](@:api(parsley.token.text.Character)): like `String`,
+  the `text.character` object can handle different kinds of text encoding. However, unlike
+  `String`, there is only one kind of character available, which has escape codes and can only
+  contain a single graphic character (or, if applicable, single unicode codepoint).
+
+  @:callout(info)
+  A single codepoint here refers to having at most two 16-bit UTF-16 characters in a surrogate
+  pair, allowing for any character in the range `0x00000` to `0x10ffff`. Some unicode
+  characters are composed of multiple codepoints. As an example, national flags are composed
+  of two "regional indicator characters", for instance 🇬 and 🇧, making 🇬🇧. Such emoji
+  cannot appear within a parsed character in `parsley`, and can instead only be written in a
+  string.
+  @:@
+
+### Examples of Configuration and Valid Literals
+The majority of configuration for strings and characters is focused around the escape
+sequences. Outside of that, it is mostly just what the valid start and end sequences
+are valid for different flavours of literal. However, the `graphicCharacter` predicate
+is used to denote what the valid characters are that can appear in a string verbatim.
+This can be restricted to a smaller set than might otherwise have been checked by
+`ascii` or `latin1` parsers. In these instances, a different error message would be
+generated:
+
+```scala mdoc:to-string
+val aboveSpace = predicate.Unicode(_ >= 0x20)
+def stringParsers(graphicChar: CharPredicate = aboveSpace, escapeDesc: EscapeDesc = EscapeDesc.plain) =
+    new Lexer(LexicalDesc.plain.copy(
+        textDesc = TextDesc.plain.copy(
+            escapeSequences = escapeDesc,
+            graphicCharacter = graphicChar
+        )
+    )).nonlexeme.text.string
+
+val fullUnicode = stringParsers(aboveSpace)
+val latin1Limited = stringParsers(predicate.Basic(c => c >= 0x20 && c <= 0xcf))
+
+fullUnicode.latin1.parse("\"hello α\"")
+latin1Limited.fullUtf16.parse("\"hello α\"")
+```
+
+When it comes to escape characters, the [configuration](@:api(parsley.token.descriptions.text.EscapeDesc)) distinguishes between four kinds of escape sequence, which are further sub-divided:
+
+@:style(paragraph) Denotative escapes @:@
+These are a family of escape sequences that are names or symbols for the escape characters
+they represent. Parsley supports three different kinds of denotative escape characters:
+
+* `EscapeDesc.literals`: these are a set of characters that plainly represent themselves, but
+  for whatever reason must be escaped to appear within the string. Some of the most common
+  examples would be `\"` or `\\`, which are an escaped double quote and backslash,
+  respectively. The literal set for these would be `Set('"', '\\')`
+
+* `EscapeDesc.singleMap`: these are a mapping of specific single characters to the underlying
+  characters they represent. Commonly, this might be something like `\n`, which would be
+  represented in the map by an entry `'n' -> 0xa`.
+
+* `EscapeDesc.multiMap`: these generalise the single map by allowing a multiple character
+  sequence to represent a specific escape character. These are less common in "the wild",
+  but a good example is Haskell, where `'\NULL'` is a valid character, represented by an
+  entry `"NULL" -> 0x0` in the `multiMap`.
+
+Of course, all denotative escape sequences can be represented by the `multiMap` on its own,
+and all the above examples could be represented by
+`Map("\"" -> '"', "\\" -> '\\', "n" -> 0xa, "NULL" -> 0x0)`. For `literals` in particular, the
+`Set` is more ergonomic than the `Map`.
+
+@:callout(error)
+Note that the `literals` set, along with the keys of `singleMap` and `multiMap`, must all be
+distinct from each other. Furthermore, no empty sequences may be placed in `multiMap`.
+Violating any of these requirements will result in an error.
+@:@
+
+@:style(paragraph) Numeric escapes @:@
+These are escapes that represent the numeric code of a specific character. There are four different bases for numeric escapes: binary, octal, hexadecimal, and decimal. Each of these
+can have their own unique prefix (or lack there of), maximum allowed value, and specific
+number of digits:
+
+* `NumberOfDigits.Unbounded`: simply, this allows the numeric escape to have any number of
+  digits, so long as the end result is within the specified maximum value of the escape.
+
+* `NumberOfDigits.AtMost(n: Int)`: this denotes that there is an upper-limit to the number
+  of digits allowed for the escape sequence, but it can take any number of digits below
+  this limit. Again, the end result must still be within the specified maximum value of the
+  escape.
+
+* `NumerOfDigits.Exactly(ns: Int*)`: this denotes that the number of digits can be one of
+  the specified totals in `ns` (there must be at least one provided number). For example
+  `Exactly(1, 2, 4, 6)` would allow escapes like `\0`, `\20`, `\0400`, `\10fffe` are legal,
+  but `\400` would not be.
+
+@:style(paragraph) String gaps @:@
+Supported for string literals only, string gaps allow for prunable whitespace
+within a string literal. These take the form of a backslash, followed by whitespace,
+terminated by another backslash (this can include newlines, even in otherwise
+single-line strings). As an example:
+
+```scala mdoc:to-string
+val withGaps = stringParsers(escapeDesc = EscapeDesc.plain.copy(gapsSupported = true))
+withGaps.ascii.parse(""""Hello \
+
+      \World!" """)
+```
+
+@:style(paragraph) Empty escapes @:@
+These are also only supported by string literals. These characters have no effect on the
+string literal, but otherwise allow for disambiguation with multi-character escape
+sequences. For example, if `EscapeDesc.emptyEscape` is set to `Some('&')`, then
+`"\x20\&7"` would be interpreted as the string `" 7"`, however, without the `\&`
+character, it would try and render character `0x207`.
 
 ## `Lexer.lexeme.{enclosing, separators}`
 These two objects just contain various shortcuts for doing things such as semi-colon separated

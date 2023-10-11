@@ -18,3 +18,8 @@ code {
     white-space: pre-wrap; /*break-spaces?*/
     overflow-wrap: break-word; /*this allows long contiguous text to be broken*/
 }
+
+/* Make code inside links look like links :) */
+a code {
+    color: inherit;
+}
