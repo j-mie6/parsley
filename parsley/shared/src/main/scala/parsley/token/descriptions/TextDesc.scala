@@ -113,6 +113,7 @@ final case class EscapeDesc (escBegin: Char,
         require(litAndSingle.isEmpty && litSingleAndMulti.isEmpty, "there can be no overlap between literals, singleMap, and multiMap")
         litOrSingle | multiKeys
     }
+    // TODO: ensure that at most one numeric sequence has an empty prefix
     private [token] val escTrie = {
         val escMap = multiMap ++ literals.map(c => s"$c" -> c.toInt) ++ singleMap.map {
            case (k, v) => s"$k" -> v
