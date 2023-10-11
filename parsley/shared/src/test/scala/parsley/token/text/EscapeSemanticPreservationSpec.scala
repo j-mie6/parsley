@@ -29,7 +29,7 @@ class EscapeSemanticPreservationSpec extends AnyPropSpec with ScalaCheckProperty
         4 -> Gen.alphaNumStr,
         1 -> Gen.numStr,
         1 -> Gen.hexStr.map(s => s"x$s"),
-        1 -> Gen.stringOf(Gen.choose('0', '7')).map(s => s"b$s"),
+        1 -> Gen.stringOf(Gen.choose('0', '7')).map(s => s"o$s"),
         1 -> Gen.stringOf(Gen.oneOf('0', '1')).map(s => s"b$s"),
     ).map(s => s"\\$s")
 
