@@ -1016,7 +1016,7 @@ object combinator {
       * @since 4.4.0
       */
     def range[A](min: Int, max: Int)(p: Parsley[A]): Parsley[List[A]] = fresh(mutable.ListBuffer.empty[A]).persist { xs =>
-        count(min, max)((xs, p).zipped(_ += _).unsafe()) ~>
+        count(min, max)((xs, p).zipped(_ += _).impure) ~>
         xs.map(_.toList)
     }
 
