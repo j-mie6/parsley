@@ -12,7 +12,7 @@ import text._
 # Lexer (`parsley.token.Lexer`)
 
 The `Lexer` class is the main-entry point to the combinator-based functionality of the `parsley.token`
-package. It is given configuration in the form of a [`LexicalDesc`][`descriptions.LexicalDesc`]
+package. It is given configuration in the form of a [`LexicalDesc`][Configuring the Lexer (`parsley.token.descriptions`)]
 and an optional [`ErrorConfig`][`errors.ErrorConfig`]. The internal structure is then a collection
 of objects that contain various forms of functionality: these are explored in more detail in this
 page.
