@@ -27,6 +27,24 @@
     <link rel="stylesheet" type="text/css" href="../../../css/parsley-style.css" />
   <script src="../../../helium/site/laika-helium.js"></script>
     <script src="../../../helium/site/laika-versions.js"></script>
+    <script type="module">
+
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+mermaid.initialize({ 
+  startOnLoad: true,
+  theme: "base",
+  themeVariables: {
+    'darkMode': dark,
+    'primaryColor': dark ? '#202025' : '#e3f2e3', 
+    'primaryTextColor': dark ? '#96dec4' : '#095609',
+    'primaryBorderColor': dark ? '#2e2f30' : '#3ca43c',
+    'lineColor': dark ? '#96dec4' : '#095609',
+    'background': dark ? '#242526' : '#fbfefb',
+  }
+});
+
+</script>
   <script>initVersions("../../../", "/api-guide/token/descriptions.html", "latest", null);</script>
   
   <script> /* for avoiding page load transitions */ </script>
@@ -93,6 +111,8 @@
     <li class="level2 nav-leaf"><a href="../generic.html"><code>parsley.genericbridges</code></a></li>
     <li class="level2 nav-header"><code>parsley.token</code></li>
     <li class="level3 nav-leaf"><a href="Lexer.html"><code>Lexer</code></a></li>
+    <li class="level3 nav-leaf"><a href="errors.html"><code>errors</code></a></li>
+    <li class="level3 active nav-leaf"><a href="#"><code>descriptions</code></a></li>
     <li class="level2 nav-leaf"><a href="../Parsley.html"><code>parsley.Parsley</code></a></li>
     <li class="level1 nav-node"><a href="../../tutorial/">Parser Combinator Tutorial</a></li>
     <li class="level2 nav-leaf"><a href="../../tutorial/basics-of-combinators.html">Basics of Combinators</a></li>
@@ -117,7 +137,7 @@
   <p class="header"><a href="#"><code>descriptions</code></a></p>
 
   <ul class="nav-list">
-    <li class="level1 nav-leaf"><a href="#descriptions-lexicaldesc"><code>descriptions.LexicalDesc</code></a></li>
+    <li class="level1 nav-leaf"><a href="#diagram-of-dependencies">Diagram of Dependencies</a></li>
   </ul>
 
   <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/wiki-improvements/docs/api-guide/token/descriptions.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
@@ -128,7 +148,39 @@
 
         <h1 id="configuring-the-lexer-parsley-token-descriptions" class="title">Configuring the Lexer (<code>parsley.token.descriptions</code>)</h1>
         
-        <h2 id="descriptions-lexicaldesc" class="section"><a class="anchor-link left" href="#descriptions-lexicaldesc"><i class="icofont-laika link">&#xef71;</i></a><code>descriptions.LexicalDesc</code></h2>
+        <h2 id="diagram-of-dependencies" class="section"><a class="anchor-link left" href="#diagram-of-dependencies"><i class="icofont-laika link">&#xef71;</i></a>Diagram of Dependencies</h2>
+        <pre class="mermaid">classDiagram
+direction LR
+
+LexicalDesc *-- NumericDesc
+LexicalDesc *-- NameDesc
+LexicalDesc *-- SpaceDesc
+LexicalDesc *-- SymbolDesc
+LexicalDesc *-- TextDesc
+
+TextDesc *-- EscapeDesc
+EscapeDesc *-- NumericEscape
+NumericEscape_Illegal --|&gt; NumericEscape
+NumericEscape_Supported --|&gt; NumericEscape
+NumericEscape_Supported *-- NumberOfDigits
+AtMost --|&gt; NumberOfDigits
+Exactly --|&gt; NumberOfDigits
+Unbounded --|&gt; NumberOfDigits
+
+ExponentDesc --* NumericDesc
+ExponentDesc_Supported --|&gt; ExponentDesc
+ExponentDesc_NoExponents --|&gt; ExponentDesc
+NumericDesc *-- BreakCharDesc
+ExponentDesc_Supported *-- PlusSignPresence
+
+BreakCharDesc &lt;|-- BreakCharDesc_Supported
+BreakCharDesc &lt;|-- BreakCharDesc_NoBreakChar
+
+PlusSignPresence &lt;|-- PlusSignPresence_Illegal
+PlusSignPresence &lt;|-- PlusSignPresence_Optional
+PlusSignPresence &lt;|-- PlusSignPrecense_Required
+NumericDesc *-- PlusSignPresence
+</pre>
 
         
 <hr class="footer-rule"/>
