@@ -74,11 +74,7 @@ private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Debugg
 
         // Fail if the current context is not good, as required by how Parsley's machine functions.
         ctx.handlers = ctx.handlers.tail
-        if (success) {
-            ctx.inc()
-        } else {
-            ctx.fail()
-        }
+        if (success) ctx.inc() else ctx.fail()
     }
 
     override def toString: String = "AddAttemptAndLeave"
