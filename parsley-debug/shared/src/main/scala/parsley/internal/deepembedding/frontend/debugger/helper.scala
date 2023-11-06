@@ -79,7 +79,7 @@ private [parsley] object helper {
                                                   context: ParserTracker,
                                                   gen: (LazyParsley[A], DebugContext) => Debugged[A])(dbgF: => L[A]): L[A] =
             if (context.map.contains(self)) {
-                result(context.map(self).asInstanceOf[Debugged[A]])
+                result[R, LazyParsley[A], M](context.map(self).asInstanceOf[Debugged[A]])
             } else {
                 val current = gen(self, dbgCtx)
                 context.map.put(self, current)
@@ -93,7 +93,7 @@ private [parsley] object helper {
             handlePossiblySeenAbstract(self, context, (s: LazyParsley[A], d) => new Debugged(s, None, None)(d))(dbgF)
 
         private def handleNoChildren[A](self: LazyParsley[A], context: ParserTracker): L[A] =
-            handlePossiblySeen[A](self, context)(result(self))
+            handlePossiblySeen[A](self, context)(result[R, LazyParsley[A], M](self))
 
         override def visitSingleton[A](self: singletons.Singleton[A], context: ParserTracker): L[A] =
             handleNoChildren[A](self, context)
@@ -101,7 +101,7 @@ private [parsley] object helper {
         override def visitUnary[A, B](self: Unary[A, B], context: ParserTracker)(p: LazyParsley[A]): L[B] =
             handlePossiblySeen[B](self, context) {
                 for {
-                    dbgC <- suspend(p.visit(this, context))
+                    dbgC <- suspend[M, R, LazyParsley[A]](p.visit(this, context))
                 } yield new Unary[A, B](dbgC) {
                     override def make(p: StrictParsley[A]): StrictParsley[B] = self.make(p)
 
@@ -114,8 +114,8 @@ private [parsley] object helper {
         override def visitBinary[A, B, C](self: Binary[A, B, C], context: ParserTracker)(l: LazyParsley[A], r: => LazyParsley[B]): L[C] =
             handlePossiblySeen[C](self, context) {
                 for {
-                    dbgL <- suspend(l.visit(this, context))
-                    dbgR <- suspend(r.visit(this, context))
+                    dbgL <- suspend[M, R, LazyParsley[A]](l.visit(this, context))
+                    dbgR <- suspend[M, R, LazyParsley[B]](r.visit(this, context))
                 } yield new Binary[A, B, C](dbgL, dbgR) {
                     override def make(p: StrictParsley[A], q: StrictParsley[B]): StrictParsley[C] = self.make(p, q)
 
@@ -130,9 +130,9 @@ private [parsley] object helper {
                                                                                                  t: => LazyParsley[C]): L[D] =
             handlePossiblySeen[D](self, context) {
                 for {
-                    dbgF <- suspend(f.visit(this, context))
-                    dbgS <- suspend(s.visit(this, context))
-                    dbgT <- suspend(t.visit(this, context))
+                    dbgF <- suspend[M, R, LazyParsley[A]](f.visit(this, context))
+                    dbgS <- suspend[M, R, LazyParsley[B]](s.visit(this, context))
+                    dbgT <- suspend[M, R, LazyParsley[C]](t.visit(this, context))
                 } yield new Ternary[A, B, C, D](dbgF, dbgS, dbgT) {
                     override def make(p: StrictParsley[A], q: StrictParsley[B], r: StrictParsley[C]): StrictParsley[D] = self.make(p, q, r)
 
@@ -150,7 +150,7 @@ private [parsley] object helper {
                 // This is why a map with weak keys is required, so that these entries do not flood the map and
                 // cause a massive memory leak.
                 for {
-                    dbgC <- suspend(p.visit(this, context))
+                    dbgC <- suspend[M, R, LazyParsley[A]](p.visit(this, context))
                 } yield {
                     def dbgF(x: A): LazyParsley[B] = {
                         val subvisitor = new DebugInjectingVisitorM[M, LazyParsley[B]](dbgCtx)
@@ -163,8 +163,8 @@ private [parsley] object helper {
         override def visit[A](self: <|>[A], context: ParserTracker)(p: LazyParsley[A], q: LazyParsley[A]): L[A] =
             handlePossiblySeen[A](self, context) {
                 for {
-                    dbgP <- suspend(p.visit(this, context))
-                    dbgQ <- suspend(q.visit(this, context))
+                    dbgP <- suspend[M, R, LazyParsley[A]](p.visit(this, context))
+                    dbgQ <- suspend[M, R, LazyParsley[A]](q.visit(this, context))
                 } yield new <|>(dbgP, dbgQ)
             }
 
@@ -172,32 +172,32 @@ private [parsley] object helper {
         override def visit[A](self: Many[A], context: ParserTracker)(p: LazyParsley[A]): L[List[A]] =
             handlePossiblySeen(self, context) {
               for {
-                dbgC <- suspend(p.visit(this, context))
+                dbgC <- suspend[M, R, LazyParsley[A]](p.visit(this, context))
               } yield new Many[A](dbgC)
             }
 
         override def visit[A](self: ChainPost[A], context: ParserTracker)(p: LazyParsley[A], _op: => LazyParsley[A => A]): L[A] =
             handlePossiblySeen[A](self, context) {
                 for {
-                    dbgP  <- suspend(p.visit(this, context))
-                    dbgOp <- suspend(_op.visit(this, context))
+                    dbgP  <- suspend[M, R, LazyParsley[A]](p.visit(this, context))
+                    dbgOp <- suspend[M, R, LazyParsley[A => A]](_op.visit(this, context))
                 } yield new ChainPost(dbgP, dbgOp)
             }
 
         override def visit[A](self: ChainPre[A], context: ParserTracker)(p: LazyParsley[A], op: => LazyParsley[A => A]): L[A] =
             handlePossiblySeen[A](self, context) {
                 for {
-                    dbgP  <- suspend(p.visit(this, context))
-                    dbgOp <- suspend(op.visit(this, context))
+                    dbgP  <- suspend[M, R, LazyParsley[A]](p.visit(this, context))
+                    dbgOp <- suspend[M, R, LazyParsley[A => A]](op.visit(this, context))
                 } yield new ChainPre(dbgP, dbgOp)
             }
 
         override def visit[A, B](self: Chainl[A, B], context: ParserTracker)(init: LazyParsley[B], p: => LazyParsley[A], op: => LazyParsley[(B, A) => B]): L[B] =
             handlePossiblySeen[B](self, context) {
                 for {
-                    dbgInit <- suspend(init.visit(this, context))
-                    dbgP    <- suspend(p.visit(this, context))
-                    dbgOp   <- suspend(op.visit(this, context))
+                    dbgInit <- suspend[M, R, LazyParsley[B]](init.visit(this, context))
+                    dbgP    <- suspend[M, R, LazyParsley[A]](p.visit(this, context))
+                    dbgOp   <- suspend[M, R, LazyParsley[(B, A) => B]](op.visit(this, context))
                 } yield new Chainl[A, B](dbgInit, dbgP, dbgOp)
             }
 
@@ -212,21 +212,21 @@ private [parsley] object helper {
         override def visit[A, B](self: SepEndBy1[A, B], context: ParserTracker)(p: LazyParsley[A], sep: => LazyParsley[B]): L[List[A]] =
             handlePossiblySeen[List[A]](self, context) {
                 for {
-                    dbgP   <- suspend(p.visit(this, context))
-                    dbgSep <- suspend(sep.visit(this, context))
+                    dbgP   <- suspend[M, R, LazyParsley[A]](p.visit(this, context))
+                    dbgSep <- suspend[M, R, LazyParsley[B]](sep.visit(this, context))
                 } yield new SepEndBy1[A, B](dbgP, dbgSep)
             }
 
         override def visit[A](self: ManyUntil[A], context: ParserTracker)(body: LazyParsley[Any]): L[List[A]] =
             handlePossiblySeen[List[A]](self, context) {
                 for {
-                  dbgC <- suspend(body.visit(this, context))
+                  dbgC <- suspend[M, R, LazyParsley[Any]](body.visit(this, context))
                 } yield new ManyUntil[A](dbgC)
             }
 
         // XXX: This will assume all completely unknown parsers have no children at all (i.e. are Singletons).
         override def visitUnknown[A](self: LazyParsley[A], context: ParserTracker): L[A] = self match {
-            case d: Debugged[A] => result(d) // No need to debug a parser twice!
+            case d: Debugged[A] => result[R, LazyParsley[A], M](d) // No need to debug a parser twice!
             case n: Named[A]    => n.par match {
                 case g: GenericLazyParsley[A] => visitGeneric(g, context).map(_.asInstanceOf[Debugged[A]].withName(n.name))
                 case alt: <|>[A]              => alt.visit(this, context).map(_.asInstanceOf[Debugged[A]].withName(n.name))
