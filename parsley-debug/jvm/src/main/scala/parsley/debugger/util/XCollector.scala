@@ -37,6 +37,8 @@ import scala.reflect.runtime.{universe => ru}
 import parsley.Parsley
 import parsley.token.Lexer
 
+import parsley.debugger.internal.Rename.MapAddAll
+
 import parsley.internal.deepembedding.frontend.LazyParsley
 
 private [parsley] object XCollector extends CollectorImpl {
@@ -99,7 +101,7 @@ private [parsley] object XCollector extends CollectorImpl {
             lexer.nonlexeme.text
         )
 
-        lexerObjects.foreach(obj => accumulator.addAll(collectNames(obj)))
+        lexerObjects.foreach(obj => accumulator.addAllFrom(collectNames(obj)))
 
         val mirror = scala.reflect.runtime.currentMirror
         val reflPairs = List(
@@ -116,7 +118,7 @@ private [parsley] object XCollector extends CollectorImpl {
 
             for (getter <- getters) {
                 val innerRefl = lexRefl.reflectMethod(getter)
-                accumulator.addAll(collectNames(innerRefl()))
+                accumulator.addAllFrom(collectNames(innerRefl()))
             }
         }
 

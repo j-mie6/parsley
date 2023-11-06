@@ -49,6 +49,15 @@ private [parsley] object Rename {
     // reference to a parser.
     lazy private val collected: mutable.Map[LazyParsley[_], String] = new mutable.HashMap()
 
+    // Compatibility for Scala 2.12.
+    implicit class MapAddAll[K, V](mutMap: mutable.Map[K, V]) {
+        def addAllFrom(collection: Map[K, V]): Unit =
+            collection.foreach(mutMap.addOne)
+
+        def addAllFrom(collection: Iterable[(K, V)]): Unit =
+            collection.foreach(mutMap.addOne)
+    }
+
     // This method attempts the renaming of a parser.
     def apply(optName: Option[String], p: LazyParsley[_]): String = {
         val defaultName = partial(p)
@@ -73,7 +82,7 @@ private [parsley] object Rename {
         })
 
     private [parsley] def addNames(names: Map[LazyParsley[_], String]): Unit =
-        collected.addAll(names)
+        collected.addAllFrom(names)
 
     private [parsley] def addName(par: LazyParsley[_], name: String): Unit = {
         val _ = collected.put(par, name)

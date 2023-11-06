@@ -32,6 +32,8 @@ package parsley.debugger.internal
 
 import scala.collection.mutable
 
+import parsley.debugger.internal.Rename.MapAddAll
+
 import parsley.internal.deepembedding.frontend.LazyParsley
 
 // Helper class for reconstructing a debug tree.
@@ -45,7 +47,7 @@ private [parsley] case class DebugTreeBuilder(
 
     def reconstruct: TransientDebugTree = {
         node.children
-            .addAll(
+            .addAllFrom(
                 bChildren.map { case (lp, cs) => (Rename(foundName, lp()) + s"-#${{
                     val uuid = uid
                     uid = uid + 1
