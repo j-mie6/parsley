@@ -224,11 +224,11 @@ private [parsley] object helper {
 
         // XXX: This will assume all completely unknown parsers have no children at all (i.e. are Singletons).
         override def visitUnknown[A](self: LazyParsley[A], context: ParserTracker): L[A] = self match {
-            case d: Debugged[A] => result[R, LazyParsley[A], M](d) // No need to debug a parser twice!
-            case n: Named[A]    => n.par match {
-                case g: GenericLazyParsley[A] => visitGeneric(g, context).map(_.asInstanceOf[Debugged[A]].withName(n.name))
-                case alt: <|>[A]              => alt.visit(this, context).map(_.asInstanceOf[Debugged[A]].withName(n.name))
-                case cpre: ChainPre[A]        => cpre.visit(this, context).map(_.asInstanceOf[Debugged[A]].withName(n.name))
+            case d: Debugged[_] => result[R, LazyParsley[A], M](d.asInstanceOf[Debugged[A]]) // No need to debug a parser twice!
+            case n: Named[_]    => n.par match {
+                case g: GenericLazyParsley[_] => visitGeneric(g, context).map(_.asInstanceOf[Debugged[A]].withName(n.name))
+                case alt: <|>[_]              => alt.visit(this, context).map(_.asInstanceOf[Debugged[A]].withName(n.name))
+                case cpre: ChainPre[_]        => cpre.visit(this, context).map(_.asInstanceOf[Debugged[A]].withName(n.name))
                 case _                        => visitUnknown(n.par, context).map(_.asInstanceOf[Debugged[A]].withName(n.name))
             }
             case _              => handleNoChildren(self, context)
