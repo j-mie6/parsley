@@ -19,7 +19,7 @@ private [parsley] final class Debugged[A](origin: LazyParsley[A], val p: StrictP
         val handler = state.freshLabel()
 
         instrs += new EnterParser(handler, origin, optName)(dbgCtx)
-        suspend[M, R, Unit](p.codeGen[M, R](produceResults)) |> {
+        suspend[M, R, Unit](p.codeGen[M, R](producesResults = true)) |> {
             instrs += new Label(handler)
             instrs += new AddAttemptAndLeave(dbgCtx)
         }

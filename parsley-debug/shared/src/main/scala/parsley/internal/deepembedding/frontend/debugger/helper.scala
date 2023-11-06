@@ -54,9 +54,9 @@ private [parsley] object helper {
             if (context.map.contains(self)) {
                 result(context.map(self).asInstanceOf[Debugged[A]])
             } else {
+                val current = gen(self, dbgCtx)
+                context.map.put(self, current)
                 dbgF.map { dbgF_ =>
-                    val current = gen(self, dbgCtx)
-                    context.map.put(self, current)
                     current.par = Some(dbgF_)
                     current
                 }
