@@ -5,7 +5,6 @@
  */
 package parsley.internal.deepembedding.frontend
 
-import scala.annotation.tailrec
 import scala.util.Random
 
 import org.scalatest.flatspec.AnyFlatSpec
