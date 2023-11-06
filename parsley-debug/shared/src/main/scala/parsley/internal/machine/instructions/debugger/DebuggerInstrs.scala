@@ -64,7 +64,11 @@ private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Debugg
 
         // See above.
         dbgCtx.pop()
-        ctx.restoreState() // Manually pop off our debug checkpoint.
+
+        // Manually pop off our debug checkpoint.
+        // It is highly important that we don't actually restore the state of the parser, because that
+        // will mess with the parsing of the text.
+        ctx.states = ctx.states.tail
 
         // Fail if the current context is not good, as required by how Parsley's machine functions.
         if (success) {

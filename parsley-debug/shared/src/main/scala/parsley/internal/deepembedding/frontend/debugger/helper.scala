@@ -152,7 +152,7 @@ private [parsley] object helper {
         override def visit[A](self: ChainPost[A], context: ParserTracker)(p: LazyParsley[A], _op: => LazyParsley[A => A]): L[A] =
             handlePossiblySeen[A](self, context) {
                 for {
-                    dbgP <- suspend(p.visit(this, context))
+                    dbgP  <- suspend(p.visit(this, context))
                     dbgOp <- suspend(_op.visit(this, context))
                 } yield new ChainPost(dbgP, dbgOp)
             }
