@@ -100,18 +100,18 @@ lazy val parsleyDebug = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     )
   )
   .jvmSettings(
-    libraryDependencies ++= Seq(
-      // Only time will tell if this is safe or not.
+    libraryDependencies ++= {
+      // Reflection library choice per Scala version.
       CrossVersion.partialVersion(Keys.scalaVersion.value) match {
         case Some((2, 12)) =>
-          "org.scala-lang" % "scala-reflect" % Scala212
+          Seq("org.scala-lang" % "scala-reflect" % Scala212)
         case Some((2, 13)) =>
-          "org.scala-lang" % "scala-reflect" % Scala213
-        case Some((3, _))  =>
-          // Use the 2.13 dependency, and good luck!
-          "org.scala-lang" % "scala-reflect" % Scala213
+          Seq("org.scala-lang" % "scala-reflect" % Scala213)
+        case _             =>
+          // No Scala library for any other version (2.11, 3, etc.).
+          Seq()
       }
-    )
+    }
   )
 
 def testCoverageJob(cacheSteps: List[WorkflowStep]) = WorkflowJob(
