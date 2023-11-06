@@ -33,6 +33,7 @@ package parsley.internal.deepembedding
 import org.scalatest.Assertions.fail
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import parsley.debugger.internal.{DebugContext, Rename}
 import parsley.internal.deepembedding.backend.StrictParsley
 import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor, LetFinderState, LetMap}
 import parsley.internal.deepembedding.frontend.debugger.Debugged

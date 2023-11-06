@@ -20,9 +20,9 @@ class XWeakMap[K, V] extends mutable.Map[K, V] {
 
     // WeakRef to Option helper.
     private implicit class WeakRefOps[+S](wr: js.WeakRef[S]) {
-        def derefAsOption: Option[S] = wr.deref match {
-            case () => None
-            case x  => Some(x)
+        def derefAsOption: Option[S] = {
+            val x = wr.deref()
+            if (x.isDefined) Some(x.get) else None
         }
     }
 

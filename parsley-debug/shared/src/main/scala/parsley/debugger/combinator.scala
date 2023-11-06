@@ -30,11 +30,10 @@
 
 package parsley.debugger
 
-import scala.collection.mutable
-
 import parsley.Parsley
 import parsley.Parsley.{attempt, empty, fresh}
 import parsley.debugger.frontend.DebugFrontend
+import parsley.debugger.internal.{DebugContext, XWeakMap}
 
 import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.deepembedding.frontend.debugger.Named
@@ -88,7 +87,7 @@ object combinator {
       */
     def attachDebugger[A](parser: Parsley[A]): (() => DebugTree, Parsley[A]) = {
         // XXX: A weak map is needed so that memory leaks will not be caused by flatMap parsers.
-        val seen: ParserTracker   = new ParserTracker(new mutable.WeakHashMap())
+        val seen: ParserTracker   = new ParserTracker(new XWeakMap())
         val context: DebugContext = new DebugContext()
 
         val attached: LazyParsley[A] = injectM[A](parser.internal, seen, context)

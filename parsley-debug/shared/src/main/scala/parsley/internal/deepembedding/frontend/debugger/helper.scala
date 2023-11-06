@@ -33,6 +33,7 @@ package parsley.internal.deepembedding.frontend.debugger
 import scala.collection.mutable
 
 import org.typelevel.scalaccompat.annotation.unused
+import parsley.debugger.internal.DebugContext
 import parsley.internal.deepembedding.{singletons, Cont, ContOps, Id}
 import parsley.internal.deepembedding.ContOps.{perform, result, suspend, ContAdapter}
 import parsley.internal.deepembedding.backend.StrictParsley
@@ -49,7 +50,7 @@ private [parsley] object helper {
         def contains(par: LazyParsley[_]): Boolean
     }
 
-    private [parsley] final class ParserTracker(val map: mutable.Map[LazyParsley[_], Debugged[_]]) extends AnyVal with InjectorMap {
+    private [parsley] final class ParserTracker(val map: mutable.Map[LazyParsley[_], Debugged[_]]) extends InjectorMap {
         override def put(par: LazyParsley[_], dbg: Debugged[_]): Unit = map(par) = dbg
 
         override def get(par: LazyParsley[_]): Debugged[_] = map(par)

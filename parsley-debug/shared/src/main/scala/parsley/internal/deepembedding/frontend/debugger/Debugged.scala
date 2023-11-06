@@ -30,6 +30,8 @@
 
 package parsley.internal.deepembedding.frontend.debugger
 
+import parsley.debugger.internal.DebugContext
+
 import parsley.internal.deepembedding.{backend, ContOps}
 import parsley.internal.deepembedding.ContOps.{suspend, ContAdapter}
 import parsley.internal.deepembedding.backend.StrictParsley

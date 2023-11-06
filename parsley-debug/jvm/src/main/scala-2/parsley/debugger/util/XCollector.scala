@@ -35,6 +35,7 @@ import scala.collection.mutable
 import scala.reflect.runtime.{universe => ru}
 
 import parsley.Parsley
+import parsley.debugger.internal.Rename.MapAddAll
 import parsley.token.Lexer
 
 import parsley.internal.deepembedding.frontend.LazyParsley
