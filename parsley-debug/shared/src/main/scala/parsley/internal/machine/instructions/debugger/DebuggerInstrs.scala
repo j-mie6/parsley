@@ -20,7 +20,7 @@ private [internal] class EnterParser
     override def apply(ctx: Context): Unit = {
         // I think we can get away with executing this unconditionally.
         dbgCtx.push(ctx.input, origin, optName)
-        ctx.pushCheck() // Save our location for inputs.
+        ctx.saveState() // Save our location for inputs.
         ctx.pushHandler(label) // Mark the AddAttempt instruction as an exit handler.
         ctx.inc()
     }
@@ -31,29 +31,29 @@ private [internal] class EnterParser
 // Add a parse attempt to the current context at the current callstack point, and leave the current
 // parser's scope.
 private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends DebuggerInstr {
+    private def tri[I, A, B, C](x: => I)(xa: I => A, xb: I => B, xc: I => C): (A, B, C) =
+        (xa(x), xb(x), xc(x))
+
     override def apply(ctx: Context): Unit = {
         // These offsets will be needed to slice the specific part of the input that the parser has
         // attempted to parse during its attempt.
-        val prevCheck = ctx.checkStack.offset
+        val (prevOffset, prevLine, prevCol) = tri(ctx.states)(_.offset, _.line, _.col)
         val currentOff = ctx.offset
 
         // Slice based on current offset to see what a parser has attempted to parse,
         // and the 'good' member should indicate whether the previous parser has succeeded or not.
         // We add 1 to currentOff to see what character caused the parse failure.
         val success = ctx.good
-        val input = ctx.input.slice(prevCheck, if (success) currentOff else currentOff + 1)
+        val input = ctx.input.slice(prevOffset, if (success) currentOff else currentOff + 1)
 
-        val prevPos = {
-            val inpAsLines = ctx.input.slice(0, prevCheck + 1).split('\n')
-            (inpAsLines.length, inpAsLines.last.length)
-        }
+        val prevPos = (prevLine, prevCol)
 
         // Construct a new parse attempt and add it in.
         // XXX: Cast to Any required as otherwise the Some creation is treated as dead code.
         dbgCtx.addParseAttempt(
             ParseAttempt(
                 input,
-                prevCheck,
+                prevOffset,
                 if (success) currentOff else currentOff + 1,
                 prevPos,
                 if (success) (ctx.line, ctx.col - 1) else (ctx.line, ctx.col),
@@ -64,7 +64,7 @@ private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Debugg
 
         // See above.
         dbgCtx.pop()
-        ctx.checkStack = ctx.checkStack.tail // Manually pop off our debug checkpoint.
+        ctx.restoreState() // Manually pop off our debug checkpoint.
 
         // Fail if the current context is not good, as required by how Parsley's machine functions.
         if (success) {
