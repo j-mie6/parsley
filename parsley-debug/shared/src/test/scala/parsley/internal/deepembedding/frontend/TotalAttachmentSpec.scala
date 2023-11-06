@@ -97,7 +97,8 @@ class TotalAttachmentSpec extends AnyFlatSpec {
                 CUnit
             } else failure()
 
-        @tailrec override def visitUnknown[A](self: LazyParsley[A], context: Boolean): ConstUnit[A] =
+        //noinspection NoTailRecursionAnnotation
+        override def visitUnknown[A](self: LazyParsley[A], context: Boolean): ConstUnit[A] =
             self match {
                 case d: Debugged[_] if !context => visitUnknown(d.par.get, context = true)
                 case _: Debugged[_]             => failure("Not allowed to stack debuggers.") // Can't have a debugged on top of another!
