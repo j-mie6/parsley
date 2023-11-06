@@ -18,6 +18,17 @@ private [parsley] class DebugContext {
     private def dummyRoot: DebugTreeBuilder =
         DebugTreeBuilder(None, TransientDebugTree("ROOT", "ROOT", "NIL"))
 
+    // Context's checkStack vanished.
+    // Migrating it here for futureproofing.
+    private var checkStack: ListBuffer[(Int, Int, Int)] =
+        ListBuffer()
+
+    def pushPos(offset: Int, line: Int, col: Int): Unit =
+        checkStack.prepend((offset, line, col))
+
+    def popPos(): (Int, Int, Int) =
+        checkStack.remove(0)
+
     // Tracks where we are in the parser callstack.
     private var builderStack: ListBuffer[DebugTreeBuilder] =
         ListBuffer(dummyRoot)
@@ -40,6 +51,7 @@ private [parsley] class DebugContext {
     // Reset this context back to zero.
     def reset(): Unit = {
         builderStack = ListBuffer(dummyRoot)
+        checkStack   = ListBuffer()
     }
 
     // Push a new parser onto the parser callstack.

@@ -20,7 +20,10 @@ private [internal] class EnterParser
     override def apply(ctx: Context): Unit = {
         // I think we can get away with executing this unconditionally.
         dbgCtx.push(ctx.input, origin, optName)
-        ctx.saveState() // Save our location for inputs.
+        // Using my own state tracker instead.
+        dbgCtx.pushPos(ctx.offset, ctx.line, ctx.col)
+        // I don't think this is working, my states keep getting eaten.
+        // ctx.saveState() // Save our location for inputs.
         ctx.pushHandler(label) // Mark the AddAttempt instruction as an exit handler.
         ctx.inc()
     }
@@ -37,8 +40,9 @@ private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Debugg
     override def apply(ctx: Context): Unit = {
         // These offsets will be needed to slice the specific part of the input that the parser has
         // attempted to parse during its attempt.
-        val (prevOffset, prevLine, prevCol) = tri(ctx.states)(_.offset, _.line, _.col)
+        val (prevOffset, prevLine, prevCol) = tri(dbgCtx.popPos())(_._1, _._2, _._3)
         val currentOff = ctx.offset
+        val prevPos = (prevLine, prevCol)
 
         // Slice based on current offset to see what a parser has attempted to parse,
         // and the 'good' member should indicate whether the previous parser has succeeded or not.
@@ -46,7 +50,6 @@ private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Debugg
         val success = ctx.good
         val input = ctx.input.slice(prevOffset, if (success) currentOff else currentOff + 1)
 
-        val prevPos = (prevLine, prevCol)
 
         // Construct a new parse attempt and add it in.
         // XXX: Cast to Any required as otherwise the Some creation is treated as dead code.
@@ -64,11 +67,6 @@ private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Debugg
 
         // See above.
         dbgCtx.pop()
-
-        // Manually pop off our debug checkpoint.
-        // It is highly important that we don't actually restore the state of the parser, because that
-        // will mess with the parsing of the text.
-        ctx.states = ctx.states.tail
 
         // Fail if the current context is not good, as required by how Parsley's machine functions.
         if (success) {
