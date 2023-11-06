@@ -53,7 +53,6 @@ private [parsley] case class TransientDebugTree(
 
         val immChildren = children.map {
             case (n, t: TransientDebugTree) => (n, t.freeze)
-            case other                      => other
         }.toMap
 
         val immInp = fullInput
