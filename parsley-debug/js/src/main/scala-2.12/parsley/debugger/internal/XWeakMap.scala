@@ -35,7 +35,7 @@ private [parsley] class XWeakMap[K, V] extends mutable.Map[K, V] {
 
     // Run through and expunge all stale weak references from the map.
     private def removeStale(): Unit =
-        backing.foreach(_.filterInPlace(_._1.derefAsOption.isDefined))
+            backing.map(_.filter(_._1.derefAsOption.isDefined))
 
     private def resize(cmp: Double => Boolean, rf: Int => Int): Unit = {
         if (cmp(currentBucketValue())) {
@@ -49,7 +49,7 @@ private [parsley] class XWeakMap[K, V] extends mutable.Map[K, V] {
             entries.foreach { case (wk, v) =>
                 wk.derefAsOption match {
                     case None    => ()
-                    case Some(k) => backing(k.hashCode() % backing.length).append((wk, v))
+                    case Some(k) => backing(k.hashCode() % backing.length).prepend((wk, v))
                 }
             }
         }
@@ -63,7 +63,7 @@ private [parsley] class XWeakMap[K, V] extends mutable.Map[K, V] {
 
     override def +=(kv: (K, V)): XWeakMap.this.type = {
         kv match {
-            case (k, v) => backing(k.hashCode() % backing.length).append((new WeakRef(k), v))
+            case (k, v) => backing(k.hashCode() % backing.length).prepend((new WeakRef(k), v))
         }
         resize(_ > maxBucketConstant, grow)
 
