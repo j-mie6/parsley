@@ -31,7 +31,6 @@
 package parsley.debugger.util
 
 import parsley.Parsley
-import parsley.debugger.internal.Rename
 import parsley.token.Lexer
 
 import parsley.internal.deepembedding.frontend.LazyParsley

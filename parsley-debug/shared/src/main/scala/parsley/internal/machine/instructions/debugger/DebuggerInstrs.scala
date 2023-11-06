@@ -31,7 +31,6 @@
 package parsley.internal.machine.instructions.debugger
 
 import parsley.debugger.ParseAttempt
-import parsley.debugger.internal.DebugContext
 
 import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.machine.Context

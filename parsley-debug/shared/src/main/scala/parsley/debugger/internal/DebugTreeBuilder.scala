@@ -32,8 +32,6 @@ package parsley.debugger.internal
 
 import scala.collection.mutable
 
-import parsley.debugger.internal.Rename.MapAddAll
-
 import parsley.internal.deepembedding.frontend.LazyParsley
 
 // Helper class for reconstructing a debug tree.

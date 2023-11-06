@@ -33,7 +33,6 @@ package parsley.internal.deepembedding.frontend.debugger
 import scala.collection.mutable
 
 import org.typelevel.scalaccompat.annotation.unused
-import parsley.debugger.internal.DebugContext
 import parsley.internal.deepembedding.{singletons, Cont, ContOps, Id}
 import parsley.internal.deepembedding.ContOps.{perform, result, suspend, ContAdapter}
 import parsley.internal.deepembedding.backend.StrictParsley
@@ -44,7 +43,30 @@ private [parsley] object helper {
     // This map tracks seen parsers to prevent infinitely recursive parsers from overflowing the stack (and ties
     // the knot for these recursive parsers).
     // Use maps with weak keys or don't pass this into a >>= parser.
-    private [parsley] final class ParserTracker(val map: mutable.Map[LazyParsley[_], Debugged[_]]) extends AnyVal
+    private [parsley] sealed trait InjectorMap {
+        def put(par: LazyParsley[_], dbg: Debugged[_]): Unit
+        def get(par: LazyParsley[_]): Debugged[_]
+        def contains(par: LazyParsley[_]): Boolean
+    }
+
+    private [parsley] final class ParserTracker(val map: mutable.Map[LazyParsley[_], Debugged[_]]) extends AnyVal with InjectorMap {
+        override def put(par: LazyParsley[_], dbg: Debugged[_]): Unit = map(par) = dbg
+
+        override def get(par: LazyParsley[_]): Debugged[_] = map(par)
+
+        override def contains(par: LazyParsley[_]): Boolean = map.contains(par)
+    }
+
+    // FlatMap parsers hopefully
+    private [parsley] final class DummyTracker extends InjectorMap {
+        override def put(par: LazyParsley[_], dbg: Debugged[_]): Unit = ()
+
+        //noinspection ScalaStyle
+        override def get(par: LazyParsley[_]): Debugged[_] =
+            throw new NoSuchElementException("Dummy maps don't contain anything.")
+
+        override def contains(par: LazyParsley[_]): Boolean = false
+    }
 
     // Keeping this around for easy access to LPM.
     @unused private [this] final class ContWrap[M[_, +_], R] {

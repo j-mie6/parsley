@@ -35,7 +35,6 @@ import scala.collection.mutable
 import parsley.Parsley
 import parsley.Parsley.{attempt, empty, fresh}
 import parsley.debugger.frontend.DebugFrontend
-import parsley.debugger.internal.DebugContext
 
 import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.deepembedding.frontend.debugger.Named
