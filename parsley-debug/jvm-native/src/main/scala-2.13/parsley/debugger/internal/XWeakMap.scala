@@ -33,7 +33,7 @@ package parsley.debugger.internal
 import scala.collection.mutable
 
 // For the JVM and Native, its WeakHashMap does the job.
-class XWeakMap[K, V] extends mutable.Map[K, V] {
+private [parsley] class XWeakMap[K, V] extends mutable.Map[K, V] {
     private val mmap: mutable.WeakHashMap[K, V] = new mutable.WeakHashMap()
 
     override def subtractOne(k: K): XWeakMap.this.type = {

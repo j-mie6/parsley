@@ -91,13 +91,18 @@ lazy val parsleyDebug = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .settings(
     name := "parsley-debug",
 
+    headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax,
+    headerEmptyLine := false,
+
     // Unclear if this is also needed but see the same line within parsley project object.
     resolvers ++= Opts.resolver.sonatypeOssReleases,
     libraryDependencies ++= Seq(
       "org.scalatest" %%% "scalatest" % "3.2.15" % Test,
       "org.scalacheck" %%% "scalacheck" % "1.17.0" % Test,
       "org.scalatestplus" %%% "scalacheck-1-17" % "3.2.15.0" % Test,
-    )
+    ),
+
+    Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oI")
   )
   .jvmSettings(
     libraryDependencies ++= {

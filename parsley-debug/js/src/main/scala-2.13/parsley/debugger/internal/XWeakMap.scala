@@ -36,7 +36,7 @@ import scala.collection.mutable.ListBuffer
 import scalajs.js
 import scalajs.js.WeakRef
 
-class XWeakMap[K, V] extends mutable.Map[K, V] {
+private [parsley] class XWeakMap[K, V] extends mutable.Map[K, V] {
     // Constants and helpers.
     private val minBuckets: Int = 8
     private val maxBucketConstant: Double = 4.0
