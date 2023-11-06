@@ -9,6 +9,7 @@ import scala.annotation.tailrec
 import scala.util.Random
 
 import org.scalatest.flatspec.AnyFlatSpec
+import org.typelevel.scalaccompat.annotation.unused
 import parsley.Parsley
 import parsley.combinator.ifP
 import parsley.debugger.combinator.attachDebugger
@@ -61,14 +62,14 @@ class TotalAttachmentSpec extends AnyFlatSpec {
 
         override def visitUnary[A, B](self: Unary[A, B], context: Boolean)(p: LazyParsley[A]): ConstUnit[B] =
             if (context) {
-                val _ = visitUnknown(p, context = false)
+                visitUnknown(p, context = false): @unused
                 CUnit
             } else failure()
 
         override def visitBinary[A, B, C](self: Binary[A, B, C], context: Boolean)(l: LazyParsley[A], r: => LazyParsley[B]): ConstUnit[C] =
             if (context) {
-                val _ = visitUnknown(l, context = false)
-                val _ = visitUnknown(r, context = false)
+                visitUnknown(l, context = false): @unused
+                visitUnknown(r, context = false): @unused
                 CUnit
             } else failure()
 
@@ -76,23 +77,23 @@ class TotalAttachmentSpec extends AnyFlatSpec {
                                                                                            s: => LazyParsley[B],
                                                                                            t: => LazyParsley[C]): ConstUnit[D] =
             if (context) {
-                val _ = visitUnknown(f, context = false)
-                val _ = visitUnknown(s, context = false)
-                val _ = visitUnknown(t, context = false)
+                visitUnknown(f, context = false): @unused
+                visitUnknown(s, context = false): @unused
+                visitUnknown(t, context = false): @unused
                 CUnit
             } else failure()
 
         override def visit[A](self: <|>[A], context: Boolean)(p: LazyParsley[A], q: LazyParsley[A]): ConstUnit[A] =
             if (context) {
-                val _ = visitUnknown(p, context = false)
-                val _ = visitUnknown(q, context = false)
+                visitUnknown(p, context = false): @unused
+                visitUnknown(q, context = false): @unused
                 CUnit
             } else failure()
 
         override def visit[A](self: ChainPre[A], context: Boolean)(p: LazyParsley[A], op: => LazyParsley[A => A]): ConstUnit[A] =
             if (context) {
-                val _ = visitUnknown(p, context = false)
-                val _ = visitUnknown(op, context = false)
+                visitUnknown(p, context = false): @unused
+                visitUnknown(op, context = false): @unused
                 CUnit
             } else failure()
 

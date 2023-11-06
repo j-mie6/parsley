@@ -97,7 +97,7 @@ lazy val parsleyDebug = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     // Unclear if this is also needed but see the same line within parsley project object.
     resolvers ++= Opts.resolver.sonatypeOssReleases,
     libraryDependencies ++= Seq(
-      "org.scalatest" %%% "scalatest" % "3.2.15" % Test,
+      "org.scalatest" %%% "scalatest" % "3.2.17" % Test,
       "org.scalacheck" %%% "scalacheck" % "1.17.0" % Test,
       "org.scalatestplus" %%% "scalacheck-1-17" % "3.2.15.0" % Test,
     ),
