@@ -114,7 +114,7 @@ class TotalAttachmentSpec extends AnyFlatSpec {
                 CUnit
             } else failure()
 
-        override def visit[A](self: ChainPre[A], context: Boolean)(p: LazyParsley[A], op: LazyParsley[A => A]): ConstUnit[A] =
+        override def visit[A](self: ChainPre[A], context: Boolean)(p: LazyParsley[A], op: => LazyParsley[A => A]): ConstUnit[A] =
             if (context) {
                 val _ = visitUnknown(p, context = false)
                 val _ = visitUnknown(op, context = false)
@@ -131,6 +131,7 @@ class TotalAttachmentSpec extends AnyFlatSpec {
                 case cpre: ChainPre[A]          => cpre.visit(this, context)
                 case _                          => if (context) CUnit else failure()
             }
+
     }
 
     behavior of "the debug node attachment visitor"

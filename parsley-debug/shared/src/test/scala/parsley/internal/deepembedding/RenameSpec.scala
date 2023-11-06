@@ -35,7 +35,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import parsley.debugger.internal.{DebugContext, Rename}
 import parsley.internal.deepembedding.backend.StrictParsley
-import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor, LetFinderState, LetMap, RecMap}
+import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor, LetFinderState, LetMap}
 import parsley.internal.deepembedding.frontend.debugger.Debugged
 
 class RenameSpec extends AnyFlatSpec with Matchers {
@@ -85,7 +85,7 @@ private class DummyParser extends LazyParsley[Any] {
         RenameSpec.crash()
 
     override protected def preprocess[M[_, +_] : ContOps, R, A_ >: Any]
-    (implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] =
+    (implicit lets: LetMap): M[R, StrictParsley[A_]] =
         RenameSpec.crash()
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Any] =
@@ -100,7 +100,7 @@ private class <**> extends LazyParsley[Any] {
         RenameSpec.crash()
 
     override protected def preprocess[M[_, +_] : ContOps, R, A_ >: Any]
-    (implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] =
+    (implicit lets: LetMap): M[R, StrictParsley[A_]] =
         RenameSpec.crash()
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Any] =
