@@ -29,11 +29,6 @@ inThisBuild(List(
   crossScalaVersions := Seq(Scala213, Scala212, Scala3),
   scalaVersion := Scala213,
   mimaBinaryIssueFilters ++= mima.issueFilters,
-  tlVersionIntroduced := Map(
-    "2.13" -> "1.5.0",
-    "2.12" -> "1.5.0",
-    "3"    -> "3.1.2",
-  ),
   // CI Configuration
   tlCiReleaseBranches := Seq(mainBranch),
   tlCiScalafmtCheck := false,
@@ -71,6 +66,12 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
         if (!isSnapshot.value && !(noReleaseFlagsScala3 && scalaBinaryVersion.value == "3")) releaseFlags else Seq.empty
     },
 
+    tlVersionIntroduced := Map(
+      "2.13" -> "1.5.0",
+      "2.12" -> "1.5.0",
+      "3"    -> "3.1.2",
+    ),
+
     Compile / doc / scalacOptions ++= Seq("-groups", "-doc-root-content", s"${baseDirectory.value.getParentFile.getPath}/rootdoc.md"),
   )
   .jsSettings(
@@ -100,6 +101,12 @@ lazy val parsleyDebug = crossProject(JSPlatform, JVMPlatform, NativePlatform)
       "org.scalatest" %%% "scalatest" % "3.2.17" % Test,
       "org.scalacheck" %%% "scalacheck" % "1.17.0" % Test,
       "org.scalatestplus" %%% "scalacheck-1-17" % "3.2.15.0" % Test,
+    ),
+
+    tlVersionIntroduced := Map(
+      "2.13" -> "4.5.0",
+      "2.12" -> "4.5.0",
+      "3"    -> "4.5.0",
     ),
 
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oI")
