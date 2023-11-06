@@ -23,7 +23,7 @@ private [parsley] final class Debugged[A]
         suspend(par.get.findLets(seen))
 
     override def preprocess[M[_, +_] : ContOps, R, A_ >: A](implicit lets: LetMap): M[R, StrictParsley[A_]] =
-        for (p <- suspend(par.get.optimised[M, R, A])) yield make(p)
+        for (p <- suspend[M, R, StrictParsley[A]](par.get.optimised[M, R, A])) yield make(p)
 
     // Shortcuts to the given parser's name instead.
     def getTypeName: String = origin.getClass.getTypeName

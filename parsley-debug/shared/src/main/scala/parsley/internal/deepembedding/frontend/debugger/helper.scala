@@ -3,7 +3,6 @@
  */
 package parsley.internal.deepembedding.frontend.debugger
 
-import scala.annotation.tailrec
 import scala.collection.mutable
 
 import org.typelevel.scalaccompat.annotation.unused
@@ -158,7 +157,7 @@ private [parsley] object helper {
                 } yield new ChainPost(dbgP, dbgOp)
             }
 
-        override def visit[A](self: ChainPre[A], context: ParserTracker)(p: LazyParsley[A], op: LazyParsley[A => A]): L[A] =
+        override def visit[A](self: ChainPre[A], context: ParserTracker)(p: LazyParsley[A], op: => LazyParsley[A => A]): L[A] =
             handlePossiblySeen[A](self, context) {
                 for {
                     dbgP  <- suspend(p.visit(this, context))
@@ -209,5 +208,6 @@ private [parsley] object helper {
             }
             case _              => handleNoChildren(self, context)
         }
+
     }
 }

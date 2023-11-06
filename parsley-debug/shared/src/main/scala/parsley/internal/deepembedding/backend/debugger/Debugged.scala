@@ -15,11 +15,11 @@ import parsley.internal.machine.instructions.debugger.{AddAttemptAndLeave, Enter
 
 private [parsley] final class Debugged[A](origin: LazyParsley[A], val p: StrictParsley[A], optName: Option[String])
     (dbgCtx: DebugContext) extends Unary[A, A] {
-    override protected[backend] def codeGen[M[_, +_] : ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
+    override protected[backend] def codeGen[M[_, +_] : ContOps, R](produceResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler = state.freshLabel()
 
         instrs += new EnterParser(handler, origin, optName)(dbgCtx)
-        suspend(p.codeGen[M, R]) |> {
+        suspend[M, R, Unit](p.codeGen[M, R](produceResults)) |> {
             instrs += new Label(handler)
             instrs += new AddAttemptAndLeave(dbgCtx)
         }
