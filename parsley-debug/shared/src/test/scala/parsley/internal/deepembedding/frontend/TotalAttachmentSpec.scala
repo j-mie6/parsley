@@ -99,12 +99,12 @@ class TotalAttachmentSpec extends AnyFlatSpec {
 
         @tailrec override def visitUnknown[A](self: LazyParsley[A], context: Boolean): ConstUnit[A] =
             self match {
-                case d: Debugged[A] if !context => visitUnknown(d.par.get, context = true)
-                case _: Debugged[A]             => failure("Not allowed to stack debuggers.") // Can't have a debugged on top of another!
-                case s: singletons.Singleton[A] => visitSingleton(s, context)
-                case g: GenericLazyParsley[A]   => visitGeneric(g, context)
-                case alt: <|>[A]                => alt.visit(this, context)
-                case cpre: ChainPre[A]          => cpre.visit(this, context)
+                case d: Debugged[_] if !context => visitUnknown(d.par.get, context = true)
+                case _: Debugged[_]             => failure("Not allowed to stack debuggers.") // Can't have a debugged on top of another!
+                case s: singletons.Singleton[_] => visitSingleton(s.asInstanceOf[singletons.Singleton[A]], context)
+                case g: GenericLazyParsley[_]   => visitGeneric(g, context)
+                case alt: <|>[_]                => alt.visit(this, context)
+                case cpre: ChainPre[_]          => cpre.visit(this, context)
                 case _                          => if (context) CUnit else failure()
             }
 
