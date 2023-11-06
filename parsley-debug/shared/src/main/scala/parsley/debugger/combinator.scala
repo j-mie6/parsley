@@ -62,11 +62,14 @@ object combinator {
       */
     def attachDebugger[A](parser: Parsley[A]): (() => DebugTree, Parsley[A]) = {
         // XXX: A weak map is needed so that memory leaks will not be caused by flatMap parsers.
-        val seen: ParserTracker = new ParserTracker(new mutable.WeakHashMap())
+        val seen: ParserTracker   = new ParserTracker(new mutable.WeakHashMap())
         val context: DebugContext = new DebugContext()
 
         val attached: LazyParsley[A] = injectM[A](parser.internal, seen, context)
-        (() => context.getFinalBuilder.reconstruct, fresh(context.reset()) *> new Parsley(attached))
+        val resetter: Parsley[Unit]  = fresh(context.reset())
+        resetter.impure
+
+        (() => context.getFinalBuilder.reconstruct, resetter *> new Parsley(attached))
     }
 
     // $COVERAGE-OFF$
@@ -115,7 +118,7 @@ object combinator {
             val input = frozen.fullInput
 
             frontend.process(input, frozen)
-        }
+        }.impure
 
         attempt(attached <* renderer) <|> (renderer *> empty)
     }
