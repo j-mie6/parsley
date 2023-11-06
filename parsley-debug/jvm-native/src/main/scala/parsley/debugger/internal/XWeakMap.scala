@@ -37,12 +37,12 @@ class XWeakMap[K, V] extends mutable.Map[K, V] {
     private val mmap: mutable.WeakHashMap[K, V] = new mutable.WeakHashMap()
 
     override def subtractOne(k: K): XWeakMap.this.type = {
-        mmap.subtractOne(k)
+        mmap.remove(k)
         this
     }
 
     override def addOne(kv: (K, V)): XWeakMap.this.type = {
-        mmap.addOne(kv)
+        mmap.put(kv._1, kv._2)
         this
     }
 
