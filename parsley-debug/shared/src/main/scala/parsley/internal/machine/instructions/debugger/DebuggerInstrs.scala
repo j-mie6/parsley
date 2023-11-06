@@ -34,7 +34,7 @@ private [internal] class EnterParser
 // Add a parse attempt to the current context at the current callstack point, and leave the current
 // parser's scope.
 private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends DebuggerInstr {
-    private def tri[I, A, B, C](x: => I)(xa: I => A, xb: I => B, xc: I => C): (A, B, C) =
+    private def tri[I, A, B, C](x: I)(xa: I => A, xb: I => B, xc: I => C): (A, B, C) =
         (xa(x), xb(x), xc(x))
 
     override def apply(ctx: Context): Unit = {
