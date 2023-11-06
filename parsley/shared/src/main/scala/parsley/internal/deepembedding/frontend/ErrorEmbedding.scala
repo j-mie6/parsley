@@ -56,11 +56,3 @@ private [parsley] final class ErrorLexical[A](p: LazyParsley[A]) extends Unary[A
 
     override private [parsley] def prettyName = "markAsToken"
 }
-
-private [parsley] final class VerifiedError[A](p: LazyParsley[A], msggen: Either[A => Seq[String], Option[A => String]]) extends Unary[A, Nothing](p) {
-    override def make(p: StrictParsley[A]): StrictParsley[Nothing] = new backend.VerifiedError(p, msggen)
-
-    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Nothing] = visitor.visit(this, context)(p, msggen)
-
-    override private [parsley] def prettyName = "verifiedFail"
-}

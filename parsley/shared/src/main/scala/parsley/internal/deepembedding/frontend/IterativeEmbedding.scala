@@ -15,13 +15,6 @@ private [parsley] final class Many[A](p: LazyParsley[A]) extends Unary[A, List[A
 
     override private [parsley] def prettyName = "many"
 }
-private [parsley] final class SkipMany[A](p: LazyParsley[A]) extends Unary[A, Unit](p) {
-    override def make(p: StrictParsley[A]): StrictParsley[Unit] = new backend.SkipMany(p)
-
-    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)(p)
-
-    override private [parsley] def prettyName = "skipMany"
-}
 private [parsley] final class ChainPost[A](p: LazyParsley[A], _op: =>LazyParsley[A => A]) extends Binary[A, A => A, A](p, _op) {
     override def make(p: StrictParsley[A], op: StrictParsley[A => A]): StrictParsley[A] = new backend.ChainPost(p, op)
 

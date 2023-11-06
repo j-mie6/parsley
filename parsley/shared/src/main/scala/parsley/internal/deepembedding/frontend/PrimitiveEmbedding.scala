@@ -51,6 +51,8 @@ private [parsley] final class Span(p: LazyParsley[_]) extends Unary[Any, String]
     override def make(p: StrictParsley[Any]): StrictParsley[String] = new backend.Span(p)
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[String] = visitor.visit(this, context)(p)
+
+    override private[parsley] def prettyName: String = "span"
 }
 
 // $COVERAGE-OFF$
@@ -74,11 +76,15 @@ private [parsley] final class Profile[A](p: LazyParsley[A], name: String, profil
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.Profile(p, name, profiler)
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p, name, profiler)
+
+    override private[parsley] def prettyName: String = s"profile($name)"
 }
 
 private [parsley] final class Opaque[A](p: LazyParsley[A]) extends Unary[A, A](p) {
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.Opaque(p)
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = p.visit(visitor, context)
+
+    override private[parsley] def prettyName: String = s"opaque(${p.prettyName})"
 }
 // $COVERAGE-ON$

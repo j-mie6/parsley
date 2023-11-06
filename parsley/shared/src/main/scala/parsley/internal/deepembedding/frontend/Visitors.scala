@@ -111,7 +111,7 @@ private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle
     def visit[A](self: ChainPre[A], context: T)(p: LazyParsley[A], op: =>LazyParsley[A => A]): U[A]
     def visit[A, B](self: Chainl[A, B], context: T)(init: LazyParsley[B], p: =>LazyParsley[A], op: =>LazyParsley[(B, A) => B]): U[B]
     def visit[A, B](self: Chainr[A, B], context: T)(p: LazyParsley[A], op: =>LazyParsley[(A, B) => B], wrap: A => B): U[B]
-    def visit[A](self: SepEndBy1[A], context: T)(p: LazyParsley[A], sep: =>LazyParsley[_]): U[List[A]]
+    def visit[A, B](self: SepEndBy1[A, B], context: T)(p: LazyParsley[A], sep: =>LazyParsley[B]): U[List[A]]
     def visit[A](self: ManyUntil[A], context: T)(body: LazyParsley[Any]): U[List[A]]
     def visit(self: SkipManyUntil, context: T)(body: LazyParsley[Any]): U[Unit]
 
@@ -123,7 +123,6 @@ private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle
     def visit[A](self: ErrorEntrench[A], context: T)(p: LazyParsley[A]): U[A]
     def visit[A](self: ErrorDislodge[A], context: T)(n: Int, p: LazyParsley[A]): U[A]
     def visit[A](self: ErrorLexical[A], context: T)(p: LazyParsley[A]): U[A]
-    def visit[A](self: VerifiedError[A], context: T)(p: LazyParsley[A], msggen: Either[A => Seq[String], Option[A => String]]): U[Nothing]
 
     // Fallback case for any unknown parser types defined outside Parsley's main project.
     /** Specifically handles [[parsley.internal.deepembedding.frontend.Unary]],
@@ -275,8 +274,8 @@ private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
     override def visit[A, B](self: Chainr[A, B], context: T)(p: LazyParsley[A], op: =>LazyParsley[(A, B) => B], wrap: A => B): U[B] = {
         visitBinary(self, context)(p, op)
     }
-    override def visit[A](self: SepEndBy1[A], context: T)(p: LazyParsley[A], sep: =>LazyParsley[_]): U[List[A]] = {
-        visitBinary[A, Any, List[A]](self, context)(p, sep)
+    override def visit[A, B](self: SepEndBy1[A, B], context: T)(p: LazyParsley[A], sep: =>LazyParsley[B]): U[List[A]] = {
+        visitBinary[A, B, List[A]](self, context)(p, sep)
     }
     override def visit[A](self: ManyUntil[A], context: T)(body: LazyParsley[Any]): U[List[A]] = visitUnary[Any, List[A]](self, context)(body)
     override def visit(self: SkipManyUntil, context: T)(body: LazyParsley[Any]): U[Unit] = visitUnary[Any, Unit](self, context)(body)

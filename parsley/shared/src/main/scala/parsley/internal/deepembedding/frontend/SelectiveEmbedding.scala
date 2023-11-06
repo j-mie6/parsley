@@ -38,4 +38,6 @@ private [parsley] final class MapFilter[A, B](p: LazyParsley[A], pred: A => Opti
     override def make(p: StrictParsley[A], err: StrictParsley[((A, Int)) => Nothing]): StrictParsley[B] = new backend.MapFilter(p, pred, err)
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[B] = visitor.visit(this, context)(p, pred, err)
+
+    override private[parsley] def prettyName: String = "mapFilter"
 }
