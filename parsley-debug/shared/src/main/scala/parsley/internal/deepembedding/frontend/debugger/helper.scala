@@ -204,8 +204,8 @@ private [parsley] object helper {
         override def visit[A, B](self: Chainr[A, B], context: ParserTracker)(p: LazyParsley[A], op: => LazyParsley[(A, B) => B], wrap: A => B): L[B] =
             handlePossiblySeen[B](self, context) {
                 for {
-                    dbgP  <- suspend(p.visit(this, context))
-                    dbgOp <- suspend(op.visit(this, context))
+                    dbgP  <- suspend[M, R, LazyParsley[A]](p.visit(this, context))
+                    dbgOp <- suspend[M, R, LazyParsley[(A, B) => B]](op.visit(this, context))
                 } yield new Chainr[A, B](dbgP, dbgOp, wrap)
             }
 
