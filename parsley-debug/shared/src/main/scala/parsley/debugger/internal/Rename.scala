@@ -52,10 +52,10 @@ private [parsley] object Rename {
     // Compatibility for Scala 2.12.
     implicit class MapAddAll[K, V](mutMap: mutable.Map[K, V]) {
         def addAllFrom(collection: Map[K, V]): Unit =
-            collection.foreach(mutMap.addOne)
+            collection.foreach { case (k, v) => mutMap(k) = v }
 
         def addAllFrom(collection: Iterable[(K, V)]): Unit =
-            collection.foreach(mutMap.addOne)
+            collection.foreach { case (k, v) => mutMap(k) = v }
     }
 
     // This method attempts the renaming of a parser.
