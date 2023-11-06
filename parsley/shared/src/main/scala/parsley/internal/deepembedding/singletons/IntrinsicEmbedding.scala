@@ -22,6 +22,8 @@ private [parsley] final class CharTok[A](private val c: Char, private val x: A, 
     }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(c, x, expected)
+
+    override private[parsley] def prettyName: String = "charTok"
 }
 
 private [parsley] final class SupplementaryCharTok[A](private val codepoint: Int, private val x: A, val expected: LabelConfig) extends Singleton[A] {
@@ -34,6 +36,8 @@ private [parsley] final class SupplementaryCharTok[A](private val codepoint: Int
     }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(codepoint, x, expected)
+
+    override private[parsley] def prettyName: String = "supplementaryCharTok"
 }
 
 private [parsley] final class StringTok[A](private val s: String, private val x: A, val expected: LabelConfig) extends Singleton[A] {
@@ -48,6 +52,8 @@ private [parsley] final class StringTok[A](private val s: String, private val x:
     override protected[deepembedding] def optimise: StrictParsley[A] = if (s.length == 1) new CharTok(s.head, x, expected) else this
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(s, x, expected)
+
+    override private[parsley] def prettyName: String = "stringTok"
 }
 
 private [parsley] object Eof extends Singleton[Unit] {

@@ -34,7 +34,7 @@ private [parsley] object Line extends Singleton[Int] {
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Int] = visitor.visit(this, context)
 
-    override private [parsley] def prettyName = "line"
+    override private [parsley] def prettyName = pretty
 }
 private [parsley] object Col extends Singleton[Int] {
     // $COVERAGE-OFF$
@@ -44,7 +44,7 @@ private [parsley] object Col extends Singleton[Int] {
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Int] = visitor.visit(this, context)
 
-    override private [parsley] def prettyName = "col"
+    override private [parsley] def prettyName = pretty
 }
 private [parsley] object Offset extends Singleton[Int] {
     // $COVERAGE-OFF$
@@ -54,7 +54,7 @@ private [parsley] object Offset extends Singleton[Int] {
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Int] = visitor.visit(this, context)
 
-    override private [parsley] def prettyName = "offset"
+    override private [parsley] def prettyName = pretty
 }
 
 // This should really have UsesRegister, however, if it doesn't, this has the nice effect of catching

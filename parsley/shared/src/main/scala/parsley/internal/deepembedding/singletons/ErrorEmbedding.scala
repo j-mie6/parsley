@@ -20,7 +20,7 @@ private [parsley] final class Empty private (val width: Int) extends Singleton[N
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Nothing] = visitor.visit(this, context)(width)
 
-    override private [parsley] def prettyName = "empty"
+    override private [parsley] def prettyName = pretty
 }
 
 private [parsley] final class Fail(width: CaretWidth, msgs: String*) extends Singleton[Nothing] with MZero {
@@ -54,6 +54,8 @@ private [parsley] final class VanillaGen[A](gen: parsley.errors.VanillaGen[A]) e
     override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = instrs += new instructions.VanillaGen(gen)
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[((A, Int)) => Nothing] = visitor.visit(this, context)(gen)
+
+    override private[parsley] def prettyName: String = pretty
 }
 
 private [parsley] final class SpecialisedGen[A](gen: parsley.errors.SpecialisedGen[A]) extends Singleton[((A, Int)) => Nothing] {
@@ -64,6 +66,8 @@ private [parsley] final class SpecialisedGen[A](gen: parsley.errors.SpecialisedG
     override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = instrs += new instructions.SpecialisedGen(gen)
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[((A, Int)) => Nothing] = visitor.visit(this, context)(gen)
+
+    override private[parsley] def prettyName: String = pretty
 }
 
 private [parsley] object Empty {

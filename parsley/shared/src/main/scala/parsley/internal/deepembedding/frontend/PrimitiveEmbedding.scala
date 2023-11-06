@@ -77,7 +77,7 @@ private [parsley] final class Profile[A](p: LazyParsley[A], name: String, profil
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p, name, profiler)
 
-    override private[parsley] def prettyName: String = s"profile($name)"
+    override private[parsley] def prettyName: String = "profile"
 }
 
 private [parsley] final class Opaque[A](p: LazyParsley[A]) extends Unary[A, A](p) {
@@ -85,6 +85,6 @@ private [parsley] final class Opaque[A](p: LazyParsley[A]) extends Unary[A, A](p
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = p.visit(visitor, context)
 
-    override private[parsley] def prettyName: String = s"opaque(${p.prettyName})"
+    override private[parsley] def prettyName: String = "opaque"
 }
 // $COVERAGE-ON$
