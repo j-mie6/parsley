@@ -24,7 +24,12 @@ private [parsley] class DebugContext {
 
     // Get the final DebugTreeBuilder from this context.
     def getFinalBuilder: DebugTreeBuilder = {
+        // The root tree exists only as a placeholder for the rest of the debug tree to build off of.
+        // If it has no children, that means the debug tree was not built to begin with.
+        // If it was multiple children, somehow the debugger has popped too many tree nodes off the stack.
         assert(builderStack.head.bChildren.size == 1, "The root tree has somehow lost its only child, or gained multiple children.")
+
+        // This should never fail.
         builderStack.head.bChildren.collectFirst { case (_, x) => x }.get
     }
 
@@ -39,6 +44,7 @@ private [parsley] class DebugContext {
 
     // Push a new parser onto the parser callstack.
     def push(fullInput: String, parser: LazyParsley[_], optName: Option[String]): Unit = {
+        // This forces a new tree node to be built every time a parser is visited.
         lazy val uniq: Unique[LazyParsley[_]] = Unique(parser)
 
         if (builderStack.head.bChildren.contains(uniq)) {

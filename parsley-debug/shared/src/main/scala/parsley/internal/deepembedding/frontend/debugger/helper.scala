@@ -15,7 +15,8 @@ import parsley.internal.deepembedding.frontend.{<|>, >>=, Binary, Chainl, ChainP
 import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor, Many, ManyUntil, SepEndBy1, Ternary, Unary}
 
 private [parsley] object helper {
-    // This map tracks seen parsers to prevent infinitely recursive parsers from overflowing the stack.
+    // This map tracks seen parsers to prevent infinitely recursive parsers from overflowing the stack (and ties
+    // the knot for these recursive parsers).
     // Use maps with weak keys or don't pass this into a >>= parser.
     private [parsley] final class ParserTracker(val map: mutable.Map[LazyParsley[_], Debugged[_]]) extends AnyVal
 
@@ -120,7 +121,8 @@ private [parsley] object helper {
         override def visit[A, B](self: A >>= B, context: ParserTracker)(p: LazyParsley[A], f: A => LazyParsley[B]): L[B] =
             handlePossiblySeen[B](self, context) {
                 // flatMap / >>= produces parsers arbitrarily, so there is no way we'd match by reference.
-                // This is why a map with weak keys is required.
+                // This is why a map with weak keys is required, so that these entries do not flood the map and
+                // cause a massive memory leak.
                 for {
                     dbgC <- suspend(p.visit(this, context))
                 } yield {
