@@ -23,11 +23,14 @@ private [parsley] class DebugContext {
     private var checkStack: ListBuffer[(Int, Int, Int)] =
         ListBuffer()
 
-    def pushPos(offset: Int, line: Int, col: Int): Unit =
+    def pushPos(offset: Int, line: Int, col: Int): Unit = {
         checkStack.prepend((offset, line, col))
+    }
 
-    def popPos(): (Int, Int, Int) =
+
+    def popPos(): (Int, Int, Int) = {
         checkStack.remove(0)
+    }
 
     // Tracks where we are in the parser callstack.
     private var builderStack: ListBuffer[DebugTreeBuilder] =

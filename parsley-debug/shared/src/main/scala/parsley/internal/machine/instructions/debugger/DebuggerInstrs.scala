@@ -18,12 +18,13 @@ private [internal] class EnterParser
     (var label: Int, origin: LazyParsley[_], optName: Option[String])
     (dbgCtx: DebugContext) extends InstrWithLabel with DebuggerInstr {
     override def apply(ctx: Context): Unit = {
+        // Uncomment to debug entries and exits.
+        // println(s"Entering ${origin.prettyName} (@ ${ctx.pc} -> Exit @ $label)")
+
         // I think we can get away with executing this unconditionally.
         dbgCtx.push(ctx.input, origin, optName)
         // Using my own state tracker instead.
         dbgCtx.pushPos(ctx.offset, ctx.line, ctx.col)
-        // I don't think this is working, my states keep getting eaten.
-        // ctx.saveState() // Save our location for inputs.
         ctx.pushHandler(label) // Mark the AddAttempt instruction as an exit handler.
         ctx.inc()
     }
@@ -38,9 +39,13 @@ private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Debugg
         (xa(x), xb(x), xc(x))
 
     override def apply(ctx: Context): Unit = {
+        // Uncomment to debug entries and exits.
+        // println(s"Leaving ${if (ctx.good) "OK" else "FAIL" } (@ ${ctx.pc})")
+
         // These offsets will be needed to slice the specific part of the input that the parser has
         // attempted to parse during its attempt.
-        val (prevOffset, prevLine, prevCol) = tri(dbgCtx.popPos())(_._1, _._2, _._3)
+        val state = dbgCtx.popPos()
+        val (prevOffset, prevLine, prevCol) = tri(state)(_._1, _._2, _._3)
         val currentOff = ctx.offset
         val prevPos = (prevLine, prevCol)
 
@@ -49,7 +54,6 @@ private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Debugg
         // We add 1 to currentOff to see what character caused the parse failure.
         val success = ctx.good
         val input = ctx.input.slice(prevOffset, if (success) currentOff else currentOff + 1)
-
 
         // Construct a new parse attempt and add it in.
         // XXX: Cast to Any required as otherwise the Some creation is treated as dead code.
@@ -69,8 +73,8 @@ private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Debugg
         dbgCtx.pop()
 
         // Fail if the current context is not good, as required by how Parsley's machine functions.
+        ctx.handlers = ctx.handlers.tail
         if (success) {
-            ctx.handlers = ctx.handlers.tail
             ctx.inc()
         } else {
             ctx.fail()
