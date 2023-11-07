@@ -19,29 +19,12 @@ private [parsley] object helper {
     // This map tracks seen parsers to prevent infinitely recursive parsers from overflowing the stack (and ties
     // the knot for these recursive parsers).
     // Use maps with weak keys or don't pass this into a >>= parser.
-    private [parsley] sealed trait InjectorMap {
-        def put(par: LazyParsley[_], dbg: Debugged[_]): Unit
-        def get(par: LazyParsley[_]): Debugged[_]
-        def contains(par: LazyParsley[_]): Boolean
-    }
+    private [parsley] final class ParserTracker(val map: mutable.Map[LazyParsley[_], Debugged[_]]) {
+        def put(par: LazyParsley[_], dbg: Debugged[_]): Unit = map(par) = dbg
 
-    private [parsley] final class ParserTracker(val map: mutable.Map[LazyParsley[_], Debugged[_]]) extends InjectorMap {
-        override def put(par: LazyParsley[_], dbg: Debugged[_]): Unit = map(par) = dbg
+        def get(par: LazyParsley[_]): Debugged[_] = map(par)
 
-        override def get(par: LazyParsley[_]): Debugged[_] = map(par)
-
-        override def contains(par: LazyParsley[_]): Boolean = map.contains(par)
-    }
-
-    // FlatMap parsers hopefully
-    private [parsley] final class DummyTracker extends InjectorMap {
-        override def put(par: LazyParsley[_], dbg: Debugged[_]): Unit = ()
-
-        //noinspection ScalaStyle
-        override def get(par: LazyParsley[_]): Debugged[_] =
-            throw new NoSuchElementException("Dummy maps don't contain anything.")
-
-        override def contains(par: LazyParsley[_]): Boolean = false
+        def contains(par: LazyParsley[_]): Boolean = map.contains(par)
     }
 
     // Keeping this around for easy access to LPM.
@@ -76,11 +59,11 @@ private [parsley] object helper {
         private def handlePossiblySeenAbstract[A](self: LazyParsley[A],
                                                   context: ParserTracker,
                                                   gen: (LazyParsley[A], DebugContext) => Debugged[A])(dbgF: => L[A]): L[A] =
-            if (context.map.contains(self)) {
-                result[R, LazyParsley[A], M](context.map(self).asInstanceOf[Debugged[A]])
+            if (context.contains(self)) {
+                result[R, LazyParsley[A], M](context.get(self).asInstanceOf[Debugged[A]])
             } else {
                 val current = gen(self, dbgCtx)
-                context.map.put(self, current)
+                context.put(self, current)
                 dbgF.map { dbgF_ =>
                     current.par = Some(dbgF_)
                     current
