@@ -143,7 +143,7 @@ object combinator {
       * @note Do not run a parser through this combinator multiple times.
       */
     def attachWithImplicitFrontend[A](parser: Parsley[A])(implicit frontend: DebugFrontend): Parsley[A]
-    = attachWithFrontend(parser, frontend)
+        = attachWithFrontend(parser, frontend)
 
     /** Attach a name to a parser, for display within the debugger output.
       * This name has a higher precedence than names collected with [[parsley.debugger.util.Collector]].

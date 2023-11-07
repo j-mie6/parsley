@@ -9,26 +9,32 @@ import scala.collection.mutable.ListBuffer
 import scala.scalajs.js
 import scala.scalajs.js.WeakRef
 
-import XAbstractWeakMap.WeakRefOps
+import XAbstractWeakMap._ // scalastyle:ignore underscore.import
 
-private [internal] final class XAbstractWeakMap[K, V](rs: Array[ListBuffer[(WeakRef[K], V)]] => Unit) {
+private [internal] final class XAbstractWeakMap[K, V](rs: Backing[K, V] => Unit) {
     // Constants and helpers.
     private val minBuckets: Int = 8
     private val maxBucketConstant: Double = 4.0
     private val minBucketConstant: Double = 0.25
 
+    // XXX: It would be better to use a size variable private to the map, but the issue is that
+    //      removeStale() will mess with that, so the passed in stale remover function would end up
+    //      needing access to that variable in a bit of a messy way.
     private def currentBucketValue(): Double =
-        backing.map(_.length).sum.toDouble / backing.length.toDouble
+        backing.foldLeft(0)(_ + _.length).toDouble / backing.length.toDouble
 
     private def grow(n: Int): Int = Math.max(minBuckets, n + (n >> 1))
     private def shrink(n: Int): Int = Math.max(minBuckets, (n >> 1) + (n >> 2))
 
-    private var backing: Array[ListBuffer[(WeakRef[K], V)]] = Array.fill(minBuckets)(new ListBuffer())
+    private var backing: Backing[K, V] = Array.fill(minBuckets)(new ListBuffer())
 
     // Run through and expunge all stale weak references from the map.
     private def removeStale(): Unit =
         rs(backing)
 
+    // Resize only if cmp returns true after being fed currentBucketValue().
+    // This is also the only time stale entries are removed, otherwise we'd accrue an O(n) penalty every single
+    // time we want to query the map.
     private def resize(cmp: Double => Boolean, rf: Int => Int): Unit = {
         if (cmp(currentBucketValue())) {
             // Only remove stale when growing or shrinking.
@@ -75,4 +81,6 @@ private [internal] object XAbstractWeakMap {
             if (x.isDefined) Some(x.get) else None
         }
     }
+
+  type Backing[K, V] = Array[ListBuffer[(WeakRef[K], V)]]
 }

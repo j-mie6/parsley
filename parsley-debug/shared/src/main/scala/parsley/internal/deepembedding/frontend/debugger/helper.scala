@@ -190,7 +190,9 @@ private [parsley] object helper {
                 } yield new ChainPre(dbgP, dbgOp)
             }
 
-        override def visit[A, B](self: Chainl[A, B], context: ParserTracker)(init: LazyParsley[B], p: => LazyParsley[A], op: => LazyParsley[(B, A) => B]): L[B] =
+        override def visit[A, B](self: Chainl[A, B], context: ParserTracker)(init: LazyParsley[B],
+                                                                             p: => LazyParsley[A],
+                                                                             op: => LazyParsley[(B, A) => B]): L[B] =
             handlePossiblySeen[B](self, context) {
                 for {
                     dbgInit <- suspend[M, R, LazyParsley[B]](init.visit(this, context))

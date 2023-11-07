@@ -29,7 +29,6 @@ private [parsley] class DebugContext {
         checkStack.prepend((offset, line, col))
     }
 
-
     def popPos(): (Int, Int, Int) = {
         checkStack.remove(0)
     }
