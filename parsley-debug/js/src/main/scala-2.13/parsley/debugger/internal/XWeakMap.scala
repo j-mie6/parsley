@@ -14,12 +14,12 @@ private [parsley] final class XWeakMap[K, V] extends mutable.Map[K, V] {
         backing.foreach(_.filterInPlace(_._1.derefAsOption.isDefined))
     )
 
-    override def subtractOne(key: K): XWeakMap[K, V] = {
+    override def subtractOne(key: K): XWeakMap.this.type = {
         backing.drop(key)
         this
     }
 
-    override def addOne(kv: (K, V)): XWeakMap[K, V] = {
+    override def addOne(kv: (K, V)): XWeakMap.this.type = {
         backing.push(kv)
         this
     }

@@ -47,19 +47,16 @@ private [internal] final class XAbstractWeakMap[K, V](rs: Array[ListBuffer[(Weak
         }
     }
 
-    def drop(key: K): XAbstractWeakMap[K, V] = {
+    def drop(key: K): Unit = {
         backing(key.hashCode() % backing.length).filterNot(_._1.derefAsOption.exists(_ == key))
         resize(_ < minBucketConstant, shrink)
-        this
     }
 
-    def push(kv: (K, V)): XAbstractWeakMap[K, V] = {
+    def push(kv: (K, V)): Unit = {
         kv match {
             case (k, v) => backing(k.hashCode() % backing.length).append((new WeakRef(k), v))
         }
         resize(_ > maxBucketConstant, grow)
-
-        this
     }
 
     def lookup(key: K): Option[V] = {

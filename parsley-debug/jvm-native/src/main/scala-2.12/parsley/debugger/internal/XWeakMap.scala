@@ -11,13 +11,13 @@ import scala.collection.mutable
 private [parsley] final class XWeakMap[K, V] extends mutable.Map[K, V] {
     private val backing: XAbstractWeakMap[K, V] = new XAbstractWeakMap()
 
-    override def -=(k: K): XWeakMap[K, V] = {
+    override def -=(k: K): XWeakMap.this.type = {
         backing.drop(k)
         this
     }
 
-    override def +=(kv: (K, V)): XWeakMap[K, V] = {
-        backing.push(kv._1, kv._2)
+    override def +=(kv: (K, V)): XWeakMap.this.type = {
+        backing.push(kv)
         this
     }
 

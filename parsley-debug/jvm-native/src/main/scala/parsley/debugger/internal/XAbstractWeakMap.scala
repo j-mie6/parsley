@@ -7,6 +7,8 @@ package parsley.debugger.internal
 
 import scala.collection.mutable
 
+import org.typelevel.scalaccompat.annotation.unused
+
 // Abstracts away the logic of XWeakMap so that only minimal interfaces are needed between Scala
 // versions. This reduces code duplication, and makes further changes much easier to implement.
 private [internal] final class XAbstractWeakMap[K, V] extends Iterable[(K, V)] {
@@ -14,14 +16,14 @@ private [internal] final class XAbstractWeakMap[K, V] extends Iterable[(K, V)] {
     // implementation of XWeakMap.
     private val backing: mutable.WeakHashMap[K, V] = new mutable.WeakHashMap()
 
-    def drop(k: K): XAbstractWeakMap[K, V] = {
-        backing.remove(k)
-        this
+    def drop(k: K): Unit = {
+        backing.remove(k): @unused
+        () // Silences unit return warning.
     }
 
-    def push(kv: (K, V)): XAbstractWeakMap[K, V] = {
-        backing.put(kv._1, kv._2)
-        this
+    def push(kv: (K, V)): Unit = {
+        backing.put(kv._1, kv._2): @unused
+        () // Silences unit return warning.
     }
 
     def lookup(key: K): Option[V] =
