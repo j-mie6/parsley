@@ -82,5 +82,5 @@ private [internal] object XAbstractWeakMap {
         }
     }
 
-  type Backing[K, V] = Array[ListBuffer[(WeakRef[K], V)]]
+    type Backing[K, V] = Array[ListBuffer[(WeakRef[K], V)]]
 }
