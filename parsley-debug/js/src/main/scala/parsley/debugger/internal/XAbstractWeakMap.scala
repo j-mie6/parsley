@@ -5,11 +5,13 @@
  */
 package parsley.debugger.internal
 
+import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
 import scala.scalajs.js
 import scala.scalajs.js.WeakRef
 
 import XAbstractWeakMap._ // scalastyle:ignore underscore.import
+import org.typelevel.scalaccompat.annotation.unused
 
 private [internal] final class XAbstractWeakMap[K, V](rs: Backing[K, V] => Unit) {
     // Constants and helpers.
@@ -54,22 +56,47 @@ private [internal] final class XAbstractWeakMap[K, V](rs: Backing[K, V] => Unit)
     }
 
     def drop(key: K): Unit = {
-        backing(key.hashCode() % backing.length).filterNot(_._1.derefAsOption.exists(_ == key))
-        resize(_ < minBucketConstant, shrink)
+        // Filter out the key using a tight loop.
+        val lb  = backing(key.hashCode() % backing.length)
+        val len = lb.length
+
+        @tailrec def go(ix: Int): Unit =
+            if (ix <= len) {
+                if (lb(ix)._1.derefAsOption.contains(key)) {
+                    lb.remove(ix): @unused
+                    resize(_ < minBucketConstant, shrink)
+                } else go(ix + 1)
+            }
+
+        go(0)
     }
 
-    def push(kv: (K, V)): Unit = {
+    def push(kv: (K, V)): Unit =
+        // Actually remember to replace V if the key K already exists.
         kv match {
-            case (k, v) => backing(k.hashCode() % backing.length).append((new WeakRef(k), v))
+            case (k, v) =>
+                val lb  = backing(k.hashCode() % backing.length)
+                val len = lb.length
+
+                @tailrec def go(ix: Int): Boolean =
+                    if (ix <= len) {
+                        if (lb(ix)._1.derefAsOption.contains(k)) {
+                            lb(ix) = (new WeakRef(k), v)
+                            true
+                        } else go(ix + 1)
+                    } else false
+
+                if (!go(0)) {
+                    lb.append((new WeakRef(k), v))
+                    resize(_ > maxBucketConstant, grow)
+                }
         }
-        resize(_ > maxBucketConstant, grow)
-    }
 
     def lookup(key: K): Option[V] = {
         val kh = key.hashCode()
         val lb = backing(kh % backing.length)
 
-        lb.find(_._1.derefAsOption.exists(_ == key)).map(_._2)
+        lb.find(_._1.derefAsOption.contains(key)).map(_._2)
     }
 }
 
