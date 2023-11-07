@@ -209,7 +209,7 @@ class ErrorTests extends ParsleyTest {
         }
     }
 
-    it should "not replace hints if input is consumed" in {
+    it should "suppress hints even if input is consumed" in {
         inside((many(digit).hide <* eof).parse("1e")) {
             case Failure(TestError((1, 2), VanillaError(unex, exs, rs, 1))) =>
                 unex should contain (Raw("e"))
