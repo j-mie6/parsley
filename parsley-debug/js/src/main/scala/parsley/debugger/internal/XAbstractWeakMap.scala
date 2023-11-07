@@ -61,7 +61,7 @@ private [internal] final class XAbstractWeakMap[K, V](rs: Backing[K, V] => Unit)
         val len = lb.length
 
         @tailrec def go(ix: Int): Unit =
-            if (ix <= len) {
+            if (ix < len) {
                 if (lb(ix)._1.derefAsOption.contains(key)) {
                     lb.remove(ix): @unused
                     resize(_ < minBucketConstant, shrink)
@@ -79,7 +79,7 @@ private [internal] final class XAbstractWeakMap[K, V](rs: Backing[K, V] => Unit)
                 val len = lb.length
 
                 @tailrec def go(ix: Int): Boolean =
-                    if (ix <= len) {
+                    if (ix < len) {
                         if (lb(ix)._1.derefAsOption.contains(k)) {
                             lb(ix) = (new WeakRef(k), v)
                             true
