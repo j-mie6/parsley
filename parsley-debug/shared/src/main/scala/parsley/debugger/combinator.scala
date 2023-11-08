@@ -92,7 +92,11 @@ object combinator {
       * You would normally obtain a [[parsley.debugger.frontend.DebugFrontend]] frontend from its
       * respective package as either a static object or an instance object depending on whether the
       * renderer stores state. In the latter case, it is better to regenerate the frontend with
-      * every new debugged parser.
+      * every new debugged parser. The extra type parameter seen on this method is to provide type
+      * hinting which dictates whether the frontend is stateless (i.e. inherits from
+      * [[parsley.debugger.frontend.StatelessFrontend]]) or stateful (i.e. inherits from
+      * [[parsley.debugger.frontend.StatefulFrontend]]), as stateful frontends can only be run once
+      * before a new instance needs to be generated.
       *
       * The instrumented parser will automatically call the frontend to render the debug tree, so it
       * may be recommended that you only use this with smaller parsers as large parsers may cause
@@ -109,7 +113,7 @@ object combinator {
       * @return A modified parser which will ask the frontend to process the produced debug tree after
       *         a call to [[Parsley.parse]] is made.
       */
-    def attachWithFrontend[A](parser: Parsley[A], frontend: DebugFrontend): Parsley[A] = {
+    def attachWithFrontend[A, F](parser: Parsley[A], frontend: DebugFrontend[F]): Parsley[A] = {
         val (tree, attached) = attachDebugger(parser)
 
         // Ideally, this should run 'attached', and render the tree regardless of the parser's success.
@@ -132,7 +136,7 @@ object combinator {
       *
       * @return Generator closure for frontend-debugged versions of the input parser.
       */
-    def attachReusableWithFrontend[A](parser: Parsley[A], frontend: () => DebugFrontend): () => Parsley[A] =
+    def attachReusableWithFrontend[A, F](parser: Parsley[A], frontend: () => DebugFrontend[F]): () => Parsley[A] =
         () => attachWithFrontend(parser, frontend())
 
     /** Attach a debugger and an implicitly-available frontend in which the debug tree should be
@@ -142,7 +146,7 @@ object combinator {
       *
       * @note Do not run a parser through this combinator multiple times.
       */
-    def attachWithImplicitFrontend[A](parser: Parsley[A])(implicit frontend: DebugFrontend): Parsley[A]
+    def attachWithImplicitFrontend[A, F](parser: Parsley[A])(implicit frontend: DebugFrontend[F]): Parsley[A]
         = attachWithFrontend(parser, frontend)
 
     /** Attach a name to a parser, for display within the debugger output.
@@ -165,15 +169,15 @@ object combinator {
             combinator.attachReusable(par)
 
         /** Dot accessor version of [[combinator.attachWithFrontend]]. */
-        def attachWithFrontend(frontend: DebugFrontend): Parsley[A] =
+        def attachWithFrontend[F](frontend: DebugFrontend[F]): Parsley[A] =
             combinator.attachWithFrontend(par, frontend)
 
         /** Dot accessor version of [[combinator.attachReusableWithFrontend]]. */
-        def attachReusableWithFrontend(frontend: () => DebugFrontend): () => Parsley[A] =
+        def attachReusableWithFrontend[F](frontend: () => DebugFrontend[F]): () => Parsley[A] =
             combinator.attachReusableWithFrontend(par, frontend)
 
         /** Dot accessor version of [[combinator.attachWithImplicitFrontend]]. */
-        def attachWithImplicitFrontend(implicit frontend: DebugFrontend): Parsley[A] =
+        def attachWithImplicitFrontend[F](implicit frontend: DebugFrontend[F]): Parsley[A] =
             combinator.attachWithImplicitFrontend(par)
 
         /** Dot accessor version of [[combinator.named]]. */
