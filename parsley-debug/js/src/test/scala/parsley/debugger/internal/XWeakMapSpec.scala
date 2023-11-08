@@ -53,6 +53,10 @@ class XWeakMapSpec extends AnyFlatSpec with Matchers {
     }
 
     // TODO: How do I test for memory leaks (and coerce GC) in JS?
+    alert("""There does not seem to be an easy way to encourage JS' GC to run. This test would've tested
+            |the WeakRef's capability of not holding strong references to the keys of the map, but there
+            |also is no way of doing so without creating an ungodly amount of objects, and I don't think
+            |the CI runners would like that.""".stripMargin.replace("\r", "").replace('\n', ' '))
     ignore should "not leak memory when many short-lived objects exist" in {
         // I have no idea what to put in this test in general.
 
