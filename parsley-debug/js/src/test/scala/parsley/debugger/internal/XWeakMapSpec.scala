@@ -48,7 +48,7 @@ class XWeakMapSpec extends AnyFlatSpec with Matchers {
         // the chances that GC gets triggered at least once.
         val objs: Int = 256000
 
-        val xwm: XWeakMap[Object, Int] = new XWeakMap()
+        val xwm: XWeakMap[Object, Int] = new XWeakMap(objs / 16)
         for (i <- 0 until objs) {
             if (i % 4000 == 0) {
                 // XXX: This is a horrible idea. System.gc() doesn't force garbage collection, merely
@@ -59,5 +59,14 @@ class XWeakMapSpec extends AnyFlatSpec with Matchers {
         }
 
         (xwm.backing.trueSize() < objs) shouldBe true
+    }
+
+    it should "not have an iterator at all" in {
+        try {
+            new XWeakMap[Object, Object]().iterator
+            fail(".iterator somehow returned.")
+        } catch {
+            case _: Throwable => info(".iterator call has thrown, as expected.")
+        }
     }
 }

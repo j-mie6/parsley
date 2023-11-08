@@ -15,7 +15,7 @@ import org.typelevel.scalaccompat.annotation.unused
 // XXX: This map has a heavy dependency on JS's WeakRef. Not all types will be accepted as keys as
 //      they must qualify as Objects to be inserted as keys into a weak reference.
 //      Simple types like strings will raise a runtime exception.
-private [internal] final class XAbstractWeakMap[K <: Object, V](rs: Backing[K, V] => Unit) {
+private [internal] final class XAbstractWeakMap[K <: Object, V](rs: Backing[K, V] => Unit, startSize: Int = 32) {
     // Constants and helpers.
     private val minBuckets: Int = 8
     private val maxBucketConstant: Double = 4.0
@@ -33,7 +33,9 @@ private [internal] final class XAbstractWeakMap[K <: Object, V](rs: Backing[K, V
     private def grow(n: Int): Int = Math.max(minBuckets, n + (n >> 1))
     private def shrink(n: Int): Int = Math.max(minBuckets, (n >> 1) + (n >> 2))
 
-    private var backing: Backing[K, V] = Array.fill(minBuckets)(new ListBuffer())
+    private var backing: Backing[K, V] = Array.fill(
+      Math.max(minBuckets, startSize / maxBucketConstant.toInt)
+    )(new ListBuffer())
 
     // Run through and expunge all stale weak references from the map.
     private def removeStale(): Unit =
