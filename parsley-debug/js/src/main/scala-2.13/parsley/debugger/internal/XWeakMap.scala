@@ -23,6 +23,8 @@ private [parsley] final class XWeakMap[K <: Object, V](startSize: Int = 32) exte
     override def get(key: K): Option[V] =
         backing.lookup(key)
 
+    override def size: Int = backing.liveSize()
+
     // We don't actually need this, and it's very hard to work this out properly for a map with weak keys.
     override def iterator: Iterator[(K, V)] = ??? // scalastyle:ignore not.implemented.error.usage
 }

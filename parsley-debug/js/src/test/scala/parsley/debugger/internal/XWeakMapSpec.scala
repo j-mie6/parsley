@@ -49,6 +49,7 @@ class XWeakMapSpec extends AnyFlatSpec with Matchers {
         for ((k, ix) <- keys.zipWithIndex) xwm(k) shouldBe ix
 
         xwm.backing.trueSize() shouldBe objs
+        xwm.backing.trueSize() shouldBe xwm.backing.liveSize()
     }
 
     // TODO: How do I test for memory leaks (and coerce GC) in JS?

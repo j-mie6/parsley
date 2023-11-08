@@ -21,14 +21,16 @@ private [internal] final class XAbstractWeakMap[K <: Object, V](startSize: Int =
     private val maxBucketConstant: Double = 4.0
     private val minBucketConstant: Double = 0.25
 
-    // XXX: It would be better to use a size variable private to the map, but the issue is that
-    //      removeStale() will mess with that, so the passed in stale remover function would end up
-    //      needing access to that variable in a bit of a messy way.
     private def currentBucketValue(): Double =
-        trueSize().toDouble / backing.length.toDouble
+        liveEntries.toDouble / backing.length.toDouble
+
+    // This number is tracked automatically with additions to the map and removals of live or stale keys.
+    private var liveEntries: Int = 0
 
     private [internal] def trueSize(): Int =
         backing.foldLeft(0)(_ + _.length)
+
+    private [internal] def liveSize(): Int = liveEntries
 
     private def grow(n: Int): Int = Math.max(minBuckets, n + (n >> 1))
     private def shrink(n: Int): Int = Math.max(minBuckets, (n >> 1) + (n >> 2))
@@ -38,8 +40,6 @@ private [internal] final class XAbstractWeakMap[K <: Object, V](startSize: Int =
     )(new ListBuffer())
 
     // Resize only if cmp returns true after being fed currentBucketValue().
-    // This is also the only time stale entries are removed, otherwise we'd accrue an O(n) penalty every single
-    // time we want to query the map.
     private def resize(cmp: Double => Boolean, rf: Int => Int): Unit = {
         if (cmp(currentBucketValue())) {
             val old: Backing[K, V] = backing
@@ -57,6 +57,8 @@ private [internal] final class XAbstractWeakMap[K <: Object, V](startSize: Int =
                         } else {
                             // Current index is stale, remove it and try again on the same index.
                             entries.remove(ix): @unused
+                            liveEntries = liveEntries - 1
+
                             go(ix)
                         }
                     }
@@ -76,10 +78,14 @@ private [internal] final class XAbstractWeakMap[K <: Object, V](startSize: Int =
 
                 if (current.exists(_ == key)) {
                     lb.remove(ix): @unused
+                    liveEntries = liveEntries - 1
+
                     resize(_ < minBucketConstant, shrink)
                 } else if (current.isEmpty) {
                     // Current index is stale, remove it and try again on the same index.
                     lb.remove(ix): @unused
+                    liveEntries = liveEntries - 1
+
                     go(ix)
                 } else {
                     go(ix + 1)
@@ -105,6 +111,8 @@ private [internal] final class XAbstractWeakMap[K <: Object, V](startSize: Int =
                         } else if (current.isEmpty) {
                             // See above in drop().
                             lb.remove(ix): @unused
+                            liveEntries = liveEntries - 1
+
                             go(ix)
                         } else {
                             go(ix + 1)
@@ -113,6 +121,8 @@ private [internal] final class XAbstractWeakMap[K <: Object, V](startSize: Int =
 
                 if (!go(0)) {
                     lb.append((new WeakRef(k), v))
+                    liveEntries = liveEntries + 1
+
                     resize(_ > maxBucketConstant, grow)
                 }
         }
@@ -130,6 +140,8 @@ private [internal] final class XAbstractWeakMap[K <: Object, V](startSize: Int =
                 } else if (current.isEmpty) {
                     // See above in drop().
                     lb.remove(ix): @unused
+                    liveEntries = liveEntries - 1
+
                     go(ix)
                 } else {
                     go(ix + 1)
