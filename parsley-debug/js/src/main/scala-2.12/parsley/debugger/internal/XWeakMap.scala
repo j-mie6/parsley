@@ -9,7 +9,7 @@ import scala.collection.mutable
 
 import XAbstractWeakMap.WeakRefOps
 
-private [parsley] final class XWeakMap[K, V] extends mutable.Map[K, V] {
+private [parsley] final class XWeakMap[K <: Object, V] extends mutable.Map[K, V] {
     private val backing: XAbstractWeakMap[K, V] = new XAbstractWeakMap(backing =>
         backing.map(_.filter(_._1.derefAsOption.isDefined))
     )

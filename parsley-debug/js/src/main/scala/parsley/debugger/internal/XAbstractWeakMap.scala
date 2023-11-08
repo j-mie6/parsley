@@ -13,7 +13,10 @@ import scala.scalajs.js.WeakRef
 import XAbstractWeakMap._ // scalastyle:ignore underscore.import
 import org.typelevel.scalaccompat.annotation.unused
 
-private [internal] final class XAbstractWeakMap[K, V](rs: Backing[K, V] => Unit) {
+// XXX: This map has a heavy dependency on JS's WeakRef. Not all types will be accepted as keys as
+//      they must qualify as Objects to be inserted as keys into a weak reference.
+//      Simple types like strings will raise a runtime exception.
+private [internal] final class XAbstractWeakMap[K <: Object, V](rs: Backing[K, V] => Unit) {
     // Constants and helpers.
     private val minBuckets: Int = 8
     private val maxBucketConstant: Double = 4.0
