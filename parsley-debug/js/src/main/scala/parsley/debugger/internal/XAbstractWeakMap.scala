@@ -49,14 +49,15 @@ private [internal] final class XAbstractWeakMap[K <: Object, V](rs: Backing[K, V
             // Only remove stale when growing or shrinking.
             removeStale()
 
-            val entries: ListBuffer[(WeakRef[K], V)] = ListBuffer()
-            backing.foreach(entries ++= _)
-
+            val old: Backing[K, V] = backing
             backing = Array.fill(rf(backing.length))(new ListBuffer())
-            entries.foreach { case (wk, v) =>
+
+            old.foreach { entries =>
+              entries.foreach { case (wk, v) =>
                 wk.deref().foreach { k =>
-                    backing(k.hashCode() % backing.length).append((wk, v))
+                  backing(k.hashCode() % backing.length).append((wk, v))
                 }
+              }
             }
         }
     }
@@ -106,7 +107,6 @@ private [internal] final class XAbstractWeakMap[K <: Object, V](rs: Backing[K, V
     }
 }
 
-// WeakRef to Option helper.
 private [internal] object XAbstractWeakMap {
     type Backing[K, V] = Array[ListBuffer[(WeakRef[K], V)]]
 }
