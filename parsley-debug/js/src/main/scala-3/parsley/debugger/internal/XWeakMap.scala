@@ -7,7 +7,7 @@ package parsley.debugger.internal
 
 import scala.collection.mutable
 
-private [parsley] final class XWeakMap[K <: Object, V](startSize: Int = 32) extends mutable.Map[K, V] {
+private [parsley] final class XWeakMap[K <: Object, V](startSize: Int = 32) extends mutable.Map[K, V] { // scalastyle:ignore magic.number
     private [internal] val backing: XAbstractWeakMap[K, V] = new XAbstractWeakMap(backing =>
         backing.foreach(_.filterInPlace(_._1.deref().isDefined)),
         startSize
