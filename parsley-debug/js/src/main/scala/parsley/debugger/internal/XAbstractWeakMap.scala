@@ -7,7 +7,6 @@ package parsley.debugger.internal
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
-import scala.scalajs.js
 import scala.scalajs.js.WeakRef
 
 import XAbstractWeakMap._ // scalastyle:ignore underscore.import
@@ -26,7 +25,10 @@ private [internal] final class XAbstractWeakMap[K <: Object, V](rs: Backing[K, V
     //      removeStale() will mess with that, so the passed in stale remover function would end up
     //      needing access to that variable in a bit of a messy way.
     private def currentBucketValue(): Double =
-        backing.foldLeft(0)(_ + _.length).toDouble / backing.length.toDouble
+        trueSize().toDouble / backing.length.toDouble
+
+    private [internal] def trueSize(): Int =
+        backing.foldLeft(0)(_ + _.length)
 
     private def grow(n: Int): Int = Math.max(minBuckets, n + (n >> 1))
     private def shrink(n: Int): Int = Math.max(minBuckets, (n >> 1) + (n >> 2))
@@ -50,9 +52,8 @@ private [internal] final class XAbstractWeakMap[K <: Object, V](rs: Backing[K, V
 
             backing = Array.fill(rf(backing.length))(new ListBuffer())
             entries.foreach { case (wk, v) =>
-                wk.derefAsOption match {
-                    case None    => ()
-                    case Some(k) => backing(k.hashCode() % backing.length).append((wk, v))
+                wk.deref().foreach { k =>
+                    backing(k.hashCode() % backing.length).append((wk, v))
                 }
             }
         }
@@ -65,7 +66,7 @@ private [internal] final class XAbstractWeakMap[K <: Object, V](rs: Backing[K, V
 
         @tailrec def go(ix: Int): Unit =
             if (ix < len) {
-                if (lb(ix)._1.derefAsOption.contains(key)) {
+                if (lb(ix)._1.deref().exists(_ == key)) {
                     lb.remove(ix): @unused
                     resize(_ < minBucketConstant, shrink)
                 } else go(ix + 1)
@@ -83,8 +84,8 @@ private [internal] final class XAbstractWeakMap[K <: Object, V](rs: Backing[K, V
 
                 @tailrec def go(ix: Int): Boolean =
                     if (ix < len) {
-                        if (lb(ix)._1.derefAsOption.contains(k)) {
-                            lb(ix) = (new WeakRef(k), v)
+                        if (lb(ix)._1.deref().exists(_ == k)) {
+                            lb(ix) = (lb(ix)._1, v)
                             true
                         } else go(ix + 1)
                     } else false
@@ -99,18 +100,11 @@ private [internal] final class XAbstractWeakMap[K <: Object, V](rs: Backing[K, V
         val kh = key.hashCode()
         val lb = backing(kh % backing.length)
 
-        lb.find(_._1.derefAsOption.contains(key)).map(_._2)
+        lb.find(_._1.deref().exists(_ == key)).map(_._2)
     }
 }
 
 // WeakRef to Option helper.
 private [internal] object XAbstractWeakMap {
-    implicit class WeakRefOps[+S](wr: js.WeakRef[S]) {
-        def derefAsOption: Option[S] = {
-            val x = wr.deref()
-            if (x.isDefined) Some(x.get) else None
-        }
-    }
-
     type Backing[K, V] = Array[ListBuffer[(WeakRef[K], V)]]
 }
