@@ -40,6 +40,17 @@ class XWeakMapSpec extends AnyFlatSpec with Matchers {
         xwm(key) shouldBe "bar"
     }
 
+    it should "resize while keeping all live entries" in {
+        val xwm: XWeakMap[Object, Int] = new XWeakMap(32) // scalastyle:ignore magic.number
+        val objs: Int = 256
+
+        val keys: Array[Object] = Array.fill(objs)(new Object())
+        for ((k, ix) <- keys.zipWithIndex) xwm.put(k, ix)
+        for ((k, ix) <- keys.zipWithIndex) xwm(k) shouldBe ix
+
+        xwm.backing.trueSize() shouldBe objs
+    }
+
     // TODO: How do I test for memory leaks (and coerce GC) in JS?
     ignore should "not leak memory when many short-lived objects exist" in {
         // I have no idea what to put in this test in general.
@@ -50,7 +61,7 @@ class XWeakMapSpec extends AnyFlatSpec with Matchers {
 
         val xwm: XWeakMap[Object, Int] = new XWeakMap(objs / 16)
         for (i <- 0 until objs) {
-            if (i % 4000 == 0) {
+            if (i % 1000 == 0) {
                 // XXX: This is a horrible idea. System.gc() doesn't force garbage collection, merely
                 //      "encourage" it to run.
                 System.gc()

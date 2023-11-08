@@ -9,7 +9,7 @@ import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
 import scala.scalajs.js.WeakRef
 
-import XAbstractWeakMap._ // scalastyle:ignore underscore.import
+import XAbstractWeakMap.Backing
 import org.typelevel.scalaccompat.annotation.unused
 
 // XXX: This map has a heavy dependency on JS's WeakRef. Not all types will be accepted as keys as
@@ -140,6 +140,6 @@ private [internal] final class XAbstractWeakMap[K <: Object, V](startSize: Int =
     }
 }
 
-private [internal] object XAbstractWeakMap {
+private object XAbstractWeakMap {
     type Backing[K, V] = Array[ListBuffer[(WeakRef[K], V)]]
 }
