@@ -7,8 +7,10 @@ package parsley.debugger.internal
 
 import scala.collection.mutable
 
+import org.typelevel.scalaccompat.annotation.unused
+
 // For the JVM and Native, its WeakHashMap does the job.
-private [parsley] final class XWeakMap[K, V] extends mutable.Map[K, V] {
+private [parsley] final class XWeakMap[K, V](@unused startSize: Int = 32) extends mutable.Map[K, V] { // scalastyle:ignore magic.number
     private val backing: XAbstractWeakMap[K, V] = new XAbstractWeakMap()
 
     override def subtractOne(k: K): XWeakMap.this.type = {

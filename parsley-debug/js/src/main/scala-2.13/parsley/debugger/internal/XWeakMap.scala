@@ -7,12 +7,8 @@ package parsley.debugger.internal
 
 import scala.collection.mutable
 
-import XAbstractWeakMap.WeakRefOps
-
-private [parsley] final class XWeakMap[K, V] extends mutable.Map[K, V] {
-    private val backing: XAbstractWeakMap[K, V] = new XAbstractWeakMap(backing =>
-        backing.foreach(_.filterInPlace(_._1.derefAsOption.isDefined))
-    )
+private [parsley] final class XWeakMap[K <: Object, V](startSize: Int = 32) extends mutable.Map[K, V] { // scalastyle:ignore magic.number
+    private [internal] val backing: XAbstractWeakMap[K, V] = new XAbstractWeakMap(startSize)
 
     override def subtractOne(key: K): XWeakMap.this.type = {
         backing.drop(key)
@@ -26,6 +22,9 @@ private [parsley] final class XWeakMap[K, V] extends mutable.Map[K, V] {
 
     override def get(key: K): Option[V] =
         backing.lookup(key)
+
+    /** Warning: this is O(n). */
+    override def size: Int = backing.trueSize()
 
     // We don't actually need this, and it's very hard to work this out properly for a map with weak keys.
     override def iterator: Iterator[(K, V)] = ??? // scalastyle:ignore not.implemented.error.usage
