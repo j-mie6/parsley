@@ -35,7 +35,10 @@ sealed abstract class DebugFrontend[T: IsStateful] {
             hasRun = true
             processImpl(input, tree)
         } else {
-
+            // XXX: There isn't really another way to enforce not running a stateful frontend more than once that isn't just "do nothing".
+            //      Especially since doing nothing turns that action into a silent error, which is generally less preferable to "loud"
+            //      errors. Failing fast may be better for some frontends.
+            throw new XIllegalStateException("Stateful frontend has already been run.").except // scalastyle:ignore throw
         }
 
     /** The actual method that does the processing of the tree.
