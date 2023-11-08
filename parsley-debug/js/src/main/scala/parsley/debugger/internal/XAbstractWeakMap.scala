@@ -32,7 +32,7 @@ private [internal] final class XAbstractWeakMap[K <: Object, V](startSize: Int =
         backing.foldLeft(0)(_ + _.length)
     }
 
-  private [internal] def liveSize(): Int = liveEntries
+    private [internal] def liveSize(): Int = liveEntries
 
     private def grow(n: Int): Int = Math.max(minBuckets, n + (n >> 1))
     private def shrink(n: Int): Int = Math.max(minBuckets, (n >> 1) + (n >> 2))
