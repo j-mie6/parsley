@@ -27,13 +27,28 @@ private [internal] final class XAbstractWeakMap[K <: Object, V](startSize: Int =
     // This number is tracked automatically with additions to the map and removals of live or stale keys.
     private var liveEntries: Int = 0
 
-    private [internal] def trueSize(): Int =
+    private [internal] def trueSize(): Int = {
+        removeStale()
         backing.foldLeft(0)(_ + _.length)
+    }
 
-    private [internal] def liveSize(): Int = liveEntries
+  private [internal] def liveSize(): Int = liveEntries
 
     private def grow(n: Int): Int = Math.max(minBuckets, n + (n >> 1))
     private def shrink(n: Int): Int = Math.max(minBuckets, (n >> 1) + (n >> 2))
+
+    private def removeStale(): Unit =
+        backing.foreach { entries =>
+            @tailrec def go(ix: Int): Unit =
+                if (ix < entries.length) {
+                    if (entries(ix)._1.deref().isEmpty) {
+                        entries.remove(ix)
+                        go(ix)
+                    } else go(ix + 1)
+                }
+
+            go(0)
+        }
 
     private var backing: Backing[K, V] = Array.fill(
         Math.max(minBuckets, startSize / maxBucketConstant.toInt)
