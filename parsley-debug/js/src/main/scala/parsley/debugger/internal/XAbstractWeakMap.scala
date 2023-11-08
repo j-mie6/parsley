@@ -15,7 +15,7 @@ import org.typelevel.scalaccompat.annotation.unused
 // XXX: This map has a heavy dependency on JS's WeakRef. Not all types will be accepted as keys as
 //      they must qualify as Objects to be inserted as keys into a weak reference.
 //      Simple types like strings will raise a runtime exception.
-private [internal] final class XAbstractWeakMap[K <: Object, V](rs: Backing[K, V] => Unit, startSize: Int = 32) { // scalastyle:ignore magic.number
+private [internal] final class XAbstractWeakMap[K <: Object, V](startSize: Int = 32) { // scalastyle:ignore magic.number
     // Constants and helpers.
     private val minBuckets: Int = 8
     private val maxBucketConstant: Double = 4.0
@@ -34,30 +34,34 @@ private [internal] final class XAbstractWeakMap[K <: Object, V](rs: Backing[K, V
     private def shrink(n: Int): Int = Math.max(minBuckets, (n >> 1) + (n >> 2))
 
     private var backing: Backing[K, V] = Array.fill(
-      Math.max(minBuckets, startSize / maxBucketConstant.toInt)
+        Math.max(minBuckets, startSize / maxBucketConstant.toInt)
     )(new ListBuffer())
-
-    // Run through and expunge all stale weak references from the map.
-    private def removeStale(): Unit =
-        rs(backing)
 
     // Resize only if cmp returns true after being fed currentBucketValue().
     // This is also the only time stale entries are removed, otherwise we'd accrue an O(n) penalty every single
     // time we want to query the map.
     private def resize(cmp: Double => Boolean, rf: Int => Int): Unit = {
         if (cmp(currentBucketValue())) {
-            // Only remove stale when growing or shrinking.
-            removeStale()
-
             val old: Backing[K, V] = backing
             backing = Array.fill(rf(backing.length))(new ListBuffer())
 
             old.foreach { entries =>
-              entries.foreach { case (wk, v) =>
-                wk.deref().foreach { k =>
-                  backing(k.hashCode() % backing.length).append((wk, v))
-                }
-              }
+                @tailrec def go(ix: Int): Unit =
+                    if (ix < entries.length) {
+                        val (wk, v) = entries(ix)
+                        val k       = wk.deref()
+
+                        if (k.isDefined) {
+                            backing(k.get.hashCode() % backing.length).append((wk, v))
+                            go(ix + 1)
+                        } else {
+                            // Current index is stale, remove it and try again on the same index.
+                            entries.remove(ix): @unused
+                            go(ix)
+                        }
+                    }
+
+                go(0)
             }
         }
     }
@@ -65,14 +69,21 @@ private [internal] final class XAbstractWeakMap[K <: Object, V](rs: Backing[K, V
     def drop(key: K): Unit = {
         // Filter out the key using a tight loop.
         val lb  = backing(key.hashCode() % backing.length)
-        val len = lb.length
 
         @tailrec def go(ix: Int): Unit =
-            if (ix < len) {
-                if (lb(ix)._1.deref().exists(_ == key)) {
+            if (ix < lb.length) {
+                val current = lb(ix)._1.deref()
+
+                if (current.exists(_ == key)) {
                     lb.remove(ix): @unused
                     resize(_ < minBucketConstant, shrink)
-                } else go(ix + 1)
+                } else if (current.isEmpty) {
+                    // Current index is stale, remove it and try again on the same index.
+                    lb.remove(ix): @unused
+                    go(ix)
+                } else {
+                    go(ix + 1)
+                }
             }
 
         go(0)
@@ -87,10 +98,18 @@ private [internal] final class XAbstractWeakMap[K <: Object, V](rs: Backing[K, V
 
                 @tailrec def go(ix: Int): Boolean =
                     if (ix < len) {
-                        if (lb(ix)._1.deref().exists(_ == k)) {
+                        val current = lb(ix)._1.deref()
+
+                        if (current.exists(_ == k)) {
                             lb(ix) = (lb(ix)._1, v)
                             true
-                        } else go(ix + 1)
+                        } else if (current.isEmpty) {
+                            // See above in drop().
+                            lb.remove(ix): @unused
+                            go(ix)
+                        } else {
+                            go(ix + 1)
+                        }
                     } else false
 
                 if (!go(0)) {
