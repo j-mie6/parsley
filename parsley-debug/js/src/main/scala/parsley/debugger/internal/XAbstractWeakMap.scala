@@ -94,10 +94,9 @@ private [internal] final class XAbstractWeakMap[K <: Object, V](startSize: Int =
         kv match {
             case (k, v) =>
                 val lb  = backing(k.hashCode() % backing.length)
-                val len = lb.length
 
                 @tailrec def go(ix: Int): Boolean =
-                    if (ix < len) {
+                    if (ix < lb.length) {
                         val current = lb(ix)._1.deref()
 
                         if (current.exists(_ == k)) {
@@ -122,7 +121,22 @@ private [internal] final class XAbstractWeakMap[K <: Object, V](startSize: Int =
         val kh = key.hashCode()
         val lb = backing(kh % backing.length)
 
-        lb.find(_._1.deref().exists(_ == key)).map(_._2)
+        @tailrec def go(ix: Int): Option[V] =
+            if (ix < lb.length) {
+                val current = lb(ix)._1.deref()
+
+                if (current.exists(_ == key)) {
+                    Some(lb(ix)._2)
+                } else if (current.isEmpty) {
+                    // See above in drop().
+                    lb.remove(ix): @unused
+                    go(ix)
+                } else {
+                    go(ix + 1)
+                }
+            } else None
+
+        go(0)
     }
 }
 
