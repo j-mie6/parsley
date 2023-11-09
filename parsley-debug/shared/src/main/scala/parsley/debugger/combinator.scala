@@ -67,8 +67,7 @@ object combinator {
         val context: DebugContext = new DebugContext()
 
         val attached: LazyParsley[A] = injectM[A](parser.internal, seen, context)
-        val resetter: Parsley[Unit]  = fresh(context.reset())
-        resetter.impure
+        val resetter: Parsley[Unit]  = fresh(context.reset()).impure
 
         (() => context.getFinalBuilder.reconstruct, resetter *> new Parsley(attached))
     }

@@ -17,7 +17,7 @@ private [parsley] class DebugContext {
     // Create a new dummy root of the tree that will act as filler for the rest of the tree to build
     // off of (as there is no "nil" representation for the tree... other than null, which should be
     // avoided in Scala wherever possible).
-    private def dummyRoot: DebugTreeBuilder =
+    private val dummyRoot: DebugTreeBuilder =
         DebugTreeBuilder(None, TransientDebugTree("ROOT", "ROOT", "NIL"))
 
     // Context's checkStack vanished.
@@ -42,10 +42,12 @@ private [parsley] class DebugContext {
         // The root tree exists only as a placeholder for the rest of the debug tree to build off of.
         // If it has no children, that means the debug tree was not built to begin with.
         // If it was multiple children, somehow the debugger has popped too many tree nodes off the stack.
-        assert(builderStack.head.bChildren.size == 1, "The root tree has somehow lost its only child, or gained multiple children.")
+        val ch = builderStack.head.bChildren
+        assert(!(ch.size < 1), s"The root tree has somehow lost its only child. (${ch.size})")
+        assert(!(ch.size > 1), s"The root tree has somehow gained multiple children. (${ch.size})")
 
         // This should never fail.
-        builderStack.head.bChildren.collectFirst { case (_, x) => x }.get
+        ch.collectFirst { case (_, x) => x }.get
     }
 
     // Add an attempt of parsing at the current stack point.
