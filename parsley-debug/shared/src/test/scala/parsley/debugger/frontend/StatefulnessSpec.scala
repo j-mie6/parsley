@@ -34,9 +34,10 @@ class StatefulnessSpec extends AnyFlatSpec {
         stateless.process("bar", tree): @unused
         stateless.process("bar", tree): @unused
 
+        // The first run should not throw.
+        stateful.process("bar", tree): @unused
         info("it should throw when running a stateful frontend multiple times")
         try {
-            stateful.process("bar", tree): @unused
             stateful.process("bar", tree): @unused
 
             fail("stateful frontend did not throw an exception after running multiple times")

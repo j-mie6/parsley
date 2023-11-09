@@ -61,13 +61,13 @@ private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Debugg
         // XXX: Cast to Any required as otherwise the Some creation is treated as dead code.
         dbgCtx.addParseAttempt(
             ParseAttempt(
-                input,
-                prevOffset,
-                if (success) currentOff else currentOff + 1,
-                prevPos,
-                if (success) (ctx.line, ctx.col - 1) else (ctx.line, ctx.col),
-                success,
-                if (success) Some(ctx.stack.peek.asInstanceOf[Any]) else None
+                rawInput   = input,
+                fromOffset = prevOffset,
+                toOffset   = if (success) currentOff else currentOff + 1,
+                fromPos    = prevPos,
+                toPos      = if (success) (ctx.line, ctx.col - 1) else (ctx.line, ctx.col),
+                success    = success,
+                result     = if (success) Some(ctx.stack.peek.asInstanceOf[Any]) else None
             )
         )
 

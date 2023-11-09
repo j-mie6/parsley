@@ -7,13 +7,11 @@ package parsley.debugger.frontend
 
 import parsley.debugger.DebugTree
 
-/** A common interface for a debug frontend for a debugger to present the debug tree.
+/** A common interface for a debug frontend for a debugger to present the debug tree. Inherit from
+  * one of the two provided subtraits to use.
   *
   * Any compliant implementation that handles all nodes of a [[parsley.debugger.DebugTree]] can be
   * used in place of any other implementation (e.g. a serialiser to JSON, a GUI, etc.).
-  *
-  * It is not recommended to directly implement this class, as it uses some typing information to
-  * ensure stateful frontends are not run multiple times.
   *
   * If a frontend is stateless, one can implement it as either an `object` or a `class`, but an `object`
   * is recommended, one that inherits from [[StatelessFrontend]].
@@ -21,7 +19,10 @@ import parsley.debugger.DebugTree
   * If a frontend is stateful, never implement it as an `object`. Always implement stateful frontends
   * as a `class` of some sort inheriting from [[StatefulFrontend]].
   */
-sealed abstract class DebugFrontend[T: IsStateful] {
+sealed trait DebugFrontend {
+    // Is this frontend stateful (and should only be able to run once)?
+    protected [frontend] val hasState: Boolean
+
     // Tracks if this frontend has run already.
     private var hasRun: Boolean = false
 
@@ -31,7 +32,7 @@ sealed abstract class DebugFrontend[T: IsStateful] {
       * @param tree  Debug tree to process.
       */
     final def process(input: => String, tree: => DebugTree): Unit =
-        if (!(implicitly[IsStateful[T]].hasState && hasRun)) {
+        if (!(hasState && hasRun)) {
             hasRun = true
             processImpl(input, tree)
         } else {
@@ -47,30 +48,12 @@ sealed abstract class DebugFrontend[T: IsStateful] {
     protected def processImpl(input: => String, tree: => DebugTree): Unit
 }
 
-// Ensures that statefulness of a frontend is enforced by controlling the subclassing of DebugFrontend.
-sealed trait IsStateful[P] {
-    /** Determines via type if a frontend has state or not. */
-    val hasState: Boolean
-}
-
 /** Signifies that the frontend inheriting from this is stateless. */
-abstract class StatelessFrontend extends DebugFrontend[StatelessFrontend]
-
-// Provides evidence for StatelessFrontend saying that it has no state.
-private [frontend] object StatelessFrontend {
-    // Frontends implemented with this are stateless.
-    implicit final val stateless: IsStateful[StatelessFrontend] = new IsStateful[StatelessFrontend] {
-        override val hasState: Boolean = false
-    }
+trait StatelessFrontend extends DebugFrontend {
+    override protected [frontend] final val hasState: Boolean = false
 }
 
 /** Signifies that the frontend inheriting from this is stateful, and should only be run once. */
-abstract class StatefulFrontend extends DebugFrontend[StatefulFrontend]
-
-// Provides evidence for StatefulFrontend saying that it has state.
-private [frontend] object StatefulFrontend {
-    // Frontends implemented with this are stateless.
-    implicit final val stateful: IsStateful[StatefulFrontend] = new IsStateful[StatefulFrontend] {
-        override val hasState: Boolean = false
-    }
+trait StatefulFrontend extends DebugFrontend {
+    override protected [frontend] final val hasState: Boolean = true
 }
