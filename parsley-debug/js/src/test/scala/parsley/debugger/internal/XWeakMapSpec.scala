@@ -82,7 +82,7 @@ class XWeakMapSpec extends AnyFlatSpec with Matchers {
             new XWeakMap[Object, Object]().iterator
             fail(".iterator somehow returned.")
         } catch {
-            case _: Throwable => info(".iterator call has thrown, as expected.")
+            case _: Throwable => info(".iterator call has thrown, as expected")
         }
     }
 }

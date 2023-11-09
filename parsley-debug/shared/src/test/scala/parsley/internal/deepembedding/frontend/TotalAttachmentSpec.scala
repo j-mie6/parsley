@@ -96,6 +96,7 @@ class TotalAttachmentSpec extends AnyFlatSpec {
                 CUnit
             } else failure()
 
+        // Somehow IntelliJ Scala thinks this is tail-recursive... but ScalaC does not?
         //noinspection NoTailRecursionAnnotation
         override def visitUnknown[A](self: LazyParsley[A], context: Boolean): ConstUnit[A] =
             self match {
