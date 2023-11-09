@@ -54,6 +54,9 @@ private [parsley] class DebugContext {
 
     // Reset this context back to zero.
     def reset(): Unit = {
+        // Clear anything hanging off the dummy root.
+        dummyRoot.bChildren.clear()
+
         builderStack = ListBuffer(dummyRoot)
         checkStack   = ListBuffer()
     }
