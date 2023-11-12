@@ -9,6 +9,7 @@ import scala.collection.immutable.ListMap
 import scala.collection.mutable
 
 import parsley.debugger.{DebugTree, ParseAttempt}
+import parsley.debugger.internal.ToXMap._
 
 /** A mutable implementation of [[DebugTree]], used when constructing the tree as a parser is
   * running.
@@ -35,13 +36,15 @@ private [parsley] case class TransientDebugTree(
     override def parseResults: Option[ParseAttempt] = parse
 
     override val nodeChildren: Map[String, DebugTree] = new XMap[String, DebugTree] {
+        private val conv: ToXMap[Map] = implicitly[ToXMap[Map]]
+
         // We'll use a copy-on-write methodology for this.
         override def removed(key: String): Map[String, DebugTree] =
-            children.foldLeft(ListMap[String, DebugTree]())((acc, p) => acc + p).removed(key)
+            conv.toXMap(children.foldLeft(ListMap[String, DebugTree]())((acc, p) => acc + p)).removed(key)
 
         // See above.
         override def updated[V1 >: DebugTree](key: String, value: V1): Map[String, V1] =
-            children.foldLeft(ListMap[String, DebugTree]())((acc, p) => acc + p).updated(key, value)
+            conv.toXMap(children.foldLeft(ListMap[String, DebugTree]())((acc, p) => acc + p)).updated(key, value)
 
         // For get, size and iterator, we'll just use the mutable map.
         override def get(key: String): Option[DebugTree] = children.get(key)
