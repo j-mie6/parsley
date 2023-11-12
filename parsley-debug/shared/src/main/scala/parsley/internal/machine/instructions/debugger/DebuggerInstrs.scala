@@ -67,7 +67,10 @@ private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Debugg
                 fromPos    = prevPos,
                 toPos      = if (success) (ctx.line, ctx.col - 1) else (ctx.line, ctx.col),
                 success    = success,
-                result     = if (success) Some(ctx.stack.peek.asInstanceOf[Any]) else None
+                result     = if (success) Some(ctx.stack.peek.asInstanceOf[Any] match {
+                    case f if dbgCtx.toStringRules.exists(_(f)) => f.toString // Closures and lambdas are expensive!
+                    case x                                      => x
+                }) else None
             )
         )
 

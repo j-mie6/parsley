@@ -8,12 +8,15 @@ package parsley.debugger.internal
 import scala.collection.mutable.ListBuffer
 
 import parsley.debugger.ParseAttempt
+import parsley.debugger.combinator.defaultRules
 
 import parsley.internal.deepembedding.frontend.LazyParsley
 
 // Class used to hold details about a parser being debugged.
 // This is normally held as a value inside an implicit variable.
-private [parsley] class DebugContext {
+// Anything caught by the toStringRules will have a parse result of that type toString-ed for memory
+// efficiency.
+private [parsley] class DebugContext(val toStringRules: Seq[Any => Boolean] = defaultRules) {
     // Create a new dummy root of the tree that will act as filler for the rest of the tree to build
     // off of (as there is no "nil" representation for the tree... other than null, which should be
     // avoided in Scala wherever possible).
