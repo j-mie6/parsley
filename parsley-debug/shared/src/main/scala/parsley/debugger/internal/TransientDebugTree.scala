@@ -34,8 +34,22 @@ private [parsley] case class TransientDebugTree(
     // The pair stores the input the parser attempted to parse and its success.
     override def parseResults: Option[ParseAttempt] = parse
 
-    override def nodeChildren: Map[String, DebugTree] =
-        children.foldRight[ListMap[String, DebugTree]](ListMap())((p, acc) => acc + p)
+    override val nodeChildren: Map[String, DebugTree] = new Map[String, DebugTree] {
+        // We'll use a copy-on-write methodology for this.
+        override def removed(key: String): Map[String, DebugTree] =
+            children.foldLeft(ListMap[String, DebugTree]())((acc, p) => acc + p).removed(key)
+
+        // See above.
+        override def updated[V1 >: DebugTree](key: String, value: V1): Map[String, V1] =
+            children.foldLeft(ListMap[String, DebugTree]())((acc, p) => acc + p).updated(key, value)
+
+        // For get, size and iterator, we'll just use the mutable map.
+        override def get(key: String): Option[DebugTree] = children.get(key)
+
+        override def iterator: Iterator[(String, DebugTree)] = children.iterator
+
+        override def size: Int = children.size
+    }
 
     /** Freeze the current debug tree into an immutable copy.
       *

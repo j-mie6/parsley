@@ -76,7 +76,7 @@ object combinator {
         val attached: LazyParsley[A] = injectM[A](parser.internal, seen, context)
         val resetter: Parsley[Unit]  = fresh(context.reset()).impure
 
-        (() => context.getFinalBuilder.reconstruct, resetter *> new Parsley(attached))
+        (() => context.getFinalTree, resetter *> new Parsley(attached))
     }
 
     // $COVERAGE-OFF$
