@@ -34,7 +34,7 @@ private [parsley] case class TransientDebugTree(
     // The pair stores the input the parser attempted to parse and its success.
     override def parseResults: Option[ParseAttempt] = parse
 
-    override val nodeChildren: Map[String, DebugTree] = new Map[String, DebugTree] {
+    override val nodeChildren: Map[String, DebugTree] = new XMap[String, DebugTree] {
         // We'll use a copy-on-write methodology for this.
         override def removed(key: String): Map[String, DebugTree] =
             children.foldLeft(ListMap[String, DebugTree]())((acc, p) => acc + p).removed(key)
