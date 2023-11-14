@@ -25,6 +25,9 @@ trait DebugTree {
     /** The type name of the parser that formed this node. */
     def internalName: String
 
+    /** The numerical identifier of this child, which is defined if this is a child parser that consumes input. */
+    def childNumber: Option[Long]
+
     /** Get the potential parse attempt recorded for this particular parser. */
     def parseResults: Option[ParseAttempt]
 

@@ -9,7 +9,7 @@ import scala.collection.immutable.ListMap
 import scala.collection.mutable
 
 import parsley.debugger.{DebugTree, ParseAttempt}
-import parsley.debugger.internal.ToXMap._
+import parsley.debugger.internal.ToXMap._ // scalastyle:ignore underscore.import
 
 /** A mutable implementation of [[DebugTree]], used when constructing the tree as a parser is
   * running.
@@ -26,11 +26,14 @@ private [parsley] case class TransientDebugTree(
     var internal: String = "",
     fullInput: String,
     var parse: Option[ParseAttempt] = None,
+    var cNumber: Option[Long] = None,
     children: mutable.Map[String, TransientDebugTree] = new mutable.LinkedHashMap()
 ) extends DebugTree {
     override def parserName: String = name
 
     override def internalName: String = internal
+
+    override def childNumber: Option[Long] = cNumber
 
     // The pair stores the input the parser attempted to parse and its success.
     override def parseResults: Option[ParseAttempt] = parse
@@ -54,6 +57,42 @@ private [parsley] case class TransientDebugTree(
         override def size: Int = children.size
     }
 
+    // Factors out inputs or results for parsers with children.
+    private type Augment = (Long, (Int, Int))
+    private var augmentId: Long                       = 0L
+    private val augments: mutable.ListBuffer[Augment] = mutable.ListBuffer()
+
+    private [parsley] def augmentInput(startIndex: Int, endIndex: Int): Long = {
+        augmentId = augmentId + 1
+
+        val uuid = augmentId
+        augments.append((uuid, (startIndex, endIndex)))
+
+        uuid
+    }
+
+    private [parsley] def applyInputAugments(): TransientDebugTree = {
+        parse = parse.map { p =>
+            // Augments are single-use.
+            val ua = augments.toList
+            augments.clear()
+
+            def basis(int: => Int): Int =
+                int - p.fromOffset
+
+            p.copy(rawInput = ua.foldRight(p.rawInput) { case ((aid, (ast, aen)), st) =>
+                st.slice(0, basis(ast)) + s"{$aid}" + st.drop(basis(aen))
+            })
+        }
+
+        this
+    }
+
+    // Replaces result text with something that says to refer to the parent parser.
+    private [parsley] def augmentResult(): Unit = {
+        // TODO: Something here?
+    }
+
     /** Freeze the current debug tree into an immutable copy.
       *
       * It is highly advised to do this before analysing the tree.
@@ -64,16 +103,13 @@ private [parsley] case class TransientDebugTree(
         // Freeze any mutable values by copying them.
         // Also freeze all child trees because we don't want to have to manually freeze the whole tree.
         val immName = name
-
         val immInternal = internal
-
+        val immCN = cNumber
         val immParse = parse
-
+        val immInp = fullInput
         val immChildren = children.map {
             case (n, t: TransientDebugTree) => (n, t.freeze)
         }.toMap
-
-        val immInp = fullInput
 
         // There doesn't seem to be much of a point in making a whole new class for immutable trees
         // as pattern-matching is less of a worry.
@@ -81,6 +117,8 @@ private [parsley] case class TransientDebugTree(
             override def parserName: String = immName
 
             override def internalName: String = immInternal
+
+            override def childNumber: Option[Long] = immCN
 
             override def parseResults: Option[ParseAttempt] = immParse
 

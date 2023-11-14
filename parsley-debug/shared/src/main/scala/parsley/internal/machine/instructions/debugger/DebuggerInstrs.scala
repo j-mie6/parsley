@@ -55,7 +55,7 @@ private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Debugg
         // and the 'good' member should indicate whether the previous parser has succeeded or not.
         // We add 1 to currentOff to see what character caused the parse failure.
         val success = ctx.good
-        val input = ctx.input.slice(prevOffset, if (success) currentOff else currentOff + 1)
+        val input = ctx.input.slice(prevOffset, currentOff)
 
         // Construct a new parse attempt and add it in.
         // XXX: Cast to Any required as otherwise the Some creation is treated as dead code.
@@ -63,9 +63,9 @@ private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Debugg
             ParseAttempt(
                 rawInput   = input,
                 fromOffset = prevOffset,
-                toOffset   = if (success) currentOff else currentOff + 1,
+                toOffset   = currentOff,
                 fromPos    = prevPos,
-                toPos      = if (success) (ctx.line, ctx.col - 1) else (ctx.line, ctx.col),
+                toPos      = (ctx.line, ctx.col),
                 success    = success,
                 result     = if (success) Some(ctx.stack.peek.asInstanceOf[Any] match {
                     case f if dbgCtx.toStringRules.exists(_(f)) => f.toString // Closures and lambdas are expensive!

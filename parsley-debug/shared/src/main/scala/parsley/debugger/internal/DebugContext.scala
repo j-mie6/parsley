@@ -7,9 +7,9 @@ package parsley.debugger.internal
 
 import scala.collection.mutable.ListBuffer
 
+import org.typelevel.scalaccompat.annotation.unused
 import parsley.debugger.ParseAttempt
 import parsley.debugger.combinator.defaultRules
-
 import parsley.internal.deepembedding.frontend.LazyParsley
 
 // Class used to hold details about a parser being debugged.
@@ -54,8 +54,15 @@ private [parsley] class DebugContext(val toStringRules: Seq[Any => Boolean] = de
     }
 
     // Add an attempt of parsing at the current stack point.
-    def addParseAttempt(attempt: ParseAttempt): Unit =
+    def addParseAttempt(attempt: ParseAttempt): Unit = {
         builderStack.head.parse = Some(attempt)
+
+        // This child has consumed part of the parent's input. Add a hole.
+        if (attempt.fromOffset != attempt.toOffset && builderStack(1) != dummyRoot) {
+            val uuid = builderStack(1).augmentInput(attempt.fromOffset, attempt.toOffset)
+            builderStack.head.cNumber = Some(uuid)
+        }
+    }
 
     // Reset this context back to zero.
     def reset(): Unit = {
@@ -84,13 +91,9 @@ private [parsley] class DebugContext(val toStringRules: Seq[Any => Boolean] = de
     }
 
     // Pop a parser off the parser callstack.
-    def pop(): Unit =
-        if (builderStack.isEmpty) {
-            // Shouldn't happen, but just in case.
-            println("WARNING: Parser stack underflow on pop. This should not have happened!")
-        } else {
-            // Remove first parser off stack, as if returning from that parser.
-            builderStack.remove(0)
-            () // XXX: Silences discarded non-unit value warning.
-        }
+    def pop(): Unit = {
+        assert(builderStack.nonEmpty, "Parser stack underflow on pop.")
+        // Remove first parser off stack, as if returning from that parser.
+        val _ = builderStack.remove(0).applyInputAugments().augmentResult(): @unused
+    }
 }
