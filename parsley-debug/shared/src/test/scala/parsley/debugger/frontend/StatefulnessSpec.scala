@@ -28,6 +28,8 @@ class StatefulnessSpec extends AnyFlatSpec {
 
             override def internalName: String = parserName
 
+            override def childNumber: Option[Long] = None
+
             override def parseResults: Option[ParseAttempt] = None
 
             override def nodeChildren: Map[String, DebugTree] = Map.empty
