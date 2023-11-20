@@ -21,9 +21,11 @@ private [parsley] final class Satisfy(private val f: Char => Boolean, val expect
         if (!producesResults) instrs += instructions.Pop
     }
 
+    // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Char] = visitor.visit(this, context)(f, expected)
 
-    override private [parsley] def prettyName = "satisfy"
+    override private[parsley] def prettyName = "satisfy"
+    // $COVERAGE-ON$
 }
 
 private [parsley] object Line extends Singleton[Int] {
@@ -32,9 +34,11 @@ private [parsley] object Line extends Singleton[Int] {
     // $COVERAGE-ON$
     override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = if (producesResults) instrs += instructions.Line
 
+    // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Int] = visitor.visit(this, context)
 
-    override private [parsley] def prettyName = pretty
+    override private[parsley] def prettyName = pretty
+    // $COVERAGE-ON$
 }
 private [parsley] object Col extends Singleton[Int] {
     // $COVERAGE-OFF$
@@ -42,9 +46,11 @@ private [parsley] object Col extends Singleton[Int] {
     // $COVERAGE-ON$
     override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = if (producesResults) instrs += instructions.Col
 
+    // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Int] = visitor.visit(this, context)
 
-    override private [parsley] def prettyName = pretty
+    override private[parsley] def prettyName = pretty
+    // $COVERAGE-ON$
 }
 private [parsley] object Offset extends Singleton[Int] {
     // $COVERAGE-OFF$
@@ -52,9 +58,11 @@ private [parsley] object Offset extends Singleton[Int] {
     // $COVERAGE-ON$
     override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = if (producesResults) instrs += instructions.Offset
 
+    // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Int] = visitor.visit(this, context)
 
-    override private [parsley] def prettyName = pretty
+    override private[parsley] def prettyName = pretty
+    // $COVERAGE-ON$
 }
 
 // This should really have UsesRegister, however, if it doesn't, this has the nice effect of catching
@@ -65,9 +73,11 @@ private [parsley] final class Get[S](reg: Reg[S]) extends Singleton[S] {
     // $COVERAGE-ON$
     override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = if (producesResults) instrs += new instructions.Get(reg.addr)
 
+    // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[S] = visitor.visit(this, context)(reg)
 
-    override private [parsley] def prettyName = "Reg.get"
+    override private[parsley] def prettyName = "Reg.get"
+    // $COVERAGE-ON$
 }
 
 private [deepembedding] object Satisfy {
