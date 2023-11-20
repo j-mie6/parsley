@@ -179,11 +179,11 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
         for { p <- this.preprocess } yield p.optimise
     }
 
+    // $COVERAGE-OFF$
     // Processing with visitors.
     /** Use a visitor implementation to process this internal lazy parser. */
     def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A]
 
-    // $COVERAGE-OFF$
     /** Pretty names for parsers, for internal debugging purposes only. */
     private [parsley] def prettyName: String
 
