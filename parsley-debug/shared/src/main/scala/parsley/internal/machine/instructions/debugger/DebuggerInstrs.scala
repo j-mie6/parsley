@@ -31,7 +31,9 @@ private [internal] class EnterParser
         ctx.inc()
     }
 
+    // $COVERAGE-OFF$
     override def toString: String = s"EnterParser(exit: $label)"
+    // $COVERAGE-ON$
 }
 
 // Add a parse attempt to the current context at the current callstack point, and leave the current
@@ -78,5 +80,7 @@ private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Debugg
         if (success) ctx.inc() else ctx.fail()
     }
 
+    // $COVERAGE-OFF$
     override def toString: String = "AddAttemptAndLeave"
+    // $COVERAGE-ON$
 }

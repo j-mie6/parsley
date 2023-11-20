@@ -7,6 +7,7 @@ package parsley.debugger.internal
 
 import scala.collection.mutable
 
+import org.typelevel.scalaccompat.annotation.unused
 import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.deepembedding.frontend.debugger.Debugged
 
@@ -29,13 +30,21 @@ private [parsley] object Rename {
         def addAllFrom(collection: Map[K, V]): Unit =
             collection.foreach { case (k, v) => mutMap(k) = v }
 
+        // This is more a user-facing utility.
+        // $COVERAGE-OFF$
         def addAllFrom(collection: Iterable[(K, V)]): Unit =
             collection.foreach { case (k, v) => mutMap(k) = v }
+        // $COVERAGE-ON$
     }
 
     // This method attempts the renaming of a parser.
     def apply(optName: Option[String], p: LazyParsley[_]): String = {
-        val defaultName = partial(p)
+        val defaultName = p match {
+            case dbg: Debugged[_] => dbg.origin.prettyName
+            // $COVERAGE-OFF$
+            case _ => p.prettyName // Ideally this case isn't hit at all.
+            // $COVERAGE-ON$
+        }
 
         val extracted = p match {
             case dbg: Debugged[_] => dbg.origin
@@ -51,50 +60,17 @@ private [parsley] object Rename {
 
     // Perform the first step of renaming, a partial rename where only the type name is exposed.
     def partial(p: LazyParsley[_]): String =
-        translate(p match {
-            case dbg: Debugged[_] => dbg.origin.prettyName
+        p match {
+            // $COVERAGE-OFF$
+            case dbg: Debugged[_] => dbg.origin.prettyName // Ideally this case isn't hit at all.
+            // $COVERAGE-ON$
             case _ => p.prettyName
-        })
+        }
 
     private [parsley] def addNames(names: Map[LazyParsley[_], String]): Unit =
         collected.addAllFrom(names)
 
     private [parsley] def addName(par: LazyParsley[_], name: String): Unit = {
-        val _ = collected.put(par, name)
-        () // XXX: Map.put returns an option which needs to be discarded.
-    }
-
-    // Translation table for Scala operator names.
-    private [this] lazy val operatorTable: Map[String, Char] = Map(
-        ("times", '*'),
-        ("percent", '%'),
-        ("div", '/'),
-        ("plus", '+'),
-        ("minus", '-'),
-        ("colon", ':'),
-        ("less", '<'),
-        ("greater", '>'),
-        ("eq", '='),
-        ("bang", '!'),
-        ("amp", '&'),
-        ("up", '^'),
-        ("bar", '|'),
-        ("tilde", '~')
-    )
-
-    // Translate a fully-qualified class name into something more human-readable.
-    private [this] def translate(name: String): String = {
-        val lastDot = name.lastIndexOf(".")
-        val uName =
-            if (lastDot == -1) name
-            else name.drop(lastDot + 1)
-
-        if (uName.contains('$')) {
-            uName.split('$')
-                .map((seg: String) => operatorTable.get(seg).map(c => s"$c").getOrElse(seg))
-                .mkString
-        } else {
-            uName
-        }
+        val _ = collected.put(par, name): @unused
     }
 }

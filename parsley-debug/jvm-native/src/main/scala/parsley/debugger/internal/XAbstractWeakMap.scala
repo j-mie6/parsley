@@ -16,19 +16,23 @@ private [internal] final class XAbstractWeakMap[K, V] extends Iterable[(K, V)] {
     // implementation of XWeakMap.
     private val backing: mutable.WeakHashMap[K, V] = new mutable.WeakHashMap()
 
+    // There's not a lot of key dropping happening in this codebase, but this is here to conform with the
+    // mutable.Map[K, V] trait more closely.
+    // $COVERAGE-OFF$
     def drop(k: K): Unit = {
-        backing.remove(k): @unused
-        () // Silences unit return warning.
+        val _ = backing.remove(k): @unused
     }
+    // $COVERAGE-ON$
 
     def push(kv: (K, V)): Unit = {
-        backing.put(kv._1, kv._2): @unused
-        () // Silences unit return warning.
+        val _ = backing.put(kv._1, kv._2): @unused
     }
 
     def lookup(key: K): Option[V] =
         backing.get(key)
 
+    // $COVERAGE-OFF$
     override def iterator: Iterator[(K, V)] =
         backing.iterator
+    // $COVERAGE-ON$
 }

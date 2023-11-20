@@ -115,10 +115,13 @@ class TotalAttachmentSpec extends AnyFlatSpec {
 
     it should "attach debuggers to all nodes of a parser" in {
         val verifier = new AttachmentInspector
+        val maxDepth = 12
+        val width    = 100
 
-        for (i <- 0 until 12) {
+        // Testing with ContOps[Id.Impl]
+        for (i <- 0 until maxDepth) {
             val parserGenerator = new RandomParserCreator(i)
-            for (_ <- 0 until 100) {
+            for (_ <- 0 until width) {
                 val (_, dbg) = attachDebugger(parserGenerator.generate(0))
                 dbg.internal match {
                     case seq: *>[_] => verifier.visitUnknown(seq.right, context = false)
@@ -126,5 +129,21 @@ class TotalAttachmentSpec extends AnyFlatSpec {
                 }
             }
         }
+
+        // Testing with ContOps[Cont.Impl]
+        for (i <- 0 until maxDepth) {
+            val parserGenerator = new RandomParserCreator(i)
+            for (_ <- 0 until width) {
+                val par = parserGenerator.generate(0)
+                par.overflows()
+
+                val (_, dbg) = attachDebugger(par)
+                dbg.internal match {
+                    case seq: *>[_] => verifier.visitUnknown(seq.right, context = false)
+                    case _ => fail("Debugger not attached.")
+                }
+            }
+        }
     }
+
 }

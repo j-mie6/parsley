@@ -10,6 +10,7 @@ import parsley.token.Lexer
 import parsley.internal.deepembedding.frontend.LazyParsley
 
 // Empty collector for platforms that don't support reflection.
+// $COVERAGE-OFF$
 private [util] class XDummyCollector extends CollectorImpl {
     override def collectNames(obj: Any): Map[LazyParsley[_], String] = Map.empty
 
@@ -17,3 +18,4 @@ private [util] class XDummyCollector extends CollectorImpl {
 
     override val supported: Boolean = false
 }
+// $COVERAGE-ON$

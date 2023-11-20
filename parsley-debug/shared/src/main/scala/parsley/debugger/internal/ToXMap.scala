@@ -9,6 +9,8 @@ trait ToXMap[M[_, _]] {
     def toXMap[K, V](map: M[K, V]): XMap[K, V]
 }
 
+// This is only needed if users start poking at the map that represent the children.
+// $COVERAGE-OFF$
 object ToXMap {
     implicit val mtx: ToXMap[Map] = new ToXMap[Map] {
         override def toXMap[K, V](m: Map[K, V]): XMap[K, V] = new XMap[K, V] {
@@ -27,3 +29,4 @@ object ToXMap {
         }
     }
 }
+// $COVERAGE-ON$

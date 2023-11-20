@@ -32,7 +32,9 @@ case class ParseAttempt private [parsley] (
 
     // We want most of the benefits of a case class, but equals and hashCode are not what we want.
     // This allows disambiguation of attempts in a list, as they are all supposed to be "unique".
+    // $COVERAGE-OFF$
     override def equals(obj: Any): Boolean = super.equals(obj)
 
     override def hashCode(): Int = super.hashCode()
+    // $COVERAGE-ON$
 }

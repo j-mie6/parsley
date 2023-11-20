@@ -27,14 +27,19 @@ object Collector {
     }
 
     /** Collect names of parsers from a [[parsley.token.Lexer]]. */
-    def lexer(lexer: Lexer): Unit =
+    def lexer(lexer: Lexer): Unit = {
+        collectDefault()
         Rename.addNames(XCollector.collectLexer(lexer))
+    }
 
+    // $COVERAGE-OFF$
     /** Manually add a name for a parser by reference.
       *
       * Can also be used if a more informative name for a parser is wanted.
       * In this case, use this method after using [[names]] or [[lexer]] to override the automatically
       * collected / found name.
+      *
+      * @note Names assigned using this will take precedence over names assigned using [[parsley.debugger.combinator.named]].
       */
     def assignName(par: Parsley[_], name: String): Unit =
         Rename.addName(par.internal, name)
@@ -42,28 +47,38 @@ object Collector {
     /** Does the implementation of the collector for the current Scala platform actually work in
       * automatically finding parsers in objects and getting their field names as written in your
       * parser code?
+      *
+      * @note Manually named parsers using [[assignName]] or [[parsley.debugger.combinator.named]]
+      *       will still work regardless if the platform is supported or not.
       */
-    def isSupported: Boolean =
+    @inline def isSupported: Boolean =
         XCollector.supported
+    // $COVERAGE-ON$
 
     /** Collect the names of Parsley's various default singleton parsers. */
     private var defaultCollected: Boolean = false
-    private def collectDefault(): Unit = this.synchronized {
-        if (!defaultCollected) {
-            defaultCollected = true
+    private def collectDefault(): Unit =
+        if (isSupported) {
+                this.synchronized {
+                if (!defaultCollected) {
+                    defaultCollected = true
 
-            names(parsley.character)
-            names(parsley.combinator)
-            names(parsley.Parsley)
-            names(parsley.position)
+                    names(parsley.character)
+                    names(parsley.combinator)
+                    names(parsley.Parsley)
+                    names(parsley.position)
+                }
+            }
         }
-    }
 }
 
 /** A representation of the current implementation that [[Collector]] uses in order to
   * actually collect the names of parsers. One of these will need to be implemented under the name
   * `XCollector` under `parsley.debugger.util` for each different Scala runtime.
+  *
+  * @note This is an internal detail, so users do not have to interact with this if not necessary.
   */
+// $COVERAGE-OFF$
 abstract class CollectorImpl private [parsley] () {
     /** Collect names of parsers from an object. */
     def collectNames(obj: Any): Map[LazyParsley[_], String]
@@ -83,3 +98,4 @@ abstract class CollectorImpl private [parsley] () {
         }
     }
 }
+// $COVERAGE-ON$

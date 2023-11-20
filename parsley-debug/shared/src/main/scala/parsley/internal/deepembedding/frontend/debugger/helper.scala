@@ -52,6 +52,7 @@ private [parsley] object helper {
     // This visitor uses Cont / ContOps to ensure that if a parser is deeply recursive, the user can all a method
     // to use the trampoline ( https://en.wikipedia.org/wiki/Trampoline_(computing) ) to ensure that all calls are
     // turned into heap thunks instead of stack frames.
+    // $COVERAGE-OFF$
     private [parsley] final class DebugInjectingVisitorM[M[_, +_]: ContOps, R](dbgCtx: DebugContext)
         extends GenericLazyParsleyIVisitor[ParserTracker, ContWrap[M, R]#LPM] {
         private type L[+A] = ContWrap[M, R]#LPM[A]
@@ -218,6 +219,6 @@ private [parsley] object helper {
             }
             case _              => handleNoChildren(self, context)
         }
-
     }
+    // $COVERAGE-ON$
 }

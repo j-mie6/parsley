@@ -8,10 +8,14 @@ package parsley.internal.deepembedding
 import org.scalatest.Assertions.fail
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import parsley.debugger.DebuggerUsageSpec
 import parsley.debugger.internal.{DebugContext, Rename}
+import parsley.debugger.util.Collector
 import parsley.internal.deepembedding.backend.StrictParsley
 import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor, LetFinderState, LetMap}
 import parsley.internal.deepembedding.frontend.debugger.Debugged
+import parsley.token.descriptions.LexicalDesc
+import parsley.token.Lexer
 
 class RenameSpec extends AnyFlatSpec with Matchers {
     behavior of "the Renamer object"
@@ -45,6 +49,31 @@ class RenameSpec extends AnyFlatSpec with Matchers {
         Rename.addNames(Map(exampleParser -> "exampleParser"))
 
         Rename(Some("knownName"), exampleParser) shouldBe "knownName"
+    }
+
+    behavior of "the Collector implementations"
+
+    it should "collect names of parsers from objects (on supported platforms)" in {
+        if (Collector.isSupported) {
+            Collector.names(DebuggerUsageSpec.Arithmetic)
+            Rename(None, DebuggerUsageSpec.Arithmetic.prog.internal) shouldBe "prog"
+
+            info("it should also allow overriding the name")
+            Collector.assignName(DebuggerUsageSpec.Arithmetic.prog, "foo")
+            Rename(None, DebuggerUsageSpec.Arithmetic.prog.internal) shouldBe "foo"
+        } else {
+            alert("the current platform does not support Collector")
+        }
+    }
+
+    it should "collect names of parsers from lexers (on supported platforms)" in {
+        val lexer = new Lexer(LexicalDesc.plain.copy())
+        if (Collector.isSupported) {
+            Collector.lexer(lexer)
+            Rename(None, lexer.lexeme.names.identifier.internal) shouldBe "identifier"
+        } else {
+            alert("the current platform does not support Collector")
+        }
     }
 }
 

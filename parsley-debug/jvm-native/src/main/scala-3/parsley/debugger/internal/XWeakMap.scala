@@ -13,10 +13,12 @@ import org.typelevel.scalaccompat.annotation.unused
 private [parsley] final class XWeakMap[K, V](@unused startSize: Int = 32) extends mutable.Map[K, V] { // scalastyle:ignore magic.number
     private val backing: XAbstractWeakMap[K, V] = new XAbstractWeakMap()
 
+    // $COVERAGE-OFF$
     override def subtractOne(k: K): XWeakMap.this.type = {
         backing.drop(k)
         this
     }
+    // $COVERAGE-ON$
 
     override def addOne(kv: (K, V)): XWeakMap.this.type = {
         backing.push(kv)
@@ -26,6 +28,8 @@ private [parsley] final class XWeakMap[K, V](@unused startSize: Int = 32) extend
     override def get(key: K): Option[V] =
         backing.lookup(key)
 
+    // $COVERAGE-OFF$
     override def iterator: Iterator[(K, V)] =
         backing.iterator
+    // $COVERAGE-ON$
 }

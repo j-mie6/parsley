@@ -29,6 +29,8 @@ private [parsley] case class TransientDebugTree(
     var cNumber: Option[Long] = None,
     children: mutable.Map[String, TransientDebugTree] = new mutable.LinkedHashMap()
 ) extends DebugTree {
+    // These are user-facing, and will depend heavily on what the parser looks like.
+    // $COVERAGE-OFF$
     override def parserName: String = name
 
     override def internalName: String = internal
@@ -56,6 +58,7 @@ private [parsley] case class TransientDebugTree(
 
         override def size: Int = children.size
     }
+    // $COVERAGE-ON$
 
     // Factors out inputs or results for parsers with children.
     private type Augment = (Long, (Int, Int))
@@ -86,40 +89,5 @@ private [parsley] case class TransientDebugTree(
         }
 
         this
-    }
-
-    /** Freeze the current debug tree into an immutable copy.
-      *
-      * It is highly advised to do this before analysing the tree.
-      *
-      * @return An anonymous immutable copy of this tree.
-      */
-    def freeze: DebugTree = {
-        // Freeze any mutable values by copying them.
-        // Also freeze all child trees because we don't want to have to manually freeze the whole tree.
-        val immName = name
-        val immInternal = internal
-        val immCN = cNumber
-        val immParse = parse
-        val immInp = fullInput
-        val immChildren = children.map {
-            case (n, t: TransientDebugTree) => (n, t.freeze)
-        }.toMap
-
-        // There doesn't seem to be much of a point in making a whole new class for immutable trees
-        // as pattern-matching is less of a worry.
-        new DebugTree {
-            override def parserName: String = immName
-
-            override def internalName: String = immInternal
-
-            override def childNumber: Option[Long] = immCN
-
-            override def parseResults: Option[ParseAttempt] = immParse
-
-            override def nodeChildren: Map[String, DebugTree] = immChildren
-
-            override def fullInput: String = immInp
-        }
     }
 }

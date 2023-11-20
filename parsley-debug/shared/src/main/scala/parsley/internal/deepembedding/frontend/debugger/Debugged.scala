@@ -27,14 +27,13 @@ private [parsley] final class Debugged[A]
     override def preprocess[M[_, +_] : ContOps, R, A_ >: A](implicit lets: LetMap): M[R, StrictParsley[A_]] =
         for (p <- suspend[M, R, StrictParsley[A]](par.get.optimised[M, R, A])) yield make(p)
 
-    // Shortcuts to the given parser's name instead.
-    def getTypeName: String = origin.getClass.getTypeName
-
+    // $COVERAGE-OFF$
     private [frontend] def withName(name: String): Debugged[A] =
         new Debugged(origin, par, Some(name))(dbgCtx)
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] =
         visitor.visitUnknown(this, context)
+    // $COVERAGE-ON$
 
     override private [parsley] def prettyName = optName.getOrElse(origin.prettyName)
 }
