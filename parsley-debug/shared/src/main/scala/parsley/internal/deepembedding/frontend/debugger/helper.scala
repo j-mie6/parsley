@@ -33,8 +33,8 @@ private [parsley] object helper {
     }
 
     private def visitWithM[M[_, +_]: ContOps, A](parser: LazyParsley[A],
-                                                           tracker: ParserTracker,
-                                                           visitor: DebugInjectingVisitorM[M, LazyParsley[A]]): LazyParsley[A] =
+                                                 tracker: ParserTracker,
+                                                 visitor: DebugInjectingVisitorM[M, LazyParsley[A]]): LazyParsley[A] =
         perform[M, LazyParsley[A]](parser.visit(visitor, tracker))
 
     // Run this to inject the debugger itself.
