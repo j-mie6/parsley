@@ -56,7 +56,7 @@ private [parsley] object XCollector extends CollectorImpl {
 
     // All of these objects inside a lexer are exposed, so are easy to collect parser names from.
     // The rest will need to be handled by reflection.
-    @inline private def safeLexerObjects(lexer: Lexer) = List(
+    @inline private def safeLexerObjects(lexer: Lexer): List[Any] = List(
         lexer,
         lexer.space,
         lexer.lexeme,
