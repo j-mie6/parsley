@@ -54,29 +54,34 @@ private [parsley] object XCollector extends CollectorImpl {
         accumulator.toMap
     }
 
+    // All of these objects inside a lexer are exposed, so are easy to collect parser names from.
+    // The rest will need to be handled by reflection.
+    @inline private def safeLexerObjects(lexer: Lexer) = List(
+        lexer,
+        lexer.space,
+        lexer.lexeme,
+        lexer.lexeme.names,
+        lexer.lexeme.text,
+        lexer.lexeme.enclosing,
+        lexer.lexeme.separators,
+        lexer.lexeme.symbol,
+        lexer.lexeme.numeric,
+        lexer.nonlexeme,
+        lexer.nonlexeme.names,
+        lexer.nonlexeme.numeric,
+        lexer.nonlexeme.symbol,
+        lexer.nonlexeme.text
+    )
+
     // XXX: See collectNames' hack (XXX) message for more information.
     @nowarn def collectLexer(lexer: Lexer): Map[LazyParsley[_], String] = {
         val accumulator: mutable.HashMap[LazyParsley[_], String] = new mutable.HashMap()
 
-        val lexerObjects = List(
-            lexer,
-            lexer.space,
-            lexer.lexeme,
-            lexer.lexeme.names,
-            lexer.lexeme.text,
-            lexer.lexeme.enclosing,
-            lexer.lexeme.separators,
-            lexer.lexeme.symbol,
-            lexer.lexeme.numeric,
-            lexer.nonlexeme,
-            lexer.nonlexeme.names,
-            lexer.nonlexeme.numeric,
-            lexer.nonlexeme.symbol,
-            lexer.nonlexeme.text
-        )
+        // Collect all names from the exposed objects inside of a lexer, in case a user wants to know when a lexer is
+        // automatically interacting with their parser.
+        safeLexerObjects(lexer).foreach(obj => accumulator.addAllFrom(collectNames(obj)))
 
-        lexerObjects.foreach(obj => accumulator.addAllFrom(collectNames(obj)))
-
+        // Use reflection to collect hidden parsers from a lexer, as they're set to be inaccessible from the outside.
         val mirror = scala.reflect.runtime.currentMirror
         val reflPairs = List(
             lexer.lexeme.text,
