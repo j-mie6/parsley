@@ -94,6 +94,6 @@ private [parsley] class DebugContext(val toStringRules: Seq[Any => Boolean] = de
     def pop(): Unit = {
         assert(builderStack.nonEmpty, "Parser stack underflow on pop.")
         // Remove first parser off stack, as if returning from that parser.
-        val _ = builderStack.remove(0).applyInputAugments().augmentResult(): @unused
+        val _ = builderStack.remove(0).applyInputAugments(): @unused
     }
 }

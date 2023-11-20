@@ -37,17 +37,13 @@ private [internal] class EnterParser
 // Add a parse attempt to the current context at the current callstack point, and leave the current
 // parser's scope.
 private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends DebuggerInstr {
-    private def tri[I, A, B, C](x: I)(xa: I => A, xb: I => B, xc: I => C): (A, B, C) =
-        (xa(x), xb(x), xc(x))
-
     override def apply(ctx: Context): Unit = {
         // Uncomment to debug entries and exits.
         // println(s"Leaving ${if (ctx.good) "OK" else "FAIL" } (@ ${ctx.pc})")
 
         // These offsets will be needed to slice the specific part of the input that the parser has
         // attempted to parse during its attempt.
-        val state = dbgCtx.popPos()
-        val (prevOffset, prevLine, prevCol) = tri(state)(_._1, _._2, _._3)
+        val (prevOffset, prevLine, prevCol) = dbgCtx.popPos()
         val currentOff = ctx.offset
         val prevPos = (prevLine, prevCol)
 

@@ -13,15 +13,15 @@ import parsley.debugger.DebugTree
   * Any compliant implementation that handles all nodes of a [[parsley.debugger.DebugTree]] can be
   * used in place of any other implementation (e.g. a serialiser to JSON, a GUI, etc.).
   *
-  * If a frontend is stateless, one can implement it as either an `object` or a `class`, but an `object`
-  * is recommended, one that inherits from [[StatelessFrontend]].
+  * If a frontend is reusable, one can implement it as either an `object` or a `class`, but an `object`
+  * is recommended. Either way, it should inherit [[ReusableFrontend]].
   *
-  * If a frontend is stateful, never implement it as an `object`. Always implement stateful frontends
-  * as a `class` of some sort inheriting from [[StatefulFrontend]].
+  * If a frontend is single-use (e.g. it has some non-reusable state), never implement it as an `object`. Always
+  * implement single-use frontends as a `class` of some sort inheriting from [[SingleUseFrontend]].
   */
 sealed trait DebugFrontend {
     // Is this frontend stateful (and should only be able to run once)?
-    protected [frontend] val hasState: Boolean
+    protected [frontend] val reusable: Boolean
 
     // Tracks if this frontend has run already.
     private var hasRun: Boolean = false
@@ -32,7 +32,7 @@ sealed trait DebugFrontend {
       * @param tree  Debug tree to process.
       */
     final def process(input: => String, tree: => DebugTree): Unit =
-        if (!(hasState && hasRun)) {
+        if (!(reusable && hasRun)) {
             hasRun = true
             processImpl(input, tree)
         } else {
@@ -48,12 +48,12 @@ sealed trait DebugFrontend {
     protected def processImpl(input: => String, tree: => DebugTree): Unit
 }
 
-/** Signifies that the frontend inheriting from this is stateless. */
-trait StatelessFrontend extends DebugFrontend {
-    override protected [frontend] final val hasState: Boolean = false
+/** Signifies that the frontend inheriting from this can be used multiple times. */
+trait ReusableFrontend extends DebugFrontend {
+    override protected [frontend] final val reusable: Boolean = false
 }
 
-/** Signifies that the frontend inheriting from this is stateful, and should only be run once. */
-trait StatefulFrontend extends DebugFrontend {
-    override protected [frontend] final val hasState: Boolean = true
+/** Signifies that the frontend inheriting from this can only be run once. */
+trait SingleUseFrontend extends DebugFrontend {
+    override protected [frontend] final val reusable: Boolean = true
 }

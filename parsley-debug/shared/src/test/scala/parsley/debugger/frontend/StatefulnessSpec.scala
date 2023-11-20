@@ -15,11 +15,11 @@ class StatefulnessSpec extends AnyFlatSpec {
 
     it should "throw when run multiple times, only if the frontend is stateful" in {
         // Dummy values.
-        val stateless: StatelessFrontend = new StatelessFrontend {
+        val stateless: ReusableFrontend = new ReusableFrontend {
             override protected def processImpl(input: => String, tree: => DebugTree): Unit = ()
         }
 
-        val stateful: StatefulFrontend = new StatefulFrontend {
+        val stateful: SingleUseFrontend = new SingleUseFrontend {
             override protected def processImpl(input: => String, tree: => DebugTree): Unit = ()
         }
 
@@ -37,13 +37,13 @@ class StatefulnessSpec extends AnyFlatSpec {
             override def fullInput: String = "bar"
         }
 
-        info("it should not throw when running a stateless frontend multiple times")
+        info("it should not throw when running a reusable frontend multiple times")
         stateless.process("bar", tree): @unused
         stateless.process("bar", tree): @unused
 
         // The first run should not throw.
         stateful.process("bar", tree): @unused
-        info("it should throw when running a stateful frontend multiple times")
+        info("it should throw when running a single-use frontend multiple times")
         try {
             stateful.process("bar", tree): @unused
 

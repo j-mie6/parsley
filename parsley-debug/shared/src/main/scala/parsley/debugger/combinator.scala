@@ -99,10 +99,9 @@ object combinator {
       * You would normally obtain a [[parsley.debugger.frontend.DebugFrontend]] frontend from its
       * respective package as either a static object or an instance object depending on whether the
       * renderer stores state. In the latter case, it is better to regenerate the frontend with
-      * every new debugged parser. The frontend can ne stateless (i.e. inherits from
-      * [[parsley.debugger.frontend.StatelessFrontend]]) or stateful (i.e. inherits from
-      * [[parsley.debugger.frontend.StatefulFrontend]]). Stateful frontends can only be run once
-      * before a new instance needs to be generated.
+      * every new debugged parser. The frontend can be reusable (i.e. inherits from
+      * [[parsley.debugger.frontend.ReusableFrontend]]) or single-use (i.e. inherits from
+      * [[parsley.debugger.frontend.SingleUseFrontend]]).
       *
       * The instrumented parser will automatically call the frontend to render the debug tree, so it
       * may be recommended that you only use this with smaller parsers as large parsers may cause

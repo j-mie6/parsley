@@ -88,11 +88,6 @@ private [parsley] case class TransientDebugTree(
         this
     }
 
-    // Replaces result text with something that says to refer to the parent parser.
-    private [parsley] def augmentResult(): Unit = {
-        // TODO: Something here?
-    }
-
     /** Freeze the current debug tree into an immutable copy.
       *
       * It is highly advised to do this before analysing the tree.
