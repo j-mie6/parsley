@@ -22,6 +22,9 @@ object combinator {
     // By default, we don't want closures stored as themselves.
     private [debugger] val defaultRules: Seq[Any => Boolean] = Seq(_.isInstanceOf[Function[_, _]])
 
+    // FIXME: None of the Scaladoc overload disambiguating references work (anything prefixed
+    //        "parsley.debugger.combinator$".
+
     /** Attaches a debugger to a parser, returning a reference to the debug tree produced by
       * the parser's parse tree formed as it runs.
       *
@@ -52,16 +55,16 @@ object combinator {
       * It is recommended that you save the debug trees somewhere should you want to re-use the same
       * debugged parser, or if you want to use the same debugged parser as a child parser on
       * multiple parts of your main parser, make sure you use
-      * [[parsley.debugger.combinator$.attachReusable(parser:parsley\.Parsley,toStringRules:scala\.collection\.immutable\.Seq[Any=>Boolean])* attachReusable]]
+      * [[parsley.debugger.combinator$.attachReusable[A](parser:parsley\.Parsley[A],toStringRules:scala\.collection\.immutable\.Seq[Any=>Boolean])* attachReusable]]
       * , as re-use of the same debugged parser across multiple parent parsers will cause the
       * different parse trees to incorrectly merge in an undefined manner.
       *
       * A small warning: debugging an already debugged parser (via
-      * [[parsley.debugger.combinator$.attachDebugger(parser:parsley\.Parsley,toStringRules:scala\.collection\.immutable\.Seq[Any=>Boolean])* attachDebugger]]
+      * [[parsley.debugger.combinator$.attachDebugger[A](parser:parsley\.Parsley[A],toStringRules:scala\.collection\.immutable\.Seq[Any=>Boolean])* attachDebugger]]
       * and friends) is an undefined behaviour.
       *
       * See
-      * [[parsley.debugger.combinator$.attachWithFrontend(parser:parsley\.Parsley,toStringRules:scala\.collection\.immutable\.Seq[Any=>Boolean])* attachWithFrontend]]
+      * [[parsley.debugger.combinator$.attachWithFrontend[A](parser:parsley\.Parsley[A],frontend:parsley\.debugger\.frontend\.DebugFrontend,toStringRules:scala\.collection\.immutable\.Seq[Any=>Boolean])* attachWithFrontend]]
       * to automate the tree processing after parsing.
       *
       * @note Do not run a parser through this combinator multiple times.
@@ -106,9 +109,9 @@ object combinator {
       *
       * @note Do not run a parser through this combinator multiple times.
       * @see
-      *   [[parsley.debugger.combinator$.attachDebugger(parser:parsley\.Parsley,toStringRules:scala\.collection\.immutable\.Seq[Any=>Boolean])* attachDebugger]]
+      *   [[parsley.debugger.combinator$.attachDebugger[A](parser:parsley\.Parsley[A],toStringRules:scala\.collection\.immutable\.Seq[Any=>Boolean])* attachDebugger]]
       *   for more information, or
-      *   [[parsley.debugger.combinator$.attachWithFrontend(parser:parsley\.Parsley,toStringRules:scala\.collection\.immutable\.Seq[Any=>Boolean])* attachWithFrontend]]
+      *   [[parsley.debugger.combinator$.attachWithFrontend[A](parser:parsley\.Parsley[A],frontend:parsley\.debugger\.frontend\.DebugFrontend,toStringRules:scala\.collection\.immutable\.Seq[Any=>Boolean])* attachWithFrontend]]
       *   for a version that also accepts a [[parsley.debugger.frontend.DebugFrontend]].
       *
       * @return Generator closure for debugged versions of the input parser.
@@ -144,7 +147,7 @@ object combinator {
       *
       * @note Do not run a parser through this combinator multiple times.
       * @see
-      *   [[parsley.debugger.combinator$.attachDebugger(parser:parsley\.Parsley,toStringRules:scala\.collection\.immutable\.Seq[Any=>Boolean])* attachDebugger]]
+      *   [[parsley.debugger.combinator$.attachDebugger[A](parser:parsley\.Parsley[A],toStringRules:scala\.collection\.immutable\.Seq[Any=>Boolean])* attachDebugger]]
       *   for more information on how attachment works and things you may want
       *   to do before using this debug combinator, as well as some warnings on what not to do when
       *   using this debugger (such as regarding re-use of debugged parsers).
@@ -195,7 +198,7 @@ object combinator {
       *
       * @note Do not run a parser through this combinator multiple times.
       * @see
-      *   [[parsley.debugger.combinator$.attachReusable(parser:parsley\.Parsley,toStringRules:scala\.collection\.immutable\.Seq[Any=>Boolean])* attachReusable]]
+      *   [[parsley.debugger.combinator$.attachReusable[A](parser:parsley\.Parsley[A],toStringRules:scala\.collection\.immutable\.Seq[Any=>Boolean])* attachReusable]]
       *
       * @return Generator closure for frontend-debugged versions of the input parser.
       */
@@ -217,7 +220,9 @@ object combinator {
       * processed with.
       *
       * @note Do not run a parser through this combinator multiple times.
-      * @see [[attachWithFrontend]] for more information.
+      * @see
+      *   [[parsley.debugger.combinator$.attachWithFrontend[A](parser:parsley\.Parsley[A],frontend:parsley\.debugger\.frontend\.DebugFrontend,toStringRules:scala\.collection\.immutable\.Seq[Any=>Boolean])* attachWithFrontend]]
+      *   for more information.
       */
     def attachWithImplicitFrontend[A](parser: Parsley[A], toStringRules: Seq[Any => Boolean] = defaultRules)(implicit frontend: DebugFrontend): Parsley[A]
         = attachWithFrontend(parser, frontend, toStringRules)
