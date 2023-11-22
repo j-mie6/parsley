@@ -54,25 +54,6 @@ private [parsley] object XCollector extends CollectorImpl {
         accumulator.toMap
     }
 
-    // All of these objects inside a lexer are exposed, so are easy to collect parser names from.
-    // The rest will need to be handled by reflection.
-    @inline private def safeLexerObjects(lexer: Lexer): List[Any] = List(
-        lexer,
-        lexer.space,
-        lexer.lexeme,
-        lexer.lexeme.names,
-        lexer.lexeme.text,
-        lexer.lexeme.enclosing,
-        lexer.lexeme.separators,
-        lexer.lexeme.symbol,
-        lexer.lexeme.numeric,
-        lexer.nonlexeme,
-        lexer.nonlexeme.names,
-        lexer.nonlexeme.numeric,
-        lexer.nonlexeme.symbol,
-        lexer.nonlexeme.text
-    )
-
     // XXX: See collectNames' hack (XXX) message for more information.
     @nowarn def collectLexer(lexer: Lexer): Map[LazyParsley[_], String] = {
         val accumulator: mutable.HashMap[LazyParsley[_], String] = new mutable.HashMap()

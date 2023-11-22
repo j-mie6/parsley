@@ -81,7 +81,7 @@ object Collector {
   * @note This is an internal detail, so users do not have to interact with this if not necessary.
   */
 // $COVERAGE-OFF$
-abstract class CollectorImpl private [parsley] () {
+private [parsley] abstract class CollectorImpl {
     /** Collect names of parsers from an object. */
     def collectNames(obj: Any): Map[LazyParsley[_], String]
 
@@ -97,5 +97,25 @@ abstract class CollectorImpl private [parsley] () {
         case l: LazyParsley[_] => l
         case p: Parsley[_]     => p.internal
     }
+
+    // All of these objects inside a lexer are exposed, so are easy to collect parser names from.
+    // The rest will need to be handled by reflection.
+    // If any public objects are added to Lexer, please add them to this list.
+    @inline protected def safeLexerObjects(lexer: Lexer): List[Any] = List(
+        lexer,
+        lexer.space,
+        lexer.lexeme,
+        lexer.lexeme.names,
+        lexer.lexeme.text,
+        lexer.lexeme.enclosing,
+        lexer.lexeme.separators,
+        lexer.lexeme.symbol,
+        lexer.lexeme.numeric,
+        lexer.nonlexeme,
+        lexer.nonlexeme.names,
+        lexer.nonlexeme.numeric,
+        lexer.nonlexeme.symbol,
+        lexer.nonlexeme.text
+    )
 }
 // $COVERAGE-ON$

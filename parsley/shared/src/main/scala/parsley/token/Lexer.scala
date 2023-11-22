@@ -236,6 +236,10 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
       */
     def this(desc: descriptions.LexicalDesc) = this(desc, new errors.ErrorConfig)
 
+    // Note: If any public objects are added into this class that contain any Parsley[_] parsers,
+    //       please also add those objects into the safeLexerObjects list within CollectorImpl
+    //       (found in Collector.scala in parsley-debug/src/shared).
+
     private val generic = new numeric.Generic(errConfig)
 
     /** This object is concerned with ''lexemes'': these are tokens that are
