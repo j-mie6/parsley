@@ -7,11 +7,12 @@ package parsley.debugger.internal
 
 import parsley.ParsleyTest
 
+// scalastyle:off magic.number
 class XWeakMapSpec extends ParsleyTest {
     behavior of "XWeakMap"
 
     it should "allow lookup and removal of (strong) keys as a Map does" in {
-        val xwm: XWeakMap[Object, Int] = new XWeakMap()
+        val xwm: XWeakMap[Object, Int] = new XWeakMap(startSize = 32)
 
         // Keys are hardcoded here because otherwise they'd get GC-ed.
         val (k1, v1) = (new Object(), 0)
@@ -30,7 +31,7 @@ class XWeakMapSpec extends ParsleyTest {
     }
 
     it should "allow replacement of values" in {
-        val xwm: XWeakMap[Object, String] = new XWeakMap()
+        val xwm: XWeakMap[Object, String] = new XWeakMap(startSize = 32)
         val key = new Object()
 
         xwm.put(key, "foo")
@@ -40,7 +41,7 @@ class XWeakMapSpec extends ParsleyTest {
     }
 
     it should "resize while keeping all live entries" in {
-        val xwm: XWeakMap[Object, Int] = new XWeakMap(32) // scalastyle:ignore magic.number
+        val xwm: XWeakMap[Object, Int] = new XWeakMap(startSize = 32)
         val objs: Int = 256
 
         val keys: Array[Object] = Array.fill(objs)(new Object())
@@ -78,10 +79,11 @@ class XWeakMapSpec extends ParsleyTest {
 
     it should "not have an iterator at all" in {
         try {
-            new XWeakMap[Object, Object]().iterator
+            new XWeakMap[Object, Object](startSize = 32).iterator
             fail(".iterator somehow returned.")
         } catch {
             case _: Throwable => info(".iterator call has thrown, as expected")
         }
     }
 }
+// scalastyle:on magic.number
