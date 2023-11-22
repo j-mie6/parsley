@@ -6,8 +6,7 @@
 package parsley.internal.deepembedding
 
 import org.scalatest.Assertions.fail
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+import parsley.ParsleyTest
 import parsley.debugger.DebuggerUsageSpec
 import parsley.debugger.internal.{DebugContext, Rename}
 import parsley.debugger.util.Collector
@@ -17,7 +16,7 @@ import parsley.internal.deepembedding.frontend.debugger.Debugged
 import parsley.token.Lexer
 import parsley.token.descriptions.LexicalDesc
 
-class RenameSpec extends AnyFlatSpec with Matchers {
+class RenameSpec extends ParsleyTest {
     behavior of "the Renamer object"
 
     it should "not rename a parser it does not know of" in {
@@ -27,7 +26,7 @@ class RenameSpec extends AnyFlatSpec with Matchers {
 
     it should "rename a parser it is aware of" in {
         val exampleParser: LazyParsley[_] = new DummyParser
-        Rename.addNames(Map(exampleParser -> "exampleParser"))
+        Rename.addNames(Map((exampleParser, "exampleParser")))
 
         Rename(None, exampleParser) shouldBe "exampleParser"
     }
@@ -46,7 +45,7 @@ class RenameSpec extends AnyFlatSpec with Matchers {
 
     it should "override a known name if a parser is named." in {
         val exampleParser: LazyParsley[_] = new DummyParser
-        Rename.addNames(Map(exampleParser -> "exampleParser"))
+        Rename.addNames(Map((exampleParser, "exampleParser")))
 
         Rename(Some("knownName"), exampleParser) shouldBe "knownName"
     }

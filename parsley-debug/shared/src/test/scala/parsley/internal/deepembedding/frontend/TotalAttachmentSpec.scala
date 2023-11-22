@@ -7,16 +7,16 @@ package parsley.internal.deepembedding.frontend
 
 import scala.util.Random
 
-import org.scalatest.flatspec.AnyFlatSpec
 import org.typelevel.scalaccompat.annotation.unused
 import parsley.Parsley
+import parsley.ParsleyTest
 import parsley.combinator.ifP
 import parsley.debugger.combinator.attachDebugger
 import parsley.expr.chain
 import parsley.internal.deepembedding.frontend.debugger.Debugged
 import parsley.internal.deepembedding.singletons
 
-class TotalAttachmentSpec extends AnyFlatSpec {
+class TotalAttachmentSpec extends ParsleyTest {
     private final class RandomParserCreator(maxDepth: Int) {
         private val rng: Random = new Random
 

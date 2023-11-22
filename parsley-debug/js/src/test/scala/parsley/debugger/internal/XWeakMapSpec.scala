@@ -5,18 +5,17 @@
  */
 package parsley.debugger.internal
 
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+import parsley.ParsleyTest
 
-class XWeakMapSpec extends AnyFlatSpec with Matchers {
+class XWeakMapSpec extends ParsleyTest {
     behavior of "XWeakMap"
 
     it should "allow lookup and removal of (strong) keys as a Map does" in {
         val xwm: XWeakMap[Object, Int] = new XWeakMap()
 
         // Keys are hardcoded here because otherwise they'd get GC-ed.
-        val (k1, v1) = new Object() -> 0
-        val (k2, v2) = new Object() -> 1
+        val (k1, v1) = (new Object(), 0)
+        val (k2, v2) = (new Object(), 1)
 
         xwm.put(k1, v1)
         xwm.put(k2, v2)

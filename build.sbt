@@ -88,7 +88,7 @@ lazy val parsleyDebug = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .withoutSuffixFor(JVMPlatform)
   .crossType(CrossType.Full)
   .in(file("parsley-debug"))
-  .dependsOn(parsley)
+  .dependsOn(parsley % "compile->compile;test->test") // Forwards the test classes to this project. Needed for ParsleyTest.
   .settings(
     name := "parsley-debug",
 

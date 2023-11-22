@@ -7,11 +7,10 @@ package parsley.debugger
 
 // scalastyle:off underscore.import
 import DebuggerUsageSpec.Arithmetic
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
 import org.typelevel.scalaccompat.annotation.unused
 import parsley.Parsley
 import parsley.Parsley._
+import parsley.ParsleyTest
 import parsley.character._
 import parsley.combinator._
 import parsley.debugger.combinator.{attachDebugger, named}
@@ -20,7 +19,7 @@ import parsley.expr._
 import parsley.internal.deepembedding.frontend.debugger.Debugged
 // scalastyle:on underscore.import
 
-class DebuggerUsageSpec extends AnyFlatSpec with Matchers {
+class DebuggerUsageSpec extends ParsleyTest {
     behavior of "the Debugged internal frontend class"
 
     it should "not allow nesting of Debugged nodes" in {

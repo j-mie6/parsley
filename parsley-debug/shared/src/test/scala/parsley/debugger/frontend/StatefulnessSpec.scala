@@ -5,12 +5,12 @@
  */
 package parsley.debugger.frontend
 
-import org.scalatest.flatspec.AnyFlatSpec
 import org.typelevel.scalaccompat.annotation.unused
+import parsley.ParsleyTest
 import parsley.debugger.{DebugTree, ParseAttempt}
 
 //noinspection ConvertExpressionToSAM
-class StatefulnessSpec extends AnyFlatSpec {
+class StatefulnessSpec extends ParsleyTest {
     behavior of "the DebugFrontend class and its stateful / stateless enforcement"
 
     it should "throw when run multiple times, only if the frontend is stateful" in {
