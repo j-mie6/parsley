@@ -18,6 +18,8 @@ import parsley.debugger.DebugTree
   *
   * If a frontend is single-use (e.g. it has some non-reusable state), never implement it as an `object`. Always
   * implement single-use frontends as a `class` of some sort inheriting from [[SingleUseFrontend]].
+  *
+  * @since 4.5.0
   */
 sealed trait DebugFrontend {
     // Is this frontend stateful (and should only be able to run once)?
@@ -48,12 +50,18 @@ sealed trait DebugFrontend {
     protected def processImpl(input: => String, tree: => DebugTree): Unit
 }
 
-/** Signifies that the frontend inheriting from this can be used multiple times. */
+/** Signifies that the frontend inheriting from this can be used multiple times.
+  *
+  * @since 4.5.0
+  */
 trait ReusableFrontend extends DebugFrontend {
     override protected [frontend] final val reusable: Boolean = false
 }
 
-/** Signifies that the frontend inheriting from this can only be run once. */
+/** Signifies that the frontend inheriting from this can only be run once.
+  *
+  * @since 4.5.0
+  */
 trait SingleUseFrontend extends DebugFrontend {
     override protected [frontend] final val reusable: Boolean = true
 }

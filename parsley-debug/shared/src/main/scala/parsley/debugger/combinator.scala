@@ -6,7 +6,7 @@
 package parsley.debugger
 
 import parsley.Parsley
-import parsley.Parsley.{attempt, empty, fresh}
+import parsley.Parsley.{atomic, empty, fresh}
 import parsley.debugger.frontend.DebugFrontend
 import parsley.debugger.internal.{DebugContext, XWeakMap}
 
@@ -14,7 +14,10 @@ import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.deepembedding.frontend.debugger.Named
 import parsley.internal.deepembedding.frontend.debugger.helper.{injectM, ParserTracker}
 
-/** This object contains the two main debug combinators, `attachDebugger` and `attachWithFrontend`. */
+/** This object contains the two main debug combinators, `attachDebugger` and `attachWithFrontend`.
+  *
+  * @since 4.5.0
+  */
 object combinator {
     // By default, we don't want closures stored as themselves.
     private [debugger] val defaultRules: Seq[Any => Boolean] = Seq(_.isInstanceOf[Function[_, _]])
@@ -70,7 +73,7 @@ object combinator {
     def attachDebugger[A](parser: Parsley[A], toStringRules: Seq[Any => Boolean] = defaultRules): (() => DebugTree, Parsley[A]) = {
         // XXX: A weak map is needed so that memory leaks will not be caused by flatMap parsers.
         //      We want a decent amount of initial space to speed up debugging larger parsers slightly.
-        val seen: ParserTracker   = new ParserTracker(new XWeakMap(64)) // scalastyle:ignore magic.number
+        val seen: ParserTracker   = new ParserTracker(new XWeakMap(startSize = 64)) // scalastyle:ignore magic.number
         val context: DebugContext = new DebugContext(toStringRules)
 
         val attached: LazyParsley[A] = injectM[A](parser.internal, seen, context)
@@ -133,7 +136,7 @@ object combinator {
             frontend.process(input, frozen)
         }.impure
 
-        attempt(attached <* renderer) <|> (renderer *> empty)
+        atomic(attached <* renderer) <|> (renderer *> empty)
     }
 
     /** Create a closure that freshly attaches a debugger and a tree-processing frontend to a parser every

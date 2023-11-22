@@ -5,7 +5,7 @@
  */
 package parsley.debugger.internal
 
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable
 
 import org.typelevel.scalaccompat.annotation.unused
 import parsley.debugger.ParseAttempt
@@ -25,8 +25,7 @@ private [parsley] class DebugContext(val toStringRules: Seq[Any => Boolean] = de
 
     // Context's checkStack vanished.
     // Migrating it here for futureproofing.
-    private var checkStack: ListBuffer[(Int, Int, Int)] =
-        ListBuffer()
+    private val checkStack = mutable.ListBuffer.empty[(Int, Int, Int)]
 
     def pushPos(offset: Int, line: Int, col: Int): Unit = {
         checkStack.prepend((offset, line, col))
@@ -37,8 +36,7 @@ private [parsley] class DebugContext(val toStringRules: Seq[Any => Boolean] = de
     }
 
     // Tracks where we are in the parser callstack.
-    private var builderStack: ListBuffer[TransientDebugTree] =
-        ListBuffer(dummyRoot)
+    private val builderStack = mutable.ListBuffer[TransientDebugTree](dummyRoot)
 
     // Get the final DebugTree from this context.
     def getFinalTree: TransientDebugTree = {
@@ -68,9 +66,11 @@ private [parsley] class DebugContext(val toStringRules: Seq[Any => Boolean] = de
     def reset(): Unit = {
         // Clear anything hanging off the dummy root.
         dummyRoot.children.clear()
+        checkStack.clear()
 
-        builderStack = ListBuffer(dummyRoot)
-        checkStack   = ListBuffer()
+        // The builder stack always starts with just the dummy root, so children can hang off it while building.
+        builderStack.clear()
+        builderStack.append(dummyRoot)
     }
 
     // Unique parser IDs.

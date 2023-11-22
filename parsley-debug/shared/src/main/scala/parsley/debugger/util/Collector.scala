@@ -18,6 +18,8 @@ import parsley.internal.deepembedding.frontend.LazyParsley
   * so that they do not end up being named things like "packageanon".
   *
   * You only need to run this once per parser-holding object.
+  *
+  * @since 4.5.0
   */
 object Collector {
     /** Collect names of parsers from an object. */
@@ -90,6 +92,7 @@ abstract class CollectorImpl private [parsley] () {
     val supported: Boolean
 
     // Try grabbing a parser from a LazyParsley or Parsley instance.
+    // XXX: Doing a direct type test with match will cause Parsley objects to be instantiated.
     protected def tryExtract(p: Any): LazyParsley[_] = {
         try {
             p.asInstanceOf[LazyParsley[_]]

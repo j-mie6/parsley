@@ -17,6 +17,8 @@ package parsley.debugger
   * Although this trait is unsealed, it is not useful to make a subtype of this trait, as this
   * trait's sole purpose is to provide safe methods into handling the frozen trees produced by
   * the debugger.
+  *
+  * @since 4.5.0
   */
 trait DebugTree {
     /** The name of the parser that made this node. */

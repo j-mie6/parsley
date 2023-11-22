@@ -17,7 +17,7 @@ private [parsley] final class Attempt[A](p: LazyParsley[A]) extends Unary[A, A](
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p)
 
-    override private[parsley] def prettyName = "attempt"
+    override private[parsley] def prettyName = "atomic"
     // $COVERAGE-ON$
 }
 private [parsley] final class Look[A](p: LazyParsley[A]) extends Unary[A, A](p) {
@@ -97,6 +97,6 @@ private [parsley] final class Opaque[A](p: LazyParsley[A]) extends Unary[A, A](p
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = p.visit(visitor, context)
 
-    override private[parsley] def prettyName: String = "opaque"
+    override private[parsley] def prettyName: String = "impure"
 }
 // $COVERAGE-ON$

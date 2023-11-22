@@ -43,28 +43,32 @@ inThisBuild(List(
 
 lazy val root = tlCrossRootProject.aggregate(parsley, parsleyDebug)
 
+// These settings are shared between all projects.
+lazy val commonSettings = Seq(
+  headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax,
+  headerEmptyLine := false,
+
+  resolvers ++= Opts.resolver.sonatypeOssReleases, // Will speed up MiMA during fast back-to-back releases
+  libraryDependencies ++= Seq(
+    "org.scalatest" %%% "scalatest" % "3.2.17" % Test,
+    "org.scalacheck" %%% "scalacheck" % "1.17.0" % Test,
+    "org.scalatestplus" %%% "scalacheck-1-17" % "3.2.15.0" % Test,
+  ),
+
+  Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oI"),
+
+  scalacOptions ++= {
+    if (!isSnapshot.value && !(noReleaseFlagsScala3 && scalaBinaryVersion.value == "3")) releaseFlags else Seq.empty
+  },
+)
+
 lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .withoutSuffixFor(JVMPlatform)
   .crossType(CrossType.Full)
   .in(file("parsley"))
   .settings(
     name := projectName,
-
-    headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax,
-    headerEmptyLine := false,
-
-    resolvers ++= Opts.resolver.sonatypeOssReleases, // Will speed up MiMA during fast back-to-back releases
-    libraryDependencies ++= Seq(
-        "org.scalatest" %%% "scalatest" % "3.2.17" % Test,
-        "org.scalacheck" %%% "scalacheck" % "1.17.0" % Test,
-        "org.scalatestplus" %%% "scalacheck-1-17" % "3.2.15.0" % Test,
-    ),
-
-    Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oI"),
-
-    scalacOptions ++= {
-        if (!isSnapshot.value && !(noReleaseFlagsScala3 && scalaBinaryVersion.value == "3")) releaseFlags else Seq.empty
-    },
+    commonSettings,
 
     tlVersionIntroduced := Map(
       "2.13" -> "1.5.0",
@@ -91,25 +95,15 @@ lazy val parsleyDebug = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .dependsOn(parsley % "compile->compile;test->test") // Forwards the test classes to this project. Needed for ParsleyTest.
   .settings(
     name := "parsley-debug",
+    commonSettings,
 
-    headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax,
-    headerEmptyLine := false,
-
-    // Unclear if this is also needed but see the same line within parsley project object.
-    resolvers ++= Opts.resolver.sonatypeOssReleases,
-    libraryDependencies ++= Seq(
-      "org.scalatest" %%% "scalatest" % "3.2.17" % Test,
-      "org.scalacheck" %%% "scalacheck" % "1.17.0" % Test,
-      "org.scalatestplus" %%% "scalacheck-1-17" % "3.2.15.0" % Test,
-    ),
+    libraryDependencies += "org.scala-lang.modules" %%% "scala-collection-compat" % "2.11.0",
 
     tlVersionIntroduced := Map(
       "2.13" -> "4.5.0",
       "2.12" -> "4.5.0",
       "3"    -> "4.5.0",
     ),
-
-    Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oI")
   )
   .jvmSettings(
     libraryDependencies ++= {

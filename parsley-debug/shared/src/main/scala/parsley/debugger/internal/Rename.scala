@@ -52,10 +52,7 @@ private [parsley] object Rename {
         }
 
         // This renames the parser if it is present, otherwise gives the default name found earlier.
-        optName match {
-            case Some(name) => name
-            case None       => collected.getOrElse(extracted, defaultName)
-        }
+        optName.getOrElse(collected.getOrElse(extracted, defaultName))
     }
 
     // Perform the first step of renaming, a partial rename where only the type name is exposed.

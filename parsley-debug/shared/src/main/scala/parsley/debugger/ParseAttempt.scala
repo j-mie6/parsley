@@ -16,6 +16,8 @@ package parsley.debugger
   * @param result     If this parse attempt was successful, what did it return?
   *                   It is guaranteed that `result.isDefined` is true if and only if the attempt
   *                   is successful.
+  *
+  * @since 4.5.0
   */
 case class ParseAttempt private [parsley] (
     rawInput: String,
