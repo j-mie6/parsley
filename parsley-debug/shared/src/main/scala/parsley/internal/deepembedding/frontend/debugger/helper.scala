@@ -77,6 +77,18 @@ private [parsley] object helper {
         private def handleNoChildren[A](self: LazyParsley[A], context: ParserTracker): L[A] =
             handlePossiblySeen[A](self, context)(result[R, LazyParsley[A], M](self))
 
+        // We assume _q must be lazy, as it'd be better to *not* force a strict value versus accidentally forcing a lazy value.
+        // This is called handle2Ary as to not be confused with handling Binary[_, _, _].
+        private def handle2Ary[P[X] <: LazyParsley[X], A, B, C](self: P[A], context: ParserTracker)
+                                                               (constructor: (LazyParsley[B], LazyParsley[C]) => P[A])
+                                                               (p: LazyParsley[B], _q: => LazyParsley[C]): L[A] =
+            handlePossiblySeen[A](self, context) {
+                for {
+                    dbgP <- suspend[M, R, LazyParsley[B]](p.visit(this, context))
+                    dbgQ <- suspend[M, R, LazyParsley[C]](_q.visit(this, context))
+                } yield constructor(dbgP, dbgQ)
+            }
+
         override def visitSingleton[A](self: singletons.Singleton[A], context: ParserTracker): L[A] =
             handleNoChildren[A](self, context)
 
@@ -143,36 +155,21 @@ private [parsley] object helper {
             }
 
         override def visit[A](self: <|>[A], context: ParserTracker)(p: LazyParsley[A], q: LazyParsley[A]): L[A] =
-            handlePossiblySeen[A](self, context) {
-                for {
-                    dbgP <- suspend[M, R, LazyParsley[A]](p.visit(this, context))
-                    dbgQ <- suspend[M, R, LazyParsley[A]](q.visit(this, context))
-                } yield new <|>(dbgP, dbgQ)
-            }
+            handle2Ary[<|>, A, A, A](self, context)(new <|>(_, _))(p, q)
 
         // Iterative parsers need their own handling.
         override def visit[A](self: Many[A], context: ParserTracker)(p: LazyParsley[A]): L[List[A]] =
             handlePossiblySeen(self, context) {
-              for {
-                dbgC <- suspend[M, R, LazyParsley[A]](p.visit(this, context))
-              } yield new Many[A](dbgC)
+                for {
+                    dbgC <- suspend[M, R, LazyParsley[A]](p.visit(this, context))
+                } yield new Many[A](dbgC)
             }
 
         override def visit[A](self: ChainPost[A], context: ParserTracker)(p: LazyParsley[A], _op: => LazyParsley[A => A]): L[A] =
-            handlePossiblySeen[A](self, context) {
-                for {
-                    dbgP  <- suspend[M, R, LazyParsley[A]](p.visit(this, context))
-                    dbgOp <- suspend[M, R, LazyParsley[A => A]](_op.visit(this, context))
-                } yield new ChainPost(dbgP, dbgOp)
-            }
+            handle2Ary[ChainPost, A, A, A => A](self, context)(new ChainPost(_, _))(p, _op)
 
         override def visit[A](self: ChainPre[A], context: ParserTracker)(p: LazyParsley[A], op: => LazyParsley[A => A]): L[A] =
-            handlePossiblySeen[A](self, context) {
-                for {
-                    dbgP  <- suspend[M, R, LazyParsley[A]](p.visit(this, context))
-                    dbgOp <- suspend[M, R, LazyParsley[A => A]](op.visit(this, context))
-                } yield new ChainPre(dbgP, dbgOp)
-            }
+            handle2Ary[ChainPre, A, A, A => A](self, context)(new ChainPre(_, _))(p, op)
 
         override def visit[A, B](self: Chainl[A, B], context: ParserTracker)(init: LazyParsley[B],
                                                                              p: => LazyParsley[A],
@@ -204,7 +201,7 @@ private [parsley] object helper {
         override def visit[A](self: ManyUntil[A], context: ParserTracker)(body: LazyParsley[Any]): L[List[A]] =
             handlePossiblySeen[List[A]](self, context) {
                 for {
-                  dbgC <- suspend[M, R, LazyParsley[Any]](body.visit(this, context))
+                    dbgC <- suspend[M, R, LazyParsley[Any]](body.visit(this, context))
                 } yield new ManyUntil[A](dbgC)
             }
 

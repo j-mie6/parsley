@@ -53,7 +53,6 @@ object Collector {
       */
     @inline def isSupported: Boolean =
         XCollector.supported
-    // $COVERAGE-ON$
 
     /** Collect the names of Parsley's various default singleton parsers. */
     private var defaultCollected: Boolean = false
@@ -70,6 +69,7 @@ object Collector {
                 }
             }
         }
+    // $COVERAGE-ON$
 }
 
 /** A representation of the current implementation that [[Collector]] uses in order to

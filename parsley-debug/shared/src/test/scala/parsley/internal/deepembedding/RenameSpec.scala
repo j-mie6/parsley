@@ -14,8 +14,8 @@ import parsley.debugger.util.Collector
 import parsley.internal.deepembedding.backend.StrictParsley
 import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor, LetFinderState, LetMap}
 import parsley.internal.deepembedding.frontend.debugger.Debugged
-import parsley.token.descriptions.LexicalDesc
 import parsley.token.Lexer
+import parsley.token.descriptions.LexicalDesc
 
 class RenameSpec extends AnyFlatSpec with Matchers {
     behavior of "the Renamer object"
