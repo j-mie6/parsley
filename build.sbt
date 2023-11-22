@@ -97,8 +97,6 @@ lazy val parsleyDebug = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     name := "parsley-debug",
     commonSettings,
 
-    libraryDependencies += "org.scala-lang.modules" %%% "scala-collection-compat" % "2.11.0",
-
     tlVersionIntroduced := Map(
       "2.13" -> "4.5.0",
       "2.12" -> "4.5.0",

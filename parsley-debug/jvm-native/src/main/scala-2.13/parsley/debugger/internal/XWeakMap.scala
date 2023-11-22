@@ -10,7 +10,7 @@ import scala.collection.mutable
 import org.typelevel.scalaccompat.annotation.unused
 
 // For the JVM and Native, its WeakHashMap does the job.
-private [parsley] final class XWeakMap[K, V](@unused startSize: Int = 32) extends mutable.Map[K, V] { // scalastyle:ignore magic.number
+private [parsley] final class XWeakMap[K, V](@unused startSize: Int) extends mutable.Map[K, V] { // scalastyle:ignore magic.number
     private val backing: XWeakMapImpl[K, V] = new XWeakMapImpl()
 
     // $COVERAGE-OFF$

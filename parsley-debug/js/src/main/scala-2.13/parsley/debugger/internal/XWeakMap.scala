@@ -7,7 +7,7 @@ package parsley.debugger.internal
 
 import scala.collection.mutable
 
-private [parsley] final class XWeakMap[K <: Object, V](startSize: Int = 32) extends mutable.Map[K, V] { // scalastyle:ignore magic.number
+private [parsley] final class XWeakMap[K <: Object, V](startSize: Int) extends mutable.Map[K, V] { // scalastyle:ignore magic.number
     private [internal] val backing: XWeakMapImpl[K, V] = new XWeakMapImpl(startSize)
 
     override def subtractOne(key: K): XWeakMap.this.type = {
