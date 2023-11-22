@@ -13,11 +13,13 @@ import parsley.token.descriptions.numeric.PlusSignPresence
 import parsley.token.errors.{ErrorConfig, LabelConfig, SpecialisedFilterConfig}
 import parsley.token.predicate.CharPredicate
 
+// scalastyle:off underscore.import
 import parsley.internal.collection.immutable.Trie
 import parsley.internal.deepembedding.Sign.SignType
-import parsley.internal.deepembedding.singletons.*
-import parsley.internal.deepembedding.singletons.token.*
+import parsley.internal.deepembedding.singletons._
+import parsley.internal.deepembedding.singletons.token._
 import parsley.internal.errors.CaretWidth
+// scalastyle:on underscore.import
 
 /** Visitor class template for the processing of parsers without fully explicit exhaustive pattern
   * matching.
