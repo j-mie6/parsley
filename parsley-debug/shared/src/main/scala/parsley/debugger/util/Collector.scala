@@ -93,7 +93,8 @@ private [parsley] abstract class CollectorImpl {
 
     // Try grabbing a parser from a LazyParsley or Parsley instance.
     // XXX: Doing a direct type test with match will cause Parsley objects to be instantiated.
-    protected def tryExtract(par: Any): LazyParsley[_] = par match {
+    // XXX: Using a match-case expression without @unchecked causes an error in CI as these matches are not exhaustive.
+    protected def tryExtract(par: Any): LazyParsley[_] = (par: @unchecked) match {
         case l: LazyParsley[_] => l
         case p: Parsley[_]     => p.internal
     }
