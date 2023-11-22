@@ -134,12 +134,15 @@ def testCoverageJob(cacheSteps: List[WorkflowStep]) = WorkflowJob(
         WorkflowStep.Checkout ::
         WorkflowStep.SetupJava(List(JavaLTS)) :::
         cacheSteps ::: List(
-            WorkflowStep.Sbt(name = Some("Generate coverage report"), commands = List("coverage", "parsley / test", "coverageReport")),
+            WorkflowStep.Sbt(name = Some("Generate coverage report"), commands = List("coverage", "parsley / test", "parsleyDebug / test", "coverageReport")),
             WorkflowStep.Use(
                 name = Some("Upload coverage to Code Climate"),
                 ref = UseRef.Public(owner = "paambaati", repo = "codeclimate-action", ref = "v3.2.0"),
                 env = Map("CC_TEST_REPORTER_ID" -> "c1f669dece75a1d69bf0dc45a682d64837badc112b8098271ccc0dca1bbc7a09"),
-                params = Map("coverageLocations" -> "${{github.workspace}}/parsley/jvm/target/scala-2.13/coverage-report/cobertura.xml:cobertura"),
+                // FIXME: Surely, there's a better method for multiple report locations than a multiline string (or using \n as a separator).
+                params = Map("coverageLocations" ->
+                  """${{github.workspace}}/parsley/jvm/target/scala-2.13/coverage-report/cobertura.xml:cobertura
+                    |${{github.workspace}}/parsley-debug/jvm/target/scala-2.13/coverage-report/cobertura.xml:cobertura""".stripMargin),
             )
         )
 )

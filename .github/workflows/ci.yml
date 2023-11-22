@@ -390,14 +390,16 @@ jobs:
         run: sbt +update
 
       - name: Generate coverage report
-        run: sbt '++ ${{ matrix.scala }}' coverage 'parsley / test' coverageReport
+        run: sbt '++ ${{ matrix.scala }}' coverage 'parsley / test' 'parsleyDebug / test' coverageReport
 
       - name: Upload coverage to Code Climate
         env:
           CC_TEST_REPORTER_ID: c1f669dece75a1d69bf0dc45a682d64837badc112b8098271ccc0dca1bbc7a09
         uses: paambaati/codeclimate-action@v3.2.0
         with:
-          coverageLocations: '${{github.workspace}}/parsley/jvm/target/scala-2.13/coverage-report/cobertura.xml:cobertura'
+          coverageLocations: |
+            ${{github.workspace}}/parsley/jvm/target/scala-2.13/coverage-report/cobertura.xml:cobertura
+            ${{github.workspace}}/parsley-debug/jvm/target/scala-2.13/coverage-report/cobertura.xml:cobertura
 
   site:
     name: Generate Site
