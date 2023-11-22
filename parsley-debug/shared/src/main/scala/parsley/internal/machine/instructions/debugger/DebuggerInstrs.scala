@@ -5,7 +5,7 @@
  */
 package parsley.internal.machine.instructions.debugger
 
-import parsley.debugger.ParseAttempt
+import parsley.debugger.ParseAttemptImpl
 import parsley.debugger.internal.DebugContext
 
 import parsley.internal.deepembedding.frontend.LazyParsley
@@ -58,7 +58,7 @@ private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Debugg
         // Construct a new parse attempt and add it in.
         // XXX: Cast to Any required as otherwise the Some creation is treated as dead code.
         dbgCtx.addParseAttempt(
-            ParseAttempt(
+            new ParseAttemptImpl(
                 rawInput   = input,
                 fromOffset = prevOffset,
                 toOffset   = currentOff,
