@@ -22,13 +22,25 @@ import parsley.internal.deepembedding.frontend.LazyParsley
   * @since 4.5.0
   */
 object Collector {
-    /** Collect names of parsers from an object. */
+    /** Collect names of parsers from an object.
+      *
+      * @note For Scala 3 on the JVM, it is advised that all parsers in objects being introspected are
+      *       marked `public`, as otherwise, a semi-deprecated call to `setAccessible` will be called on
+      *       a private object, which may be restricted or removed in a future version of the JVM. It may
+      *       be advised to manually name one's parsers (to be debugged) using [[assignName]] or
+      *       [[parsley.debugger.combinator.named]] if that warning is not desirable.
+      */
     def names(obj: Any): Unit = {
         collectDefault() // Runs only once, ever, for a program execution.
         Rename.addNames(XCollector.collectNames(obj))
     }
 
-    /** Collect names of parsers from a [[parsley.token.Lexer]]. */
+    /** Collect names of parsers from a [[parsley.token.Lexer]].
+      *
+      * @note For Scala 3 on the JVM, this may trigger a warning about `setAccessible` for private members
+      *       being deprecated.
+      * @see [[names]] for more information regarding the warning.
+      */
     def lexer(lexer: Lexer): Unit = {
         collectDefault()
         Rename.addNames(XCollector.collectLexer(lexer))
@@ -119,8 +131,9 @@ private [parsley] abstract class CollectorImpl {
         lexer.nonlexeme.text
     )
 
-    // All of these objects inside a lexer have private parsers, so will require some fine-grained combing to find all
-    // of their internal parsers and their names.
+    // All of these objects inside a lexer have private sub-objects which contain parsers.
+    // They require special handling where those sub-objects must be exposed, and then the parsers inside will be
+    // extracted in a second step.
     @inline protected final def unsafeLexerObjects(lexer: Lexer): List[Any] = List(
         lexer.lexeme.text,
         lexer.lexeme.numeric,
