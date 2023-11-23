@@ -102,7 +102,7 @@ private [parsley] abstract class CollectorImpl {
     // All of these objects inside a lexer are exposed, so are easy to collect parser names from.
     // The rest will need to be handled by reflection.
     // If any public objects are added to Lexer, please add them to this list.
-    @inline protected def safeLexerObjects(lexer: Lexer): List[Any] = List(
+    @inline protected final def safeLexerObjects(lexer: Lexer): List[Any] = List(
         lexer,
         lexer.space,
         lexer.lexeme,
@@ -117,6 +117,15 @@ private [parsley] abstract class CollectorImpl {
         lexer.nonlexeme.numeric,
         lexer.nonlexeme.symbol,
         lexer.nonlexeme.text
+    )
+
+    // All of these objects inside a lexer have private parsers, so will require some fine-grained combing to find all
+    // of their internal parsers and their names.
+    @inline protected final def unsafeLexerObjects(lexer: Lexer): List[Any] = List(
+        lexer.lexeme.text,
+        lexer.lexeme.numeric,
+        lexer.nonlexeme.text,
+        lexer.nonlexeme.numeric
     )
 }
 // $COVERAGE-ON$

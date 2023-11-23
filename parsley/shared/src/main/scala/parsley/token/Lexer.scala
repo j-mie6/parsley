@@ -236,9 +236,12 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
       */
     def this(desc: descriptions.LexicalDesc) = this(desc, new errors.ErrorConfig)
 
-    // Note: If any public objects are added into this class that contain any Parsley[_] parsers,
+    // Note: If any members with only public parsers are added into this class,
     //       please also add those objects into the safeLexerObjects list within CollectorImpl
-    //       (found in Collector.scala in parsley-debug/src/shared).
+    //       (found in Collector.scala in parsley-debug/src/shared). If those members are terms that
+    //       contain other parsers, add them to that list too.
+    //       Members with private members (in which those private members contain parsers) must be
+    //       added to unsafeLexerObjects (where they will be reflected twice).
 
     private val generic = new numeric.Generic(errConfig)
 
