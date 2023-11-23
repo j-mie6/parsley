@@ -5,7 +5,6 @@
  */
 package parsley.debugger.util
 
-import scala.annotation.nowarn
 import scala.collection.mutable
 import scala.util.{Success, Try}
 
@@ -37,9 +36,9 @@ private [parsley] abstract class XCollectorJava extends CollectorImpl {
         }.orElse(Success(accumulator.toMap))
     }
 
-    @nowarn override def collectNames(obj: Any): Map[LazyParsley[_], String] = getParsers(obj).getOrElse(Map.empty)
+    override def collectNames(obj: Any): Map[LazyParsley[_], String] = getParsers(obj).getOrElse(Map.empty)
 
-    @nowarn override def collectLexer(lexer: Lexer): Map[LazyParsley[_], String] = {
+    override def collectLexer(lexer: Lexer): Map[LazyParsley[_], String] = {
         val accumulator: mutable.HashMap[LazyParsley[_], String] = new mutable.HashMap()
 
         Try {
