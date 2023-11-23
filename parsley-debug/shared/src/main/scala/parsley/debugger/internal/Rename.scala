@@ -52,7 +52,7 @@ private [parsley] object Rename {
         }
 
         // This renames the parser if it is present, otherwise gives the default name found earlier.
-        optName.getOrElse(collected.getOrElse(extracted, defaultName))
+        translate(optName.getOrElse(collected.getOrElse(extracted, defaultName)))
     }
 
     // Perform the first step of renaming, a partial rename where only the type name is exposed.
@@ -69,5 +69,39 @@ private [parsley] object Rename {
 
     private [parsley] def addName(par: LazyParsley[_], name: String): Unit = {
         val _ = collected.put(par, name): @unused
+    }
+
+    // Translation table for Scala operator names.
+    private[this] lazy val operatorTable: Map[String, Char] = Map(
+        ("times", '*'),
+        ("percent", '%'),
+        ("div", '/'),
+        ("plus", '+'),
+        ("minus", '-'),
+        ("colon", ':'),
+        ("less", '<'),
+        ("greater", '>'),
+        ("eq", '='),
+        ("bang", '!'),
+        ("amp", '&'),
+        ("up", '^'),
+        ("bar", '|'),
+        ("tilde", '~')
+    )
+
+    // Translate a fully-qualified class name into something more human-readable.
+    private[this] def translate(name: String): String = {
+        val lastDot = name.lastIndexOf(".")
+        val uName =
+            if (lastDot == -1) name
+            else name.drop(lastDot + 1)
+
+        if (uName.contains('$')) {
+            uName.split('$')
+              .map((seg: String) => operatorTable.get(seg).map(c => s"$c").getOrElse(seg))
+              .mkString
+        } else {
+            uName
+        }
     }
 }

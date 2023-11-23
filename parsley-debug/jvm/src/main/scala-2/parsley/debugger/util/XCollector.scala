@@ -64,12 +64,7 @@ private [parsley] object XCollector extends CollectorImpl {
 
         // Use reflection to collect hidden parsers from a lexer, as they're set to be inaccessible from the outside.
         val mirror = scala.reflect.runtime.currentMirror
-        val reflPairs = List(
-            lexer.lexeme.text,
-            lexer.lexeme.numeric,
-            lexer.nonlexeme.text,
-            lexer.nonlexeme.numeric
-        ).map(obj => (mirror.classSymbol(obj.getClass), mirror.reflect(obj)))
+        val reflPairs = unsafeLexerObjects(lexer).map(obj => (mirror.classSymbol(obj.getClass), mirror.reflect(obj)))
 
         for ((clazz, lexRefl) <- reflPairs) {
             val getters = clazz.toType.members.collect {
