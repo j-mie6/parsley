@@ -35,6 +35,7 @@ sealed trait ParseAttempt {
       */
     val result: Result
 
+    // Make sure this trait has not been used improperly.
     assert(success == result.isDefined)
 }
 
@@ -61,7 +62,4 @@ private [parsley] class ParseAttemptImpl(
     override val success: Boolean,
     // It is guaranteed by the debugger that success <=> result.isDefined.
     override val result: Option[Any]
-) extends ParseAttempt {
-    // Make sure this class has not been used improperly.
-    assert(success == result.isDefined)
-}
+) extends ParseAttempt
