@@ -89,15 +89,16 @@ object combinator {
         (() => context.getFinalTree, resetter *> new Parsley(attached))
     }
 
-    /** Attaches a debugger to a parser. This assumes the default rules of converting only lambdas and
-      * closures into strings when storing in the output debug tree.
+    /** Attaches a debugger to a parser.
+      *
+      * This assumes the default rules of converting only lambdas and closures into strings when
+      * storing in the output debug tree.
       *
       * @note Do not run a parser through this combinator multiple times.
       * @see
       *   The other overload of this method
       *   ([[parsley.debugger.combinator$.attachDebugger[A](parser:parsley\.Parsley[A],toStringRules* attachDebugger]])
       *   has more information on how this attachment works.
-      *
       * @param parser The parser to debug.
       * @tparam A Output type of original parser.
       * @return A pair of the finalised tree, and the instrumented parser.
@@ -126,12 +127,14 @@ object combinator {
       * This is used for creating debugged parsers that can be used as children to multiple parent
       * parsers, as using the same debugged parser as a child to multiple parsers is unsafe.
       *
+      * This assumes the default rules of converting only lambdas and closures into strings when
+      * storing in the output debug tree.
+      *
       * @note Do not run a parser through this combinator multiple times.
       * @see
       *   The other overload of this method
       *   ([[parsley.debugger.combinator$.attachDebugger[A](parser:parsley\.Parsley[A],toStringRules* attachDebugger]])
       *   has more information on its usage.
-      *
       * @return Generator closure for debugged versions of the input parser.
       */
     def attachReusable[A](parser: Parsley[A]): () => DebuggedPair[A] =
@@ -186,18 +189,20 @@ object combinator {
       * processed with. This frontend will also be called automatically with any debug trees produced
       * by the parser.
       *
+      * This assumes the default rules of converting only lambdas and closures into strings when
+      * storing in the output debug tree.
+      *
       * @note Do not run a parser through this combinator multiple times.
       * @see
       *   The other overload of this method
-      *   ([[parsley.debugger.combinator$.attachDebugger[A](parser:parsley\.Parsley[A],toStringRules* attachDebugger]])
+      *   ([[parsley.debugger.combinator$.attachWithFrontend[A](parser:parsley\.Parsley[A],frontend:parsley\.debugger\.frontend\.DebugFrontend,toStringRules* attachDebugger]])
       *   has more information on its usage.
-      *
       * @param parser The parser to debug.
       * @param frontend The frontend instance to render with.
       * @tparam A Output type of parser.
       * @return A modified parser which will ask the frontend to process the produced debug tree after
       *         a call to [[Parsley.parse]] is made.
-
+      *
       */
     def attachWithFrontend[A](parser: Parsley[A], frontend: DebugFrontend): Parsley[A] =
         attachWithFrontend[A](parser, frontend, defaultRules)
@@ -217,12 +222,14 @@ object combinator {
     /** Create a closure that freshly attaches a debugger and a tree-processing frontend to a parser every
       * time it is called.
       *
+      * This assumes the default rules of converting only lambdas and closures into strings when
+      * storing in the output debug tree.
+      *
       * @note Do not run a parser through this combinator multiple times.
       * @see
       *   The other overload of this method
       *   ([[parsley.debugger.combinator$.attachReusableWithFrontend[A](parser:parsley\.Parsley[A],frontend:()=>parsley\.debugger\.frontend\.DebugFrontend,toStringRules* attachDebugger]])
       *   has more information on its usage.
-      *
       * @return Generator closure for frontend-debugged versions of the input parser.
       */
     def attachReusableWithFrontend[A](parser: Parsley[A], frontend: () => DebugFrontend): () => Parsley[A] =
@@ -242,6 +249,9 @@ object combinator {
     /** Attach a debugger and an implicitly-available frontend in which the debug tree should be
       * processed with.
       *
+      * This assumes the default rules of converting only lambdas and closures into strings when
+      * storing in the output debug tree.
+      *
       * @note Do not run a parser through this combinator multiple times.
       * @see
       *   The other overload of this method
@@ -252,7 +262,9 @@ object combinator {
         attachWithImplicitFrontend[A](parser, defaultRules)
 
     /** Attach a name to a parser, for display within the debugger output.
-      * This name has a higher precedence than names collected with [[parsley.debugger.util.Collector]].
+      * Names assigned here have a higher precedence than names collected with [[parsley.debugger.util.Collector]].
+      *
+      * Renaming the same parser multiple times simply overwrites its name to the most latest rename.
       */
     def named[A](parser: Parsley[A], name: String): Parsley[A] =
         parser.internal match {
@@ -260,7 +272,7 @@ object combinator {
             case _           => new Parsley(Named(parser.internal, name))
         }
 
-    /** Dot accessor versions of the combinators, in case that is your preference. */
+    /** Dot accessor versions of the combinators.  */
     implicit class DebuggerOps[A](par: Parsley[A]) {
         def attachDebugger(toStringRules: Seq[Any => Boolean]): DebuggedPair[A] =
             combinator.attachDebugger(par, toStringRules)
@@ -292,7 +304,6 @@ object combinator {
         def attachWithImplicitFrontend(implicit frontend: DebugFrontend): Parsley[A] =
             combinator.attachWithImplicitFrontend(par, defaultRules)
 
-        /** Dot accessor version of [[combinator.named]]. */
         def named(name: String): Parsley[A] =
             combinator.named(par, name)
     }
