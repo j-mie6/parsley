@@ -11,7 +11,7 @@ import ParseAttempt._ // scalastyle:ignore underscore.import
   *
   * @since 4.5.0
   */
-class ParseAttempt private [parsley] (
+final class ParseAttempt private [parsley] (
     inp: Input,
     fof: Offset,
     tof: Offset,
@@ -65,6 +65,7 @@ class ParseAttempt private [parsley] (
 }
 
 object ParseAttempt {
+    // FIXME: Can we get these type aliases from somewhere that already defines them in parsley?
     type Input   = String
     type Offset  = Int
     type Line    = Int
@@ -74,6 +75,7 @@ object ParseAttempt {
     type Result  = Option[Any]
 
     // This gives you everything you need for inspecting a parse attempt made by a parser.
+    // Anything extra are most likely internal fields only.
     def unapply(att: ParseAttempt): Option[(Input, Offset, Offset, Pos, Pos, Success, Result)] =
         Some((att.rawInput, att.fromOffset, att.toOffset, att.fromPos, att.toPos, att.success, att.result))
 }
