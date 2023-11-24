@@ -5,7 +5,7 @@
  */
 package parsley.internal.machine.instructions.debugger
 
-import parsley.debugger.ParseAttemptImpl
+import parsley.debugger.ParseAttempt
 import parsley.debugger.internal.DebugContext
 
 import parsley.internal.deepembedding.frontend.LazyParsley
@@ -58,14 +58,14 @@ private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Debugg
         // Construct a new parse attempt and add it in.
         // XXX: Cast to Any required as otherwise the Some creation is treated as dead code.
         dbgCtx.addParseAttempt(
-            new ParseAttemptImpl(
-                rawInput   = input,
-                fromOffset = prevOffset,
-                toOffset   = currentOff,
-                fromPos    = prevPos,
-                toPos      = (ctx.line, ctx.col),
-                success    = success,
-                result     = if (success) Some(ctx.stack.peek.asInstanceOf[Any] match {
+            new ParseAttempt(
+                inp = input,
+                fof = prevOffset,
+                tof = currentOff,
+                fps = prevPos,
+                tps = (ctx.line, ctx.col),
+                scs = success,
+                res = if (success) Some(ctx.stack.peek.asInstanceOf[Any] match {
                     case f if dbgCtx.toStringRules.exists(_(f)) => f.toString // Closures and lambdas are expensive!
                     case x                                      => x
                 }) else None

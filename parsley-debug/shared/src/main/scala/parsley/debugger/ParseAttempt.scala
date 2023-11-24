@@ -11,32 +11,57 @@ import ParseAttempt._ // scalastyle:ignore underscore.import
   *
   * @since 4.5.0
   */
-sealed trait ParseAttempt {
+class ParseAttempt private [parsley] (
+    inp: Input,
+    fof: Offset,
+    tof: Offset,
+    fps: Pos,
+    tps: Pos,
+    scs: Success,
+    res: Result
+) {
     /** The input parsed, as raw text. */
-    val rawInput: Input
+    val rawInput: Input = inp
 
     /** This offset is where the parse attempt started in the input. */
-    val fromOffset: Offset
+    val fromOffset: Offset = fof
 
     /** This offset is where the parse attempt finished in the input. */
-    val toOffset: Offset
+    val toOffset: Offset = tof
 
     /** [[fromOffset]] represented as a (line, column) pair. */
-    val fromPos: Pos
+    val fromPos: Pos = fps
 
     /** [[toOffset]] represented as a (line, column pair). */
-    val toPos: Pos
+    val toPos: Pos = tps
 
-    /** Was this parse attempt successful? */
-    val success: Success
+    /** Was this parse attempt successful?
+      *
+      * @note [[success]] if and only if [[result]] is defined (contains a value).
+      */
+    val success: Success = scs
 
     /** If this parse attempt was successful, what did it return? It is guaranteed that `result.isDefined` is true
       * if and only if the attempt is successful.
+      *
+      * @note [[success]] if and only if [[result]] is defined (contains a value).
       */
-    val result: Result
+    val result: Result = res
 
-    // Make sure this trait has not been used improperly.
+    // Make sure this class has not been used improperly.
     assert(success == result.isDefined)
+
+    // Utility copy method only to be used internally.
+    private [parsley] def copy(
+        inp: Input = rawInput,
+        fof: Offset = fromOffset,
+        tof: Offset = toOffset,
+        fps: Pos = fromPos,
+        tps: Pos = toPos,
+        scs: Success = success,
+        res: Result = result
+    ): ParseAttempt =
+        new ParseAttempt(inp, fof, tof, fps, tps, scs, res)
 }
 
 object ParseAttempt {
@@ -48,18 +73,7 @@ object ParseAttempt {
     type Success = Boolean
     type Result  = Option[Any]
 
+    // This gives you everything you need for inspecting a parse attempt made by a parser.
     def unapply(att: ParseAttempt): Option[(Input, Offset, Offset, Pos, Pos, Success, Result)] =
         Some((att.rawInput, att.fromOffset, att.toOffset, att.fromPos, att.toPos, att.success, att.result))
 }
-
-// Internal representation a parser's attempt to parse some input.
-private [parsley] class ParseAttemptImpl(
-    override val rawInput: String,
-    override val fromOffset: Int,
-    override val toOffset: Int,
-    override val fromPos: (Int, Int),
-    override val toPos: (Int, Int),
-    override val success: Boolean,
-    // It is guaranteed by the debugger that success <=> result.isDefined.
-    override val result: Option[Any]
-) extends ParseAttempt

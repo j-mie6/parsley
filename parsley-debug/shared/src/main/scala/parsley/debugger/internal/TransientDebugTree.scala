@@ -8,7 +8,7 @@ package parsley.debugger.internal
 import scala.collection.immutable.ListMap
 import scala.collection.mutable
 
-import parsley.debugger.{DebugTree, ParseAttempt, ParseAttemptImpl}
+import parsley.debugger.{DebugTree, ParseAttempt}
 
 /** A mutable implementation of [[DebugTree]], used when constructing the tree as a parser is
   * running.
@@ -65,14 +65,8 @@ private [parsley] case class TransientDebugTree(
             def basis(int: => Int): Int =
                 int - p.fromOffset
 
-            new ParseAttemptImpl(
-                rawInput = ua.foldRight(p.rawInput) { case ((aid, (ast, aen)), st) => st.slice(0, basis(ast)) + s"{$aid}" + st.drop(basis(aen)) },
-                fromOffset = p.fromOffset,
-                toOffset = p.toOffset,
-                fromPos = p.fromPos,
-                toPos = p.toPos,
-                success = p.success,
-                result = p.result
+            p.copy(
+                inp = ua.foldRight(p.rawInput) { case ((aid, (ast, aen)), st) => st.slice(0, basis(ast)) + s"{$aid}" + st.drop(basis(aen)) },
             )
         }
 

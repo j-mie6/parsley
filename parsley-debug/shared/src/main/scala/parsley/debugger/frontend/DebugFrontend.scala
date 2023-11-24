@@ -31,12 +31,6 @@ sealed trait DebugFrontend {
     // Tracks if this frontend has run already.
     private var hasRun: Boolean = false
 
-    // FIXME: There is probably a better way of making frontends that return than having to use continuations.
-    //        One contender is to just allow the frontend to return its result and discard it for automatic executions,
-    //        while making overloads that return the return value in a pair, where the original parser's return result
-    //        is converted into an Option[_]. The other contender is just to ignore the result entirely and leave returns
-    //        of processing results to manual invocations of a frontend.
-
     /** Process a debug tree using whatever the frontend is doing to present the tree in some way.
       *
       * @param input The full input of the parse.
