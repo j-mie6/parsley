@@ -63,7 +63,7 @@ trait DebugTree extends Iterable[DebugTree] {
 }
 
 object DebugTree {
-    def unApply(dt: DebugTree): Option[(String, String, Option[Long], String, Option[ParseAttempt], Map[String, DebugTree])] =
+    def unapply(dt: DebugTree): Option[(String, String, Option[Long], String, Option[ParseAttempt], Map[String, DebugTree])] =
         Some((dt.parserName, dt.internalName, dt.childNumber, dt.fullInput, dt.parseResults, dt.nodeChildren))
 }
 

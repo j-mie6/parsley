@@ -48,7 +48,7 @@ object ParseAttempt {
     type Success = Boolean
     type Result  = Option[Any]
 
-    def unApply(att: ParseAttempt): Option[(Input, Offset, Offset, Pos, Pos, Success, Result)] =
+    def unapply(att: ParseAttempt): Option[(Input, Offset, Offset, Pos, Pos, Success, Result)] =
         Some((att.rawInput, att.fromOffset, att.toOffset, att.fromPos, att.toPos, att.success, att.result))
 }
 
