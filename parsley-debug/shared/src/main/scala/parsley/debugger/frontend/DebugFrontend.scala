@@ -19,6 +19,9 @@ import parsley.debugger.DebugTree
   * If a frontend is single-use (e.g. it has some non-reusable state), never implement it as an `object`. Always
   * implement single-use frontends as a `class` of some sort inheriting from [[SingleUseFrontend]].
   *
+  * If the results of some processing of a tree are needed out of a frontend, create a frontend class that accepts
+  * some continuation parameter of `ReturnType => Unit` and call it somewhere within the implementation.
+  *
   * @since 4.5.0
   */
 sealed trait DebugFrontend {
@@ -27,6 +30,12 @@ sealed trait DebugFrontend {
 
     // Tracks if this frontend has run already.
     private var hasRun: Boolean = false
+
+    // FIXME: There is probably a better way of making frontends that return than having to use continuations.
+    //        One contender is to just allow the frontend to return its result and discard it for automatic executions,
+    //        while making overloads that return the return value in a pair, where the original parser's return result
+    //        is converted into an Option[_]. The other contender is just to ignore the result entirely and leave returns
+    //        of processing results to manual invocations of a frontend.
 
     /** Process a debug tree using whatever the frontend is doing to present the tree in some way.
       *
@@ -52,6 +61,7 @@ sealed trait DebugFrontend {
 
 /** Signifies that the frontend inheriting from this can be used multiple times.
   *
+  * @see [[DebugFrontend]]
   * @since 4.5.0
   */
 trait ReusableFrontend extends DebugFrontend {
@@ -60,6 +70,7 @@ trait ReusableFrontend extends DebugFrontend {
 
 /** Signifies that the frontend inheriting from this can only be run once.
   *
+  * @see [[DebugFrontend]]
   * @since 4.5.0
   */
 trait SingleUseFrontend extends DebugFrontend {
