@@ -10,16 +10,16 @@ import parsley.ParsleyTest
 import parsley.debugger.{DebugTree, ParseAttempt}
 
 //noinspection ConvertExpressionToSAM
-class StatefulnessSpec extends ParsleyTest {
-    behavior of "the DebugFrontend class and its stateful / stateless enforcement"
+class ReuseSpec extends ParsleyTest {
+    behavior of "the DebugFrontend class and its re-usability / single-use enforcement"
 
-    it should "throw when run multiple times, only if the frontend is stateful" in {
+    it should "throw when run multiple times, only if the frontend is marked as single-use" in {
         // Dummy values.
-        val stateless: ReusableFrontend = new ReusableFrontend {
+        val reusable: ReusableFrontend = new ReusableFrontend {
             override protected def processImpl(input: => String, tree: => DebugTree): Unit = ()
         }
 
-        val stateful: SingleUseFrontend = new SingleUseFrontend {
+        val singleUse: SingleUseFrontend = new SingleUseFrontend {
             override protected def processImpl(input: => String, tree: => DebugTree): Unit = ()
         }
 
@@ -38,18 +38,18 @@ class StatefulnessSpec extends ParsleyTest {
         }
 
         info("it should not throw when running a reusable frontend multiple times")
-        stateless.process("bar", tree): @unused
-        stateless.process("bar", tree): @unused
+        reusable.process("bar", tree): @unused
+        reusable.process("bar", tree): @unused
 
         // The first run should not throw.
-        stateful.process("bar", tree): @unused
+        singleUse.process("bar", tree): @unused
         info("it should throw when running a single-use frontend multiple times")
         try {
-            stateful.process("bar", tree): @unused
+            singleUse.process("bar", tree): @unused
 
-            fail("stateful frontend did not throw an exception after running multiple times")
+            fail("single-use frontend did not throw an exception after running multiple times")
         } catch {
-            case _: Throwable => info("stateful frontend has thrown after being run multiple times, as expected")
+            case _: Throwable => info("single-use frontend has thrown after being run multiple times, as expected")
         }
     }
 }
