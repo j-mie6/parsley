@@ -39,8 +39,20 @@ private [parsley] case class TransientDebugTree(
     // The pair stores the input the parser attempted to parse and its success.
     override def parseResults: Option[ParseAttempt] = parse
 
-    override val nodeChildren: Map[String, DebugTree] =
-        children.foldLeft[ListMap[String, DebugTree]](new ListMap())(_ + _)
+    // Provides a consistent view on the children of the tree.
+    // There shouldn't really be a need to call into the expensive path often, but this is guarding against
+    // concurrent accesses (if the platform supports synchronized).
+    private var lastChildrenView: Map[String, DebugTree] = Map.empty
+    private def childrenOrGenerate(): Map[String, DebugTree] = this.synchronized {
+        if (lastChildrenView.size != children.size) {
+            lastChildrenView = children.foldLeft[ListMap[String, DebugTree]](new ListMap())(_ + _)
+        }
+
+        lastChildrenView
+    }
+
+    override def nodeChildren: Map[String, DebugTree] =
+        childrenOrGenerate()
 
     // Factors out inputs or results for parsers with children.
     private type Augment = (Long, (Int, Int))

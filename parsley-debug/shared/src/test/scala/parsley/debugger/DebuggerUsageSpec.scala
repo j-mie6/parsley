@@ -69,6 +69,13 @@ class DebuggerUsageSpec extends ParsleyTest {
         assert(hit1 && hit2 && hit3)
     }
 
+    it should "store the children, representing the paths the parse-time execution took" in {
+        val (generator, parser) = attachDebugger(Arithmetic.prog)
+        parser.parse("1+1+1").get.head shouldBe 3
+
+        assert(generator().nodeChildren.nonEmpty)
+    }
+
     it should "factor out inputs of child parsers" in {
         val parser = many(string("abc"))
         val (treeF, debugged) = attachDebugger(parser)
