@@ -76,6 +76,8 @@ object ParseAttempt {
 
     // This gives you everything you need for inspecting a parse attempt made by a parser.
     // Anything extra are most likely internal fields only.
-    def unapply(att: ParseAttempt): Option[(Input, Offset, Offset, Pos, Pos, Success, Result)] =
+    // To stop warnings about refutable / non-exhaustive matches, the return type must be Some[_].
+    // You'd think that'd be in <https://docs.scala-lang.org/tour/extractor-objects.html>, but no.
+    def unapply(att: ParseAttempt): Some[(Input, Offset, Offset, Pos, Pos, Success, Result)] =
         Some((att.rawInput, att.fromOffset, att.toOffset, att.fromPos, att.toPos, att.success, att.result))
 }
