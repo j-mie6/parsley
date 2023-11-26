@@ -59,8 +59,8 @@ private [parsley] object Rename {
         collected.addAllFrom(names)
 
     // $COVERAGE-OFF$
-    private [parsley] def addNames(names: IterableOnce[(LazyParsley[_], String)]): Unit =
-        names.iterator.foreach { case (k, v) => collected(k) = v }
+    private [parsley] def addNames(names: Iterable[(LazyParsley[_], String)]): Unit =
+        names.foreach { case (k, v) => collected(k) = v }
     // $COVERAGE-ON$
 
     private [parsley] def addName(par: LazyParsley[_], name: String): Unit = {
