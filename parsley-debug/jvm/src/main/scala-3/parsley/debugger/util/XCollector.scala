@@ -6,4 +6,4 @@
 package parsley.debugger.util
 
 // TODO: Find a substitute for Java reflection for Scala 3.
-private [parsley] object XCollector extends XCollectorJava
+private [parsley] object XCollector extends XDummyCollector
