@@ -9,6 +9,7 @@ import scala.collection.immutable.ListMap
 import scala.collection.mutable
 
 import parsley.debugger.{DebugTree, ParseAttempt}
+import parsley.debugger.util.XMap
 
 /** A mutable implementation of [[DebugTree]], used when constructing the tree as a parser is
   * running.
@@ -39,19 +40,22 @@ private [parsley] case class TransientDebugTree(
     // The pair stores the input the parser attempted to parse and its success.
     override def parseResults: Option[ParseAttempt] = parse
 
-    // Provides a consistent view on the children of the tree.
-    // There shouldn't really be a need to call into the expensive path often, but this is guarding against
-    // concurrent accesses (if the platform supports synchronized).
-    private var lastChildrenView: Map[String, DebugTree] = Map.empty
-    private def childrenOrGenerate(): Map[String, DebugTree] = this.synchronized {
-        if (lastChildrenView.size != children.size) {
-            lastChildrenView = children.foldLeft(ListMap.empty[String, DebugTree])(_ + _)
-        }
+    override val nodeChildren: Map[String, DebugTree] = new XMap[String, DebugTree] {
+        // We'll use a copy-on-write methodology for this.
+        override def removed(key: String): Map[String, DebugTree] =
+            children.foldLeft(ListMap.empty[String, DebugTree])((acc, p) => acc + p) - key
 
-        lastChildrenView
+        // See above.
+        override def updated[V1 >: DebugTree](key: String, value: V1): Map[String, V1] =
+            children.foldLeft(ListMap.empty[String, V1])((acc, p) => acc + p) + ((key, value))
+
+        // For get, size and iterator, we'll just use the mutable map.
+        override def get(key: String): Option[DebugTree] = children.get(key)
+
+        override def iterator: Iterator[(String, DebugTree)] = children.iterator
+
+        override def size: Int = children.size
     }
-
-    override def nodeChildren: Map[String, DebugTree] = childrenOrGenerate()
 
     // Factors out inputs or results for parsers with children.
     private type Augment  = (Long, (Int, Int))
