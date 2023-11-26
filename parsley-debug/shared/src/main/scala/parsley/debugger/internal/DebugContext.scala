@@ -75,9 +75,9 @@ private [parsley] class DebugContext(val toStringRules: Seq[Any => Boolean] = de
     }
 
     // Unique parser IDs.
-    private var uid: Long = -1L
+    private var uid = -1L
     private def nextUid(): Long = {
-        uid = uid + 1
+        uid += 1L
         uid
     }
 
@@ -87,7 +87,7 @@ private [parsley] class DebugContext(val toStringRules: Seq[Any => Boolean] = de
         newTree.name = Rename(optName, parser)
         newTree.internal = Rename.partial(parser)
 
-        builderStack.head.children(newTree.name + nextUid()) = newTree
+        builderStack.head.children(newTree.name + "-#" + nextUid()) = newTree
         builderStack.prepend(newTree)
     }
 

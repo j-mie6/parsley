@@ -51,7 +51,6 @@ private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Debugg
 
         // Slice based on current offset to see what a parser has attempted to parse,
         // and the 'good' member should indicate whether the previous parser has succeeded or not.
-        // We add 1 to currentOff to see what character caused the parse failure.
         val success = ctx.good
         val input = ctx.input.slice(prevOffset, currentOff)
 
@@ -72,7 +71,6 @@ private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Debugg
             )
         )
 
-        // See above.
         dbgCtx.pop()
 
         // Fail if the current context is not good, as required by how Parsley's machine functions.

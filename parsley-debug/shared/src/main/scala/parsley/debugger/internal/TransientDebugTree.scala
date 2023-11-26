@@ -63,7 +63,7 @@ private [parsley] case class TransientDebugTree(
     private val augments  = mutable.ListBuffer.empty[Augment]
 
     private [parsley] def augmentInput(startIndex: Int, endIndex: Int): Long = {
-        augmentId += 1
+        augmentId += 1L
 
         val uuid = augmentId
         augments.append((uuid, (startIndex, endIndex)))
