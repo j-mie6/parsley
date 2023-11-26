@@ -5,6 +5,8 @@
  */
 package parsley.debugger
 
+import parsley.XAssert
+
 import ParseAttempt._ // scalastyle:ignore underscore.import
 
 /** A representation of the attempts a parser has made during parse-time.
@@ -49,7 +51,7 @@ final class ParseAttempt private [parsley] (
     val result: Result = res
 
     // Make sure this class has not been used improperly.
-    assert(success == result.isDefined)
+    XAssert.assert(success == result.isDefined)
 
     // Utility copy method only to be used internally.
     private [parsley] def copy(
@@ -78,6 +80,8 @@ object ParseAttempt {
     // Anything extra are most likely internal fields only.
     // To stop warnings about refutable / non-exhaustive matches, the return type must be Some[_].
     // You'd think that'd be in <https://docs.scala-lang.org/tour/extractor-objects.html>, but no.
+    // $COVERAGE-OFF$
     def unapply(att: ParseAttempt): Some[(Input, Offset, Offset, Pos, Pos, Success, Result)] =
         Some((att.rawInput, att.fromOffset, att.toOffset, att.fromPos, att.toPos, att.success, att.result))
+    // $COVERAGE-ON$
 }

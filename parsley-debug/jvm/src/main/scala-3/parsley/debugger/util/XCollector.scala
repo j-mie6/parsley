@@ -5,7 +5,5 @@
  */
 package parsley.debugger.util
 
-// Sadly, no reflective capabilities exist in Scala 3 yet, so these
-// methods don't do anything yet.
-// TODO: Find a substitute for reflection for Scala 3.
+// TODO: Find a substitute for Java reflection for Scala 3.
 private [parsley] object XCollector extends XCollectorJava

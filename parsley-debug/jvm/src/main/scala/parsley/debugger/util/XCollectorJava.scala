@@ -12,6 +12,7 @@ import parsley.debugger.internal.Rename.MapAddAll
 import parsley.token.Lexer
 
 import parsley.internal.deepembedding.frontend.LazyParsley
+import parsley.internal.deepembedding.frontend.debugger.helper.{lazyParsleyExample, parsleyExample}
 
 // Java-reflection powered XCollector. For backup purposes. Not meant to be used directly, but inherited from.
 // The setAccessible methods on private members is a deprecated action, so proceed with caution.
@@ -25,8 +26,9 @@ private [parsley] abstract class XCollectorJava extends CollectorImpl {
         Try {
             // FIXME: Type matching by name is very brittle...
             val parserGetters = obj.getClass.getDeclaredMethods.filter { mth =>
-                Seq(Class.forName("parsley.Parsley"), Class.forName("parsley.internal.deepembedding.frontend.LazyParsley"))
-                    .contains(mth.getReturnType) && mth.getParameterCount == 0
+                // lazyParsleyExample is an anonymous class, so we have to get the superclass name for LazyParsley.
+                Seq(parsleyExample.getClass.getName, lazyParsleyExample.getClass.getSuperclass.getName)
+                    .map(Class.forName).contains(mth.getReturnType) && mth.getParameterCount == 0
             }
 
             parserGetters.foreach(_.setAccessible(true)) // FIXME: This is deprecated API and may be removed in a later Java version!

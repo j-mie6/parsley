@@ -8,14 +8,31 @@ package parsley.internal.deepembedding.frontend.debugger
 import scala.collection.mutable
 
 import org.typelevel.scalaccompat.annotation.unused
+import parsley.Parsley
 import parsley.debugger.internal.DebugContext
 import parsley.internal.deepembedding.{singletons, Cont, ContOps, Id}
 import parsley.internal.deepembedding.ContOps.{perform, result, suspend, ContAdapter}
 import parsley.internal.deepembedding.backend.StrictParsley
-import parsley.internal.deepembedding.frontend.{<|>, >>=, Binary, Chainl, ChainPost, ChainPre, Chainr, GenericLazyParsley, GenericLazyParsleyIVisitor}
-import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor, Many, ManyUntil, SepEndBy1, Ternary, Unary}
+import parsley.internal.deepembedding.frontend._ // scalastyle:ignore underscore.import
 
 private [parsley] object helper {
+    // scalastyle:off not.implemented.error.usage
+
+    // These are example parsers used for certain classes.
+    private [parsley] val lazyParsleyExample: LazyParsley[Nothing] = new LazyParsley[Nothing] {
+        override protected def findLetsAux[M[_, +_] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] = ???
+
+        override protected def preprocess[M[_, +_] : ContOps, R, A_ >: Nothing](implicit lets: LetMap): M[R, StrictParsley[A_]] = ???
+
+        override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Nothing] = ???
+
+        override private[parsley] def prettyName: String = ???
+    }
+
+    private [parsley] val parsleyExample: Parsley[Nothing] = new Parsley(lazyParsleyExample)
+
+    // scalastyle:on not.implemented.error.usage
+
     // This map tracks seen parsers to prevent infinitely recursive parsers from overflowing the stack (and ties
     // the knot for these recursive parsers).
     // Use maps with weak keys or don't pass this into a >>= parser.

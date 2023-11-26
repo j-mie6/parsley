@@ -45,22 +45,21 @@ private [parsley] case class TransientDebugTree(
     private var lastChildrenView: Map[String, DebugTree] = Map.empty
     private def childrenOrGenerate(): Map[String, DebugTree] = this.synchronized {
         if (lastChildrenView.size != children.size) {
-            lastChildrenView = children.foldLeft[ListMap[String, DebugTree]](new ListMap())(_ + _)
+            lastChildrenView = children.foldLeft(ListMap.empty[String, DebugTree])(_ + _)
         }
 
         lastChildrenView
     }
 
-    override def nodeChildren: Map[String, DebugTree] =
-        childrenOrGenerate()
+    override def nodeChildren: Map[String, DebugTree] = childrenOrGenerate()
 
     // Factors out inputs or results for parsers with children.
-    private type Augment = (Long, (Int, Int))
-    private var augmentId: Long                       = 0L
-    private val augments: mutable.ListBuffer[Augment] = mutable.ListBuffer()
+    private type Augment  = (Long, (Int, Int))
+    private var augmentId = 0L
+    private val augments  = mutable.ListBuffer.empty[Augment]
 
     private [parsley] def augmentInput(startIndex: Int, endIndex: Int): Long = {
-        augmentId = augmentId + 1
+        augmentId += 1
 
         val uuid = augmentId
         augments.append((uuid, (startIndex, endIndex)))
@@ -74,8 +73,7 @@ private [parsley] case class TransientDebugTree(
             val ua = augments.toList
             augments.clear()
 
-            def basis(int: => Int): Int =
-                int - p.fromOffset
+            def basis(int: Int): Int = int - p.fromOffset
 
             p.copy(
                 inp = ua.foldRight(p.rawInput) { case ((aid, (ast, aen)), st) => st.slice(0, basis(ast)) + s"{$aid}" + st.drop(basis(aen)) },
