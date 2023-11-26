@@ -5,6 +5,8 @@
  */
 package parsley.internal.deepembedding.frontend.debugger
 
+import parsley.XAssert
+
 import parsley.internal.deepembedding.backend.StrictParsley
 import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor, Unary}
 
@@ -12,7 +14,7 @@ import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor
 // Wrapper parser class indicating explicitly named parsers.
 private [parsley] final class Named[A]
     (val par: LazyParsley[A], val name: String) extends Unary[A, A](par) {
-    assert(!par.isInstanceOf[Named[_]], "Named parsers should not be nested within each other directly.")
+    XAssert.assert(!par.isInstanceOf[Named[_]], "Named parsers should not be nested within each other directly.")
 
     def make(p: StrictParsley[A]): StrictParsley[A] = p
 

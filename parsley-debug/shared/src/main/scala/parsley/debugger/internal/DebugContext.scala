@@ -8,6 +8,7 @@ package parsley.debugger.internal
 import scala.collection.mutable
 
 import org.typelevel.scalaccompat.annotation.unused
+import parsley.XAssert
 import parsley.debugger.ParseAttempt
 import parsley.debugger.combinator.defaultRules
 import parsley.internal.deepembedding.frontend.LazyParsley
@@ -44,8 +45,8 @@ private [parsley] class DebugContext(val toStringRules: Seq[Any => Boolean] = de
         // If it has no children, that means the debug tree was not built to begin with.
         // If it was multiple children, somehow the debugger has popped too many tree nodes off the stack.
         val ch = builderStack.head.children
-        assert(!(ch.size < 1), s"The root tree has somehow lost its only child. (${ch.size})")
-        assert(!(ch.size > 1), s"The root tree has somehow gained multiple children. (${ch.size})")
+        XAssert.assert(!(ch.size < 1), s"The root tree has somehow lost its only child. (${ch.size})")
+        XAssert.assert(!(ch.size > 1), s"The root tree has somehow gained multiple children. (${ch.size})")
 
         // This should never fail.
         ch.collectFirst { case (_, x) => x }.get
