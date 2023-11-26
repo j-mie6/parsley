@@ -66,7 +66,9 @@ final class ParseAttempt private [parsley] (
         new ParseAttempt(inp, fof, tof, fps, tps, scs, res)
 }
 
-object ParseAttempt {
+// Ideally, this would be public. However, that introduces potential binary incompatibilities later down the line
+// should the return type of unapply change at all in the future.
+private [parsley] object ParseAttempt {
     // FIXME: Can we get these type aliases from somewhere that already defines them in parsley?
     type Input   = String
     type Offset  = Int
