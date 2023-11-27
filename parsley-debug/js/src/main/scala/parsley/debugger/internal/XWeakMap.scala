@@ -34,12 +34,13 @@ private [debugger] final class XWeakMap[K <: Object, V] extends XMutMap[K, V] { 
 
 private [internal] object XWeakMap {
     // Simple facade type for ECMA 6's WeakMap.
-    // Source: https://github.com/typelevel/cats-effect/blob/31ad01e798133f9bc62e043aac2e7709d4ba017d/core/js/src/main/scala/cats/effect/unsafe/WeakMap.scala
-    // Author: Arman Bilge (@armanbilge)
+    // Source : https://github.com/typelevel/cats-effect/blob/31ad01e798133f9bc62e043aac2e7709d4ba017d/core/js/src/main/scala/cats/effect/unsafe/WeakMap.scala
+    // Author : Arman Bilge (@armanbilge)
+    // License: Apache License, Version 2.0 (https://github.com/typelevel/cats-effect/blob/31ad01e798133f9bc62e043aac2e7709d4ba017d/LICENSE.txt)
+    // State  : Modified to silence compiler warnings with @unused.
     @js.native
     @JSGlobal
     private [XWeakMap] sealed class WeakMap[K <: Object, V] extends js.Object {
-        // XXX: @unused to silence compiler warnings about the arguments seemingly not being used.
         def delete(@unused key: K): Boolean = js.native
         def get(@unused key: K): js.UndefOr[V] = js.native
         def has(@unused key: K): Boolean = js.native
