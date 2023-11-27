@@ -7,8 +7,8 @@ package parsley.debugger.internal
 
 import scala.collection.mutable
 
-private [parsley] final class XWeakMap[K <: Object, V](startSize: Int) extends mutable.Map[K, V] { // scalastyle:ignore magic.number
-    private [internal] val backing: XWeakMapImpl[K, V] = new XWeakMapImpl(startSize)
+private [parsley] final class XWeakMap[K <: Object, V] extends mutable.Map[K, V] { // scalastyle:ignore magic.number
+    private [internal] val backing: XWeakMapImpl[K, V] = new XWeakMapImpl
 
     override def subtractOne(key: K): XWeakMap.this.type = {
         backing.drop(key)
@@ -22,9 +22,6 @@ private [parsley] final class XWeakMap[K <: Object, V](startSize: Int) extends m
 
     override def get(key: K): Option[V] =
         backing.lookup(key)
-
-    /** Warning: this is O(n). */
-    override def size: Int = backing.trueSize()
 
     // We don't actually need this, and it's very hard to work this out properly for a map with weak keys.
     override def iterator: Iterator[(K, V)] = ??? // scalastyle:ignore not.implemented.error.usage

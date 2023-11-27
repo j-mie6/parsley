@@ -80,7 +80,7 @@ object combinator {
     def attachDebugger[A](parser: Parsley[A], toStringRules: Seq[Any => Boolean]): DebuggedPair[A] = {
         // XXX: A weak map is needed so that memory leaks will not be caused by flatMap parsers.
         //      We want a decent amount of initial space to speed up debugging larger parsers slightly.
-        val seen: ParserTracker   = new ParserTracker(new XWeakMap(startSize = 64)) // scalastyle:ignore magic.number
+        val seen: ParserTracker   = new ParserTracker(new XWeakMap) // scalastyle:ignore magic.number
         val context: DebugContext = new DebugContext(toStringRules)
 
         val attached: LazyParsley[A] = injectM[A](parser.internal, seen, context)
