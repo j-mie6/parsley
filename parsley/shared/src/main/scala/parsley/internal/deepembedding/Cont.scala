@@ -25,12 +25,18 @@ private [deepembedding] abstract class ContOps[Cont[_, +_]] {
     def map[R, A, B](c: Cont[R, A], f: A => B): Cont[R, B]
     def flatMap[R, A, B](c: Cont[R, A], f: A => Cont[R, B]): Cont[R, B]
     def suspend[R, A](x: =>Cont[R, A]): Cont[R, A]
+
+    // Add more zips as needed by internal code. Hand-write each implementation if you can.
+    def zipWith[R, A, B, C](xa: Cont[R, A], xb: =>Cont[R, B], f: (A, B) => C): Cont[R, C]
+    def zipWith3[R, A, B, C, D](xa: Cont[R, A], xb: =>Cont[R, B], xc: =>Cont[R, C], f: (A, B, C) => D): Cont[R, D]
+
     def isStackSafe: Boolean
     // $COVERAGE-OFF$
     // This needs to be lazy, because I'm an idiot when I use it
     def `then`[R, A, B](c: Cont[R, A], k: =>Cont[R, B]): Cont[R, B] = flatMap[R, A, B](c, _ => k)
     def as[R, A, B](c: Cont[R, A], x: =>B): Cont[R, B] = map[R, A, B](c, _ => x)
     // $COVERAGE-ON$
+
 }
 private [deepembedding] object ContOps {
     implicit class ContAdapter[R, A, Cont[_, +_]](val c: Cont[R, A]) extends AnyVal {
@@ -43,6 +49,13 @@ private [deepembedding] object ContOps {
     @inline def result[R, A, Cont[_, +_]](x: A)(implicit canWrap: ContOps[Cont]): Cont[R, A] = canWrap.wrap(x)
     @inline def perform[Cont[_, +_], R](wrapped: Cont[R, R])(implicit canUnwrap: ContOps[Cont]): R = canUnwrap.unwrap(wrapped)
     @inline def suspend[Cont[_, +_], R, A](x: =>Cont[R, A])(implicit ops: ContOps[Cont]): Cont[R, A] = ops.suspend(x)
+    // Zips. Add more as needed.
+    @inline def zipWith[Cont[_, +_], R, A, B, C](f: (A, B) => C)(xa: Cont[R, A], xb: =>Cont[R, B])(implicit ops: ContOps[Cont]): Cont[R, C] =
+        ops.zipWith(xa, xb, f)
+    @inline def zipWith3[Cont[_, +_], R, A, B, C, D](f: (A, B, C) => D)(xa: Cont[R, A],
+                                                                        xb: =>Cont[R, B],
+                                                                        xc: =>Cont[R, C])(implicit ops: ContOps[Cont]): Cont[R, D] =
+        ops.zipWith3(xa, xb, xc, f)
 }
 
 private [deepembedding] object Cont {
@@ -54,6 +67,10 @@ private [deepembedding] object Cont {
         override def flatMap[R, A, B](mx: Impl[R, A], f: A => Impl[R, B]): Impl[R, B] = k => new Thunk(() => mx(x => f(x)(k)))
         override def suspend[R, A](x: =>Impl[R, A]): Impl[R, A] = k => new Thunk(() => x(k))
         override def `then`[R, A, B](mx: Impl[R, A], my: =>Impl[R, B]): Impl[R, B] = k => new Thunk(() => mx(_ => my(k)))
+        override def zipWith[R, A, B, C](xa: Impl[R, A], xb: => Impl[R, B], f: (A, B) => C): Impl[R, C] =
+            k => new Thunk(() => xa(a => new Thunk(() => xb(b => new Thunk(() => k(f(a, b)))))))
+        override def zipWith3[R, A, B, C, D](xa: Impl[R, A], xb: =>Impl[R, B], xc: =>Impl[R, C], f: (A, B, C) => D): Impl[R, D] =
+            k => new Thunk(() => xa(a => new Thunk(() => xb(b => new Thunk(() => xc(c => new Thunk(() => k(f(a, b, c)))))))))
         override def isStackSafe: Boolean = true
     }
 }
@@ -67,6 +84,8 @@ private [deepembedding] object Id {
         override def flatMap[R, A, B](c: Impl[R, A], f: A => Impl[R, B]): Impl[R, B] = f(c)
         override def suspend[R, A](x: =>Impl[R, A]): Impl[R, A] = x
         override def as[R, A, B](c: Impl[R, A], x: =>B): Impl[R, B] = x
+        override def zipWith[R, A, B, C](xa: Impl[R, A], xb: =>Impl[R, B], f: (A, B) => C): Impl[R, C] = f(xa, xb)
+        override def zipWith3[R, A, B, C, D](xa: Impl[R, A], xb: =>Impl[R, B], xc: =>Impl[R, C], f: (A, B, C) => D): Impl[R, D] = f(xa, xb, xc)
         override def isStackSafe: Boolean = false
     }
 }
