@@ -25,7 +25,9 @@ private [parsley] object Rename {
     // reference to a parser.
     // Alternatively, users can use the `named` combinator from the debugger to weakly assign names
     // to their parsers, or directly invoke Collector.assignName to strongly assign names to parsers.
-    lazy private val collected: mutable.Map[LazyParsley[_], String] = new mutable.HashMap()
+    // Just like parser reference collection for the debugger, we need a weak map so ephemeral renamed
+    // parsers don't leak memory.
+    lazy private val collected: mutable.Map[LazyParsley[_], String] = new XWeakMap
 
     // Compatibility for Scala 2.12, and for convenience within the debugger for things to do with maps.
     private [debugger] implicit class MapAddAll[K, V](mutMap: mutable.Map[K, V]) {
