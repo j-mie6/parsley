@@ -721,6 +721,18 @@ class ErrorConfig {
       */
     def verifiedStringBadCharsUsedInLiteral: VerifiedBadChars = Unverified
 
+    /** Gives names to punctuation if it is otherwise unspecified.
+      *
+      * Symbols that do not appear in the map are unlabelled. When a symbol
+      * is mapped to `None`, this indicates that it should be hidden from errors.
+      * Otherwise, a mapping to `Some` will relabel the error.
+      *
+      * @since 4.5.0
+      * @note defaults to the empty map
+      * @group symbol
+      */
+    def labelSymbolPunctuation: Map[String, Option[String]] = Map.empty
+
     /** How to refer to a `;` symbol in an error message.
       * @since 4.1.0
       * @note defaults to "semicolon"
@@ -831,4 +843,29 @@ class ErrorConfig {
       * @group space
       */
     def labelSpaceEndOfMultiComment: LabelWithExplainConfig = Label("end of comment")
+}
+
+/** Some possible defaults for the `ErrorConfig`.
+  *
+  * @since 4.5.0
+  */
+object ErrorConfig {
+    /** Can be used as part of `labelSymbolPunctuation` to give names to common punctuation
+      * their english name counterpart.
+      * @since 4.5.0
+      */
+    val englishPunctuation: Map[String, Option[String]] = Map(
+        "," -> Some("comma"),
+        "." -> Some("dot"),
+        ";" -> Some("semicolon"),
+        ":" -> Some("colon"),
+        "(" -> Some("open parenthesis"),
+        ")" -> Some("closing parenthesis"),
+        "[" -> Some("open bracket"),
+        "]" -> Some("closing bracket"),
+        "{" -> Some("open brace"),
+        "}" -> Some("closing brace"),
+        "<" -> Some("open angle bracket"),
+        ">" -> Some("closing angle bracket")
+    )
 }
