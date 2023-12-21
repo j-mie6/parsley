@@ -6,6 +6,7 @@
 package parsley.debugger.frontend
 
 import parsley.debugger.DebugTree
+import parsley.debugger.internal.XIllegalStateException
 
 /** A common interface for a debug frontend for a debugger to present the debug tree. Inherit from
   * one of the two provided subtraits to use.
