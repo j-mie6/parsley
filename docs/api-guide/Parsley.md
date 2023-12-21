@@ -1,5 +1,6 @@
 {%
 laika.title = "`parsley.Parsley`"
+laika.excludeFromNavigation = true
 %}
 # Parsley (`parsley.Parsley`)
 
