@@ -123,11 +123,11 @@ jobs:
 
       - name: Make target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/master')
-        run: mkdir -p parsley/native/target parsley/jvm/target parsley/js/target project/target
+        run: mkdir -p parsley-debug/jvm/target parsley-debug/native/target parsley/native/target parsley/jvm/target parsley-debug/js/target parsley/js/target project/target
 
       - name: Compress target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/master')
-        run: tar cf targets.tar parsley/native/target parsley/jvm/target parsley/js/target project/target
+        run: tar cf targets.tar parsley-debug/jvm/target parsley-debug/native/target parsley/native/target parsley/jvm/target parsley-debug/js/target parsley/js/target project/target
 
       - name: Upload target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/master')
@@ -390,14 +390,16 @@ jobs:
         run: sbt +update
 
       - name: Generate coverage report
-        run: sbt '++ ${{ matrix.scala }}' coverage 'parsley / test' coverageReport
+        run: sbt '++ ${{ matrix.scala }}' coverage 'parsley / test' 'parsleyDebug / test' coverageReport
 
       - name: Upload coverage to Code Climate
         env:
           CC_TEST_REPORTER_ID: c1f669dece75a1d69bf0dc45a682d64837badc112b8098271ccc0dca1bbc7a09
         uses: paambaati/codeclimate-action@v3.2.0
         with:
-          coverageLocations: '${{github.workspace}}/parsley/jvm/target/scala-2.13/coverage-report/cobertura.xml:cobertura'
+          coverageLocations: |
+            ${{github.workspace}}/parsley/jvm/target/scala-2.13/coverage-report/cobertura.xml:cobertura
+            ${{github.workspace}}/parsley-debug/jvm/target/scala-2.13/coverage-report/cobertura.xml:cobertura
 
   site:
     name: Generate Site

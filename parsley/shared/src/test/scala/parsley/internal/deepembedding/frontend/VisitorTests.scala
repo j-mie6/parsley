@@ -11,8 +11,7 @@ import parsley.{Parsley, ParsleyTest}
 import parsley.debug.FullBreak
 import parsley.errors, errors.{DefaultErrorBuilder, ErrorBuilder, Token}
 import parsley.internal.collection.immutable.Trie
-import parsley.internal.deepembedding.ContOps
-import parsley.internal.deepembedding.Sign
+import parsley.internal.deepembedding.{ContOps, Sign}
 import parsley.internal.deepembedding.backend.StrictParsley
 import parsley.internal.deepembedding.singletons.*
 import parsley.internal.deepembedding.singletons.token.*
@@ -40,9 +39,11 @@ class VisitorTests extends ParsleyTest {
                                                                                             s: => LazyParsley[B],
                                                                                             t: => LazyParsley[C]): ConstUnit[D] = CUnit
 
-            override def visit[A](self: <|>[A])(context: Unit, p: LazyParsley[A], q: LazyParsley[A]): ConstUnit[A] = CUnit
+            override def visit[A](self: <|>[A], context: Unit)(p: LazyParsley[A], q: LazyParsley[A]): ConstUnit[A] = CUnit
 
             override def visit[A](self: ChainPre[A], context: Unit)(p: LazyParsley[A], op: => LazyParsley[A => A]): ConstUnit[A] = CUnit
+
+            override def visitUnknown[A](self: LazyParsley[A], context: Unit): ConstUnit[A] = CUnit
         }
 
     private def dontExecute(): Nothing =
@@ -57,6 +58,9 @@ class VisitorTests extends ParsleyTest {
                 dontExecute()
 
             override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Nothing] =
+                dontExecute()
+
+            override private[parsley] def prettyName: String =
                 dontExecute()
         }
 

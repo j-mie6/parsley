@@ -21,7 +21,11 @@ private [parsley] final class CharTok[A](private val c: Char, private val x: A, 
         if (producesResults) instrs += new instructions.Push(x)
     }
 
+    // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(c, x, expected)
+
+    override private[parsley] def prettyName: String = "charTok"
+    // $COVERAGE-ON$
 }
 
 private [parsley] final class SupplementaryCharTok[A](private val codepoint: Int, private val x: A, val expected: LabelConfig) extends Singleton[A] {
@@ -33,7 +37,11 @@ private [parsley] final class SupplementaryCharTok[A](private val codepoint: Int
         if (producesResults) instrs += new instructions.Push(x)
     }
 
+    // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(codepoint, x, expected)
+
+    override private[parsley] def prettyName: String = "supplementaryCharTok"
+    // $COVERAGE-ON$
 }
 
 private [parsley] final class StringTok[A](private val s: String, private val x: A, val expected: LabelConfig) extends Singleton[A] {
@@ -47,7 +55,11 @@ private [parsley] final class StringTok[A](private val s: String, private val x:
 
     override protected[deepembedding] def optimise: StrictParsley[A] = if (s.length == 1) new CharTok(s.head, x, expected) else this
 
+    // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(s, x, expected)
+
+    override private[parsley] def prettyName: String = "stringTok"
+    // $COVERAGE-ON$
 }
 
 private [parsley] object Eof extends Singleton[Unit] {
@@ -59,7 +71,11 @@ private [parsley] object Eof extends Singleton[Unit] {
         if (producesResults) instrs += instructions.Push.Unit
     }
 
+    // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)
+
+    override private[parsley] def prettyName = "eof"
+    // $COVERAGE-ON$
 }
 
 private [parsley] final class UniSatisfy(private [UniSatisfy] val f: Int => Boolean, val expected: LabelConfig) extends Singleton[Int] {
@@ -71,7 +87,11 @@ private [parsley] final class UniSatisfy(private [UniSatisfy] val f: Int => Bool
         if (!producesResults) instrs += instructions.Pop
     }
 
+    // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Int] = visitor.visit(this, context)(f, expected)
+
+    override private[parsley] def prettyName = "satisfyUtf16"
+    // $COVERAGE-ON$
 }
 
 private [parsley] final class Modify[S](val reg: Reg[S], f: S => S) extends Singleton[Unit] with UsesRegister {
@@ -83,7 +103,11 @@ private [parsley] final class Modify[S](val reg: Reg[S], f: S => S) extends Sing
         if (producesResults) instrs += instructions.Push.Unit
     }
 
+    // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)(reg, f)
+
+    override private[parsley] def prettyName = "Reg.modify"
+    // $COVERAGE-ON$
 }
 
 private [deepembedding] object CharTok {

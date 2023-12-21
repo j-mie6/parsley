@@ -83,6 +83,7 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
 
     /** should the `Id` instance be skipped? */
     final private var cps = false
+    final private [deepembedding] def isCps: Boolean = cps
     /** how many registers are used by the ''parent'' of this combinator (this combinator is part of a `flatMap` when this is not -1) */
     final private var numRegsUsedByParent = -1
 
@@ -178,11 +179,14 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
         for { p <- this.preprocess } yield p.optimise
     }
 
+    // $COVERAGE-OFF$
     // Processing with visitors.
     /** Use a visitor implementation to process this internal lazy parser. */
     def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A]
 
-    // $COVERAGE-OFF$
+    /** Pretty names for parsers, for internal debugging purposes only. */
+    private [parsley] def prettyName: String
+
     /** Pretty-prints a combinator tree, for internal debugging purposes only. */
     final private [internal] def prettyAST: String = {
         implicit val ops = Id.ops

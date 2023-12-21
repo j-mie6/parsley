@@ -23,7 +23,11 @@ private [parsley] final class WhiteSpace(ws: Char => Boolean, desc: SpaceDesc, e
         if (producesResults) instrs += instructions.Push.Unit
     }
 
+    // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)(ws, desc, errConfig)
+
+    override private[parsley] def prettyName = pretty
+    // $COVERAGE-ON$
 }
 
 private [parsley] final class SkipComments(desc: SpaceDesc, errConfig: ErrorConfig) extends Singleton[Unit] {
@@ -34,7 +38,11 @@ private [parsley] final class SkipComments(desc: SpaceDesc, errConfig: ErrorConf
         if (producesResults) instrs += instructions.Push.Unit
     }
 
+    // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)(desc, errConfig)
+
+    override private[parsley] def prettyName = pretty
+    // $COVERAGE-ON$
 }
 
 private [parsley] final class Comment(desc: SpaceDesc, errConfig: ErrorConfig) extends Singleton[Unit] {
@@ -45,7 +53,11 @@ private [parsley] final class Comment(desc: SpaceDesc, errConfig: ErrorConfig) e
         if (producesResults) instrs += instructions.Push.Unit
     }
 
+    // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)(desc, errConfig)
+
+    override private[parsley] def prettyName = pretty
+    // $COVERAGE-ON$
 }
 
 private [parsley] final class Sign[A](ty: SignType, signPresence: PlusSignPresence) extends Singleton[A => A] {
@@ -56,7 +68,11 @@ private [parsley] final class Sign[A](ty: SignType, signPresence: PlusSignPresen
         if (!producesResults) instrs += instructions.Pop
     }
 
+    // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A => A] = visitor.visit(this, context)(ty, signPresence)
+
+    override private[parsley] def prettyName = pretty
+    // $COVERAGE-ON$
 }
 
 private [parsley] final class NonSpecific(name: String, unexpectedIllegal: String => String,
@@ -69,7 +85,11 @@ private [parsley] final class NonSpecific(name: String, unexpectedIllegal: Strin
         if (!producesResults) instrs += instructions.Pop
     }
 
+    // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[String] = {
         visitor.visit(this, context)(name, unexpectedIllegal, start, letter, illegal)
     }
+
+    override private[parsley] def prettyName = pretty
+    // $COVERAGE-ON$
 }

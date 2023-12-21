@@ -16,7 +16,11 @@ private [parsley] final class Pure[A](private val x: A) extends Singleton[A] {
     // $COVERAGE-ON$
     override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = if (producesResults) instrs += new instructions.Push(x)
 
+    // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(x)
+
+    override private[parsley] def prettyName = "pure"
+    // $COVERAGE-ON$
 }
 
 private [parsley] final class Fresh[A](x: =>A) extends Singleton[A] {
@@ -25,7 +29,11 @@ private [parsley] final class Fresh[A](x: =>A) extends Singleton[A] {
     // $COVERAGE-ON$
     override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = if (producesResults) instrs += new instructions.Fresh(x)
 
+    // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(x)
+
+    override private[parsley] def prettyName = "fresh"
+    // $COVERAGE-ON$
 }
 
 private [deepembedding] object Pure {

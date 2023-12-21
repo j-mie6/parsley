@@ -22,7 +22,11 @@ private [parsley] final class EscapeMapped(escTrie: Trie[Int], escs: Set[String]
         if (!producesResults) instrs += instructions.Pop
     }
 
+    // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Int] = visitor.visit(this, context)(escTrie, escs)
+
+    override private[parsley] def prettyName = pretty
+    // $COVERAGE-ON$
 }
 
 private [parsley] final class EscapeAtMost(n: Int, radix: Int) extends Singleton[BigInt] {
@@ -32,8 +36,11 @@ private [parsley] final class EscapeAtMost(n: Int, radix: Int) extends Singleton
     }
     // $COVERAGE-OFF$
     override def pretty: String = "escapeAtMost"
-    // $COVERAGE-ON$
+
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[BigInt] = visitor.visit(this, context)(n, radix)
+
+    override private[parsley] def prettyName = pretty
+    // $COVERAGE-ON$
 }
 
 private [parsley] final class EscapeOneOfExactly(radix: Int, ns: List[Int], inexactErr: SpecialisedFilterConfig[Int]) extends Singleton[BigInt] {
@@ -43,6 +50,9 @@ private [parsley] final class EscapeOneOfExactly(radix: Int, ns: List[Int], inex
     }
     // $COVERAGE-OFF$
     override def pretty: String = "escapeOneOfExactly"
-    // $COVERAGE-ON$
+
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[BigInt] = visitor.visit(this, context)(radix, ns, inexactErr)
+
+    override private [parsley] def prettyName = pretty
+    // $COVERAGE-ON$
 }

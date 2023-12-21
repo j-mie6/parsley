@@ -1,0 +1,149 @@
+/*
+ * Copyright 2020 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+package parsley.internal.deepembedding.frontend
+
+import scala.util.Random
+
+import org.typelevel.scalaccompat.annotation.unused
+import parsley.Parsley
+import parsley.ParsleyTest
+import parsley.combinator.ifP
+import parsley.debugger.combinator.attachDebugger
+import parsley.expr.chain
+import parsley.internal.deepembedding.frontend.debugger.Debugged
+import parsley.internal.deepembedding.singletons
+
+class TotalAttachmentSpec extends ParsleyTest {
+    private final class RandomParserCreator(maxDepth: Int) {
+        private val rng: Random = new Random
+
+        private val unaryModifiers: Array[Parsley[Unit] => Parsley[Unit]] = Array(
+            Parsley.attempt,
+            Parsley.lookAhead,
+            _.map(identity[Unit]),
+            _.flatMap(Parsley.pure),
+            chain.left(_, Parsley.fresh { (_: Unit, _: Unit) => () }, ()),
+            chain.right(_, Parsley.fresh { (_: Unit, _: Unit) => () }, ())
+        )
+
+        private val binaryModifiers: Array[(Parsley[Unit], Parsley[Unit]) => Parsley[Unit]] = Array(
+            (px, py) => px <|> py,
+            (px, py) => ifP(Parsley.pure(true), px, py),
+        )
+
+        private val baseParser: Parsley[Unit] = Parsley.unit
+
+        def generate(depth: Int): Parsley[Unit] =
+            if (depth >= maxDepth) baseParser
+            else {
+                rng.nextDouble() match {
+                    case d if d <= 0.5 =>
+                        val mod = unaryModifiers(rng.nextInt(unaryModifiers.length))
+                        mod(generate(depth + 1))
+                    case _             =>
+                        val mod = binaryModifiers(rng.nextInt(binaryModifiers.length))
+                        mod(generate(depth + 1), generate(depth + 1))
+                }
+            }
+    }
+
+    sealed trait ConstUnit[+A]
+    object CUnit extends ConstUnit[Nothing]
+
+    private final class AttachmentInspector extends GenericLazyParsleyIVisitor[Boolean, ConstUnit] {
+        def failure(msg: String = "Parent parser was not debugged."): Nothing = fail(msg)
+
+        override def visitSingleton[A](self: singletons.Singleton[A], context: Boolean): ConstUnit[A] =
+            if (context) CUnit else failure()
+
+        override def visitUnary[A, B](self: Unary[A, B], context: Boolean)(p: LazyParsley[A]): ConstUnit[B] =
+            if (context) {
+                visitUnknown(p, context = false): @unused
+                CUnit
+            } else failure()
+
+        override def visitBinary[A, B, C](self: Binary[A, B, C], context: Boolean)(l: LazyParsley[A], r: => LazyParsley[B]): ConstUnit[C] =
+            if (context) {
+                visitUnknown(l, context = false): @unused
+                visitUnknown(r, context = false): @unused
+                CUnit
+            } else failure()
+
+        override def visitTernary[A, B, C, D](self: Ternary[A, B, C, D], context: Boolean)(f: LazyParsley[A],
+                                                                                           s: => LazyParsley[B],
+                                                                                           t: => LazyParsley[C]): ConstUnit[D] =
+            if (context) {
+                visitUnknown(f, context = false): @unused
+                visitUnknown(s, context = false): @unused
+                visitUnknown(t, context = false): @unused
+                CUnit
+            } else failure()
+
+        override def visit[A](self: <|>[A], context: Boolean)(p: LazyParsley[A], q: LazyParsley[A]): ConstUnit[A] =
+            if (context) {
+                visitUnknown(p, context = false): @unused
+                visitUnknown(q, context = false): @unused
+                CUnit
+            } else failure()
+
+        override def visit[A](self: ChainPre[A], context: Boolean)(p: LazyParsley[A], op: => LazyParsley[A => A]): ConstUnit[A] =
+            if (context) {
+                visitUnknown(p, context = false): @unused
+                visitUnknown(op, context = false): @unused
+                CUnit
+            } else failure()
+
+        // Somehow IntelliJ Scala thinks this is tail-recursive... but ScalaC does not?
+        //noinspection NoTailRecursionAnnotation
+        override def visitUnknown[A](self: LazyParsley[A], context: Boolean): ConstUnit[A] =
+            self match {
+                case d: Debugged[_] if !context => visitUnknown(d.par.get, context = true)
+                case _: Debugged[_]             => failure("Not allowed to stack debuggers.") // Can't have a debugged on top of another!
+                case s: singletons.Singleton[_] => visitSingleton(s.asInstanceOf[singletons.Singleton[A]], context)
+                case g: GenericLazyParsley[_]   => visitGeneric(g.asInstanceOf[GenericLazyParsley[A]], context)
+                case alt: <|>[_]                => alt.visit(this, context)
+                case cpre: ChainPre[_]          => cpre.visit(this, context)
+                case _                          => if (context) CUnit else failure()
+            }
+
+    }
+
+    behavior of "the debug node attachment visitor"
+
+    it should "attach debuggers to all nodes of a parser" in {
+        val verifier = new AttachmentInspector
+        val maxDepth = 12
+        val width    = 100
+
+        // Testing with ContOps[Id.Impl]
+        for (i <- 0 until maxDepth) {
+            val parserGenerator = new RandomParserCreator(i)
+            for (_ <- 0 until width) {
+                val (_, dbg) = attachDebugger(parserGenerator.generate(0))
+                dbg.internal match {
+                    case seq: *>[_] => verifier.visitUnknown(seq.right, context = false)
+                    case _          => fail("Debugger not attached.")
+                }
+            }
+        }
+
+        // Testing with ContOps[Cont.Impl]
+        for (i <- 0 until maxDepth) {
+            val parserGenerator = new RandomParserCreator(i)
+            for (_ <- 0 until width) {
+                val par = parserGenerator.generate(0)
+                par.overflows()
+
+                val (_, dbg) = attachDebugger(par)
+                dbg.internal match {
+                    case seq: *>[_] => verifier.visitUnknown(seq.right, context = false)
+                    case _ => fail("Debugger not attached.")
+                }
+            }
+        }
+    }
+
+}
