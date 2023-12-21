@@ -91,11 +91,13 @@
     <li class="level1 nav-leaf"><a href="../../cheatsheet.html">Cheatsheet</a></li>
     <li class="level1 nav-node"><a href="../">Understanding the API</a></li>
     <li class="level2 nav-leaf"><a href="../generic.html"><code>parsley.genericbridges</code></a></li>
+    <li class="level2 nav-header"><code>parsley.expr</code></li>
+    <li class="level3 nav-leaf"><a href="precedence.html"><code>precedence</code></a></li>
+    <li class="level3 active nav-leaf"><a href="#"><code>chain</code></a></li>
     <li class="level2 nav-header"><code>parsley.token</code></li>
     <li class="level3 nav-leaf"><a href="../token/errors.html"><code>errors</code></a></li>
     <li class="level3 nav-leaf"><a href="../token/descriptions.html"><code>descriptions</code></a></li>
     <li class="level3 nav-leaf"><a href="../token/Lexer.html"><code>Lexer</code></a></li>
-    <li class="level2 nav-leaf"><a href="../Parsley.html"><code>parsley.Parsley</code></a></li>
     <li class="level1 nav-node"><a href="../../tutorial/">Parser Combinator Tutorial</a></li>
     <li class="level2 nav-leaf"><a href="../../tutorial/basics-of-combinators.html">Basics of Combinators</a></li>
     <li class="level2 nav-leaf"><a href="../../tutorial/building-expression-parsers.html">Building Expression Parsers</a></li>
@@ -119,6 +121,8 @@
   <p class="header"><a href="#"><code>chain</code></a></p>
 
   <ul class="nav-list">
+    <li class="level1 nav-leaf"><a href="#binary-chains">Binary Chains</a></li>
+    <li class="level1 nav-leaf"><a href="#unary-chains">Unary Chains</a></li>
   </ul>
 
   <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/wiki-improvements/docs/api-guide/expr/chain.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
@@ -128,6 +132,37 @@
       <main class="content">
 
         <h1 id="chain-combinators" class="title">Chain Combinators</h1>
+        <p>The <code>parsley.expr.chain</code> module contains a variety of combinators for abstracting, most commonly, the application of
+        operators to values in expressions. This allows <code>parsley</code> to
+        handle <em>left recursion</em> idiomatically. To distinguish between
+        these chains and the functionality found in <a href="infix.html#infix-chain-combinators"><code>parsley.expr.infix</code></a>, it is recommended to always import this module qualified as <code>import parsley.expr.chain</code>.</p>
+        <div class="callout info">
+          <i class="icofont-laika info">&#xef4e;</i>
+          <p><em>The Scaladoc for this page can be found at <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/expr/chain$.html"><code>parsley.expr.chain</code></a>.</em></p>
+        </div>
+        
+        <h2 id="binary-chains" class="section"><a class="anchor-link left" href="#binary-chains"><i class="icofont-laika link">&#xef71;</i></a>Binary Chains</h2>
+        <p>The first kind of chains found in <code>chain</code> are the binary chains,
+        which handle infix application of a binary operator to values
+        in either a left- or right-associative way. These are called <code>chain.left1</code> or <code>chain.right1</code>. The <code>1</code> here means that there
+        must be at least one value present, though there may be no
+        operators. As an example:</p>
+        <blockquote><h3><code>p op p op p op p op p</code></h3></blockquote>
+        <p>The above can be parsed using <code>chain.left1(p, op)</code> to have the
+        effect of parsing like:</p>
+        <blockquote><h3><code>(((p op p) op p) op p) op p</code></h3></blockquote>
+        <p>It can also be parded using <code>chain.right1(p, op)</code> to have the
+        effect of parsing like:</p>
+        <blockquote><h3><code>p op (p op (p op (p op p)))</code></h3></blockquote>
+        <p>Both of these combinators share the same type, where the parser
+        <code>p: Parsley[A]</code>, and the parser <code>op: Parsley[(A, A) =&gt; A]</code>. This
+        means that the two combinators can be freely swapped between
+        in an implementation. This is useful when the grammar being
+        encoded for is fully-associative and the associativity within
+        the parser is an implementation detail. However, if more type-safety is desired, the <code>infix.left1</code> and <code>infix.right1</code>
+        combinators may be more appropriate.</p>
+        
+        <h2 id="unary-chains" class="section"><a class="anchor-link left" href="#unary-chains"><i class="icofont-laika link">&#xef71;</i></a>Unary Chains</h2>
 
         
 <hr class="footer-rule"/>
