@@ -638,7 +638,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
             private [Lexer] val _integer = new SignedInteger(desc.numericDesc, _natural, errConfig)
             private [Lexer] val _positiveReal = new UnsignedReal(desc.numericDesc, _natural, errConfig, generic)
             private [Lexer] val _real = new SignedReal(desc.numericDesc, _positiveReal, errConfig)
-            private [Lexer] val _unsignedCombined = new UnsignedCombined(desc.numericDesc, _integer, _positiveReal, errConfig)
+            private [Lexer] val _unsignedCombined = new UnsignedCombined(desc.numericDesc, _natural, _positiveReal, errConfig)
             private [Lexer] val _signedCombined = new SignedCombined(desc.numericDesc, _unsignedCombined, errConfig)
 
             /** $natural
