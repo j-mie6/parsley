@@ -111,8 +111,8 @@ mermaid.initialize({
     <li class="level2 nav-leaf"><a href="../generic.html"><code>parsley.genericbridges</code></a></li>
     <li class="level2 nav-header"><code>parsley.token</code></li>
     <li class="level3 active nav-leaf"><a href="#"><code>errors</code></a></li>
-    <li class="level3 nav-leaf"><a href="Lexer.html"><code>Lexer</code></a></li>
     <li class="level3 nav-leaf"><a href="descriptions.html"><code>descriptions</code></a></li>
+    <li class="level3 nav-leaf"><a href="Lexer.html"><code>Lexer</code></a></li>
     <li class="level2 nav-leaf"><a href="../Parsley.html"><code>parsley.Parsley</code></a></li>
     <li class="level1 nav-node"><a href="../../tutorial/">Parser Combinator Tutorial</a></li>
     <li class="level2 nav-leaf"><a href="../../tutorial/basics-of-combinators.html">Basics of Combinators</a></li>
@@ -142,7 +142,9 @@ mermaid.initialize({
     <li class="level2 nav-leaf"><a href="#configuring-labels">Configuring Labels</a></li>
     <li class="level2 nav-leaf"><a href="#adding-explanations">Adding Explanations</a></li>
     <li class="level1 nav-leaf"><a href="#configuring-filtering">Configuring Filtering</a></li>
-    <li class="level1 nav-leaf"><a href="#special-configuration">Special Configuration</a></li>
+    <li class="level1 nav-node"><a href="#special-configuration">Special Configuration</a></li>
+    <li class="level2 nav-leaf"><a href="#preventing-double-dropped-zero">Preventing Double-Dropped Zero</a></li>
+    <li class="level2 nav-leaf"><a href="#preventing-bad-characters-in-literals">Preventing Bad Characters in Literals</a></li>
   </ul>
 
   <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/wiki-improvements/docs/api-guide/token/errors.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
@@ -213,10 +215,30 @@ class LabelAndReason {
         wouldn&#39;t make sense; and a <code>ReasonConfig</code> if it does not make sense to name.</p>
         
         <h3 id="configuring-labels" class="section"><a class="anchor-link left" href="#configuring-labels"><i class="icofont-laika link">&#xef71;</i></a>Configuring Labels</h3>
+        <p>Adding a label can be one of the following:</p>
+        <ul>
+          <li><code>Label</code>: this labels the corresponding parser with one or more
+                 labels -- this also applies for <code>LabelAndReason</code>.</li>
+          <li><code>Hidden</code>: this suppresses any error messages arising from the
+                  corresponding parser.</li>
+          <li><code>NotConfigured</code>: this doesn&#39;t alter the error messages from
+                         the corresponding parser.</li>
+        </ul>
         
         <h3 id="adding-explanations" class="section"><a class="anchor-link left" href="#adding-explanations"><i class="icofont-laika link">&#xef71;</i></a>Adding Explanations</h3>
+        <p>Adding an explanation can be one of the following:</p>
+        <ul>
+          <li><code>Reason</code>: this adds a reason for the corresponding parser
+                  though doesn&#39;t change the labelling -- unless <code>LabelAndReason</code> is used instead.</li>
+          <li><code>NotConfigured</code>: this doesn&#39;t alter the error messages from
+                         the corresponding parser.</li>
+        </ul>
         
         <h2 id="configuring-filtering" class="section"><a class="anchor-link left" href="#configuring-filtering"><i class="icofont-laika link">&#xef71;</i></a>Configuring Filtering</h2>
+        <p>Some parsers perform filtering on their results, for instance checking if a numeric literal
+        is within a certain bit-width. The messages generated when these filters fail is controled
+        by the <code>FilterConfig[A]</code>, where <code>A</code> is the type of value being filtered. The below diagram
+        shows how the various sub-configurations are laid out.</p>
         <pre class="mermaid">classDiagram
 FilterConfig~A~ --|&gt; VanillaFilterConfig~A~
 FilterConfig~A~ --|&gt; SpecialisedFilterConfig~A~
@@ -248,8 +270,43 @@ class UnexpectedBecause~A~ {
     reason(x: A) String*
     unexpected(x: A) String*
 }</pre>
+        <p>Some filters within the <code>Lexer</code> are best left as a <em>specialised</em> or <em>vanilla</em> error, which is
+        why the hierarchy is constrained. Other than that, the various leaf classes allow for various
+        combinations of adding reasons, altering the unexpected message, or bespoke error messages.
+        The <code>BasicFilter</code> here does not attach any special error messages to the filtering, having the
+        effect of just using the basic <code>filter</code> combinator internally.</p>
         
         <h2 id="special-configuration" class="section"><a class="anchor-link left" href="#special-configuration"><i class="icofont-laika link">&#xef71;</i></a>Special Configuration</h2>
+        <p>Some parts of the error configuration for the <code>Lexer</code> are special. In particular, these are
+        <code>preventRealDoubleDroppedZero</code> and the two <code>verifiedXBadCharsUsedInLiteral</code> (for both <code>Char</code> and <code>String</code>).
+        These provide very hand-crafted error messages for specific scenarios, based on the ideas of
+        the <em>Preventative</em> and <em>Verified Errors</em> patterns.</p>
+        
+        <h3 id="preventing-double-dropped-zero" class="section"><a class="anchor-link left" href="#preventing-double-dropped-zero"><i class="icofont-laika link">&#xef71;</i></a>Preventing Double-Dropped Zero</h3>
+        <p>When writing floating point literals, it is, depending on the configuration, possible to write <code>.0</code>,
+        say, or <code>0.</code>. However, it should not be possible to have the literal <code>.</code> on its own! Overriding
+        <code>preventRealDoubleDroppedZero</code> is the way to prevent this, and provide a good error message in the
+        process. There are a few options:</p>
+        <ul>
+          <li><code>UnexpectedZeroDot</code>: sets an unexpected message when just <code>.</code> is seen to be the given string.</li>
+          <li><code>ZeroDotReason</code>: does not set an unexpected message, but adds a reason explaining why <code>.</code> is illegal.</li>
+          <li><code>UnexpectedZeroDotWithReason</code>: combines both above behaviours.</li>
+          <li><code>ZeroDotFail</code>: throws an error with the given bespoke error messages.</li>
+        </ul>
+        
+        <h3 id="preventing-bad-characters-in-literals" class="section"><a class="anchor-link left" href="#preventing-bad-characters-in-literals"><i class="icofont-laika link">&#xef71;</i></a>Preventing Bad Characters in Literals</h3>
+        <p>When writing string and character literals, some characters may be considered illegal. For instance,
+        a langauge may not allow <code>&quot;</code> to appear unescaped within a character literal. To help make it clear
+        why a character was rejected by the parser, <code>verifiedCharBadCharsUsedInLiteral</code> and
+        <code>verifiedStringBadCharsUsedInLiteral</code> allow for fine-grained error messages to be generated when
+        an illegal character occurs. There are a few options:</p>
+        <ul>
+          <li><code>BadCharsFail</code> takes a <code>Map[Int, Seq[String]]</code> from unicode characters to the messages to generate
+          if one of the keys was found in the string.</li>
+          <li><code>BadCharsReason</code> takes a <code>Map[Int, String]</code> from unicode characters to the reason they generate if
+          they are found in the string.</li>
+          <li><code>Unverified</code> does no additional checks for bad characters.</li>
+        </ul>
 
         
 <hr class="footer-rule"/>

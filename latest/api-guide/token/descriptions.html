@@ -111,8 +111,8 @@ mermaid.initialize({
     <li class="level2 nav-leaf"><a href="../generic.html"><code>parsley.genericbridges</code></a></li>
     <li class="level2 nav-header"><code>parsley.token</code></li>
     <li class="level3 nav-leaf"><a href="errors.html"><code>errors</code></a></li>
-    <li class="level3 nav-leaf"><a href="Lexer.html"><code>Lexer</code></a></li>
     <li class="level3 active nav-leaf"><a href="#"><code>descriptions</code></a></li>
+    <li class="level3 nav-leaf"><a href="Lexer.html"><code>Lexer</code></a></li>
     <li class="level2 nav-leaf"><a href="../Parsley.html"><code>parsley.Parsley</code></a></li>
     <li class="level1 nav-node"><a href="../../tutorial/">Parser Combinator Tutorial</a></li>
     <li class="level2 nav-leaf"><a href="../../tutorial/basics-of-combinators.html">Basics of Combinators</a></li>
@@ -147,8 +147,21 @@ mermaid.initialize({
       <main class="content">
 
         <h1 id="configuring-the-lexer-parsley-token-descriptions" class="title">Configuring the Lexer (<code>parsley.token.descriptions</code>)</h1>
+        <p>The <a href="Lexer.html#lexer-parsley-token-lexer"><code>Lexer</code></a> is configured primarily by providing it a
+        <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/token/descriptions/LexicalDesc.html"><code>LexicalDesc</code></a>. This is a structure built up
+        of many substructures that each configure a specific part of the overall functionality available.
+        In general, many parts of this hierarchy have &quot;sensible defaults&quot; in the form of their <code>plain</code> value
+        within their companion objects; these document what choices were made in each individual case. There
+        may also be some values crafted to adhere to some specific language specification; for instance,
+        <code>EscapeDesc.haskell</code> describes escape characters that adhere to the Haskell Report.</p>
+        <p>This page does not aim to document everything that is configurable within <code>LexicalDesc</code>, but it will
+        outline the general design and how things slot together.</p>
         
         <h2 id="diagram-of-dependencies" class="section"><a class="anchor-link left" href="#diagram-of-dependencies"><i class="icofont-laika link">&#xef71;</i></a>Diagram of Dependencies</h2>
+        <p>The hierarchy of types involved with lexical configuration can be daunting. The following diagram
+        illustrates both the &quot;has-a&quot; and &quot;is-a&quot; relationships between the types. For instance, <code>TextDesc</code>
+        contains an <code>EscapeDesc</code>, and <code>NumericEscape</code> may be implemented by either <code>NumericEscape.Illegal</code> or
+        <code>NumericEscape.Supported</code>.</p>
         <pre class="mermaid">classDiagram
 direction LR
 
@@ -163,9 +176,9 @@ EscapeDesc *-- NumericEscape
 NumericEscape_Illegal --|&gt; NumericEscape
 NumericEscape_Supported --|&gt; NumericEscape
 NumericEscape_Supported *-- NumberOfDigits
-AtMost --|&gt; NumberOfDigits
-Exactly --|&gt; NumberOfDigits
-Unbounded --|&gt; NumberOfDigits
+NumberOfDigits_AtMost --|&gt; NumberOfDigits
+NumberOfDigits_Exactly --|&gt; NumberOfDigits
+NumberOfDigits_Unbounded --|&gt; NumberOfDigits
 
 ExponentDesc --* NumericDesc
 ExponentDesc_Supported --|&gt; ExponentDesc
@@ -179,8 +192,33 @@ BreakCharDesc &lt;|-- BreakCharDesc_NoBreakChar
 PlusSignPresence &lt;|-- PlusSignPresence_Illegal
 PlusSignPresence &lt;|-- PlusSignPresence_Optional
 PlusSignPresence &lt;|-- PlusSignPrecense_Required
-NumericDesc *-- PlusSignPresence
-</pre>
+NumericDesc *-- PlusSignPresence</pre>
+        <p><em>In the above diagram, an <code>_</code> represents a <code>.</code></em></p>
+        <p>The types in the diagram that have alternative implements are as follows:</p>
+        <ul>
+          <li><code>BreakDescChar</code>: used to describe whether or not numeric literals can contain meaningless
+          &quot;break characters&quot;, like <code>_</code>. It can either be <code>NoBreakChar</code>, which disallows them; or
+          <code>Supported</code>, which will specify the character and whether it is legal to appear after a non-decimal
+          prefix like hexadecimal <code>0x</code>.</li>
+          <li><code>PlusSignPresence</code>: used to describe whether or not a <code>+</code> is allowed in numeric literals, which
+          appears for the start of numeric literals and floating-point exponents. It can either be <code>Required</code>,
+          which means either a <code>+</code> or <code>-</code> must always be written; <code>Optional</code>, which means a <code>+</code> can be written;
+          or <code>Illegal</code>, which means only a <code>-</code> can appear.</li>
+          <li><code>ExponentDesc</code>: used to describe how an exponent is formed for different bases of floating point
+          literals. It can either be <code>Supported</code>, in which case it will indicate whether it is compulsory,
+          what characters can start it, what the numeric base of the exponent number itself is, and then
+          what the <code>PlusSignPresence</code> is, as above; otherwise, it is <code>NoExponents</code>, which means that the
+          exponent notation is not supported for a specific numeric base.</li>
+          <li><code>NumericEscape</code>: used to describe whether or not numeric escape sequences are allowed in string and
+          character literals. It either be <code>Illegal</code>, which means there are no numeric escapes; or <code>Supported</code>,
+          which means that the prefix, <code>NumberOfDigits</code>, and the maximum value of the escape must all be
+          specified.</li>
+          <li><code>NumberOfDigits</code>: used by the above <code>NumericEscape</code> to determine how many digits can appear within
+          a numeric escape literal. These can be one of: <code>Unbounded</code>, which means there can be any well-formed
+          number as the escape; <code>AtMost</code>, which puts an upper limit on the number of digits that can appear;
+          or <code>Exactly</code>, which details one or more exact numbers of digits that could appear, for instance,
+          some languages allow for numeric escapes with exactly 2, 4, or 6 digits in them only.</li>
+        </ul>
 
         
 <hr class="footer-rule"/>
