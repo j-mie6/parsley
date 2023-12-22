@@ -92,8 +92,9 @@
     <li class="level1 nav-node"><a href="../">Understanding the API</a></li>
     <li class="level2 nav-leaf"><a href="../generic.html"><code>parsley.genericbridges</code></a></li>
     <li class="level2 nav-header"><code>parsley.expr</code></li>
-    <li class="level3 nav-leaf"><a href="precedence.html"><code>precedence</code></a></li>
     <li class="level3 active nav-leaf"><a href="#"><code>chain</code></a></li>
+    <li class="level3 nav-leaf"><a href="infix.html"><code>infix</code></a></li>
+    <li class="level3 nav-leaf"><a href="precedence.html"><code>precedence</code></a></li>
     <li class="level2 nav-header"><code>parsley.token</code></li>
     <li class="level3 nav-leaf"><a href="../token/errors.html"><code>errors</code></a></li>
     <li class="level3 nav-leaf"><a href="../token/descriptions.html"><code>descriptions</code></a></li>
@@ -122,7 +123,8 @@
 
   <ul class="nav-list">
     <li class="level1 nav-leaf"><a href="#binary-chains">Binary Chains</a></li>
-    <li class="level1 nav-leaf"><a href="#unary-chains">Unary Chains</a></li>
+    <li class="level1 nav-node"><a href="#unary-chains">Unary Chains</a></li>
+    <li class="level2 nav-leaf"><a href="#ensuring-an-operator-exists">Ensuring an operator exists</a></li>
   </ul>
 
   <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/wiki-improvements/docs/api-guide/expr/chain.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
@@ -135,7 +137,7 @@
         <p>The <code>parsley.expr.chain</code> module contains a variety of combinators for abstracting, most commonly, the application of
         operators to values in expressions. This allows <code>parsley</code> to
         handle <em>left recursion</em> idiomatically. To distinguish between
-        these chains and the functionality found in <a href="infix.html#infix-chain-combinators"><code>parsley.expr.infix</code></a>, it is recommended to always import this module qualified as <code>import parsley.expr.chain</code>.</p>
+        these chains and the functionality found in <a href="infix.html#infix-chain-combinators"><code>parsley.expr.infix</code></a>, it is recommended to always import this module qualified as <code>import parsley.expr.chain</code> -- except for <code>postfix</code> and <code>prefix</code>.</p>
         <div class="callout info">
           <i class="icofont-laika info">&#xef4e;</i>
           <p><em>The Scaladoc for this page can be found at <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/expr/chain$.html"><code>parsley.expr.chain</code></a>.</em></p>
@@ -154,15 +156,51 @@
         <p>It can also be parded using <code>chain.right1(p, op)</code> to have the
         effect of parsing like:</p>
         <blockquote><h3><code>p op (p op (p op (p op p)))</code></h3></blockquote>
-        <p>Both of these combinators share the same type, where the parser
-        <code>p: Parsley[A]</code>, and the parser <code>op: Parsley[(A, A) =&gt; A]</code>. This
-        means that the two combinators can be freely swapped between
-        in an implementation. This is useful when the grammar being
-        encoded for is fully-associative and the associativity within
-        the parser is an implementation detail. However, if more type-safety is desired, the <code>infix.left1</code> and <code>infix.right1</code>
-        combinators may be more appropriate.</p>
+        <div class="callout warning">
+          <i class="icofont-laika warning">&#xf026;</i>
+          <p>Both of these combinators share the same type, where the parser
+          <code>p: Parsley[A]</code>, and the parser <code>op: Parsley[(A, A) =&gt; A]</code>. This
+          means that the two combinators can be freely swapped between
+          in an implementation. This is useful when the grammar being
+          encoded for is fully-associative and the associativity within
+          the parser is an implementation detail.</p>
+          <p>However, if more type-safety is desired, the <code>infix.left1</code> and
+          <code>infix.right1</code> combinators may be more appropriate.</p>
+        </div>
         
         <h2 id="unary-chains" class="section"><a class="anchor-link left" href="#unary-chains"><i class="icofont-laika link">&#xef71;</i></a>Unary Chains</h2>
+        <p>The other kind of chains found in <code>chain</code> are unary chains, which
+        handle repeated prefix or postfix application of an operator to
+        a single value. These are called <code>chain.prefix</code> and
+        <code>chain.postfix</code>. There also <code>1</code> variants of these combinators, which will be discussed later.</p>
+        <p>Given input of shape:</p>
+        <blockquote><h3><code>p op op op op</code></h3></blockquote>
+        <p>The combinator <code>postfix p op</code> will parse the input and apply
+        results such that it would look like:</p>
+        <blockquote><h3><code>(((p op) op) op) op</code></h3></blockquote>
+        <p>Similarly, given input of shape:</p>
+        <blockquote><h3><code>op op op op p</code></h3></blockquote>
+        <p>The combinator <code>prefix op p</code> will parse the input and apply
+        results such that it would look like:</p>
+        <blockquote><h3><code>op (op (op (op p)))</code></h3></blockquote>
+        <div class="callout info">
+          <i class="icofont-laika info">&#xef4e;</i>
+          <p>Unlike <code>chain.left1</code> and <code>chain.right1</code>, there is no <code>infix</code>
+          equivalent for <code>prefix</code> and <code>postfix</code>. This is because a
+          refined type will not add much to the way the combinators
+          operate.</p>
+        </div>
+        
+        <h3 id="ensuring-an-operator-exists" class="section"><a class="anchor-link left" href="#ensuring-an-operator-exists"><i class="icofont-laika link">&#xef71;</i></a>Ensuring an operator exists</h3>
+        <p>Unlike the difference between <code>chain.left</code> and <code>chain.left1</code>,
+        which allows for an absence of terminal value; <code>prefix</code> vs <code>prefix1</code> describe whether or not an operator is required
+        or not. This is enforced by the type signature of the operations
+        themselves:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">prefix1</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span> &lt;: </span><span class="type-name">A</span><span>](</span><span class="identifier">op</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span> =&gt; </span><span class="type-name">B</span><span>], </span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">B</span><span>]</span></code></pre>
+        <p>Given that <code>B</code> is a subtype of <code>A</code>, it is not possible for the
+        <code>p</code>&#39;s result of type <code>A</code> to be the final return value of type <code>B</code>. As such, an operator must be parsed which wraps the <code>A</code>
+        into a <code>B</code>. The subtying relation then allows a nested application of an operator to be upcast into an <code>A</code> so it can
+        be fed into another layer of operator.</p>
 
         
 <hr class="footer-rule"/>
