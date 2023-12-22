@@ -6,7 +6,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="generator" content="Typelevel Laika + Helium Theme" />
-  <title>`chain`</title>
+  <title>`ErrorBuilder`</title>
   
   <meta name="author" content="parsley contributors"/>
   
@@ -27,7 +27,7 @@
     <link rel="stylesheet" type="text/css" href="../../../css/parsley-style.css" />
   <script src="../../../helium/site/laika-helium.js"></script>
     <script src="../../../helium/site/laika-versions.js"></script>
-  <script>initVersions("../../../", "/api-guide/expr/chain.html", "latest", null);</script>
+  <script>initVersions("../../../", "/api-guide/errors/ErrorBuilder.html", "latest", null);</script>
   
   <script> /* for avoiding page load transitions */ </script>
 </head>
@@ -92,15 +92,15 @@
     <li class="level1 nav-node"><a href="../">Understanding the API</a></li>
     <li class="level2 nav-leaf"><a href="../generic.html"><code>parsley.genericbridges</code></a></li>
     <li class="level2 nav-header"><code>parsley.expr</code></li>
-    <li class="level3 active nav-leaf"><a href="#"><code>chain</code></a></li>
-    <li class="level3 nav-leaf"><a href="infix.html"><code>infix</code></a></li>
-    <li class="level3 nav-leaf"><a href="precedence.html"><code>precedence</code></a></li>
+    <li class="level3 nav-leaf"><a href="../expr/chain.html"><code>chain</code></a></li>
+    <li class="level3 nav-leaf"><a href="../expr/infix.html"><code>infix</code></a></li>
+    <li class="level3 nav-leaf"><a href="../expr/precedence.html"><code>precedence</code></a></li>
     <li class="level2 nav-header"><code>parsley.token</code></li>
     <li class="level3 nav-leaf"><a href="../token/errors.html"><code>errors</code></a></li>
     <li class="level3 nav-leaf"><a href="../token/descriptions.html"><code>descriptions</code></a></li>
     <li class="level3 nav-leaf"><a href="../token/Lexer.html"><code>Lexer</code></a></li>
     <li class="level2 nav-header"><code>parsley.errors</code></li>
-    <li class="level3 nav-leaf"><a href="../errors/ErrorBuilder.html"><code>ErrorBuilder</code></a></li>
+    <li class="level3 active nav-leaf"><a href="#"><code>ErrorBuilder</code></a></li>
     <li class="level1 nav-node"><a href="../../tutorial/">Parser Combinator Tutorial</a></li>
     <li class="level2 nav-leaf"><a href="../../tutorial/basics-of-combinators.html">Basics of Combinators</a></li>
     <li class="level2 nav-leaf"><a href="../../tutorial/building-expression-parsers.html">Building Expression Parsers</a></li>
@@ -121,88 +121,50 @@
 
       
 <nav id="page-nav">
-  <p class="header"><a href="#"><code>chain</code></a></p>
+  <p class="header"><a href="#"><code>ErrorBuilder</code></a></p>
 
   <ul class="nav-list">
-    <li class="level1 nav-leaf"><a href="#binary-chains">Binary Chains</a></li>
-    <li class="level1 nav-node"><a href="#unary-chains">Unary Chains</a></li>
-    <li class="level2 nav-leaf"><a href="#ensuring-an-operator-exists">Ensuring an operator exists</a></li>
+    <li class="level1 nav-leaf"><a href="#error-message-structure">Error Message Structure</a></li>
+    <li class="level1 nav-leaf"><a href="#the-errorbuilder-typeclass">The <code>ErrorBuilder</code> Typeclass</a></li>
+    <li class="level1 nav-leaf"><a href="#constructing-test-errors">Constructing Test Errors</a></li>
   </ul>
 
-  <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/wiki-improvements/docs/api-guide/expr/chain.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
+  <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/wiki-improvements/docs/api-guide/errors/ErrorBuilder.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
 </nav>
 
 
       <main class="content">
 
-        <h1 id="chain-combinators" class="title">Chain Combinators</h1>
-        <p>The <code>parsley.expr.chain</code> module contains a variety of combinators for abstracting, most commonly, the application of
-        operators to values in expressions. This allows <code>parsley</code> to
-        handle <em>left recursion</em> idiomatically. To distinguish between
-        these chains and the functionality found in <a href="infix.html#infix-chain-combinators"><code>parsley.expr.infix</code></a>, it is recommended to always import this module qualified as <code>import parsley.expr.chain</code> -- except for <code>postfix</code> and <code>prefix</code>.</p>
+        <h1 id="constructing-custom-errors" class="title">Constructing Custom Errors</h1>
+        <p>By default, <code>parsley</code> returns errors that consist of <code>String</code>-based
+        content. However, it is possible to build error messages into a
+        datatype or format that is user-defined. This is done with the
+        <code>ErrorBuilder</code> typeclass.</p>
+        <p>The <code>ErrorBuilder</code> is pulled in implicitly by the <code>parse</code> method of
+        the <code>Parsley</code> type:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">class</span><span> </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] {
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">parse</span><span>[</span><span class="type-name">Err</span><span>: </span><span class="type-name">ErrorBuilder</span><span>](</span><span class="identifier">input</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Result</span><span>[</span><span class="type-name">Err</span><span>, </span><span class="type-name">A</span><span>]
+}</span></code></pre>
+        <p>This is equivalent to having an implicit parameter of type
+        <code>ErrorBuilder[Err]</code>. As the <code>ErrorBuilder</code> companion object has an
+        implicit value of type <code>ErrorBuilder[String]</code> only, the type
+        <code>String</code> is chosen as the default instantiation of <code>Err</code> by Scala.
+        Providing another <code>ErrorBuilder</code> implicit object in a tighter
+        scope (or adding an explicit type ascription with another implicit
+        object available), you are able to hook in your own type instead.</p>
+        <p>This page describes how the <code>ErrorBuilder</code> is structured, and gives
+        an example of how to construct a lossy type suitable for unit
+        testing generated error messages.</p>
         <div class="callout info">
           <i class="icofont-laika info">&#xef4e;</i>
-          <p><em>The Scaladoc for this page can be found at <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/expr/chain$.html"><code>parsley.expr.chain</code></a>.</em></p>
+          <p><em>The Scaladoc for this page can be found at <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/errors/ErrorBuilder.html"><code>parsley.errors.ErrorBuilder</code></a>.</em></p>
         </div>
         
-        <h2 id="binary-chains" class="section"><a class="anchor-link left" href="#binary-chains"><i class="icofont-laika link">&#xef71;</i></a>Binary Chains</h2>
-        <p>The first kind of chains found in <code>chain</code> are the binary chains,
-        which handle infix application of a binary operator to values
-        in either a left- or right-associative way. These are called <code>chain.left1</code> or <code>chain.right1</code>. The <code>1</code> here means that there
-        must be at least one value present, though there may be no
-        operators. As an example:</p>
-        <blockquote><h3><code>p op p op p op p op p</code></h3></blockquote>
-        <p>The above can be parsed using <code>chain.left1(p, op)</code> to have the
-        effect of parsing like:</p>
-        <blockquote><h3><code>(((p op p) op p) op p) op p</code></h3></blockquote>
-        <p>It can also be parded using <code>chain.right1(p, op)</code> to have the
-        effect of parsing like:</p>
-        <blockquote><h3><code>p op (p op (p op (p op p)))</code></h3></blockquote>
-        <div class="callout warning">
-          <i class="icofont-laika warning">&#xf026;</i>
-          <p>Both of these combinators share the same type, where the parser
-          <code>p: Parsley[A]</code>, and the parser <code>op: Parsley[(A, A) =&gt; A]</code>. This
-          means that the two combinators can be freely swapped between
-          in an implementation. This is useful when the grammar being
-          encoded for is fully-associative and the associativity within
-          the parser is an implementation detail.</p>
-          <p>However, if more type-safety is desired, the <code>infix.left1</code> and
-          <code>infix.right1</code> combinators may be more appropriate.</p>
-        </div>
+        <h2 id="error-message-structure" class="section"><a class="anchor-link left" href="#error-message-structure"><i class="icofont-laika link">&#xef71;</i></a>Error Message Structure</h2>
         
-        <h2 id="unary-chains" class="section"><a class="anchor-link left" href="#unary-chains"><i class="icofont-laika link">&#xef71;</i></a>Unary Chains</h2>
-        <p>The other kind of chains found in <code>chain</code> are unary chains, which
-        handle repeated prefix or postfix application of an operator to
-        a single value. These are called <code>chain.prefix</code> and
-        <code>chain.postfix</code>. There also <code>1</code> variants of these combinators, which will be discussed later.</p>
-        <p>Given input of shape:</p>
-        <blockquote><h3><code>p op op op op</code></h3></blockquote>
-        <p>The combinator <code>postfix p op</code> will parse the input and apply
-        results such that it would look like:</p>
-        <blockquote><h3><code>(((p op) op) op) op</code></h3></blockquote>
-        <p>Similarly, given input of shape:</p>
-        <blockquote><h3><code>op op op op p</code></h3></blockquote>
-        <p>The combinator <code>prefix op p</code> will parse the input and apply
-        results such that it would look like:</p>
-        <blockquote><h3><code>op (op (op (op p)))</code></h3></blockquote>
-        <div class="callout info">
-          <i class="icofont-laika info">&#xef4e;</i>
-          <p>Unlike <code>chain.left1</code> and <code>chain.right1</code>, there is no <code>infix</code>
-          equivalent for <code>prefix</code> and <code>postfix</code>. This is because a
-          refined type will not add much to the way the combinators
-          operate.</p>
-        </div>
+        <h2 id="the-errorbuilder-typeclass" class="section"><a class="anchor-link left" href="#the-errorbuilder-typeclass"><i class="icofont-laika link">&#xef71;</i></a>The <code>ErrorBuilder</code> Typeclass</h2>
         
-        <h3 id="ensuring-an-operator-exists" class="section"><a class="anchor-link left" href="#ensuring-an-operator-exists"><i class="icofont-laika link">&#xef71;</i></a>Ensuring an operator exists</h3>
-        <p>Unlike the difference between <code>chain.left</code> and <code>chain.left1</code>,
-        which allows for an absence of terminal value; <code>prefix</code> vs <code>prefix1</code> describe whether or not an operator is required
-        or not. This is enforced by the type signature of the operations
-        themselves:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">prefix1</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span> &lt;: </span><span class="type-name">A</span><span>](</span><span class="identifier">op</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span> =&gt; </span><span class="type-name">B</span><span>], </span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">B</span><span>]</span></code></pre>
-        <p>Given that <code>B</code> is a subtype of <code>A</code>, it is not possible for the
-        <code>p</code>&#39;s result of type <code>A</code> to be the final return value of type <code>B</code>. As such, an operator must be parsed which wraps the <code>A</code>
-        into a <code>B</code>. The subtying relation then allows a nested application of an operator to be upcast into an <code>A</code> so it can
-        be fed into another layer of operator.</p>
+        <h2 id="constructing-test-errors" class="section"><a class="anchor-link left" href="#constructing-test-errors"><i class="icofont-laika link">&#xef71;</i></a>Constructing Test Errors</h2>
 
         
 <hr class="footer-rule"/>

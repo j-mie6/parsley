@@ -4,6 +4,10 @@
   ],
   "linkTargets": [
     { "path": "/api-guide/Parsley.html", "versions": ["latest"] },
+    { "path": "/api-guide/errors/ErrorBuilder.html", "versions": ["latest"] },
+    { "path": "/api-guide/errors/combinator.html", "versions": ["latest"] },
+    { "path": "/api-guide/errors/patterns.html", "versions": ["latest"] },
+    { "path": "/api-guide/errors/tokenextractors.html", "versions": ["latest"] },
     { "path": "/api-guide/expr/chain.html", "versions": ["latest"] },
     { "path": "/api-guide/expr/infix.html", "versions": ["latest"] },
     { "path": "/api-guide/expr/precedence.html", "versions": ["latest"] },

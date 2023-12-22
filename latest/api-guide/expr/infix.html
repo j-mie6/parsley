@@ -99,6 +99,8 @@
     <li class="level3 nav-leaf"><a href="../token/errors.html"><code>errors</code></a></li>
     <li class="level3 nav-leaf"><a href="../token/descriptions.html"><code>descriptions</code></a></li>
     <li class="level3 nav-leaf"><a href="../token/Lexer.html"><code>Lexer</code></a></li>
+    <li class="level2 nav-header"><code>parsley.errors</code></li>
+    <li class="level3 nav-leaf"><a href="../errors/ErrorBuilder.html"><code>ErrorBuilder</code></a></li>
     <li class="level1 nav-node"><a href="../../tutorial/">Parser Combinator Tutorial</a></li>
     <li class="level2 nav-leaf"><a href="../../tutorial/basics-of-combinators.html">Basics of Combinators</a></li>
     <li class="level2 nav-leaf"><a href="../../tutorial/building-expression-parsers.html">Building Expression Parsers</a></li>
@@ -178,16 +180,16 @@
         left,  but <code>Num</code> must appear on the right. As <code>Num</code> and <code>Add</code>
         share a common supertype <code>Expr</code>, this is what the chains will return. To illustrate what happens if <code>right1</code> was used instead:</p>
         <pre><code class="nohighlight"><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">badExpr</span><span> = </span><span class="identifier">infix</span><span>.</span><span class="identifier">right1</span><span>(</span><span class="identifier">num</span><span>, </span><span class="string-literal">&quot;+&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="type-name">Add</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>)))
-</span><span class="comment">// error: inferred type arguments [repl.MdocSession.MdocApp.Num,repl.MdocSession.MdocApp.Add,repl.MdocSession.MdocApp.Num] do not conform to method right1&#39;s type parameter bounds [A,B,C &gt;: B]
+</span><span class="comment">// error: inferred type arguments [Num,Add,Num] do not conform to method right1&#39;s type parameter bounds [A,B,C &gt;: B]
 // lazy val badExpr = infix.right1(num, &quot;+&quot;.as(Add(_, _)))
 //                    ^^^^^^^^^^^^
 // error: type mismatch;
-//  found   : parsley.Parsley[repl.MdocSession.MdocApp.Num]
+//  found   : parsley.Parsley[Num]
 //  required: parsley.Parsley[A]
 // lazy val badExpr = infix.right1(num, &quot;+&quot;.as(Add(_, _)))
 //                                 ^^^
 // error: type mismatch;
-//  found   : parsley.Parsley[(repl.MdocSession.MdocApp.Expr, repl.MdocSession.MdocApp.Num) =&gt; repl.MdocSession.MdocApp.Add]
+//  found   : parsley.Parsley[(Expr, Num) =&gt; Add]
 //  required: parsley.Parsley[(A, C) =&gt; B]
 // lazy val badExpr = infix.right1(num, &quot;+&quot;.as(Add(_, _)))
 //                                      ^^^^^^^^^^^^^^^^^</span></code></pre>
