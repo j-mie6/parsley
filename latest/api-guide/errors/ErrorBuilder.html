@@ -124,8 +124,12 @@
   <p class="header"><a href="#"><code>ErrorBuilder</code></a></p>
 
   <ul class="nav-list">
-    <li class="level1 nav-leaf"><a href="#error-message-structure">Error Message Structure</a></li>
-    <li class="level1 nav-leaf"><a href="#the-errorbuilder-typeclass">The <code>ErrorBuilder</code> Typeclass</a></li>
+    <li class="level1 nav-node"><a href="#error-message-structure">Error Message Structure</a></li>
+    <li class="level2 nav-leaf"><a href="#vanilla-errors">Vanilla Errors</a></li>
+    <li class="level2 nav-leaf"><a href="#specialised-errors">Specialised Errors</a></li>
+    <li class="level1 nav-node"><a href="#the-errorbuilder-typeclass">The <code>ErrorBuilder</code> Typeclass</a></li>
+    <li class="level2 nav-leaf"><a href="#vanilla">Vanilla</a></li>
+    <li class="level2 nav-leaf"><a href="#specialised">Specialised</a></li>
     <li class="level1 nav-leaf"><a href="#constructing-test-errors">Constructing Test Errors</a></li>
   </ul>
 
@@ -161,10 +165,239 @@
         </div>
         
         <h2 id="error-message-structure" class="section"><a class="anchor-link left" href="#error-message-structure"><i class="icofont-laika link">&#xef71;</i></a>Error Message Structure</h2>
+        <p>Error messages within <code>parsley</code> take two different forms: <em>vanilla</em>
+        or <em>specialised</em>. The error chosen depends on the combinators used
+        to produce it: <code>empty</code>, <code>unexpected</code>, <code>char</code>, <code>string</code>, etc all produce vanilla errors; and <code>fail</code> and its derivatives produce
+        specialised errors. An <code>ErrorBuilder</code> must describe how to format
+        both kinds of error; their structure is explained below.</p>
+        
+        <h3 id="vanilla-errors" class="section"><a class="anchor-link left" href="#vanilla-errors"><i class="icofont-laika link">&#xef71;</i></a>Vanilla Errors</h3>
+        <pre><code>┌───────────────────────────────────────────────────────────────────────┐
+│                          ┌────────────────┐◄──────── position         │
+│                  source  │                │                           │
+│                     │    │   line      col│                           │
+│                     ▼    │     │         ││                           │
+│                  ┌─────┐ │     ▼         ▼│   end of input            │
+│               In foo.txt (line 1, column 5):       │                  │
+│                 ┌─────────────────────┐            │                  │
+│unexpected ─────►│                     │            │  ┌───── expected │
+│                 │          ┌──────────┐ ◄──────────┘  │               │
+│                 unexpected end of input               ▼               │
+│                 ┌──────────────────────────────────────┐              │
+│                 expected &quot;(&quot;, &quot;negate&quot;, digit, or letter              │
+│                          │    └──────┘  └───┘     └────┘ ◄────── named│
+│                          │       ▲        └──────────┘ │              │
+│                          │       │                     │              │
+│                          │      raw                    │              │
+│                          └─────────────────┬───────────┘              │
+│                 &#39;-&#39; is a binary operator   │                          │
+│                 └──────────────────────┘   │                          │
+│                ┌──────┐        ▲           │                          │
+│                │&gt;3+4- │        │           expected items             │
+│                │     ^│        │                                      │
+│                └──────┘        └───────────────── reason              │
+│                   ▲                                                   │
+│                   │                                                   │
+│                   line info                                           │
+└───────────────────────────────────────────────────────────────────────┘</code></pre>
+        <p>A vanilla error consists of three unique components: the
+        <code>unexpected</code> component, which describes the problematic token;
+        the <code>expected</code> component, which describes the possible parses that
+        would have avoided the error; and the <code>reason</code> component, which
+        gives additional context for an error. These are in addition to
+        parts shared with <em>specialised</em> errors: the <code>source</code>, <code>position</code>,
+        and the <code>lineInfo</code>. Any of the three unique components may be
+        missing from the error, and the <code>ErrorBuilder</code> will need to be able
+        to handle this.</p>
+        <p>Within both <code>unexpected</code> and <code>expected</code>, items can have one of three forms: <code>named</code>, which indicates they came from labels;
+        <code>raw</code>, which means they came directly from the input itself; and
+        <code>endOfInput</code>, which means no more input was available. All three
+        of these states can be formatted independently.</p>
+        
+        <h3 id="specialised-errors" class="section"><a class="anchor-link left" href="#specialised-errors"><i class="icofont-laika link">&#xef71;</i></a>Specialised Errors</h3>
+        <pre><code>┌───────────────────────────────────────────────────────────────────────┐
+│                          ┌────────────────┐◄──────── position         │
+│                  source  │                │                           │
+│                     │    │   line       col                           │
+│                     ▼    │     │         │                            │
+│                  ┌─────┐ │     ▼         ▼                            │
+│               In foo.txt (line 1, column 5):                          │
+│                                                                       │
+│           ┌───► something went wrong                                  │
+│           │                                                           │
+│ message ──┼───► it looks like a binary operator has no argument       │
+│           │                                                           │
+│           └───► &#39;-&#39; is a binary operator                              │
+│                ┌──────┐                                               │
+│                │&gt;3+4- │                                               │
+│                │     ^│                                               │
+│                └──────┘                                               │
+│                   ▲                                                   │
+│                   │                                                   │
+│                   line info                                           │
+└───────────────────────────────────────────────────────────────────────┘</code></pre>
+        <p>In contrast to the <em>vanilla</em> error, specialised errors have one
+        unique component, <code>messages</code>, which is zero or more lines of
+        bespoke error messages generated by <code>fail</code> combinators.</p>
         
         <h2 id="the-errorbuilder-typeclass" class="section"><a class="anchor-link left" href="#the-errorbuilder-typeclass"><i class="icofont-laika link">&#xef71;</i></a>The <code>ErrorBuilder</code> Typeclass</h2>
+        <p>Within the <code>ErrorBuilder</code> trait, there is a number of undefined
+        type aliases. Each of these must be implemented by an extender and
+        provide an internal type to represent different components within
+        the system. These are used to ensure maximal flexiblity of the
+        user to pick how each component should be represented without
+        exposing unnecessary information into the rest of the system.</p>
+        <p>After these types are specified, the methods of the typeclass
+        can be implemented. These put together the primtive-most components
+        and compose them into the larger whole. The documentation of the
+        typeclass details the role of these well enough, however. For example&#39;s sake, however, these are the two shapes of call that will
+        be made for the different types of error messages:</p>
+        
+        <h4 id="vanilla" class="section"><a class="anchor-link left" href="#vanilla"><i class="icofont-laika link">&#xef71;</i></a>Vanilla</h4>
+        <pre><code>(line 1, column 5):
+  unexpected end of input
+  expected &quot;(&quot;, &quot;negate&quot;, digit, or letter
+  &#39;-&#39; is a binary operator
+  &gt;3+4-
+       ^</code></pre>
+        <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">builder</span><span> = </span><span class="identifier">implicitly</span><span>[</span><span class="type-name">ErrorBuilder</span><span>[</span><span class="type-name">String</span><span>]]
+</span><span class="identifier">builder</span><span>.</span><span class="identifier">format</span><span> (
+    </span><span class="identifier">builder</span><span>.</span><span class="identifier">pos</span><span>(</span><span class="number-literal">1</span><span>, </span><span class="number-literal">5</span><span>),
+    </span><span class="identifier">builder</span><span>.</span><span class="identifier">source</span><span>(</span><span class="type-name">None</span><span>),
+    </span><span class="identifier">builder</span><span>.</span><span class="identifier">vanillaError</span><span> (
+        </span><span class="identifier">builder</span><span>.</span><span class="identifier">unexpected</span><span>(</span><span class="type-name">Some</span><span>(</span><span class="identifier">builder</span><span>.</span><span class="identifier">endOfInput</span><span>)),
+        </span><span class="identifier">builder</span><span>.</span><span class="identifier">expected</span><span> (
+            </span><span class="identifier">builder</span><span>.</span><span class="identifier">combineExpectedItems</span><span>(</span><span class="type-name">Set</span><span> (
+                </span><span class="identifier">builder</span><span>.</span><span class="identifier">raw</span><span>(</span><span class="string-literal">&quot;(&quot;</span><span>),
+                </span><span class="identifier">builder</span><span>.</span><span class="identifier">raw</span><span>(</span><span class="string-literal">&quot;negate&quot;</span><span>),
+                </span><span class="identifier">builder</span><span>.</span><span class="identifier">named</span><span>(</span><span class="string-literal">&quot;digit&quot;</span><span>),
+                </span><span class="identifier">builder</span><span>.</span><span class="identifier">named</span><span>(</span><span class="string-literal">&quot;letter&quot;</span><span>)
+            ))
+        ),
+        </span><span class="identifier">builder</span><span>.</span><span class="identifier">combineMessages</span><span>(</span><span class="type-name">List</span><span>(
+            </span><span class="identifier">builder</span><span>.</span><span class="identifier">reason</span><span>(</span><span class="string-literal">&quot;&#39;-&#39; is a binary operator&quot;</span><span>)
+        )),
+        </span><span class="identifier">builder</span><span>.</span><span class="identifier">lineInfo</span><span>(</span><span class="string-literal">&quot;3+4-&quot;</span><span>, </span><span class="type-name">Nil</span><span>, </span><span class="type-name">Nil</span><span>, </span><span class="number-literal">4</span><span>, </span><span class="number-literal">4</span><span>)
+    )
+)</span></code></pre>
+        <p>One builder call not shown here, is a call to
+        <code>builder.unexpectedToken</code>. This is a bigger discussion and is
+        deferred to <a href="tokenextractors.html#token-extraction-in-errorbuilder">Token Extraction in <code>ErrorBuilder</code></a></p>
+        
+        <h4 id="specialised" class="section"><a class="anchor-link left" href="#specialised"><i class="icofont-laika link">&#xef71;</i></a>Specialised</h4>
+        <pre><code>In file &#39;foo.txt&#39; (line 2, column 6):
+  first message
+  second message
+  &gt;first line of input
+  &gt;second line
+        ^^^
+  &gt;third line
+  &gt;fourth line</code></pre>
+        <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">builder</span><span> = </span><span class="identifier">implicitly</span><span>[</span><span class="type-name">ErrorBuilder</span><span>[</span><span class="type-name">String</span><span>]]
+</span><span class="identifier">builder</span><span>.</span><span class="identifier">format</span><span> (
+    </span><span class="identifier">builder</span><span>.</span><span class="identifier">pos</span><span>(</span><span class="number-literal">2</span><span>, </span><span class="number-literal">6</span><span>),
+    </span><span class="identifier">builder</span><span>.</span><span class="identifier">source</span><span>(</span><span class="type-name">Some</span><span>(</span><span class="string-literal">&quot;foo.txt&quot;</span><span>)),
+    </span><span class="identifier">builder</span><span>.</span><span class="identifier">specialisedError</span><span> (
+        </span><span class="identifier">builder</span><span>.</span><span class="identifier">combineMessages</span><span>(</span><span class="type-name">List</span><span>(
+            </span><span class="identifier">builder</span><span>.</span><span class="identifier">message</span><span>(</span><span class="string-literal">&quot;first message&quot;</span><span>),
+            </span><span class="identifier">builder</span><span>.</span><span class="identifier">message</span><span>(</span><span class="string-literal">&quot;second message&quot;</span><span>),
+        )),
+        </span><span class="identifier">builder</span><span>.</span><span class="identifier">lineInfo</span><span>(</span><span class="string-literal">&quot;second line&quot;</span><span>,
+                         </span><span class="type-name">List</span><span>(</span><span class="string-literal">&quot;first line of input&quot;</span><span>),
+                         </span><span class="type-name">List</span><span>(</span><span class="string-literal">&quot;third line&quot;</span><span>, </span><span class="string-literal">&quot;fourth line&quot;</span><span>),
+                         </span><span class="number-literal">5</span><span>,
+                         </span><span class="number-literal">3</span><span>)
+    )
+)</span></code></pre>
         
         <h2 id="constructing-test-errors" class="section"><a class="anchor-link left" href="#constructing-test-errors"><i class="icofont-laika link">&#xef71;</i></a>Constructing Test Errors</h2>
+        <p>As an example of how to construct an <code>ErrorBuilder</code> for a type,
+        consider the following representation of <code>TestError</code>:</p>
+        <pre><code class="nohighlight"><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">TestError</span><span>(</span><span class="identifier">pos</span><span>: (</span><span class="type-name">Int</span><span>, </span><span class="type-name">Int</span><span>), </span><span class="identifier">lines</span><span>: </span><span class="type-name">TestErrorLines</span><span>)
+
+</span><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">TestErrorLines</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">VanillaError</span><span>(
+    </span><span class="identifier">unexpected</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">TestErrorItem</span><span>],
+    </span><span class="identifier">expecteds</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">TestErrorItem</span><span>],
+    </span><span class="identifier">reasons</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">String</span><span>]) </span><span class="keyword">extends</span><span> </span><span class="type-name">TestErrorLines</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">SpecialisedError</span><span>(</span><span class="identifier">msgs</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">String</span><span>]) </span><span class="keyword">extends</span><span> </span><span class="type-name">TestErrorLines</span><span>
+
+</span><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">TestErrorItem</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">TestRaw</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">TestErrorItem</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">TestNamed</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">TestErrorItem</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">TestEndOfInput</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">TestErrorItem</span></code></pre>
+        <p>This type, as will become evident from the formatter derived
+        from it, is lossy and does not perfectly encode all the
+        information available. Notice that <code>TestErrorItem</code> is a supertype
+        of <code>TestRaw</code>, <code>TestNamed</code>, and <code>TestEndOfInput</code>: this is
+        required, as the representation of each must all share a common
+        supertype.</p>
+        <p>To construct an <code>ErrorBuilder[TestError]</code>, the type aliases must
+        first be filled in:</p>
+        <pre><code class="nohighlight"><span class="keyword">class</span><span> </span><span class="type-name">TestErrorBuilder</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ErrorBuilder</span><span>[</span><span class="type-name">TestError</span><span>] {
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Position</span><span> = (</span><span class="type-name">Int</span><span>, </span><span class="type-name">Int</span><span>)
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Source</span><span> = </span><span class="type-name">Unit</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">ErrorInfoLines</span><span> = </span><span class="type-name">TestErrorLines</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Item</span><span> = </span><span class="type-name">TestErrorItem</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Raw</span><span> = </span><span class="type-name">TestRaw</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Named</span><span> = </span><span class="type-name">TestNamed</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">EndOfInput</span><span> = </span><span class="type-name">TestEndOfInput</span><span>.</span><span class="keyword">type</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Message</span><span> = </span><span class="type-name">String</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Messages</span><span> = </span><span class="type-name">Set</span><span>[</span><span class="type-name">String</span><span>]
+    </span><span class="keyword">type</span><span> </span><span class="type-name">ExpectedItems</span><span> = </span><span class="type-name">Set</span><span>[</span><span class="type-name">TestErrorItem</span><span>]
+    </span><span class="keyword">type</span><span> </span><span class="type-name">ExpectedLine</span><span> = </span><span class="type-name">Set</span><span>[</span><span class="type-name">TestErrorItem</span><span>]
+    </span><span class="keyword">type</span><span> </span><span class="type-name">UnexpectedLine</span><span> = </span><span class="type-name">Option</span><span>[</span><span class="type-name">TestErrorItem</span><span>]
+    </span><span class="keyword">type</span><span> </span><span class="type-name">LineInfo</span><span> = </span><span class="type-name">Unit</span><span>
+    </span><span class="comment">//...
+</span><span>}</span></code></pre>
+        <p>These types can be determined by examining the shape of <code>TestError</code>: for bits that it doesn&#39;t work, these are set to <code>Unit</code>. With these in place, the refined types of the typeclass
+        methods make it very easy to fill in the gaps:</p>
+        <pre><code class="nohighlight"><span class="keyword">class</span><span> </span><span class="type-name">TestErrorBuilder</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ErrorBuilder</span><span>[</span><span class="type-name">TestError</span><span>] {
+    </span><span class="comment">//...
+</span><span>    </span><span class="keyword">def</span><span> </span><span class="declaration-name">format</span><span>(</span><span class="identifier">pos</span><span>: (</span><span class="type-name">Int</span><span>, </span><span class="type-name">Int</span><span>), </span><span class="identifier">source</span><span>: </span><span class="type-name">Unit</span><span>, </span><span class="identifier">lines</span><span>: </span><span class="type-name">TestErrorLines</span><span>): </span><span class="type-name">TestError</span><span> = </span><span class="type-name">TestError</span><span>(</span><span class="identifier">pos</span><span>, </span><span class="identifier">lines</span><span>)
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">vanillaError</span><span>(
+        </span><span class="identifier">unexpected</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">TestErrorItem</span><span>],
+        </span><span class="identifier">expected</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">TestErrorItem</span><span>],
+        </span><span class="identifier">reasons</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">String</span><span>],
+        </span><span class="identifier">line</span><span>: </span><span class="type-name">Unit</span><span>
+      ): </span><span class="type-name">TestErrorLines</span><span> = </span><span class="type-name">VanillaError</span><span>(</span><span class="identifier">unexpected</span><span>, </span><span class="identifier">expected</span><span>, </span><span class="identifier">reasons</span><span>)
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">specialisedError</span><span>(
+        </span><span class="identifier">msgs</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">String</span><span>],
+        </span><span class="identifier">line</span><span>: </span><span class="type-name">Unit</span><span>
+      ): </span><span class="type-name">TestErrorLines</span><span> = </span><span class="type-name">SpecialisedError</span><span>(</span><span class="identifier">msgs</span><span>)
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">pos</span><span>(</span><span class="identifier">line</span><span>: </span><span class="type-name">Int</span><span>, </span><span class="identifier">col</span><span>: </span><span class="type-name">Int</span><span>): (</span><span class="type-name">Int</span><span>, </span><span class="type-name">Int</span><span>) = (</span><span class="identifier">line</span><span>, </span><span class="identifier">col</span><span>)
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">source</span><span>(</span><span class="identifier">sourceName</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">String</span><span>]): </span><span class="type-name">Unit</span><span> = ()
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">combineExpectedItems</span><span>(</span><span class="identifier">alts</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">TestErrorItem</span><span>]): </span><span class="type-name">Set</span><span>[</span><span class="type-name">TestErrorItem</span><span>] = </span><span class="identifier">alts</span><span>
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">combineMessages</span><span>(</span><span class="identifier">alts</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">String</span><span>]): </span><span class="type-name">Set</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">alts</span><span>.</span><span class="identifier">toSet</span><span>
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">unexpected</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">TestErrorItem</span><span>]): </span><span class="type-name">Option</span><span>[</span><span class="type-name">TestErrorItem</span><span>] = </span><span class="identifier">item</span><span>
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">expected</span><span>(</span><span class="identifier">alts</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">TestErrorItem</span><span>]): </span><span class="type-name">Set</span><span>[</span><span class="type-name">TestErrorItem</span><span>] = </span><span class="identifier">alts</span><span>
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">message</span><span>(</span><span class="identifier">msg</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">String</span><span> = </span><span class="identifier">msg</span><span>
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">reason</span><span>(</span><span class="identifier">msg</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">String</span><span> = </span><span class="identifier">msg</span><span>
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">raw</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">TestRaw</span><span> = </span><span class="type-name">TestRaw</span><span>(</span><span class="identifier">item</span><span>)
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">named</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">TestNamed</span><span> = </span><span class="type-name">TestNamed</span><span>(</span><span class="identifier">item</span><span>)
+    </span><span class="keyword">val</span><span> </span><span class="identifier">endOfInput</span><span>: </span><span class="type-name">TestEndOfInput</span><span>.</span><span class="keyword">type</span><span> = </span><span class="type-name">TestEndOfInput</span><span>
+
+    </span><span class="keyword">val</span><span> </span><span class="identifier">numLinesAfter</span><span>: </span><span class="type-name">Int</span><span> = </span><span class="number-literal">0</span><span>
+    </span><span class="keyword">val</span><span> </span><span class="identifier">numLinesBefore</span><span>: </span><span class="type-name">Int</span><span> = </span><span class="number-literal">0</span><span>
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">lineInfo</span><span>(
+        </span><span class="identifier">line</span><span>: </span><span class="type-name">String</span><span>,
+        </span><span class="identifier">linesBefore</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">String</span><span>],
+        </span><span class="identifier">linesAfter</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">String</span><span>],
+        </span><span class="identifier">errorPointsAt</span><span>: </span><span class="type-name">Int</span><span>, </span><span class="identifier">errorWidth</span><span>: </span><span class="type-name">Int</span><span>
+      ): </span><span class="type-name">Unit</span><span> = ()
+
+    </span><span class="comment">// The implementation of this is usually provided by a mixed-in
+</span><span>    </span><span class="comment">// token extractor, discussed in `tokenextractors`
+</span><span>    </span><span class="keyword">def</span><span> </span><span class="declaration-name">unexpectedToken</span><span>(
+        </span><span class="identifier">cs</span><span>: </span><span class="type-name">Iterable</span><span>[</span><span class="type-name">Char</span><span>],
+        </span><span class="identifier">amountOfInputParserWanted</span><span>: </span><span class="type-name">Int</span><span>,
+        </span><span class="identifier">lexicalError</span><span>: </span><span class="type-name">Boolean</span><span>
+      ): </span><span class="type-name">Token</span><span> = ???
+}</span></code></pre>
+        <p>Each of the methods above do the bare minimum work to
+        satisfy the types. As noted in the comment, the implementation
+        of <code>unexpectedToken</code> is usually done by mixing in a
+        <em>token extractor</em>, which is explained <a href="tokenextractors.html#token-extraction-in-errorbuilder">here</a>.</p>
 
         
 <hr class="footer-rule"/>
