@@ -122,6 +122,10 @@
   <p class="header"><a href="#"><code>precedence</code></a></p>
 
   <ul class="nav-list">
+    <li class="level1 nav-node"><a href="#formulating-precedence">Formulating Precedence</a></li>
+    <li class="level2 nav-leaf"><a href="#homogeneous-precedence">Homogeneous Precedence</a></li>
+    <li class="level2 nav-leaf"><a href="#ops-and-fixity"><code>Ops</code> and <code>Fixity</code></a></li>
+    <li class="level2 nav-leaf"><a href="#heterogeneous-precedence">Heterogeneous Precedence</a></li>
   </ul>
 
   <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/wiki-improvements/docs/api-guide/expr/precedence.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
@@ -131,6 +135,188 @@
       <main class="content">
 
         <h1 id="precedence-combinators" class="title">Precedence Combinators</h1>
+        <p>The chain combinators in <code>parsley.expr.{chain, infix}</code> are useful
+        for handling isolated instances of expression-like behaviours in
+        a grammar. However, they can be cumbersome to use when there are
+        multiple interacting layers of expression operators. In these
+        circumstances, a precedence table is the more appropriate
+        choice. In <code>parsley</code>, the precedence machinery is very general, which can make the documentation intimidating. This page aims to break down how this works, with examples of different uses.
+        The relevant combinator for turning a precedence table into a
+        parser is the <code>precedence</code> combinator.</p>
+        
+        <h2 id="formulating-precedence" class="section"><a class="anchor-link left" href="#formulating-precedence"><i class="icofont-laika link">&#xef71;</i></a>Formulating Precedence</h2>
+        <p>In general, a precedence table is formed up of a collection of
+        base &quot;atoms&quot;, and then one or more levels of operators. The
+        precise shape these components take depends on how complex the
+        types of the results are.</p>
+        <p>The simplest shape of <code>precedence</code>
+        directly takes a variadic list of atoms and then a variadic list
+        of levels as arguments: the levels lexically closest to the atoms
+        will be the tightest-binding operators. This shape is discussed
+        in <a href="#homogeneous-precedence">Homogeneous Precedence</a>, below.</p>
+        <p>More generally, however, the <code>precedence</code> combinator takes a
+        <em>heterogeneous list</em> of levels of operators, where the base
+        case of this structure contains the atoms. This can be used
+        to handle more generic shapes of results, and is discussed
+        in <a href="#heterogeneous-precedence">Heterogeneous Precedence</a>.</p>
+        <p>However, both shapes make use of the <code>Ops</code> type, which requires
+        a <code>Fixity</code> to be provided to it. First, it is good to understand
+        the basics of how that works in a simplified presentation: for
+        now, trust that the types work out. There are five different
+        <code>Fixity</code> values: <code>InfixL</code>, <code>InfixR</code>, <code>Prefix</code>, <code>Postfix</code>, and
+        <code>InfixN</code>. These each denote either binary or unary operators,
+        and where recursion may appear for each of them. <code>InfixN</code> is a
+        non-recursive operator, like <code>&lt;</code> in some languages. At its
+        simplest, <code>Ops</code> first takes a <code>Fixity</code> and then takes a variadic
+        number of operators that should have that fixity and all have
+        the same precedence. This will be explored in more detail in
+        <a href="#ops-and-fixity"><code>Ops</code> and <code>Fixity</code></a>.</p>
+        <p>Throughout this section, the following imports and parsers
+        are assumed:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">letter</span><span>, </span><span class="identifier">digit</span><span>, </span><span class="identifier">stringOfSome</span><span>}
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">stringLift</span><span>
+
+</span><span class="keyword">val</span><span> </span><span class="identifier">int</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Int</span><span>] = </span><span class="identifier">digit</span><span>.</span><span class="identifier">foldLeft1</span><span>(</span><span class="number-literal">0</span><span>)((</span><span class="identifier">n</span><span>, </span><span class="identifier">d</span><span>) =&gt; </span><span class="identifier">n</span><span> * </span><span class="number-literal">10</span><span> + </span><span class="identifier">d</span><span>.</span><span class="identifier">asDigit</span><span>)
+</span><span class="keyword">val</span><span> </span><span class="identifier">ident</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">stringOfSome</span><span>(</span><span class="identifier">letter</span><span>)</span></code></pre>
+        
+        <h3 id="homogeneous-precedence" class="section"><a class="anchor-link left" href="#homogeneous-precedence"><i class="icofont-laika link">&#xef71;</i></a>Homogeneous Precedence</h3>
+        <p>When the result type of the precedence table is the same throughout the table -- right through to the atoms, this is
+        a <em>homogeneous</em> precedence table. This can be captured by the
+        <code>Ops</code> smart-constructor, and make use of the simple flat
+        structure. As an example:</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">expr</span><span>.{</span><span class="identifier">precedence</span><span>, </span><span class="type-name">Ops</span><span>, </span><span class="type-name">InfixL</span><span>}
+
+</span><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">Expr</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Add</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Expr</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Expr</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Expr</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Sub</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Expr</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Expr</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Expr</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Mul</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Expr</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Expr</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Expr</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Num</span><span>(</span><span class="identifier">n</span><span>: </span><span class="type-name">Int</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Expr</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Var</span><span>(</span><span class="identifier">v</span><span>: </span><span class="type-name">String</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Expr</span><span>
+
+</span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Expr</span><span>] =
+    </span><span class="identifier">precedence</span><span>(</span><span class="identifier">ident</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Var</span><span>(</span><span class="identifier">_</span><span>)), </span><span class="identifier">int</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Num</span><span>(</span><span class="identifier">_</span><span>)))(
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="type-name">Mul</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>))),
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="type-name">Add</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>)), </span><span class="string-literal">&quot;-&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="type-name">Sub</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>)))
+    )
+</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@61f481b3
+</span><span>
+</span><span class="identifier">expr</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;x+5*y&quot;</span><span>)
+</span><span class="comment">// res0: parsley.Result[String, Expr] = Success(Add(Var(x),Mul(Num(5),Var(y))))</span></code></pre>
+        <p>In the above example, notice that <code>Add</code> and <code>Sub</code> are within the
+        same <code>Ops</code>, and therefore are the same precedence; <code>Mul</code> is closer to the atoms lexically than <code>Add</code> and <code>Sub</code> are, so it binds tighter. All levels have been marked as left associative with <code>InfixL</code>. When using <code>Prefix</code> or <code>Postfix</code>, the type of the
+        parsers in the <code>Ops</code> will have type <code>Parsley[A =&gt; A]</code> instead
+        of the above <code>Parsley[(A, A) =&gt; A]</code>.</p>
+        
+        <h3 id="ops-and-fixity" class="section"><a class="anchor-link left" href="#ops-and-fixity"><i class="icofont-laika link">&#xef71;</i></a><code>Ops</code> and <code>Fixity</code></h3>
+        <p>The above example of <code>precedence</code> did not elaborate on how the types work to allow the operators to vary in type when the fixity
+        does. Here is the type of the <code>Ops</code> constructor from above:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="type-name">Ops</span><span> {
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">fixity</span><span>: </span><span class="type-name">Fixity</span><span>)(</span><span class="identifier">ops</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="identifier">fixity</span><span>.</span><span class="type-name">Op</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">A</span><span>]]*): </span><span class="type-name">Ops</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">A</span><span>]
+}</span></code></pre>
+        <p>There are a few things to note here. First is that the type
+        returned is <code>Ops[A, A]</code>: this means that the input type to this
+        precedence layer matches the output type (this is because it&#39;s
+        homogeneous). Second is that the type that the operators must
+        return is <code>fixity.Op[A, A]</code>: this is known as a <em>path-dependent type</em>. Each object of type <code>Fixity</code> will describe the shape of
+        operators that match that fixity, the two type parameters are
+        the input and output of the operator (again, for homogeneous precedence, these will coincide). This is formulated as follows:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">Fixity</span><span> {
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Op</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>]
+}
+</span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">InfixL</span><span>  { </span><span class="keyword">type</span><span> </span><span class="type-name">Op</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>] = (</span><span class="type-name">B</span><span>, </span><span class="type-name">A</span><span>) =&gt; </span><span class="type-name">B</span><span> }
+</span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">InfixR</span><span>  { </span><span class="keyword">type</span><span> </span><span class="type-name">Op</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>] = (</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>) =&gt; </span><span class="type-name">B</span><span> }
+</span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">InfixN</span><span>  { </span><span class="keyword">type</span><span> </span><span class="type-name">Op</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>] = (</span><span class="type-name">A</span><span>, </span><span class="type-name">A</span><span>) =&gt; </span><span class="type-name">B</span><span> }
+</span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">Prefix</span><span>  { </span><span class="keyword">type</span><span> </span><span class="type-name">Op</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>] = </span><span class="type-name">B</span><span> =&gt; </span><span class="type-name">B</span><span> }
+</span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">Postfix</span><span> { </span><span class="keyword">type</span><span> </span><span class="type-name">Op</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>] = </span><span class="type-name">B</span><span> =&gt; </span><span class="type-name">B</span><span> }</span></code></pre>
+        <p>These types align with those seen in <code>parsley.expr.infix</code>, as
+        well as <code>Prefix</code> and <code>Postfix</code> matching the homogeneous shape in
+        <code>parsley.expr.chain.{prefix, postfix}</code>. As such, when a specific
+        fixity is provided to <code>Ops</code>, it also fixes the type of the
+        operators in the next set of parentheses.</p>
+        <p>When considering heterogeneous combinators, the types <code>A</code> and
+        <code>B</code> can indeed vary, and the more general <code>SOps</code> and <code>GOps</code> will
+        be explored in the next section.</p>
+        
+        <h3 id="heterogeneous-precedence" class="section"><a class="anchor-link left" href="#heterogeneous-precedence"><i class="icofont-laika link">&#xef71;</i></a>Heterogeneous Precedence</h3>
+        <p>When the results of the precedence table is not the same throughout, it is necessary to generalise the machinery to
+        make use of either <code>SOps</code> or <code>GOps</code>:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="type-name">SOps</span><span> {
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>[</span><span class="type-name">B</span><span>, </span><span class="type-name">A</span><span> &lt;: </span><span class="type-name">B</span><span>](</span><span class="identifier">fixity</span><span>: </span><span class="type-name">Fixity</span><span>)(</span><span class="identifier">ops</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="identifier">fixity</span><span>.</span><span class="type-name">Op</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>]]*): </span><span class="type-name">Ops</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>]
+}
+
+</span><span class="keyword">object</span><span> </span><span class="type-name">GOps</span><span> {
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>](</span><span class="identifier">fixity</span><span>: </span><span class="type-name">Fixity</span><span>)(</span><span class="identifier">ops</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="identifier">fixity</span><span>.</span><span class="type-name">Op</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>]]*)(</span><span class="keyword">implicit</span><span> </span><span class="identifier">wrap</span><span>: </span><span class="type-name">A</span><span> =&gt; </span><span class="type-name">B</span><span>): </span><span class="type-name">Ops</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>]
+}</span></code></pre>
+        <p>The <code>SOps</code> object allows the input and output to the layer to vary so long as they are in a sub-type relation: this is the most common form of heterogeneous hierachy that leverages Scala&#39;s strengths. Otherwise, <code>GOps</code> handles any arbitrary relationship between the types, so long as there is a known implicit <code>A =&gt; B</code> conversion.</p>
+        <p>Since the types between layers differ, a variadic argument list cannot be used to collect them together. Instead, the <code>Ops</code> are
+        stitched together into a <code>Prec[A]</code> structure:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">Prec</span><span>[</span><span class="type-name">A</span><span>] {
+    </span><span class="keyword">def</span><span> +:[</span><span class="type-name">B</span><span>](</span><span class="identifier">ops</span><span>: </span><span class="type-name">Ops</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>]): </span><span class="type-name">Prec</span><span>[</span><span class="type-name">B</span><span>]
+    </span><span class="keyword">def</span><span> :+[</span><span class="type-name">B</span><span>](</span><span class="identifier">ops</span><span>: </span><span class="type-name">Ops</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>]): </span><span class="type-name">Prec</span><span>[</span><span class="type-name">B</span><span>]
+}
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Atoms</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">atoms</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]*) </span><span class="keyword">extends</span><span> </span><span class="type-name">Prec</span><span>[</span><span class="type-name">A</span><span>]</span></code></pre>
+        <p>The atoms are placed into <code>Atoms</code>, which is the base case of the
+        list. The <code>+:</code> and <code>:+</code> operators attach an additional layer
+        onto the table, adapting the existing tables input type into a
+        new output type via the given operators. Again, levels closer
+        to the <code>Atoms</code> will bind tighter. As an example:</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">expr</span><span>.{</span><span class="identifier">precedence</span><span>, </span><span class="type-name">SOps</span><span>, </span><span class="type-name">Atoms</span><span>, </span><span class="type-name">InfixL</span><span>}
+
+</span><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">Expr</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Add</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Expr</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Term</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Expr</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Sub</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Expr</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Term</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Expr</span><span>
+</span><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">Term</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">Expr</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Mul</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Term</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Atom</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Term</span><span>
+</span><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">Atom</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">Term</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Num</span><span>(</span><span class="identifier">n</span><span>: </span><span class="type-name">Int</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Atom</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Var</span><span>(</span><span class="identifier">v</span><span>: </span><span class="type-name">String</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Atom</span><span>
+
+</span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Expr</span><span>] =
+    </span><span class="identifier">precedence</span><span>(
+        </span><span class="type-name">Atoms</span><span>(</span><span class="identifier">ident</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Var</span><span>(</span><span class="identifier">_</span><span>)), </span><span class="identifier">int</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Num</span><span>(</span><span class="identifier">_</span><span>))) :+
+        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="type-name">Mul</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>))) :+
+        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="type-name">Add</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>)), </span><span class="string-literal">&quot;-&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="type-name">Sub</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>)))
+    )
+</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@460cf905
+</span><span>
+</span><span class="identifier">expr</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;x+5*y&quot;</span><span>)
+</span><span class="comment">// res1: parsley.Result[String, Expr] = Success(Add(Var(x),Mul(Num(5),Var(y))))</span></code></pre>
+        <p>Here, the types within the syntax tree are very specific about
+        the fact that all three operators are left associative. To be
+        able to use this type with precedence <code>SOps</code> is required, since
+        the outer layer takes in <code>Term</code>s and produces <code>Expr</code>s, the
+        middle layer takes <code>Atom</code>s and produces <code>Term</code>s, and the
+        inner-most atoms produce <code>Atom</code>s. Notice that, if the layers
+        are incorrectly stitched together, the table does not typecheck:</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">expr</span><span>.</span><span class="type-name">InfixR</span><span>
+
+</span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Expr</span><span>] =
+    </span><span class="identifier">precedence</span><span>(
+        </span><span class="type-name">Atoms</span><span>(</span><span class="identifier">ident</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Var</span><span>(</span><span class="identifier">_</span><span>)), </span><span class="identifier">int</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Num</span><span>(</span><span class="identifier">_</span><span>))) :+
+        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixR</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="type-name">Mul</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>))) :+
+        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="type-name">Add</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>)), </span><span class="string-literal">&quot;-&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="type-name">Sub</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>)))
+    )
+</span><span class="comment">// error: type mismatch;
+//  found   : parsley.Parsley[(Term, Atom) =&gt; Mul]
+//  required: parsley.Parsley[parsley.expr.InfixR.Op[Term,Term]]
+//     (which expands to)  parsley.Parsley[(Term, Term) =&gt; Term]
+//         SOps(InfixR)(&quot;*&quot;.as(Mul(_, _))) :+
+//                      ^^^^^^^^^^^^^^^^^</span></code></pre>
+        <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Expr</span><span>] =
+    </span><span class="identifier">precedence</span><span>(
+        </span><span class="type-name">Atoms</span><span>(</span><span class="identifier">ident</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Var</span><span>(</span><span class="identifier">_</span><span>)), </span><span class="identifier">int</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Num</span><span>(</span><span class="identifier">_</span><span>))) :+
+        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="type-name">Add</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>)), </span><span class="string-literal">&quot;-&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="type-name">Sub</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>))) :+
+        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="type-name">Mul</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>)))
+    )
+</span><span class="comment">// error: inferred type arguments [Atom,Term] do not conform to method :+&#39;s type parameter bounds [Aʹ &gt;: Expr,B]
+//         Atoms(ident.map(Var(_)), int.map(Num(_))) :+
+//         ^
+// error: type mismatch;
+//  found   : parsley.expr.Ops[Atom,Term]
+//  required: parsley.expr.Ops[Aʹ,B]
+//         SOps(InfixL)(&quot;*&quot;.as(Mul(_, _)))
+//         ^^^^^^^^^^^^</span></code></pre>
 
         
 <hr class="footer-rule"/>
