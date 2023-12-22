@@ -40,7 +40,7 @@ Ultimately, these chains are useful when the parser writer wants further guarant
 
 As an example:
 
-```scala mdoc:to-string
+```scala mdoc:to-string:nest
 import parsley.character.digit
 import parsley.expr.infix
 import parsley.implicits.character.stringLift
