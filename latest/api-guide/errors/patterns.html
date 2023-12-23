@@ -100,6 +100,7 @@
     <li class="level3 nav-leaf"><a href="../token/descriptions.html"><code>descriptions</code></a></li>
     <li class="level3 nav-leaf"><a href="../token/Lexer.html"><code>Lexer</code></a></li>
     <li class="level2 nav-header"><code>parsley.errors</code></li>
+    <li class="level3 active nav-leaf"><a href="#"><code>patterns</code></a></li>
     <li class="level3 nav-leaf"><a href="ErrorBuilder.html"><code>ErrorBuilder</code></a></li>
     <li class="level3 nav-leaf"><a href="tokenextractors.html"><code>tokenextractors</code></a></li>
     <li class="level1 nav-node"><a href="../../tutorial/">Parser Combinator Tutorial</a></li>
@@ -125,6 +126,8 @@
   <p class="header"><a href="#"><code>patterns</code></a></p>
 
   <ul class="nav-list">
+    <li class="level1 nav-leaf"><a href="#verified-errors"><em>Verified Errors</em></a></li>
+    <li class="level1 nav-leaf"><a href="#preventative-errors"><em>Preventative Errors</em></a></li>
   </ul>
 
   <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/wiki-improvements/docs/api-guide/errors/patterns.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
@@ -133,7 +136,148 @@
 
       <main class="content">
 
+        <h1 id="error-message-patterns" class="title">Error Message Patterns</h1>
+        <p>The combinators discussed in
+        <a href="combinator.html#error-message-combinators"><code>parsley.errors.combinator</code></a> are useful
+        for changing the contents of an error message, but they do not account for any
+        contextual obligations a more carefully crafted error might have. Ensuring
+        that error messages are valid in the context in which they occurred is the job
+        of the <em>Verified Errors</em> and <em>Preventative Errors</em> parsing design patterns.
+        These are both encoded in <code>parsley</code> as combinators within <code>parsley.errors.patterns</code>.</p>
+        <div class="callout info">
+          <i class="icofont-laika info">&#xef4e;</i>
+          <p><em>The Scaladoc for this page can be found at <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/errors/patterns$.html"><code>parsley.errors.patterns</code></a>.</em></p>
+        </div>
         
+        <h2 id="verified-errors" class="section"><a class="anchor-link left" href="#verified-errors"><i class="icofont-laika link">&#xef71;</i></a><em>Verified Errors</em></h2>
+        <p>When a hand-tailored reason for a syntax error relies on some future input
+        being present, a <em>verified</em> error can be used to ensure these obligations are met. These errors, called <em>error widgets</em>, will have the following properties:</p>
+        <ul>
+          <li>have type <code>Parsley[Nothing]</code>, ensuring that it is guaranteed to fail</li>
+          <li>produce errors that are rooted at the start of the widget</li>
+          <li>generate a caret as wide as the problematic input</li>
+          <li>if the problematic parser succeeds having consumed input, the widget consumes
+          input</li>
+          <li>if the problematic parser fails, it does not consume input or influence the
+          error message of the surrounding parser in any way</li>
+        </ul>
+        <p>The &quot;problematic parser&quot; referred to above is what will be parsed to try and
+        verify that the requirements for the error messages are met.
+        Any widget that meets these five properties is likely already a <em>verified error</em>,
+        however, they can be satisfied by the combinators enabled by importing <code>parsley.errors.patterns.VerifiedErrors</code> -- this is the focus of this page.</p>
+        <p>Each of the <code>verifiedX</code> combinators try a parse something, and if it succeeds
+        will generate an error based on the result. If it could not be parsed, they will generate an empty error. Each different combinator will generate an error with
+        different content. As examples (in isolation of surrounding content):</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">patterns</span><span>.</span><span class="type-name">VerifiedErrors</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">char</span><span>
+
+</span><span class="comment">// assume that a `lexer` is available
+</span><span class="keyword">val</span><span> </span><span class="identifier">float</span><span> = </span><span class="identifier">lexer</span><span>.</span><span class="identifier">nonlexeme</span><span>.</span><span class="identifier">numeric</span><span>.</span><span class="identifier">floating</span><span>.</span><span class="identifier">decimal</span><span>
+</span><span class="comment">// float: parsley.Parsley[BigDecimal] = parsley.Parsley@28eac659
+</span><span class="keyword">val</span><span> </span><span class="identifier">_noFloat</span><span> = </span><span class="identifier">float</span><span>.</span><span class="identifier">verifiedUnexpected</span><span>(</span><span class="string-literal">&quot;floating-point values may not be used as array indices&quot;</span><span>)
+</span><span class="comment">// _noFloat: parsley.Parsley[Nothing] = parsley.Parsley@7c3033ca
+</span><span>
+</span><span class="identifier">_noFloat</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;hello&quot;</span><span>)
+</span><span class="comment">// res0: parsley.Result[String, Nothing] = Failure((line 1, column 1):
+//   unknown parse error
+//   &gt;hello
+//    )
+</span><span class="identifier">_noFloat</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;3.142&quot;</span><span>)
+</span><span class="comment">// res1: parsley.Result[String, Nothing] = Failure((line 1, column 1):
+//   unexpected &quot;3.142&quot;
+//   floating-point values may not be used as array indices
+//   &gt;3.142
+//    ^^^^^)
+</span><span>
+</span><span class="keyword">val</span><span> </span><span class="identifier">int</span><span> = </span><span class="identifier">lexer</span><span>.</span><span class="identifier">nonlexeme</span><span>.</span><span class="identifier">numeric</span><span>.</span><span class="identifier">unsigned</span><span>.</span><span class="identifier">decimal</span><span>
+</span><span class="comment">// int: parsley.Parsley[BigInt] = parsley.Parsley@4823f4aa
+</span><span class="keyword">val</span><span> </span><span class="identifier">_noPlus</span><span> = (</span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;+&#39;</span><span>) ~&gt; </span><span class="identifier">int</span><span>).</span><span class="identifier">verifiedFail</span><span>(</span><span class="identifier">n</span><span> =&gt; </span><span class="type-name">Seq</span><span>(</span><span class="string-literal">s&quot;the number </span><span class="substitution">$n</span><span class="string-literal"> may not be preceeded by </span><span class="escape-sequence">\&quot;</span><span class="string-literal">+</span><span class="escape-sequence">\&quot;</span><span class="string-literal">&quot;</span><span>))
+</span><span class="comment">// _noPlus: parsley.Parsley[Nothing] = parsley.Parsley@32873f
+</span><span class="identifier">_noPlus</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;+10&quot;</span><span>)
+</span><span class="comment">// res2: parsley.Result[String, Nothing] = Failure((line 1, column 1):
+//   the number 10 may not be preceeded by &quot;+&quot;
+//   &gt;+10
+//    ^^^)</span></code></pre>
+        <p>Occasionally, there may need to be more fine-grained control over the errors.
+        In these cases, the most generic version of the combinator is <code>verifiedWith</code>,
+        which takes an <code>ErrorGen</code> object. For instance, perhaps the focus of the last
+        error above should only be the <code>+</code>. In which case, the caret must be adjusted by
+        an <code>ErrorGen</code> object -- this can either be <code>VanillaGen</code> or <code>SpecialisedGen</code>.</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="type-name">SpecialisedGen</span><span>
+</span><span class="keyword">val</span><span> </span><span class="identifier">_noPlus</span><span> = (</span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;+&#39;</span><span>) ~&gt; </span><span class="identifier">int</span><span>).</span><span class="identifier">verifiedWith</span><span> {
+    </span><span class="keyword">new</span><span> </span><span class="type-name">SpecialisedGen</span><span>[</span><span class="type-name">BigInt</span><span>] {
+        </span><span class="keyword">def</span><span> </span><span class="declaration-name">messages</span><span>(</span><span class="identifier">n</span><span>: </span><span class="type-name">BigInt</span><span>): </span><span class="type-name">Seq</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="type-name">Seq</span><span>(</span><span class="string-literal">&quot;a number may not be preceeded by </span><span class="escape-sequence">\&quot;</span><span class="string-literal">+</span><span class="escape-sequence">\&quot;</span><span class="string-literal">&quot;</span><span>)
+        </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">adjustWidth</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">BigInt</span><span>, </span><span class="identifier">width</span><span>: </span><span class="type-name">Int</span><span>) = </span><span class="number-literal">1</span><span>
+    }
+}
+</span><span class="comment">// _noPlus: parsley.Parsley[Nothing] = parsley.Parsley@ffe3752
+</span><span class="identifier">_noPlus</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;+10&quot;</span><span>)
+</span><span class="comment">// res3: parsley.Result[String, Nothing] = Failure((line 1, column 1):
+//   a number may not be preceeded by &quot;+&quot;
+//   &gt;+10
+//    ^)</span></code></pre>
+        <p>In the above, the <code>width</code> parameter would have been the original determined
+        size, which would have been <code>3</code> based on the other error message. A <code>VanillaGen</code>
+        would also have the ability to change the unexpected message:</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="type-name">VanillaGen</span><span>
+</span><span class="keyword">val</span><span> </span><span class="identifier">_noFloat</span><span> = </span><span class="identifier">float</span><span>.</span><span class="identifier">verifiedWith</span><span> {
+    </span><span class="keyword">new</span><span> </span><span class="type-name">VanillaGen</span><span>[</span><span class="type-name">BigDecimal</span><span>] {
+        </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">reason</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">BigDecimal</span><span>): </span><span class="type-name">Option</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="type-name">Some</span><span>(</span><span class="string-literal">&quot;floats may not be array indices&quot;</span><span>)
+        </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">unexpected</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">BigDecimal</span><span>): </span><span class="type-name">VanillaGen</span><span>.</span><span class="type-name">UnexpectedItem</span><span> = {
+            </span><span class="type-name">VanillaGen</span><span>.</span><span class="type-name">NamedItem</span><span>(</span><span class="string-literal">&quot;floating-point number&quot;</span><span>)
+        }
+    }
+}
+</span><span class="comment">// _noFloat: parsley.Parsley[Nothing] = parsley.Parsley@1e724ad2
+</span><span>
+</span><span class="identifier">_noFloat</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;3.142&quot;</span><span>)
+</span><span class="comment">// res4: parsley.Result[String, Nothing] = Failure((line 1, column 1):
+//   unexpected floating-point number
+//   floats may not be array indices
+//   &gt;3.142
+//    ^^^^^)</span></code></pre>
+        
+        <h2 id="preventative-errors" class="section"><a class="anchor-link left" href="#preventative-errors"><i class="icofont-laika link">&#xef71;</i></a><em>Preventative Errors</em></h2>
+        <p>The <em>verified error</em> pattern can only be applied as part of a chain of
+        alternatives. However, if the alternatives are spread far apart, this can make
+        the pattern cumbersome to use. Instead, a <em>preventative error</em> seeks to rule out
+        bad inputs not as a last resort, but eagerly as soon as it might become possible to do so. Widgets following this pattern have the following properties:</p>
+        <ul>
+          <li>succeed if the problematic parser does not succeed, returning <code>Unit</code></li>
+          <li>produce errors that are unconditionally rooted at the start of the widget</li>
+          <li>generate a caret as wide as the problematic input</li>
+          <li>if the problematic parser succeeds having consumed input, this widget must
+          consume input</li>
+          <li>if the problematic parser fails, it should not consume input nor influence
+          any errors generated afterwards</li>
+        </ul>
+        <p>Similarly to <em>verified errors</em>, <em>preventative errors</em> can have many forms but
+        the most common are embodied by the combinators available by importing
+        <code>parsley.errors.patterns.PreventativeErrors</code>.</p>
+        <p>Unlike, <code>verifiedX</code>, <code>preventativeX</code> will try and parse something, and succeed
+        if that fails. This makes it <em>similar</em> to <code>notFollowedBy</code>, but that alone does
+        not have all the desired properties. As an example:</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">patterns</span><span>.</span><span class="type-name">PreventativeErrors</span><span>
+
+</span><span class="keyword">val</span><span> </span><span class="identifier">ident</span><span> = </span><span class="identifier">lexer</span><span>.</span><span class="identifier">nonlexeme</span><span>.</span><span class="identifier">names</span><span>.</span><span class="identifier">identifier</span><span>
+</span><span class="comment">// ident: parsley.Parsley[String] = parsley.Parsley@11ec8019
+</span><span class="keyword">val</span><span> </span><span class="identifier">_noDot</span><span> = (</span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;.&#39;</span><span>) ~&gt; </span><span class="identifier">ident</span><span>).</span><span class="identifier">preventativeFail</span><span> { </span><span class="identifier">v</span><span> =&gt;
+    </span><span class="type-name">Seq</span><span>(</span><span class="string-literal">s&quot;accessing field </span><span class="substitution">$v</span><span class="string-literal"> is not permitted here&quot;</span><span>)
+}
+</span><span class="comment">// _noDot: parsley.Parsley[Unit] = parsley.Parsley@a9df065
+</span><span class="identifier">_noDot</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;hi&quot;</span><span>)
+</span><span class="comment">// res5: parsley.Result[String, Unit] = Success(())
+</span><span class="identifier">_noDot</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;.foo&quot;</span><span>)
+</span><span class="comment">// res6: parsley.Result[String, Unit] = Failure((line 1, column 1):
+//   accessing field foo is not permitted here
+//   &gt;.foo
+//    ^^^^)</span></code></pre>
+        <p>There are also vanilla variants too (and one for <code>ErrorGen</code>). However, these also
+        allow for additional optional labels to be provided to describe <em>valid</em>
+        alternatives that would have been successful from this point. This is useful,
+        since parsers that follow from this point will not be parsed and cannot
+        contribute their own labels. It is for this reason, that the <em>verified error</em>
+        pattern is more effective if it possible to use.</p>
 
         
 <hr class="footer-rule"/>

@@ -100,6 +100,7 @@
     <li class="level3 nav-leaf"><a href="../token/descriptions.html"><code>descriptions</code></a></li>
     <li class="level3 nav-leaf"><a href="../token/Lexer.html"><code>Lexer</code></a></li>
     <li class="level2 nav-header"><code>parsley.errors</code></li>
+    <li class="level3 nav-leaf"><a href="patterns.html"><code>patterns</code></a></li>
     <li class="level3 nav-leaf"><a href="ErrorBuilder.html"><code>ErrorBuilder</code></a></li>
     <li class="level3 active nav-leaf"><a href="#"><code>tokenextractors</code></a></li>
     <li class="level1 nav-node"><a href="../../tutorial/">Parser Combinator Tutorial</a></li>
@@ -250,10 +251,12 @@
         language being parsed: each returns the name of that token as it
         would be displayed in the error message. The extractor will
         try to parse all of these tokens, and should at least one
-        succeed the <strong>non-empty</strong> list of parsed tokens will be passed to <code>selectToken</code> for one to be picked to be used in the error:
+        succeed the <strong>non-empty</strong> list of parsed tokens will be passed
+        to <code>selectToken</code> for one to be picked to be used in the error:
         by default, the one which is the widest is chosen. If no tokens
         could be parsed, or the error occured <em>during</em> the parsing of
-        a token/within the <code>markAsToken</code> combinator (as denoted by <code>lexicalError</code> normally), then <code>extractItem</code> is used instead.
+        a token/within the <code>markAsToken</code> combinator (as denoted by
+        <code>lexicalError</code> normally), then <code>extractItem</code> is used instead.
         This usually should defer to another kind of token extractor,
         which, for convience, all expose their functionality in their companion objects.</p>
         <div class="callout warning">
