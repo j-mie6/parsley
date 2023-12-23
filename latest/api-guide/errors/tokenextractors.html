@@ -101,6 +101,7 @@
     <li class="level3 nav-leaf"><a href="../token/Lexer.html"><code>Lexer</code></a></li>
     <li class="level2 nav-header"><code>parsley.errors</code></li>
     <li class="level3 nav-leaf"><a href="ErrorBuilder.html"><code>ErrorBuilder</code></a></li>
+    <li class="level3 active nav-leaf"><a href="#"><code>tokenextractors</code></a></li>
     <li class="level1 nav-node"><a href="../../tutorial/">Parser Combinator Tutorial</a></li>
     <li class="level2 nav-leaf"><a href="../../tutorial/basics-of-combinators.html">Basics of Combinators</a></li>
     <li class="level2 nav-leaf"><a href="../../tutorial/building-expression-parsers.html">Building Expression Parsers</a></li>
@@ -124,6 +125,11 @@
   <p class="header"><a href="#"><code>tokenextractors</code></a></p>
 
   <ul class="nav-list">
+    <li class="level1 nav-node"><a href="#basic-extractors">Basic Extractors</a></li>
+    <li class="level2 nav-leaf"><a href="#singlechar"><code>SingleChar</code></a></li>
+    <li class="level2 nav-leaf"><a href="#matchparserdemand"><code>MatchParserDemand</code></a></li>
+    <li class="level2 nav-leaf"><a href="#tillnextwhitespace"><code>TillNextWhitespace</code></a></li>
+    <li class="level1 nav-leaf"><a href="#lexer-backed-extraction"><code>Lexer</code>-backed Extraction</a></li>
   </ul>
 
   <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/wiki-improvements/docs/api-guide/errors/tokenextractors.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
@@ -133,6 +139,146 @@
       <main class="content">
 
         <h1 id="token-extraction-in-errorbuilder" class="title">Token Extraction in <code>ErrorBuilder</code></h1>
+        <p>When <em>vanilla</em> error messages are generated internally to
+        <code>parsley</code>, the unexpected component is usually derived from
+        the raw input, or a name explicitly given to an <code>unexpected</code>
+        combinator. However, that does not necessarily provide the
+        most informative or precise error messages.</p>
+        <p>Instead, the <code>ErrorBuilder</code> typeclass has an <code>unexpectedToken</code>
+        method that can be used to determine how the token should
+        be formulated in the event that it would have otherwise
+        come raw from the input. Its signature is as follows:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">unexpectedToken</span><span>(
+    </span><span class="identifier">cs</span><span>: </span><span class="type-name">Iterable</span><span>[</span><span class="type-name">Char</span><span>],
+    </span><span class="identifier">amountOfInputParserWanted</span><span>: </span><span class="type-name">Int</span><span>,
+    </span><span class="identifier">lexicalError</span><span>: </span><span class="type-name">Boolean</span><span>
+  ): </span><span class="type-name">Token</span></code></pre>
+        <p>The first argument, <code>cs</code>, is the input from the point that
+        the bad input was found; the second is the amount of input
+        the parser tried to read when it failed; and <code>lexicalError</code>
+        denotes whether or not the failure happened whilst trying
+        to parse a token from <code>Lexer</code>, or not. The return value,
+        <code>Token</code>, is one of the following classes:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Named</span><span>(</span><span class="identifier">name</span><span>: </span><span class="type-name">String</span><span>, </span><span class="identifier">span</span><span>: </span><span class="type-name">TokenSpan</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Token</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Raw</span><span>(</span><span class="identifier">tok</span><span>: </span><span class="type-name">String</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Token</span><span>
+
+</span><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">TokenSpan</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Spanning</span><span>(</span><span class="identifier">line</span><span>: </span><span class="type-name">Int</span><span>, </span><span class="identifier">col</span><span>: </span><span class="type-name">Int</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">TokenSpan</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Width</span><span>(</span><span class="identifier">w</span><span>: </span><span class="type-name">Int</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">TokenSpan</span></code></pre>
+        <p>A <code>Raw</code> token indicates no further processing of the input could
+        occur to get a better token, and some is returned verbatim.
+        Otherwise, a <code>Named</code> token can replace a raw token with something
+        derived from the input -- the <code>span</code> here denotes how wide that
+        token had been determined to be.</p>
+        <div class="callout warning">
+          <i class="icofont-laika warning">&#xf026;</i>
+          <p>The <code>Spanning</code> class will be removed in <code>parsley:5.0.0</code>: in future, the width will be in <code>Named</code> directly.</p>
+        </div>
+        <p>The idea is that <code>unexpectedToken</code> should examine the provided
+        arguments and determine if a more specific token can be extracted
+        from the residual input, or, if not, produce a final <code>Raw</code> token
+        of the desired width.
+        In practice, while a user could implement the <code>unexpectedToken</code>
+        method by hand, <code>parsley</code> provides a collection of
+        <em>token extractors</em> that can be mixed-in to an <code>ErrorBuilder</code> to
+        implement it instead.</p>
+        
+        <h2 id="basic-extractors" class="section"><a class="anchor-link left" href="#basic-extractors"><i class="icofont-laika link">&#xef71;</i></a>Basic Extractors</h2>
+        <p>There are three basic extractors available in <code>parsley</code>:
+        <code>SingleChar</code>, <code>MatchParserDemand</code>, and <code>TillNextWhitespace</code>.
+        Each is discussed below. Each of them have special handling for
+        whitespace characters and ones that are unprintable, which are
+        given names.</p>
+        
+        <h3 id="singlechar" class="section"><a class="anchor-link left" href="#singlechar"><i class="icofont-laika link">&#xef71;</i></a><code>SingleChar</code></h3>
+        <p>This extractor simply takes the first <em>codepoint</em> of the input
+        stream <code>cs</code> and returns it. A <em>codepoint</em> is a single unicode
+        character, which may consist of one or two bytes. As an example,
+        the default formatting may be instantiated with this extractor
+        by writing:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="type-name">DefaultErrorBuilder</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">tokenextractors</span><span>.</span><span class="type-name">SingleChar</span><span>
+
+</span><span class="keyword">val</span><span> </span><span class="identifier">builder</span><span> = </span><span class="keyword">new</span><span> </span><span class="type-name">DefaultErrorBuilder</span><span> </span><span class="keyword">with</span><span> </span><span class="type-name">SingleChar</span></code></pre>
+        
+        <h3 id="matchparserdemand" class="section"><a class="anchor-link left" href="#matchparserdemand"><i class="icofont-laika link">&#xef71;</i></a><code>MatchParserDemand</code></h3>
+        <p>This extractor, as its name suggests, takes more than a single
+        codepoint from the input, instead taking as many as the parser
+        has requested via the <code>amountOfInputParserWanted</code> argument.
+        As an example, the default formatting may be instantiated with
+        this extractor by writing:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="type-name">DefaultErrorBuilder</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">tokenextractors</span><span>.</span><span class="type-name">MatchParserDemand</span><span>
+
+</span><span class="keyword">val</span><span> </span><span class="identifier">builder</span><span> = </span><span class="keyword">new</span><span> </span><span class="type-name">DefaultErrorBuilder</span><span> </span><span class="keyword">with</span><span> </span><span class="type-name">MatchParserDemand</span></code></pre>
+        
+        <h3 id="tillnextwhitespace" class="section"><a class="anchor-link left" href="#tillnextwhitespace"><i class="icofont-laika link">&#xef71;</i></a><code>TillNextWhitespace</code></h3>
+        <p>Unlike the other extractors, this one has additional
+        configuration. It generally aims to take as much input
+        as necessary to find the next the next whitespace character,
+        which can be changed by overriding the <code>isWhitespace</code> method.
+        However, this can be capped as the minimum of the input the
+        parser demanded or until the next whitespace.
+        As an example, the default formatting may be instantiated with
+        this extractor by writing:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="type-name">DefaultErrorBuilder</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">tokenextractors</span><span>.</span><span class="type-name">TillNextWhitespace</span><span>
+
+</span><span class="keyword">val</span><span> </span><span class="identifier">builder</span><span> = </span><span class="keyword">new</span><span> </span><span class="type-name">DefaultErrorBuilder</span><span> </span><span class="keyword">with</span><span> </span><span class="type-name">TillNextWhitespace</span><span> {
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">trimToParserDemand</span><span> = </span><span class="boolean-literal">true</span><span>
+}</span></code></pre>
+        <p>This extractor, with <code>trimToParserDemand = true</code> is the default
+        currented used by <code>parsley</code> for all error messages. By default,
+        <code>isWhitespace</code> matches any character <code>c</code> for which <code>c.isWhitespace</code> is true.</p>
+        
+        <h2 id="lexer-backed-extraction" class="section"><a class="anchor-link left" href="#lexer-backed-extraction"><i class="icofont-laika link">&#xef71;</i></a><code>Lexer</code>-backed Extraction</h2>
+        <p>The default strategies outlined above all ignore the
+        <code>lexicalError</code> flag passed to <code>unexpectedToken</code>. To provide a
+        more language-directed token extraction, however, the <code>LexToken</code>
+        extractor is also provided.</p>
+        <p>It has one compulsory configuration and two more that have defaults:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">trait</span><span> </span><span class="type-name">LexToken</span><span> {
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">tokens</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>]]
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">extractItem</span><span>(</span><span class="identifier">cs</span><span>: </span><span class="type-name">Iterable</span><span>[</span><span class="type-name">Char</span><span>], </span><span class="identifier">amountOfInputParserWanted</span><span>: </span><span class="type-name">Int</span><span>): </span><span class="type-name">Token</span><span> = {
+        </span><span class="type-name">SingleChar</span><span>.</span><span class="identifier">unexpectedToken</span><span>(</span><span class="identifier">cs</span><span>)
+    }
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">selectToken</span><span>(</span><span class="identifier">matchedToks</span><span>: </span><span class="type-name">List</span><span>[(</span><span class="type-name">String</span><span>, (</span><span class="type-name">Int</span><span>, </span><span class="type-name">Int</span><span>))]): (</span><span class="type-name">String</span><span>, (</span><span class="type-name">Int</span><span>, </span><span class="type-name">Int</span><span>)) = {
+        </span><span class="identifier">matchedToks</span><span>.</span><span class="identifier">maxBy</span><span>(</span><span class="identifier">_</span><span class="number-literal">._2</span><span>)
+    }
+}</span></code></pre>
+        <p>Here, the <code>tokens</code> are parsers for valid tokens within the
+        language being parsed: each returns the name of that token as it
+        would be displayed in the error message. The extractor will
+        try to parse all of these tokens, and should at least one
+        succeed the <strong>non-empty</strong> list of parsed tokens will be passed to <code>selectToken</code> for one to be picked to be used in the error:
+        by default, the one which is the widest is chosen. If no tokens
+        could be parsed, or the error occured <em>during</em> the parsing of
+        a token/within the <code>markAsToken</code> combinator (as denoted by <code>lexicalError</code> normally), then <code>extractItem</code> is used instead.
+        This usually should defer to another kind of token extractor,
+        which, for convience, all expose their functionality in their companion objects.</p>
+        <div class="callout warning">
+          <i class="icofont-laika warning">&#xf026;</i>
+          <p>The intention of the <code>tokens</code> sequence is that they should <em>not</em>
+          consume whitespace: were they to do so, this whitespace would
+          form part of the generated token! When using <code>Lexer</code> to fill
+          this sequence, be sure to use <code>lexer.nonlexeme</code> to source the
+          tokens.</p>
+        </div>
+        <p>As an example, a language which already has an available <code>lexer</code>
+        built with lexical description <code>desc</code> can implement a <code>LexToken</code> as follows:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="type-name">DefaultErrorBuilder</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">tokenextractors</span><span>.</span><span class="type-name">LexToken</span><span>
+
+</span><span class="keyword">val</span><span> </span><span class="identifier">builder</span><span> = </span><span class="keyword">new</span><span> </span><span class="type-name">DefaultErrorBuilder</span><span> </span><span class="keyword">with</span><span> </span><span class="type-name">LexToken</span><span> {
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">tokens</span><span> = </span><span class="type-name">Seq</span><span>(
+        </span><span class="identifier">lexer</span><span>.</span><span class="identifier">nonlexeme</span><span>.</span><span class="identifier">numeric</span><span>.</span><span class="identifier">integer</span><span>.</span><span class="identifier">decimal</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">n</span><span> =&gt; </span><span class="string-literal">s&quot;integer </span><span class="substitution">$n</span><span class="string-literal">&quot;</span><span>),
+        </span><span class="identifier">lexer</span><span>.</span><span class="identifier">nonlexeme</span><span>.</span><span class="identifier">names</span><span>.</span><span class="identifier">identifier</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">v</span><span> =&gt; </span><span class="string-literal">s&quot;identifier </span><span class="substitution">$v</span><span class="string-literal">&quot;</span><span>)
+    ) ++ </span><span class="identifier">desc</span><span>.</span><span class="identifier">symbolDesc</span><span>.</span><span class="identifier">hardKeywords</span><span>.</span><span class="identifier">map</span><span> { </span><span class="identifier">k</span><span> =&gt;
+        </span><span class="identifier">lexer</span><span>.</span><span class="identifier">nonlexeme</span><span>.</span><span class="identifier">symbol</span><span>(</span><span class="identifier">k</span><span>).</span><span class="identifier">as</span><span>(</span><span class="string-literal">s&quot;keyword </span><span class="substitution">$k</span><span class="string-literal">&quot;</span><span>)
+    }
+}</span></code></pre>
+        <p>Obviously, this may not be an exhaustive list of tokens, but is
+        illustrative of how to set things up.</p>
 
         
 <hr class="footer-rule"/>
