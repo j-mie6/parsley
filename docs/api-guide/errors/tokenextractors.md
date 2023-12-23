@@ -139,10 +139,12 @@ Here, the `tokens` are parsers for valid tokens within the
 language being parsed: each returns the name of that token as it
 would be displayed in the error message. The extractor will
 try to parse all of these tokens, and should at least one
-succeed the **non-empty** list of parsed tokens will be passed to `selectToken` for one to be picked to be used in the error:
+succeed the **non-empty** list of parsed tokens will be passed
+to `selectToken` for one to be picked to be used in the error:
 by default, the one which is the widest is chosen. If no tokens
 could be parsed, or the error occured *during* the parsing of
-a token/within the `markAsToken` combinator (as denoted by `lexicalError` normally), then `extractItem` is used instead.
+a token/within the `markAsToken` combinator (as denoted by
+`lexicalError` normally), then `extractItem` is used instead.
 This usually should defer to another kind of token extractor,
 which, for convience, all expose their functionality in their companion objects.
 
