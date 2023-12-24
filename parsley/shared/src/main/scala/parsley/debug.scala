@@ -81,7 +81,7 @@ object debug {
       * @define debug This combinator allows this parser to be debugged by providing a trace through the execution.
       *
       * When this combinator is entered, it will print the name assigned to the parser,
-      * as well as the current currenting input context for a few characters on either side.
+      * as well as the current input context for a few characters on either side.
       * This parser is then executed. If it succeeded, this combinator again reports the
       * name along with "`Good`" and the input context. If it failed, it reports the name
       * along with "`Bad`" and the input context.

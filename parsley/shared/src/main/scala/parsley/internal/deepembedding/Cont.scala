@@ -6,6 +6,7 @@
 package parsley.internal.deepembedding
 
 import scala.annotation.tailrec
+
 import org.typelevel.scalaccompat.annotation.uncheckedVariance212
 
 // Trampoline for CPS

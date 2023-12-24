@@ -8,8 +8,7 @@ package parsley.internal.errors
 import parsley.XAssert._
 import parsley.errors, errors.{ErrorBuilder, Token, TokenSpan}
 
-private [internal] sealed abstract class ErrorItem
-private [internal] sealed abstract class UnexpectItem extends ErrorItem {
+private [internal] sealed abstract class UnexpectItem {
     private [internal] def formatUnexpect(lexicalError: Boolean)(implicit builder: ErrorBuilder[_]): (builder.Item, TokenSpan)
     private [internal] def higherPriority(other: UnexpectItem): Boolean
     protected [errors] def lowerThanRaw(other: UnexpectRaw): Boolean
@@ -17,7 +16,7 @@ private [internal] sealed abstract class UnexpectItem extends ErrorItem {
     private [internal] def isFlexible: Boolean
     private [internal] def widen(caret: Int): UnexpectItem
 }
-private [parsley] sealed trait ExpectItem extends ErrorItem {
+private [parsley] sealed trait ExpectItem {
     private [internal] def formatExpect(implicit builder: ErrorBuilder[_]): builder.Item
 }
 

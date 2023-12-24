@@ -35,7 +35,7 @@ private [internal] final class RelabelHints(labels: Iterable[String]) extends In
 private [internal] final class RelabelErrorAndFail(labels: Iterable[String]) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
-        ctx.restoreHints()
+        //ctx.restoreHints() //FIXME: I'm not sure this was meant to be there in the first place
         ctx.errs.error = ctx.useHints {
             // only use the label if the error message is generated at the same offset
             // as the check stack saved for the start of the `label` combinator.
@@ -45,7 +45,7 @@ private [internal] final class RelabelErrorAndFail(labels: Iterable[String]) ext
         ctx.fail()
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"ApplyError($labels)"
+    override def toString: String = s"RelabelErrorAndFail($labels)"
     // $COVERAGE-ON$
 }
 
@@ -62,6 +62,7 @@ private [internal] object HideHints extends Instr {
     // $COVERAGE-ON$
 }
 
+// FIXME: Gigaparsec points out the hints aren't being used here, I believe they should be!
 private [internal] object HideErrorAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
@@ -119,6 +120,7 @@ private [internal] class ApplyReasonAndFail(reason: String) extends Instr {
 private [internal] class AmendAndFail private (partial: Boolean) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.restoreHints() //TODO: verify this is ok; it feels more right than the restore on the labelling
         ctx.handlers = ctx.handlers.tail
         ctx.errs.error = ctx.errs.error.amend(partial, ctx.states.offset, ctx.states.line, ctx.states.col)
         ctx.states = ctx.states.tail
