@@ -13,6 +13,7 @@
     { "path": "/api-guide/expr/precedence.html", "versions": ["latest"] },
     { "path": "/api-guide/generic.html", "versions": ["latest"] },
     { "path": "/api-guide/index.html", "versions": ["latest"] },
+    { "path": "/api-guide/registers.html", "versions": ["latest"] },
     { "path": "/api-guide/token/Lexer.html", "versions": ["latest"] },
     { "path": "/api-guide/token/descriptions.html", "versions": ["latest"] },
     { "path": "/api-guide/token/errors.html", "versions": ["latest"] },

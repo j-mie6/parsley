@@ -6,7 +6,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="generator" content="Typelevel Laika + Helium Theme" />
-  <title>Understanding the API</title>
+  <title>`parsley.registers`</title>
   
   <meta name="author" content="parsley contributors"/>
   
@@ -27,7 +27,7 @@
     <link rel="stylesheet" type="text/css" href="../../css/parsley-style.css" />
   <script src="../../helium/site/laika-helium.js"></script>
     <script src="../../helium/site/laika-versions.js"></script>
-  <script>initVersions("../../", "/api-guide/index.html", "latest", null);</script>
+  <script>initVersions("../../", "/api-guide/registers.html", "latest", null);</script>
   
   <script> /* for avoiding page load transitions */ </script>
 </head>
@@ -89,9 +89,9 @@
     <li class="level1 nav-leaf"><a href="../">Home</a></li>
     <li class="level1 nav-leaf"><a href="../faq.html">FAQ</a></li>
     <li class="level1 nav-leaf"><a href="../cheatsheet.html">Cheatsheet</a></li>
-    <li class="level1 active nav-node"><a href="#">Understanding the API</a></li>
+    <li class="level1 nav-node"><a href="index.html">Understanding the API</a></li>
     <li class="level2 nav-leaf"><a href="generic.html"><code>parsley.genericbridges</code></a></li>
-    <li class="level2 nav-leaf"><a href="registers.html"><code>parsley.registers</code></a></li>
+    <li class="level2 active nav-leaf"><a href="#"><code>parsley.registers</code></a></li>
     <li class="level2 nav-header"><code>parsley.expr</code></li>
     <li class="level3 nav-leaf"><a href="expr/chain.html"><code>chain</code></a></li>
     <li class="level3 nav-leaf"><a href="expr/infix.html"><code>infix</code></a></li>
@@ -124,44 +124,103 @@
     <div id="container">
 
       
+<nav id="page-nav">
+  <p class="header"><a href="#"><code>parsley.registers</code></a></p>
+
+  <ul class="nav-list">
+    <li class="level1 nav-node"><a href="#registers">Registers</a></li>
+    <li class="level2 nav-leaf"><a href="#persistence">Persistence</a></li>
+    <li class="level2 nav-leaf"><a href="#using-state">Using State</a></li>
+    <li class="level1 nav-leaf"><a href="#stateful-combinators">Stateful Combinators</a></li>
+  </ul>
+
+  <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/wiki-improvements/docs/api-guide/registers.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
+</nav>
+
 
       <main class="content">
 
-        <h1 id="understanding-the-api" class="title">Understanding the API</h1>
+        <h1 id="context-sensitive-parsing-parsley-registers" class="title">Context-Sensitive Parsing (<code>parsley.registers</code>)</h1>
+        <p>Normally, context-sensitive parsing can be done with monadic <code>flatMap</code>. However,
+        in <code>parsley</code>, <code>flatMap</code> is a very expensive operation and is best avoided.
+        Instead, <code>parsley</code> supports a form of arbitrary state threading called <em>registers</em>. These can be used to perform context-sensitive parsing in a
+        more performant way at a cost to expressive power.</p>
+        <div class="callout info">
+          <i class="icofont-laika info">&#xef4e;</i>
+          <p><em>The Scaladoc for this page can be found at <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/registers$.html"><code>parsley.registers</code></a>.</em></p>
+        </div>
         
+        <h2 id="registers" class="section"><a class="anchor-link left" href="#registers"><i class="icofont-laika link">&#xef71;</i></a>Registers</h2>
+        <p>A register is a single piece of mutable state threaded through a parser.
+        They can be made in three different ways:</p>
+        <ol class="arabic">
+          <li>
+            <p>Importing <code>parsley.registers.RegisterMaker</code> allows the use of the <code>makeReg</code>
+            method on any type <code>A</code>:</p>
+            <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">makeReg</span><span>[</span><span class="type-name">B</span><span>](</span><span class="identifier">body</span><span>: </span><span class="type-name">Reg</span><span>[</span><span class="type-name">A</span><span>] =&gt; </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">B</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">B</span><span>]</span></code></pre>
+            <p>This will construct a new register filled with the receiver value, and this can be used within the scope of the given continuation. Everytime this is
+            executed, it will be uniquely scoped (when the parser is recursive).</p>
+          </li>
+          <li>
+            <p>Similarly, importing <code>parsley.registers.RegisterMethods</code> allows the use of
+            the <code>fillReg</code> combinator on <code>Parsley[A]</code>, which has the same signature as
+            <code>makeReg</code>.</p>
+            <p>It behaves similarly to <code>makeReg</code>, but sources its result from a parser.
+            Loosely: <code>p.fillReg(body)</code> is the same as <code>p.flatMap(_.makeReg(body))</code>,
+            but is much more efficient.</p>
+          </li>
+          <li>
+            <p>The <code>Reg.make[A]: Reg[A]</code> method allows for the creation of a register
+            <em>outside</em> of the parsing context. This is not recommended, as it will
+            not guarantee uniqueness of scoping. The state will <strong>not</strong> be initialised.</p>
+            <div class="callout warning">
+              <i class="icofont-laika warning">&#xf026;</i>
+              <p>Using the same globally constructed register in two places is undefined
+              behaviour and should <em>not</em> be done.</p>
+            </div>
+          </li>
+        </ol>
+        <p>Registers themselves have two core operations, with several more built on top:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">class</span><span> </span><span class="type-name">Reg</span><span>[</span><span class="type-name">A</span><span>] {
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">get</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">put</span><span>(</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>]
+}</span></code></pre>
+        <p>The <code>get</code> method will read the register at parse-time and return the value
+        contained within. The <code>put</code> method takes the result of a parser and stores
+        that into the register. As examples:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">item</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">registers</span><span>.</span><span class="identifier">_</span><span>
+
+</span><span class="type-name">List</span><span>.</span><span class="identifier">empty</span><span>[</span><span class="type-name">Char</span><span>].</span><span class="identifier">makeReg</span><span> { </span><span class="identifier">r1</span><span> =&gt;
+    </span><span class="identifier">item</span><span>.</span><span class="identifier">fillReg</span><span> { </span><span class="identifier">r2</span><span> =&gt;
+        </span><span class="identifier">r1</span><span>.</span><span class="identifier">put</span><span>(</span><span class="identifier">r2</span><span>.</span><span class="identifier">get</span><span> &lt;::&gt; (</span><span class="identifier">r2</span><span>.</span><span class="identifier">get</span><span> &lt;::&gt; </span><span class="identifier">r1</span><span>.</span><span class="identifier">get</span><span>))
+    } *&gt; </span><span class="identifier">r1</span><span>.</span><span class="identifier">get</span><span>
+}.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;a&quot;</span><span>)
+</span><span class="comment">// res0: parsley.Result[String, List[Char]] = Success(List(a, a))</span></code></pre>
+        <p>The above example fills a register <code>r1</code>, with the empty list, then fills
+        a second register <code>r2</code> with the result of parsing any character. The value
+        in <code>r1</code> is updated with the list obtained by prepending the parsed character onto
+        the empty list stored in <code>r1</code> twice. After <code>r2</code> goes out of scope, the current
+        value of <code>r1</code> is returned.</p>
         
-        <h2 id="main-classes-and-packages" class="section"><a class="anchor-link left" href="#main-classes-and-packages"><i class="icofont-laika link">&#xef71;</i></a>Main Classes and Packages</h2>
-        <p>In <code>parsley</code>, everything resides within the <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley.html">parsley</a> package, and the major entry point is
-        <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/Parsley.html"><code>parsley.Parsley</code></a>.
-        There are a few modules of note:</p>
-        <ul>
-          <li><a href="Parsley.html"><code>parsley.Parsley</code></a>:
-          contains some of the basic and primitive combinators (at least those that aren&#39;t methods on
-          parsers).</li>
-          <li><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/combinator$.html"><code>parsley.combinator</code></a>:
-          contains handy combinators, this should be your first port of call
-          when you want to do something but are not sure a combinator exists for it. At the very
-          least, the <code>eof</code> combinator is very common.</li>
-          <li><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/character$.html"><code>parsley.character</code></a>:
-          contains a variety of combinators which deal with characters, key ones include <code>char</code>,
-          <code>satisfy</code> and <code>string</code>.</li>
-          <li><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/implicits$.html"><code>parsley.implicits</code></a>:
-          contains the very useful implicit conversion combinators. In particular, importing <code>charLift</code>
-          and <code>stringLift</code> allows you write character and string literals as if they were parsers
-          themselves. There are also implicit classes here which extend functions of any arity with a
-          corresponding <code>.lift</code> method, instead of using the <code>liftN</code> functions.</li>
-          <li><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/expr$.html"><code>parsley.expr</code></a>:
-          contains the machinery needed to generate expression parsers for you based, at its simplest, on
-          a table of operators in order of precedence. This is <em>well</em> worth a look (this is covered in
-          detail in <a href="../tutorial/building-expression-parsers.html#building-expression-parsers">Building Expression Parsers</a>.</li>
-          <li><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/token$.html"><code>parsley.token</code></a>:
-          contains a bunch of functionality for performing common lexing tasks, which is <em>very</em> configurable.
-          These parsers may also be optimised for performance.</li>
-        </ul>
+        <h3 id="persistence" class="section"><a class="anchor-link left" href="#persistence"><i class="icofont-laika link">&#xef71;</i></a>Persistence</h3>
+        <p>In the above example, the register <code>r2</code> is only used for <code>get</code>, but is used
+        multiple times. Normally, using the value of a parser more than once requires
+        a <code>flatMap</code>; this is not the case in <code>parsley</code> when using registers. To make
+        this application more ergonomic, <code>parsley.registers.RegisterMethods</code> also
+        exposes the <code>persist</code> combinator:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="type-name">List</span><span>.</span><span class="identifier">empty</span><span>[</span><span class="type-name">Char</span><span>].</span><span class="identifier">makeReg</span><span> { </span><span class="identifier">r1</span><span> =&gt;
+    </span><span class="identifier">item</span><span>.</span><span class="identifier">persist</span><span> { </span><span class="identifier">c</span><span> =&gt;
+        </span><span class="identifier">r1</span><span>.</span><span class="identifier">put</span><span>(</span><span class="identifier">c</span><span> &lt;::&gt; (</span><span class="identifier">c</span><span> &lt;::&gt; </span><span class="identifier">r1</span><span>.</span><span class="identifier">get</span><span>))
+    } *&gt; </span><span class="identifier">r1</span><span>.</span><span class="identifier">get</span><span>
+}.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;a&quot;</span><span>)
+</span><span class="comment">// res1: parsley.Result[String, List[Char]] = Success(List(a, a))</span></code></pre>
+        <p>Persist can be thought of as a composition of <code>fillReg</code> and <code>get</code>, or
+        alternatively as a composition of <code>flatMap</code> and <code>pure</code>.</p>
         
-        <h3 id="using-parsley-token-for-lexing" class="section"><a class="anchor-link left" href="#using-parsley-token-for-lexing"><i class="icofont-laika link">&#xef71;</i></a>Using <code>parsley.token</code> for Lexing</h3>
-        <p>Unlike Haskell libraries like <code>megaparsec</code> and <code>parsec</code>, <code>parsley</code> does not
-        tie the lexing functionality to the Haskell Report, instead supporting a superset of the functionality. The functionality is provided to the user by <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/token/Lexer.html">Lexer</a>, and this must be provided an value of type <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/token/descriptions/LexicalDesc.html">LexicalDesc</a>, which provides all the configuration necessary to describe the language and make the parsers.</p>
+        <h3 id="using-state" class="section"><a class="anchor-link left" href="#using-state"><i class="icofont-laika link">&#xef71;</i></a>Using State</h3>
+        
+        <h2 id="stateful-combinators" class="section"><a class="anchor-link left" href="#stateful-combinators"><i class="icofont-laika link">&#xef71;</i></a>Stateful Combinators</h2>
 
         
 <hr class="footer-rule"/>
