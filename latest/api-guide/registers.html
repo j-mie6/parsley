@@ -130,7 +130,7 @@
   <ul class="nav-list">
     <li class="level1 nav-node"><a href="#registers">Registers</a></li>
     <li class="level2 nav-leaf"><a href="#persistence">Persistence</a></li>
-    <li class="level2 nav-leaf"><a href="#using-state">Using State</a></li>
+    <li class="level2 nav-leaf"><a href="#long-term-state">Long-Term State</a></li>
     <li class="level1 nav-leaf"><a href="#stateful-combinators">Stateful Combinators</a></li>
   </ul>
 
@@ -218,7 +218,50 @@
         <p>Persist can be thought of as a composition of <code>fillReg</code> and <code>get</code>, or
         alternatively as a composition of <code>flatMap</code> and <code>pure</code>.</p>
         
-        <h3 id="using-state" class="section"><a class="anchor-link left" href="#using-state"><i class="icofont-laika link">&#xef71;</i></a>Using State</h3>
+        <h4 id="using-persistence" class="section"><a class="anchor-link left" href="#using-persistence"><i class="icofont-laika link">&#xef71;</i></a>Using Persistence</h4>
+        <p>One use of <code>persist</code> is to otherwise reduce the scope of an expensive <code>flatMap</code>:
+        the <code>flatMap</code> combinator is expensive because it has to process the body of the
+        function in full everytime it is executed, if the size of the body is reduced,
+        that will keep the parser faster. Currently, there is no primitive functionality
+        for parsing with respect to values inside registers, like so:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">string</span><span>(</span><span class="identifier">r</span><span>: </span><span class="type-name">Reg</span><span>[</span><span class="type-name">String</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">r</span><span>.</span><span class="identifier">get</span><span>.</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">string</span><span>(</span><span class="identifier">_</span><span>))</span></code></pre>
+        <p>The scope of the <code>flatMap</code> in that combinator is small, however, so is likely
+        much more efficient than one that didn&#39;t use persistence. With this, the
+        context-sensitive parsing of XML tags can be done:</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>.{</span><span class="identifier">unit</span><span>, </span><span class="identifier">atomic</span><span>, </span><span class="identifier">notFollowedBy</span><span>}
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">stringOfSome</span><span>, </span><span class="identifier">letter</span><span>}
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">optional</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">charLift</span><span>, </span><span class="identifier">stringLift</span><span>}
+
+</span><span class="keyword">val</span><span> </span><span class="identifier">openTag</span><span> = </span><span class="identifier">atomic</span><span>(</span><span class="char-literal">&#39;&lt;&#39;</span><span> &lt;~ </span><span class="identifier">notFollowedBy</span><span>(</span><span class="char-literal">&#39;/&#39;</span><span>))
+</span><span class="comment">// openTag: Parsley[Char] = parsley.Parsley@4b07e5d3
+</span><span class="keyword">val</span><span> </span><span class="identifier">tagName</span><span> = </span><span class="identifier">stringOfSome</span><span>(</span><span class="identifier">letter</span><span>)
+</span><span class="comment">// tagName: Parsley[String] = parsley.Parsley@6b7d8d98
+</span><span>
+</span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">content</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">optional</span><span>(</span><span class="identifier">tag</span><span>)
+</span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">tag</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = (</span><span class="identifier">openTag</span><span> ~&gt; </span><span class="identifier">tagName</span><span> &lt;~ </span><span class="char-literal">&#39;&gt;&#39;</span><span>).</span><span class="identifier">fillReg</span><span> { </span><span class="identifier">name</span><span> =&gt;
+    </span><span class="identifier">content</span><span> &lt;~ (</span><span class="string-literal">&quot;&lt;/&quot;</span><span> ~&gt; </span><span class="identifier">string</span><span>(</span><span class="identifier">name</span><span>) &lt;~ </span><span class="string-literal">&quot;&gt;&quot;</span><span>)
+}
+
+</span><span class="identifier">tag</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;&lt;hello&gt;&lt;/hello&gt;&quot;</span><span>)
+</span><span class="comment">// res2: parsley.Result[String, Unit] = Success(())
+</span><span class="identifier">tag</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;&lt;hello&gt;&lt;/hi&gt;&quot;</span><span>)
+</span><span class="comment">// res3: parsley.Result[String, Unit] = Failure((line 1, column 10):
+//   unexpected &quot;hi&gt;&quot;
+//   expected &quot;hello&quot;
+//   &gt;&lt;hello&gt;&lt;/hi&gt;
+//             ^^^)
+</span><span class="identifier">tag</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;&lt;a&gt;&lt;b&gt;&lt;/b&gt;&lt;/c&gt;&quot;</span><span>)
+</span><span class="comment">// res4: parsley.Result[String, Unit] = Failure((line 1, column 13):
+//   unexpected &quot;c&quot;
+//   expected &quot;a&quot;
+//   &gt;&lt;a&gt;&lt;b&gt;&lt;/b&gt;&lt;/c&gt;
+//                ^)</span></code></pre>
+        
+        <h3 id="long-term-state" class="section"><a class="anchor-link left" href="#long-term-state"><i class="icofont-laika link">&#xef71;</i></a>Long-Term State</h3>
+        <p>Persistence is an example of read-only state used to preserve a value for
+        later. Writable state can also be used for context-sensitive tasks, by tracking
+        a value over time.</p>
         
         <h2 id="stateful-combinators" class="section"><a class="anchor-link left" href="#stateful-combinators"><i class="icofont-laika link">&#xef71;</i></a>Stateful Combinators</h2>
 
