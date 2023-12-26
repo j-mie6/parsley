@@ -1,6 +1,12 @@
 {%
 laika.title = "`parsley.registers`"
 %}
+
+```scala mdoc:invisible
+import parsley.Parsley
+import parsley.character.string
+```
+
 # Context-Sensitive Parsing (`parsley.registers`)
 Normally, context-sensitive parsing can be done with monadic `flatMap`. However,
 in `parsley`, `flatMap` is a very expensive operation and is best avoided.
@@ -88,6 +94,43 @@ List.empty[Char].makeReg { r1 =>
 Persist can be thought of as a composition of `fillReg` and `get`, or
 alternatively as a composition of `flatMap` and `pure`.
 
-### Using State
+#### Using Persistence
+One use of `persist` is to otherwise reduce the scope of an expensive `flatMap`:
+the `flatMap` combinator is expensive because it has to process the body of the
+function in full everytime it is executed, if the size of the body is reduced,
+that will keep the parser faster. Currently, there is no primitive functionality
+for parsing with respect to values inside registers, like so:
+
+```scala mdoc:silent
+def string(r: Reg[String]): Parsley[String] = r.get.flatMap(parsley.character.string(_))
+```
+
+The scope of the `flatMap` in that combinator is small, however, so is likely
+much more efficient than one that didn't use persistence. With this, the
+context-sensitive parsing of XML tags can be done:
+
+```scala mdoc:to-string
+import parsley.Parsley.{unit, atomic, notFollowedBy}
+import parsley.character.{stringOfSome, letter}
+import parsley.combinator.optional
+import parsley.implicits.character.{charLift, stringLift}
+
+val openTag = atomic('<' <~ notFollowedBy('/'))
+val tagName = stringOfSome(letter)
+
+lazy val content: Parsley[Unit] = optional(tag)
+lazy val tag: Parsley[Unit] = (openTag ~> tagName <~ '>').fillReg { name =>
+    content <~ ("</" ~> string(name) <~ ">")
+}
+
+tag.parse("<hello></hello>")
+tag.parse("<hello></hi>")
+tag.parse("<a><b></b></c>")
+```
+
+### Long-Term State
+Persistence is an example of read-only state used to preserve a value for
+later. Writable state can also be used for context-sensitive tasks, by tracking
+a value over time.
 
 ## Stateful Combinators
