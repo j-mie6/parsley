@@ -93,6 +93,7 @@
     <li class="level2 nav-leaf"><a href="Parsley.html"><code>parsley.Parsley</code></a></li>
     <li class="level2 nav-leaf"><a href="character.html"><code>parsley.character</code></a></li>
     <li class="level2 nav-leaf"><a href="generic.html"><code>parsley.genericbridges</code></a></li>
+    <li class="level2 active nav-leaf"><a href="#"><code>parsley.position</code></a></li>
     <li class="level2 nav-leaf"><a href="registers.html"><code>parsley.registers</code></a></li>
     <li class="level2 nav-header"><code>parsley.expr</code></li>
     <li class="level3 nav-leaf"><a href="expr/chain.html"><code>chain</code></a></li>
@@ -130,6 +131,8 @@
   <p class="header"><a href="#"><code>parsley.position</code></a></p>
 
   <ul class="nav-list">
+    <li class="level1 nav-leaf"><a href="#position-extraction">Position Extraction</a></li>
+    <li class="level1 nav-leaf"><a href="#offset-extraction">Offset Extraction</a></li>
   </ul>
 
   <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/wiki-improvements/docs/api-guide/position.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
@@ -138,7 +141,23 @@
 
       <main class="content">
 
+        <h1 id="position-combinators-parsley-position" class="title">Position Combinators (<code>parsley.position</code>)</h1>
+        <p>During a parse, position information is tracked and recorded by <code>parsley</code>.
+        The <code>parsley.position</code> module contains combinators that can access this
+        information so that it can be used in the construction of the results.</p>
+        <div class="callout info">
+          <i class="icofont-laika info">&#xef4e;</i>
+          <p><em>The Scaladoc for this page can be found at <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/position$.html"><code>parsley.position</code></a>.</em></p>
+        </div>
         
+        <h2 id="position-extraction" class="section"><a class="anchor-link left" href="#position-extraction"><i class="icofont-laika link">&#xef71;</i></a>Position Extraction</h2>
+        <p>The <code>line</code> and <code>col</code> parsers will extract the line and column respectively. In
+        <code>parsley</code>, the first line and column are both 1. For convenience, the <code>pos</code>
+        parser is defined as <code>line.zip(col)</code>.</p>
+        
+        <h2 id="offset-extraction" class="section"><a class="anchor-link left" href="#offset-extraction"><i class="icofont-laika link">&#xef71;</i></a>Offset Extraction</h2>
+        <p>The <code>offset</code> parser can be used to obtain the raw underlying offset of
+        a parser, which can be used for calculations on the number of characters (not codepoints) a parser consumes, but should not be used to derive positions themselves.</p>
 
         
 <hr class="footer-rule"/>
