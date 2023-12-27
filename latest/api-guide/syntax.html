@@ -93,6 +93,7 @@
     <li class="level2 nav-leaf"><a href="Parsley.html"><code>parsley.Parsley</code></a></li>
     <li class="level2 nav-leaf"><a href="character.html"><code>parsley.character</code></a></li>
     <li class="level2 nav-leaf"><a href="generic.html"><code>parsley.genericbridges</code></a></li>
+    <li class="level2 active nav-leaf"><a href="#"><code>parsley.implicits</code></a></li>
     <li class="level2 nav-leaf"><a href="position.html"><code>parsley.position</code></a></li>
     <li class="level2 nav-leaf"><a href="registers.html"><code>parsley.registers</code></a></li>
     <li class="level2 nav-header"><code>parsley.expr</code></li>
@@ -131,6 +132,8 @@
   <p class="header"><a href="#"><code>parsley.implicits</code></a></p>
 
   <ul class="nav-list">
+    <li class="level1 nav-leaf"><a href="#implicit-conversions">Implicit Conversions</a></li>
+    <li class="level1 nav-leaf"><a href="#improved-sequencing">Improved Sequencing</a></li>
   </ul>
 
   <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/wiki-improvements/docs/api-guide/syntax.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
@@ -140,6 +143,88 @@
       <main class="content">
 
         <h1 id="synactic-extensions-parsley-implicits" class="title">Synactic Extensions (<code>parsley.implicits</code>)</h1>
+        <p>The <code>parsley.implicits</code> package contains several modules that enable new &quot;syntax&quot;
+        on parsers or other values. There are currently four such modules:</p>
+        <ul>
+          <li><code>parsley.implicits.character</code>: contains conversions that allow for character
+          and string literals to serve as parsers.</li>
+          <li><code>parsley.implicits.combinator</code>: contains an implicit function that allows any
+          parser to drop its result when required by the type of another combinator.</li>
+          <li><code>parsley.implicits.lift</code>: enables the <code>lift</code> method on functions to allow them
+          to work on parsers.</li>
+          <li><code>parsley.implicits.zipped</code>: enables the <code>zipped</code> method on tuples of parsers to
+          sequence and combine their results with a single function.</li>
+        </ul>
+        
+        <h2 id="implicit-conversions" class="section"><a class="anchor-link left" href="#implicit-conversions"><i class="icofont-laika link">&#xef71;</i></a>Implicit Conversions</h2>
+        <p>The <code>charLift</code> and <code>stringLift</code> conversions in <code>parsley.implicits.character</code>
+        allow for Scala character and string literals to work directly as parsers for
+        those specific literals. For example:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">_</span><span>
+
+</span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="char-literal">&#39;a&#39;</span><span> ~&gt; </span><span class="string-literal">&quot;bc&quot;</span><span>
+</span><span class="comment">// p: parsley.Parsley[String] = parsley.Parsley@69151565
+</span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>)
+</span><span class="comment">// res0: parsley.Result[String, String] = Success(bc)
+</span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;axy&quot;</span><span>)
+</span><span class="comment">// res1: parsley.Result[String, String] = Failure((line 1, column 2):
+//   unexpected &quot;xy&quot;
+//   expected &quot;bc&quot;
+//   &gt;axy
+//     ^^)</span></code></pre>
+        <p>In the above, <code>&#39;a&#39;: Parsley[Char]</code>, and <code>&quot;bc&quot;: Parsley[String]</code>.</p>
+        <div class="callout error">
+          <i class="icofont-laika error">&#xeedd;</i>
+          <p>If you see an error like this, when you otherwise have the implicit imported:</p>
+          <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;cb&quot;</span><span> &lt;~ </span><span class="char-literal">&#39;a&#39;</span><span>
+</span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;cba&quot;</span><span>)
+</span><span class="comment">// error: value &lt;~ is not a member of String
+// val p = &quot;cb&quot; &lt;~ &#39;a&#39;
+//         ^^^^^^^</span></code></pre>
+          <p>Then this likely means that you have <em>another</em> conversion in scope and the
+          ambiguity is not resolved. If the arguments reversed, this will become more
+          evident:</p>
+          <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="char-literal">&#39;a&#39;</span><span> ~&gt; </span><span class="string-literal">&quot;bc&quot;</span><span>
+</span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>)
+</span><span class="comment">// error: type mismatch;
+//  found   : String(&quot;bc&quot;)
+//  required: parsley.Parsley[?]
+// Note that implicit conversions are not applicable because they are ambiguous:
+//  both method stringLift in object character of type (str: String): parsley.Parsley[String]
+//  and method implicitSymbol in class ImplicitSymbol of type (s: String): parsley.Parsley[Unit]
+//  are possible conversion functions from String(&quot;bc&quot;) to parsley.Parsley[?]
+// val p = &#39;a&#39; ~&gt; &quot;bc&quot;
+//                ^^^^</span></code></pre>
+          <p>In this case, a <code>lexer.lexeme.symbol.implicits</code> is imported and is clashing.</p>
+        </div>
+        
+        <h2 id="improved-sequencing" class="section"><a class="anchor-link left" href="#improved-sequencing"><i class="icofont-laika link">&#xef71;</i></a>Improved Sequencing</h2>
+        <p>Both the <code>lift</code> and <code>zipped</code> modules within <code>parsley.implicits</code> enable new
+        ways of sequencing parsers in an idiomatic way. The <code>lift</code> syntax is perhaps
+        more natural, where the function to apply appears to the left of the arguments:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">char</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">lift</span><span>.</span><span class="identifier">_</span><span>
+
+</span><span class="keyword">val</span><span> </span><span class="identifier">add</span><span> = (</span><span class="identifier">x</span><span>: </span><span class="type-name">Int</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Int</span><span>) =&gt; </span><span class="identifier">x</span><span> + </span><span class="identifier">y</span><span>
+</span><span class="comment">// add: (Int, Int) =&gt; Int = &lt;function2&gt;
+</span><span class="identifier">add</span><span>.</span><span class="identifier">lift</span><span>(</span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;a&#39;</span><span>).</span><span class="identifier">as</span><span>(</span><span class="number-literal">5</span><span>), </span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;b&#39;</span><span>).</span><span class="identifier">as</span><span>(</span><span class="number-literal">6</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;ab&quot;</span><span>)
+</span><span class="comment">// res4: parsley.Result[String, Int] = Success(11)</span></code></pre>
+        <p>However, while <code>lift</code> works well when the function has its type fully elaborated,
+        it does not infer well:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span>(</span><span class="identifier">_</span><span> + </span><span class="identifier">_</span><span>).</span><span class="identifier">lift</span><span>(</span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;a&#39;</span><span>).</span><span class="identifier">as</span><span>(</span><span class="number-literal">5</span><span>), </span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;b&#39;</span><span>).</span><span class="identifier">as</span><span>(</span><span class="number-literal">6</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;ab&quot;</span><span>)
+</span><span class="comment">// error: missing parameter type for expanded function ((&lt;x$1: error&gt;, x$2) =&gt; x$1.$plus(x$2))
+// (_ + _).lift(char(&#39;a&#39;).as(5), char(&#39;b&#39;).as(6)).parse(&quot;ab&quot;)
+//  ^
+// error: missing parameter type for expanded function ((&lt;x$1: error&gt;, &lt;x$2: error&gt;) =&gt; x$1.$plus(x$2))
+// (_ + _).lift(char(&#39;a&#39;).as(5), char(&#39;b&#39;).as(6)).parse(&quot;ab&quot;)
+//      ^</span></code></pre>
+        <p>This is where <code>zipped</code> comes in: by placing the function to the right of its
+        arguments, it can infer the type of the function based on the arguments. This
+        may appear slightly less natural, however:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">zipped</span><span>.</span><span class="identifier">_</span><span>
+(</span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;a&#39;</span><span>).</span><span class="identifier">as</span><span>(</span><span class="number-literal">5</span><span>), </span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;b&#39;</span><span>).</span><span class="identifier">as</span><span>(</span><span class="number-literal">6</span><span>)).</span><span class="identifier">zipped</span><span>(</span><span class="identifier">_</span><span> + </span><span class="identifier">_</span><span>).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;ab&quot;</span><span>)
+</span><span class="comment">// res6: parsley.Result[String, Int] = Success(11)</span></code></pre>
+        <p>Both <code>lift</code> and <code>zipped</code> work for up to 22-argument functions.</p>
 
         
 <hr class="footer-rule"/>
