@@ -228,15 +228,15 @@
         <p>The scope of the <code>flatMap</code> in that combinator is small, however, so is likely
         much more efficient than one that didn&#39;t use persistence. With this, the
         context-sensitive parsing of XML tags can be done:</p>
-        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>.{</span><span class="identifier">unit</span><span>, </span><span class="identifier">atomic</span><span>, </span><span class="identifier">notFollowedBy</span><span>}
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>.{</span><span class="identifier">atomic</span><span>, </span><span class="identifier">notFollowedBy</span><span>}
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">stringOfSome</span><span>, </span><span class="identifier">letter</span><span>}
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">optional</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">charLift</span><span>, </span><span class="identifier">stringLift</span><span>}
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">openTag</span><span> = </span><span class="identifier">atomic</span><span>(</span><span class="char-literal">&#39;&lt;&#39;</span><span> &lt;~ </span><span class="identifier">notFollowedBy</span><span>(</span><span class="char-literal">&#39;/&#39;</span><span>))
-</span><span class="comment">// openTag: Parsley[Char] = parsley.Parsley@4b07e5d3
+</span><span class="comment">// openTag: Parsley[Char] = parsley.Parsley@1a3f33dc
 </span><span class="keyword">val</span><span> </span><span class="identifier">tagName</span><span> = </span><span class="identifier">stringOfSome</span><span>(</span><span class="identifier">letter</span><span>)
-</span><span class="comment">// tagName: Parsley[String] = parsley.Parsley@6b7d8d98
+</span><span class="comment">// tagName: Parsley[String] = parsley.Parsley@791d7e6
 </span><span>
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">content</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">optional</span><span>(</span><span class="identifier">tag</span><span>)
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">tag</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = (</span><span class="identifier">openTag</span><span> ~&gt; </span><span class="identifier">tagName</span><span> &lt;~ </span><span class="char-literal">&#39;&gt;&#39;</span><span>).</span><span class="identifier">fillReg</span><span> { </span><span class="identifier">name</span><span> =&gt;
@@ -261,7 +261,98 @@
         <h3 id="long-term-state" class="section"><a class="anchor-link left" href="#long-term-state"><i class="icofont-laika link">&#xef71;</i></a>Long-Term State</h3>
         <p>Persistence is an example of read-only state used to preserve a value for
         later. Writable state can also be used for context-sensitive tasks, by tracking
-        a value over time.</p>
+        a value over time. Examples include whitespace-sensitivity or tracking matching
+        brackets.</p>
+        
+        <h4 id="matching-brackets" class="section"><a class="anchor-link left" href="#matching-brackets"><i class="icofont-laika link">&#xef71;</i></a>Matching Brackets</h4>
+        <p>The <code>local</code> combinator can be used to reset state after a specific context is
+        executed. It can be built primitively out of <code>get</code>, <code>put</code>, and <code>persist</code>. The
+        following parser reports the position of the last unclosed bracket that is
+        well-interleaved with the other kinds of brackets.</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">char</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.{</span><span class="identifier">eof</span><span>, </span><span class="identifier">skipMany</span><span>}
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">patterns</span><span>.</span><span class="type-name">VerifiedErrors</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">position</span><span>.</span><span class="identifier">pos</span><span>
+
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Brackets</span><span>(</span><span class="identifier">open</span><span>: </span><span class="type-name">Char</span><span>, </span><span class="identifier">position</span><span>: (</span><span class="type-name">Int</span><span>, </span><span class="type-name">Int</span><span>)) {
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">enter</span><span>(</span><span class="identifier">c</span><span>: </span><span class="type-name">Char</span><span>, </span><span class="identifier">p</span><span>: (</span><span class="type-name">Int</span><span>, </span><span class="type-name">Int</span><span>)) = {
+        </span><span class="keyword">val</span><span> (</span><span class="identifier">line</span><span>, </span><span class="identifier">col</span><span>) = </span><span class="identifier">p</span><span>
+        </span><span class="comment">// adjust the column, because it was parsed post-bracket
+</span><span>        </span><span class="keyword">this</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">open</span><span> = </span><span class="identifier">c</span><span>, </span><span class="identifier">position</span><span> = (</span><span class="identifier">line</span><span>, </span><span class="identifier">col</span><span>-</span><span class="number-literal">1</span><span>))
+    }
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">missingClose</span><span> = </span><span class="string-literal">s&quot;unclosed </span><span class="substitution">$open</span><span class="string-literal"> originating at </span><span class="substitution">$position</span><span class="string-literal">&quot;</span><span>
+}
+</span><span class="keyword">object</span><span> </span><span class="type-name">Brackets</span><span> {
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">empty</span><span> = </span><span class="type-name">Brackets</span><span>(</span><span class="number-literal">0</span><span>, </span><span class="literal-value">null</span><span>) </span><span class="comment">// this will never be matched on
+</span><span>    </span><span class="keyword">def</span><span> </span><span class="declaration-name">toOpen</span><span>(</span><span class="identifier">c</span><span>: </span><span class="type-name">Char</span><span>) = </span><span class="identifier">c</span><span> </span><span class="keyword">match</span><span> {
+        </span><span class="keyword">case</span><span> </span><span class="char-literal">&#39;)&#39;</span><span> =&gt; </span><span class="char-literal">&#39;(&#39;</span><span>
+        </span><span class="keyword">case</span><span> </span><span class="char-literal">&#39;]&#39;</span><span> =&gt; </span><span class="char-literal">&#39;[&#39;</span><span>
+        </span><span class="keyword">case</span><span> </span><span class="char-literal">&#39;}&#39;</span><span> =&gt; </span><span class="char-literal">&#39;{&#39;</span><span>
+    }
+}
+
+</span><span class="keyword">def</span><span> </span><span class="declaration-name">brackets</span><span> = </span><span class="type-name">Brackets</span><span>.</span><span class="identifier">empty</span><span>.</span><span class="identifier">makeReg</span><span> { </span><span class="identifier">bs</span><span> =&gt;
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">open</span><span>(</span><span class="identifier">c</span><span>: </span><span class="type-name">Char</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] =
+        </span><span class="identifier">char</span><span>(</span><span class="identifier">c</span><span>) ~&gt; </span><span class="identifier">bs</span><span>.</span><span class="identifier">modify</span><span>(</span><span class="identifier">pos</span><span>.</span><span class="identifier">map</span><span>[</span><span class="type-name">Brackets</span><span> =&gt; </span><span class="type-name">Brackets</span><span>](</span><span class="identifier">p</span><span> =&gt; </span><span class="identifier">_</span><span>.</span><span class="identifier">enter</span><span>(</span><span class="identifier">c</span><span>, </span><span class="identifier">p</span><span>)))
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">close</span><span>(</span><span class="identifier">c</span><span>: </span><span class="type-name">Char</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] =
+        </span><span class="identifier">char</span><span>(</span><span class="identifier">c</span><span>).</span><span class="identifier">void</span><span> | </span><span class="identifier">bs</span><span>.</span><span class="identifier">get</span><span>.</span><span class="identifier">verifiedUnexpected</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">missingClose</span><span>)
+
+    </span><span class="comment">// ensure it is reset
+</span><span>    </span><span class="keyword">def</span><span> </span><span class="declaration-name">scope</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">bs</span><span>.</span><span class="identifier">local</span><span>(</span><span class="identifier">identity</span><span>[</span><span class="type-name">Brackets</span><span>])(</span><span class="identifier">p</span><span>)
+
+    </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">matching</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">scope</span><span> {
+        </span><span class="identifier">skipMany</span><span> {
+              </span><span class="identifier">open</span><span>(</span><span class="char-literal">&#39;(&#39;</span><span>) ~&gt; </span><span class="identifier">matching</span><span> &lt;~ </span><span class="identifier">close</span><span>(</span><span class="char-literal">&#39;)&#39;</span><span>)
+            | </span><span class="identifier">open</span><span>(</span><span class="char-literal">&#39;[&#39;</span><span>) ~&gt; </span><span class="identifier">matching</span><span> &lt;~ </span><span class="identifier">close</span><span>(</span><span class="char-literal">&#39;]&#39;</span><span>)
+            | </span><span class="identifier">open</span><span>(</span><span class="char-literal">&#39;{&#39;</span><span>) ~&gt; </span><span class="identifier">matching</span><span> &lt;~ </span><span class="identifier">close</span><span>(</span><span class="char-literal">&#39;}&#39;</span><span>)
+        }
+    }
+    </span><span class="identifier">matching</span><span> &lt;~ </span><span class="identifier">eof</span><span>
+}</span></code></pre>
+        <p>The above parser is designed to report where the last unclosed bracket
+        was. It creates a register <code>bs</code> that stores a <code>Brackets</code>, which tracks
+        the last open character and its position. Then, whenever a bracket is
+        entered, <code>matching</code> will save the existing information using the <code>local</code>
+        combinator. Giving it the <code>identity</code> function will mean it will simply restore
+        the existing state after it returns. Whenever an open bracket is parsed, it
+        will write its position into the state (lagging by one character), and then
+        if the corresponding closing bracket cannot be parsed, it will use an
+        unconditional <a href="errors/patterns.html#verified-errors"><em>Verified Error</em></a> to report a message based on the last opened bracket. The results are below:</p>
+        <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="identifier">brackets</span><span>
+</span><span class="comment">// p: Parsley[Unit] = parsley.Parsley@7b865c7f
+</span><span>
+</span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;()()()&quot;</span><span>)
+</span><span class="comment">// res5: parsley.Result[String, Unit] = Success(())
+</span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;[][][]&quot;</span><span>)
+</span><span class="comment">// res6: parsley.Result[String, Unit] = Success(())
+</span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;{}[]()&quot;</span><span>)
+</span><span class="comment">// res7: parsley.Result[String, Unit] = Success(())
+</span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;[[[[[]]]]]&quot;</span><span>)
+</span><span class="comment">// res8: parsley.Result[String, Unit] = Success(())
+</span><span>
+</span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;([)]&quot;</span><span>)
+</span><span class="comment">// res9: parsley.Result[String, Unit] = Failure((line 1, column 3):
+//   unexpected &quot;)&quot;
+//   expected &quot;(&quot;, &quot;[&quot;, &quot;]&quot;, or &quot;{&quot;
+//   unclosed [ originating at (1,2)
+//   &gt;([)]
+//      ^)
+</span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;({(&quot;</span><span>)
+</span><span class="comment">// res10: parsley.Result[String, Unit] = Failure((line 1, column 4):
+//   unexpected end of input
+//   expected &quot;(&quot;, &quot;)&quot;, &quot;[&quot;, or &quot;{&quot;
+//   unclosed ( originating at (1,3)
+//   &gt;({(
+//       ^)
+</span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;()[]{[(){}}&quot;</span><span>)
+</span><span class="comment">// res11: parsley.Result[String, Unit] = Failure((line 1, column 11):
+//   unexpected &quot;}&quot;
+//   expected &quot;(&quot;, &quot;[&quot;, &quot;]&quot;, or &quot;{&quot;
+//   unclosed [ originating at (1,6)
+//   &gt;()[]{[(){}}
+//              ^)</span></code></pre>
+        <p>Given the relatively simple construction, it works
+        quite well, and efficiently too: no <code>flatMap</code> necessary!</p>
         
         <h2 id="stateful-combinators" class="section"><a class="anchor-link left" href="#stateful-combinators"><i class="icofont-laika link">&#xef71;</i></a>Stateful Combinators</h2>
 
