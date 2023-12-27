@@ -236,5 +236,37 @@ is added into this set every iteration. When the loop completes (successfully), 
 would use `persist` and a mutable set (along with `impure` and `fresh`): this, of course, still uses a register.
 
 #### Whitespace-Sensitive Languages
+Another application of long-term state is to track indentation levels in
+a whitespace-sensitive language: here the start of a new cause, statement
+or block will record the current column number, and further statements
+must verify that the column number is correct. Leaving a block will restore
+the identation level back to how it was before. This is similar to how
+matching brackets worked.
 
 ## Stateful Combinators
+For some applications, a more structured strategy for tracking state can be
+useful. The `forP` combinators allow for looping where the a stateful variable
+is used to control the control flow. For instance, the classic context-sensitive
+grammar of `a^n b^n c^n` can be matched effectively using a register and a `forP`:
+
+```scala mdoc:to-string
+import parsley.Parsley.pure
+import parsley.registers.forP
+val abcs = 0.makeReg { i =>
+    skipMany('a' ~> i.modify(_ + 1)) ~>
+    forP[Int](i.get, pure(_ > 0), pure(_ - 1)) {
+        'b'
+    } ~>
+    forP[Int](i.get, pure(_ > 0), pure(_ - 1)) {
+        'c'
+    } ~>
+    i.get <~ eof
+}
+
+abcs.parse("aabbcc")
+abcs.parse("aaaaabbbbbccccc")
+abcs.parse("aaaabbbbbbcccc")
+```
+
+First, as many `a`s as possible are read and each one will increment the counter
+`i`. Then, run the equivalent of a C-style: `for (int j = i, j > 0, j -= 1)` reading `b` and `c`. Internally, `forP` will use a register to track its state.
