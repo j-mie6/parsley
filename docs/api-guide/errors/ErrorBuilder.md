@@ -3,7 +3,7 @@ laika.title = "`ErrorBuilder`"
 %}
 
 ```scala mdoc:invisible
-import parsley.errors.{ErrorBuilder, Token}
+import parsley.errors.ErrorBuilder
 ```
 
 ## Constructing Custom Errors
@@ -203,7 +203,7 @@ builder.format (
 As an example of how to construct an `ErrorBuilder` for a type,
 consider the following representation of `TestError`:
 
-```scala mdoc:silent:nest
+```scala
 case class TestError(pos: (Int, Int), lines: TestErrorLines)
 
 sealed trait TestErrorLines

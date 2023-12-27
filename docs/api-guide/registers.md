@@ -4,7 +4,6 @@ laika.title = "`parsley.registers`"
 
 ```scala mdoc:invisible
 import parsley.Parsley
-import parsley.character.string
 ```
 
 # Context-Sensitive Parsing (`parsley.registers`)
@@ -110,7 +109,7 @@ much more efficient than one that didn't use persistence. With this, the
 context-sensitive parsing of XML tags can be done:
 
 ```scala mdoc:to-string
-import parsley.Parsley.{unit, atomic, notFollowedBy}
+import parsley.Parsley.{atomic, notFollowedBy}
 import parsley.character.{stringOfSome, letter}
 import parsley.combinator.optional
 import parsley.implicits.character.{charLift, stringLift}
@@ -131,6 +130,82 @@ tag.parse("<a><b></b></c>")
 ### Long-Term State
 Persistence is an example of read-only state used to preserve a value for
 later. Writable state can also be used for context-sensitive tasks, by tracking
-a value over time.
+a value over time. Examples include whitespace-sensitivity or tracking matching
+brackets.
+
+#### Matching Brackets
+The `local` combinator can be used to reset state after a specific context is
+executed. It can be built primitively out of `get`, `put`, and `persist`. The
+following parser reports the position of the last unclosed bracket that is
+well-interleaved with the other kinds of brackets.
+
+```scala mdoc:to-string
+import parsley.character.char
+import parsley.combinator.{eof, skipMany}
+import parsley.errors.patterns.VerifiedErrors
+import parsley.position.pos
+
+case class Brackets(open: Char, position: (Int, Int)) {
+    def enter(c: Char, p: (Int, Int)) = {
+        val (line, col) = p
+        // adjust the column, because it was parsed post-bracket
+        this.copy(open = c, position = (line, col-1))
+    }
+    def missingClose = s"unclosed $open originating at $position"
+}
+object Brackets {
+    def empty = Brackets(0, null) // this will never be matched on
+    def toOpen(c: Char) = c match {
+        case ')' => '('
+        case ']' => '['
+        case '}' => '{'
+    }
+}
+
+def brackets = Brackets.empty.makeReg { bs =>
+    def open(c: Char): Parsley[Unit] =
+        char(c) ~> bs.modify(pos.map[Brackets => Brackets](p => _.enter(c, p)))
+    def close(c: Char): Parsley[Unit] =
+        char(c).void | bs.get.verifiedUnexpected(_.missingClose)
+
+    // ensure it is reset
+    def scope[A](p: Parsley[A]): Parsley[A] = bs.local(identity[Brackets])(p)
+
+    lazy val matching: Parsley[Unit] = scope {
+        skipMany {
+              open('(') ~> matching <~ close(')')
+            | open('[') ~> matching <~ close(']')
+            | open('{') ~> matching <~ close('}')
+        }
+    }
+    matching <~ eof
+}
+```
+
+The above parser is designed to report where the last unclosed bracket
+was. It creates a register `bs` that stores a `Brackets`, which tracks
+the last open character and its position. Then, whenever a bracket is
+entered, `matching` will save the existing information using the `local`
+combinator. Giving it the `identity` function will mean it will simply restore
+the existing state after it returns. Whenever an open bracket is parsed, it
+will write its position into the state (lagging by one character), and then
+if the corresponding closing bracket cannot be parsed, it will use an
+unconditional [*Verified Error*][*Verified Errors*] to report a message based on the last opened bracket. The results are below:
+
+```scala mdoc:to-string
+val p = brackets
+
+p.parse("()()()")
+p.parse("[][][]")
+p.parse("{}[]()")
+p.parse("[[[[[]]]]]")
+
+p.parse("([)]")
+p.parse("({(")
+p.parse("()[]{[(){}}")
+```
+
+Given the relatively simple construction, it works
+quite well, and efficiently too: no `flatMap` necessary!
 
 ## Stateful Combinators
