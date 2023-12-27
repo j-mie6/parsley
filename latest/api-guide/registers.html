@@ -234,9 +234,9 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">charLift</span><span>, </span><span class="identifier">stringLift</span><span>}
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">openTag</span><span> = </span><span class="identifier">atomic</span><span>(</span><span class="char-literal">&#39;&lt;&#39;</span><span> &lt;~ </span><span class="identifier">notFollowedBy</span><span>(</span><span class="char-literal">&#39;/&#39;</span><span>))
-</span><span class="comment">// openTag: Parsley[Char] = parsley.Parsley@1a3f33dc
+</span><span class="comment">// openTag: Parsley[Char] = parsley.Parsley@e77378
 </span><span class="keyword">val</span><span> </span><span class="identifier">tagName</span><span> = </span><span class="identifier">stringOfSome</span><span>(</span><span class="identifier">letter</span><span>)
-</span><span class="comment">// tagName: Parsley[String] = parsley.Parsley@791d7e6
+</span><span class="comment">// tagName: Parsley[String] = parsley.Parsley@6692eeb5
 </span><span>
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">content</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">optional</span><span>(</span><span class="identifier">tag</span><span>)
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">tag</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = (</span><span class="identifier">openTag</span><span> ~&gt; </span><span class="identifier">tagName</span><span> &lt;~ </span><span class="char-literal">&#39;&gt;&#39;</span><span>).</span><span class="identifier">fillReg</span><span> { </span><span class="identifier">name</span><span> =&gt;
@@ -313,13 +313,13 @@
         was. It creates a register <code>bs</code> that stores a <code>Brackets</code>, which tracks
         the last open character and its position. Then, whenever a bracket is
         entered, <code>matching</code> will save the existing information using the <code>local</code>
-        combinator. Giving it the <code>identity</code> function will mean it will simply restore
+        combinator: giving it the <code>identity</code> function will mean it will simply restore
         the existing state after it returns. Whenever an open bracket is parsed, it
         will write its position into the state (lagging by one character), and then
         if the corresponding closing bracket cannot be parsed, it will use an
         unconditional <a href="errors/patterns.html#verified-errors"><em>Verified Error</em></a> to report a message based on the last opened bracket. The results are below:</p>
         <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="identifier">brackets</span><span>
-</span><span class="comment">// p: Parsley[Unit] = parsley.Parsley@7b865c7f
+</span><span class="comment">// p: Parsley[Unit] = parsley.Parsley@4b4a1ec3
 </span><span>
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;()()()&quot;</span><span>)
 </span><span class="comment">// res5: parsley.Result[String, Unit] = Success(())
@@ -353,6 +353,27 @@
 //              ^)</span></code></pre>
         <p>Given the relatively simple construction, it works
         quite well, and efficiently too: no <code>flatMap</code> necessary!</p>
+        
+        <h4 id="tail-recursive-combinators" class="section"><a class="anchor-link left" href="#tail-recursive-combinators"><i class="icofont-laika link">&#xef71;</i></a>Tail-Recursive Combinators</h4>
+        <p>When combinators can be implemented tail recursively instead of
+        recursively, they can be more efficient. In the context of <code>parsley</code>,
+        tail-recursive combinators are ones which only return the result
+        of the last recursive call they make:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">tailRec</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="char-literal">&#39;a&#39;</span><span> ~&gt; </span><span class="identifier">tailRec</span><span> | </span><span class="identifier">unit</span></code></pre>
+        <p>The above is tail recursive, for instance. Combinators like <code>skipMany</code>
+        are implemented tail recursively, with additional optimisations to make
+        them more efficient: implementing new combinators in terms of <code>skipMany</code>
+        with registers to carry state is likely to be efficient. For example:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">setOf</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Set</span><span>[</span><span class="type-name">A</span><span>]] = {
+    </span><span class="type-name">Set</span><span>.</span><span class="identifier">empty</span><span>[</span><span class="type-name">A</span><span>].</span><span class="identifier">makeReg</span><span> { </span><span class="identifier">set</span><span> =&gt;
+        </span><span class="identifier">skipMany</span><span>(</span><span class="identifier">set</span><span>.</span><span class="identifier">modify</span><span>(</span><span class="identifier">p</span><span>.</span><span class="identifier">map</span><span>[</span><span class="type-name">Set</span><span>[</span><span class="type-name">A</span><span>] =&gt; </span><span class="type-name">Set</span><span>[</span><span class="type-name">A</span><span>]](</span><span class="identifier">x</span><span> =&gt; </span><span class="identifier">_</span><span> + </span><span class="identifier">x</span><span>))) ~&gt; </span><span class="identifier">set</span><span>.</span><span class="identifier">get</span><span>
+    }
+}</span></code></pre>
+        <p>In the above code, a set is carried around in a register, and a new element
+        is added into this set every iteration. When the loop completes (successfully), the set in the register is returned. A more efficient implementation, however,
+        would use <code>persist</code> and a mutable set (along with <code>impure</code> and <code>fresh</code>): this, of course, still uses a register.</p>
+        
+        <h4 id="whitespace-sensitive-languages" class="section"><a class="anchor-link left" href="#whitespace-sensitive-languages"><i class="icofont-laika link">&#xef71;</i></a>Whitespace-Sensitive Languages</h4>
         
         <h2 id="stateful-combinators" class="section"><a class="anchor-link left" href="#stateful-combinators"><i class="icofont-laika link">&#xef71;</i></a>Stateful Combinators</h2>
 
