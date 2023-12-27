@@ -186,7 +186,7 @@ The above parser is designed to report where the last unclosed bracket
 was. It creates a register `bs` that stores a `Brackets`, which tracks
 the last open character and its position. Then, whenever a bracket is
 entered, `matching` will save the existing information using the `local`
-combinator. Giving it the `identity` function will mean it will simply restore
+combinator: giving it the `identity` function will mean it will simply restore
 the existing state after it returns. Whenever an open bracket is parsed, it
 will write its position into the state (lagging by one character), and then
 if the corresponding closing bracket cannot be parsed, it will use an
@@ -207,5 +207,34 @@ p.parse("()[]{[(){}}")
 
 Given the relatively simple construction, it works
 quite well, and efficiently too: no `flatMap` necessary!
+
+#### Tail-Recursive Combinators
+When combinators can be implemented tail recursively instead of
+recursively, they can be more efficient. In the context of `parsley`,
+tail-recursive combinators are ones which only return the result
+of the last recursive call they make:
+
+```scala
+lazy val tailRec: Parsley[Unit] = 'a' ~> tailRec | unit
+```
+
+The above is tail recursive, for instance. Combinators like `skipMany`
+are implemented tail recursively, with additional optimisations to make
+them more efficient: implementing new combinators in terms of `skipMany`
+with registers to carry state is likely to be efficient. For example:
+
+```scala mdoc:silent
+def setOf[A](p: Parsley[A]): Parsley[Set[A]] = {
+    Set.empty[A].makeReg { set =>
+        skipMany(set.modify(p.map[Set[A] => Set[A]](x => _ + x))) ~> set.get
+    }
+}
+```
+
+In the above code, a set is carried around in a register, and a new element
+is added into this set every iteration. When the loop completes (successfully), the set in the register is returned. A more efficient implementation, however,
+would use `persist` and a mutable set (along with `impure` and `fresh`): this, of course, still uses a register.
+
+#### Whitespace-Sensitive Languages
 
 ## Stateful Combinators
