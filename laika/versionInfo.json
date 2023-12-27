@@ -4,6 +4,7 @@
   ],
   "linkTargets": [
     { "path": "/api-guide/Parsley.html", "versions": ["latest"] },
+    { "path": "/api-guide/character.html", "versions": ["latest"] },
     { "path": "/api-guide/errors/ErrorBuilder.html", "versions": ["latest"] },
     { "path": "/api-guide/errors/combinator.html", "versions": ["latest"] },
     { "path": "/api-guide/errors/patterns.html", "versions": ["latest"] },

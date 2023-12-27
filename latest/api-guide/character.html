@@ -6,7 +6,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="generator" content="Typelevel Laika + Helium Theme" />
-  <title>Understanding the API</title>
+  <title>`parsley.character`</title>
   
   <meta name="author" content="parsley contributors"/>
   
@@ -27,7 +27,7 @@
     <link rel="stylesheet" type="text/css" href="../../css/parsley-style.css" />
   <script src="../../helium/site/laika-helium.js"></script>
     <script src="../../helium/site/laika-versions.js"></script>
-  <script>initVersions("../../", "/api-guide/index.html", "latest", null);</script>
+  <script>initVersions("../../", "/api-guide/character.html", "latest", null);</script>
   
   <script> /* for avoiding page load transitions */ </script>
 </head>
@@ -89,8 +89,8 @@
     <li class="level1 nav-leaf"><a href="../">Home</a></li>
     <li class="level1 nav-leaf"><a href="../faq.html">FAQ</a></li>
     <li class="level1 nav-leaf"><a href="../cheatsheet.html">Cheatsheet</a></li>
-    <li class="level1 active nav-node"><a href="#">Understanding the API</a></li>
-    <li class="level2 nav-leaf"><a href="character.html"><code>parsley.character</code></a></li>
+    <li class="level1 nav-node"><a href="index.html">Understanding the API</a></li>
+    <li class="level2 active nav-leaf"><a href="#"><code>parsley.character</code></a></li>
     <li class="level2 nav-leaf"><a href="generic.html"><code>parsley.genericbridges</code></a></li>
     <li class="level2 nav-leaf"><a href="registers.html"><code>parsley.registers</code></a></li>
     <li class="level2 nav-header"><code>parsley.expr</code></li>
@@ -125,44 +125,55 @@
     <div id="container">
 
       
+<nav id="page-nav">
+  <p class="header"><a href="#"><code>parsley.character</code></a></p>
+
+  <ul class="nav-list">
+    <li class="level1 nav-leaf"><a href="#character-primitives">Character Primitives</a></li>
+    <li class="level1 nav-leaf"><a href="#string-building">String Building</a></li>
+    <li class="level1 nav-leaf"><a href="#pre-built-character-parsers">Pre-Built Character Parsers</a></li>
+  </ul>
+
+  <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/wiki-improvements/docs/api-guide/character.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
+</nav>
+
 
       <main class="content">
 
-        <h1 id="understanding-the-api" class="title">Understanding the API</h1>
+        <h1 id="parsing-characters" class="title">Parsing Characters</h1>
+        <p>The consumption of input is central to parsing. In <code>parsley</code>, the only way of
+        consuming input is by consuming characters, as customised token streams are
+        not supported. However, as <code>parsley</code> is based on Scala, which relies on
+        16-bit Basic-Multilingual Plane UTF16 characters, there are two modules for
+        input consumption: <code>character</code>, for 16-bit <code>Char</code>, and <code>unicode</code>, handling 32-bit <code>Int</code>s.</p>
+        <div class="callout info">
+          <i class="icofont-laika info">&#xef4e;</i>
+          <p><em>The Scaladoc for this page can be found at <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/character$.html"><code>parsley.character</code></a> and <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/unicode$.html"><code>parsley.unicode</code></a>.</em></p>
+        </div>
         
+        <h2 id="character-primitives" class="section"><a class="anchor-link left" href="#character-primitives"><i class="icofont-laika link">&#xef71;</i></a>Character Primitives</h2>
+        <p>There are three key input consumption primitives in <code>parsley</code>: <code>satisfy</code>, which
+        takes a predicate and parses any character for which that predicate returns true; <code>char</code>, which reads a specific character; and <code>string</code>, which reads a specific
+        sequence of characters. Technically, <code>char</code> and <code>string</code> can be built in terms of
+        <code>satisfy</code>, but would then lose their enhanced error message characteristics.</p>
+        <p>The <code>oneOf</code> and <code>noneOf</code> are based on <code>satisfy</code> but with better error messages,
+        based on the kind of range of characters they are provided with.
+        The <code>strings</code> and <code>trie</code> combinators can be used similarly to match a set of
+        strings: they are likely to parse these more efficiently than a manual
+        construction and may improve further in future.</p>
         
-        <h2 id="main-classes-and-packages" class="section"><a class="anchor-link left" href="#main-classes-and-packages"><i class="icofont-laika link">&#xef71;</i></a>Main Classes and Packages</h2>
-        <p>In <code>parsley</code>, everything resides within the <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley.html">parsley</a> package, and the major entry point is
-        <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/Parsley.html"><code>parsley.Parsley</code></a>.
-        There are a few modules of note:</p>
-        <ul>
-          <li><a href="Parsley.html"><code>parsley.Parsley</code></a>:
-          contains some of the basic and primitive combinators (at least those that aren&#39;t methods on
-          parsers).</li>
-          <li><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/combinator$.html"><code>parsley.combinator</code></a>:
-          contains handy combinators, this should be your first port of call
-          when you want to do something but are not sure a combinator exists for it. At the very
-          least, the <code>eof</code> combinator is very common.</li>
-          <li><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/character$.html"><code>parsley.character</code></a>:
-          contains a variety of combinators which deal with characters, key ones include <code>char</code>,
-          <code>satisfy</code> and <code>string</code>.</li>
-          <li><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/implicits$.html"><code>parsley.implicits</code></a>:
-          contains the very useful implicit conversion combinators. In particular, importing <code>charLift</code>
-          and <code>stringLift</code> allows you write character and string literals as if they were parsers
-          themselves. There are also implicit classes here which extend functions of any arity with a
-          corresponding <code>.lift</code> method, instead of using the <code>liftN</code> functions.</li>
-          <li><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/expr$.html"><code>parsley.expr</code></a>:
-          contains the machinery needed to generate expression parsers for you based, at its simplest, on
-          a table of operators in order of precedence. This is <em>well</em> worth a look (this is covered in
-          detail in <a href="../tutorial/building-expression-parsers.html#building-expression-parsers">Building Expression Parsers</a>.</li>
-          <li><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/token$.html"><code>parsley.token</code></a>:
-          contains a bunch of functionality for performing common lexing tasks, which is <em>very</em> configurable.
-          These parsers may also be optimised for performance.</li>
-        </ul>
+        <h2 id="string-building" class="section"><a class="anchor-link left" href="#string-building"><i class="icofont-laika link">&#xef71;</i></a>String Building</h2>
+        <p>It is possible to efficiently construct a <code>String</code> using the <code>stringOfMany</code> and
+        <code>stringOfSome</code> combinators. This can be used with either a character predicate (which turns out to be called <code>takeWhileP</code> in <code>megaparsec</code>), or can be given a
+        parser that consumes a character instead. The construction of the underlying
+        string is done efficiently with a <code>StringBuilder</code>. Note that, with the version
+        that takes a parser, the characters incorporated into the string are the ones
+        returned by the parser and not necessarily the ones the parser consumed.</p>
         
-        <h3 id="using-parsley-token-for-lexing" class="section"><a class="anchor-link left" href="#using-parsley-token-for-lexing"><i class="icofont-laika link">&#xef71;</i></a>Using <code>parsley.token</code> for Lexing</h3>
-        <p>Unlike Haskell libraries like <code>megaparsec</code> and <code>parsec</code>, <code>parsley</code> does not
-        tie the lexing functionality to the Haskell Report, instead supporting a superset of the functionality. The functionality is provided to the user by <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/token/Lexer.html">Lexer</a>, and this must be provided an value of type <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/token/descriptions/LexicalDesc.html">LexicalDesc</a>, which provides all the configuration necessary to describe the language and make the parsers.</p>
+        <h2 id="pre-built-character-parsers" class="section"><a class="anchor-link left" href="#pre-built-character-parsers"><i class="icofont-laika link">&#xef71;</i></a>Pre-Built Character Parsers</h2>
+        <p>Some pre-built parsers are bunched into <code>character</code> and <code>unicode</code>, which parse
+        specific sets of letter, with good error messages. Each will document the specific
+        set of characters they recognise.</p>
 
         
 <hr class="footer-rule"/>

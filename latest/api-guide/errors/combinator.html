@@ -90,6 +90,7 @@
     <li class="level1 nav-leaf"><a href="../../faq.html">FAQ</a></li>
     <li class="level1 nav-leaf"><a href="../../cheatsheet.html">Cheatsheet</a></li>
     <li class="level1 nav-node"><a href="../">Understanding the API</a></li>
+    <li class="level2 nav-leaf"><a href="../character.html"><code>parsley.character</code></a></li>
     <li class="level2 nav-leaf"><a href="../generic.html"><code>parsley.genericbridges</code></a></li>
     <li class="level2 nav-leaf"><a href="../registers.html"><code>parsley.registers</code></a></li>
     <li class="level2 nav-header"><code>parsley.expr</code></li>
@@ -301,7 +302,7 @@
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="type-name">ErrorMethods</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">digit</span><span> = </span><span class="identifier">satisfy</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">isDigit</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;digit&quot;</span><span>)
-</span><span class="comment">// digit: parsley.Parsley[Char] = parsley.Parsley@3163f8b7
+</span><span class="comment">// digit: parsley.Parsley[Char] = parsley.Parsley@4e2f58d7
 </span><span class="identifier">digit</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;a&quot;</span><span>)
 </span><span class="comment">// res9: parsley.Result[String, Char] = Failure((line 1, column 1):
 //   unexpected &quot;a&quot;
@@ -319,7 +320,7 @@
         error message properly lines up with the point the input was at when it
         entered the combinator - otherwise, the label may be inaccurate. For example:</p>
         <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">twoDigits</span><span> = (</span><span class="identifier">digit</span><span> *&gt; </span><span class="identifier">digit</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;two digits&quot;</span><span>)
-</span><span class="comment">// twoDigits: parsley.Parsley[Char] = parsley.Parsley@3ae74da9
+</span><span class="comment">// twoDigits: parsley.Parsley[Char] = parsley.Parsley@31d5f048
 </span><span class="identifier">twoDigits</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;a&quot;</span><span>)
 </span><span class="comment">// res10: parsley.Result[String, Char] = Failure((line 1, column 1):
 //   unexpected &quot;a&quot;
