@@ -90,6 +90,7 @@
     <li class="level1 nav-leaf"><a href="../faq.html">FAQ</a></li>
     <li class="level1 nav-leaf"><a href="../cheatsheet.html">Cheatsheet</a></li>
     <li class="level1 nav-node"><a href="index.html">Understanding the API</a></li>
+    <li class="level2 active nav-leaf"><a href="#"><code>parsley.Parsley</code></a></li>
     <li class="level2 nav-leaf"><a href="character.html"><code>parsley.character</code></a></li>
     <li class="level2 nav-leaf"><a href="generic.html"><code>parsley.genericbridges</code></a></li>
     <li class="level2 nav-leaf"><a href="registers.html"><code>parsley.registers</code></a></li>
@@ -129,7 +130,13 @@
   <p class="header"><a href="#"><code>parsley.Parsley</code></a></p>
 
   <ul class="nav-list">
-    <li class="level1 nav-leaf"><a href="#class-parsley">Class <code>Parsley</code></a></li>
+    <li class="level1 nav-node"><a href="#class-parsley">Class <code>Parsley</code></a></li>
+    <li class="level2 nav-leaf"><a href="#running-parsers">Running Parsers</a></li>
+    <li class="level2 nav-leaf"><a href="#altering-results">Altering Results</a></li>
+    <li class="level2 nav-leaf"><a href="#composing-parsers">Composing Parsers</a></li>
+    <li class="level2 nav-leaf"><a href="#filtering-results">Filtering Results</a></li>
+    <li class="level2 nav-leaf"><a href="#reductions">Reductions</a></li>
+    <li class="level2 nav-leaf"><a href="#special-methods">Special Methods</a></li>
     <li class="level1 nav-leaf"><a href="#object-parsley">Object <code>Parsley</code></a></li>
   </ul>
 
@@ -149,8 +156,160 @@
         </div>
         
         <h2 id="class-parsley" class="section"><a class="anchor-link left" href="#class-parsley"><i class="icofont-laika link">&#xef71;</i></a>Class <code>Parsley</code></h2>
+        <p>The <code>Parsley</code> class is the value class responsible for representing parsers.
+        It has methods largely grouped into the following categories:</p>
+        <ul>
+          <li>Methods to execute a parser, like <code>parse</code>.</li>
+          <li>Methods to alter the result of a parser, like <code>map</code>, <code>as</code>, <code>void</code>, and <code>span</code>.</li>
+          <li>Methods to sequence multiple parsers, like <code>flatMap</code>, <code>zip</code>, <code>&lt;~</code>, and <code>~&gt;</code>.</li>
+          <li>Methods to compose parsers in alternation, like <code>orElse</code>, <code>|</code>, and <code>&lt;+&gt;</code>.</li>
+          <li>Methods to filter the results of parsers, like <code>filter</code>, <code>collect</code>,
+          and <code>mapFilter</code>.</li>
+          <li>Methods to repeat a parser and collapse the results, like <code>foldLeft</code>,
+          <code>reduceRight</code>, and so on.</li>
+          <li>Special methods to help direct <code>parsley</code>, like <code>impure</code>, <code>overflows</code>, and
+          <code>force</code>.</li>
+        </ul>
+        
+        <h3 id="running-parsers" class="section"><a class="anchor-link left" href="#running-parsers"><i class="icofont-laika link">&#xef71;</i></a>Running Parsers</h3>
+        <p>The <code>parse</code> method runs a parser with some given input. The type signature has
+        an additional <code>Err</code> parameter, with an implicit requirement for
+        <code>ErrorBuilder[Err]</code>. This is discussed in
+        <a href="errors/ErrorBuilder.html#constructing-custom-errors"><code>parsley.errors.ErrorBuilder</code></a>, but for
+        the purposes of basic use, you can assume that Scala will automatically infer
+        this type to be <code>String</code>, for which an <code>ErrorBuilder[String]</code> does implicitly
+        exist.</p>
+        <p>By importing <code>parsley.io._</code>, another <code>parseFromFile</code> method is added to
+        <code>Parsley</code>, which works similarly, but loads the input from a file first.
+        In future versions of <code>parsley</code>, this import will no longer be needed, and
+        this will be an overloading of <code>parse</code>.</p>
+        
+        <h3 id="altering-results" class="section"><a class="anchor-link left" href="#altering-results"><i class="icofont-laika link">&#xef71;</i></a>Altering Results</h3>
+        <p>The results of an individual parser can be altered using <code>map</code> or combinators
+        derived from it, such as <code>as</code> or <code>void</code>. Note that the <code>#&gt;</code> combinator is
+        a symbolic alias for <code>as</code>, though as is now recommended.</p>
+        <div class="callout info">
+          <i class="icofont-laika info">&#xef4e;</i>
+          <p>Note that, whilst <code>as</code> can be implemented using <code>map</code>, it is
+          actually implemented with <code>~&gt;</code> and <code>pure</code>, which allows it to be better
+          optimised: if a result is not needed, <code>parsley</code> will ensure it is not
+          even generated to begin with.</p>
+        </div>
+        <p>The <code>span</code> combinator is special: it allows for the result of a parser to be discarded and instead the input consumed in the process of parsing is returned
+        instead. This can be used to avoid constructing strings again after parsing.</p>
+        
+        <h3 id="composing-parsers" class="section"><a class="anchor-link left" href="#composing-parsers"><i class="icofont-laika link">&#xef71;</i></a>Composing Parsers</h3>
+        <p>Some combinators allow for multiple parsers to be composed together to form
+        a new one. This comes in two forms: sequencing them one after another and
+        combining their results in some way, or combining them in parallel as two
+        independent choices.</p>
+        
+        <h4 id="sequencing" class="section"><a class="anchor-link left" href="#sequencing"><i class="icofont-laika link">&#xef71;</i></a>Sequencing</h4>
+        <p>The <code>zip</code> combinator is the most permissive way of combining two parsers together
+        whilst retaining both of their results; <code>p zip q</code> will parse <code>p</code>, then <code>q</code> and
+        then return a pair of their results. The symbolic version of <code>zip</code> is called <code>&lt;~&gt;</code>. When both results are not needed, <code>~&gt;</code> and <code>&lt;~</code> point towards a result to
+        keep, and discard the other.</p>
+        <p>Combinators like <code>&lt;*&gt;</code>, <code>&lt;**&gt;</code> and <code>&lt;::&gt;</code> perform a similar role to <code>zip</code>, but
+        combine the two results depending on the specific subtypes of the arguments.
+        Both <code>&lt;*&gt;</code> and <code>&lt;**&gt;</code> perform function application, and <code>&lt;::&gt;</code> adds the result
+        of the first parser onto a list returned by the second. These are all more
+        specific versions of the <code>parsley.lift._</code> combinators, but are often useful
+        in practice.</p>
+        <p>The <code>flatMap</code> combinator is another way of sequencing two parsers, but where
+        the second depends on the result of the first. In <code>parsley</code>, this operation
+        is <strong>very</strong> expensive, and it (and its derived <code>flatten</code> combinator) should
+        be avoided. One way of avoiding the <code>flatMap</code> combinator is to use features
+        found in <a href="registers.html#context-sensitive-parsing-parsley-registers"><code>parsley.registers</code></a>,
+        or to use <code>lift</code> combinators instead.</p>
+        
+        <h4 id="choice" class="section"><a class="anchor-link left" href="#choice"><i class="icofont-laika link">&#xef71;</i></a>Choice</h4>
+        <p>When one of two parsers can be used at a specific point, the <code>|</code> combinator (also
+        known as <code>orElse</code> or <code>&lt;|&gt;</code>) can be used to try one and then the other if the
+        first failed. The result of the successful branch, if any, will be returned.</p>
+        <div class="callout warning">
+          <i class="icofont-laika warning">&#xf026;</i>
+          <p>A parser <code>p | q</code> will <strong>only</strong> try <code>q</code> if the parser <code>p</code> failed having <strong>not</strong>
+          consumed any input. If it does consume input, then the overall parser will fail.
+          The <code>atomic</code> combinator can be used to prevent input consumption on failure,
+          however.</p>
+          <p>When <code>atomic</code> is used in this manner, it may cause error messages to be less
+          effective, or increase the runtime or complexity of the parser. Backtracking
+          in this way should be avoided if at all possible by factoring the grammar or
+          employing techniques like <a href="generic.html#normalising-or-disambiguating-data"><em>Disambiguator Bridges</em></a>.</p>
+        </div>
+        
+        <h3 id="filtering-results" class="section"><a class="anchor-link left" href="#filtering-results"><i class="icofont-laika link">&#xef71;</i></a>Filtering Results</h3>
+        <p>When the results of the parser need to be verified or conditionally transformed,
+        filtering combinators can be used. Largely, they will try and apply a function
+        to the result of a parser: if the function returns <code>false</code> or is otherwise not defined, then the parser will fail, and otherwise, it may perform some
+        transformation:</p>
+        <ul>
+          <li><code>filter</code> will check if the result of a parser matches some predicate, failing
+          otherwise. If successful, result is returned unchanged</li>
+          <li><code>collect</code> will attempt to apply a partial function to the result of the parser:
+          if the function is defined on that input, it is applied and the new result
+          returned; otherwise, the parser fails.</li>
+          <li><code>filterMap</code> is similar to <code>collect</code>, but works with a function that returns
+          <code>Option[B]</code>: if the function returns <code>None</code>, the parser fails; otherwise the
+          value inside the <code>Some</code> is returned.</li>
+        </ul>
+        <p>Largely, these combinators are more useful in their more advanced formulations,
+        those in <code>parsley.errors.combinator.ErrorMethods</code>, which produce detailed
+        error messages about filtering failures.</p>
+        
+        <h3 id="reductions" class="section"><a class="anchor-link left" href="#reductions"><i class="icofont-laika link">&#xef71;</i></a>Reductions</h3>
+        <p>There are a collection of methods that repeatedly perform a parser, and collapse
+        the generated results into a single value - like regular folds. There are three classes of reductive combinators:</p>
+        <ul>
+          <li><code>foldLeft</code>, <code>foldRight</code>: these combine up the results of repeated parsing
+          of a parser starting with an initial value and combining each result with
+          the running value. When the name of the combinator has a <code>1</code> at the end, it
+          means the parser must succeed at least once; otherwise the parser need not
+          succeed and the combinator will return the initial value (so long as no input
+          was consumed in the process).</li>
+          <li><code>reduceLeft</code>, <code>reduceRight</code>: these combine one or more parses of a parser
+          by a left or right reduction. As the parser will parse successfully at least
+          once, there is no need for a default or initial value.</li>
+          <li><code>reduceLeftOption</code>, <code>reduceRightOption</code>: like <code>reduceLeft</code> or <code>reduceRight</code>,
+          but returns <code>None</code> if the parser could not successfully parse once, and wraps
+          the result of reduction in a <code>Some</code> otherwise.</li>
+        </ul>
+        
+        <h3 id="special-methods" class="section"><a class="anchor-link left" href="#special-methods"><i class="icofont-laika link">&#xef71;</i></a>Special Methods</h3>
+        <p>The underlying implementation of <code>parsley</code> is more akin to a compiler than
+        a regular parser combinator library. Some methods exist to help direct the
+        internal compiler:</p>
+        <ul>
+          <li><code>force()</code>: this forces the compiler to optimise and compile the parser
+          right now, as opposed to when the parser is first executed. This should be
+          used on the top-level parser.</li>
+          <li><code>impure</code>: this tells the optimiser to not touch the parser, which may
+          be necessary when the parser deals with mutable objects. This is because
+          the optimiser assumes purity, and may factor out or even remove results
+          entirely, which would otherwise change the results. This can be used
+          across the parser.</li>
+          <li><code>overflows()</code>: this tells the compiler that the parser it is invoked on
+          will stack overflow during compilation. As a result, the compiler will
+          instead process the parser in a stack-safe trampoline. This should be
+          used on the top-level parser.</li>
+        </ul>
         
         <h2 id="object-parsley" class="section"><a class="anchor-link left" href="#object-parsley"><i class="icofont-laika link">&#xef71;</i></a>Object <code>Parsley</code></h2>
+        <p>The <code>Parsley</code> object contains a collection of primitive combinators that help
+        control a parser or its results. By far the most important ones are <code>pure</code> and
+        <code>atomic</code>:</p>
+        <ul>
+          <li><code>pure</code> injects a value into the parsing world without having any other effect
+          on the state of the parser.</li>
+          <li><code>atomic</code> ensures that a parser either consumes all its input and succeeds, or
+          none of it and fails. This is important because the <code>|</code> combinator will not
+          parse its second argument if the first failed having consumed input - <code>atomic</code>
+          helps by ensuring no input was consumed on failure.</li>
+        </ul>
+        <p>In addition to these, it also has <code>empty</code> and <code>empty(Int)</code>, which fail the parser
+        immediately (but recoverably) and produces a given width of caret (and <code>0</code> in the case of <code>empty</code>); <code>lookAhead</code> and <code>notFollowedBy</code> for dealing with positive
+        and negative lookahead; and <code>fresh</code>, which can be used like <code>pure</code> but evaluates
+        its argument every time, which is useful in the presence of mutable values.</p>
 
         
 <hr class="footer-rule"/>
