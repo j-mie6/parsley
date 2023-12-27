@@ -6,7 +6,7 @@ laika.title = "`ErrorBuilder`"
 import parsley.errors.ErrorBuilder
 ```
 
-## Constructing Custom Errors
+# Constructing Custom Errors
 By default, `parsley` returns errors that consist of `String`-based
 content. However, it is possible to build error messages into a
 datatype or format that is user-defined. This is done with the
