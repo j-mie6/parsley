@@ -206,11 +206,11 @@
 </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Var</span><span>(</span><span class="identifier">v</span><span>: </span><span class="type-name">String</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Expr</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Expr</span><span>] =
-    </span><span class="identifier">precedence</span><span>(</span><span class="identifier">ident</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Var</span><span>(</span><span class="identifier">_</span><span>)), </span><span class="identifier">int</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Num</span><span>(</span><span class="identifier">_</span><span>)))(
-        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="type-name">Mul</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>))),
-        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="type-name">Add</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>)), </span><span class="string-literal">&quot;-&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="type-name">Sub</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>)))
+    </span><span class="identifier">precedence</span><span>(</span><span class="identifier">ident</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Var</span><span>), </span><span class="identifier">int</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Num</span><span>))(
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Mul</span><span>),
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Add</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Sub</span><span>)
     )
-</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@1c6a7087
+</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@10db2628
 </span><span>
 </span><span class="identifier">expr</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;x+5*y&quot;</span><span>)
 </span><span class="comment">// res0: parsley.Result[String, Expr] = Success(Add(Var(x),Mul(Num(5),Var(y))))</span></code></pre>
@@ -284,12 +284,12 @@
 </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Var</span><span>(</span><span class="identifier">v</span><span>: </span><span class="type-name">String</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Atom</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Expr</span><span>] =
-    </span><span class="identifier">precedence</span><span>(
-        </span><span class="type-name">Atoms</span><span>(</span><span class="identifier">ident</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Var</span><span>(</span><span class="identifier">_</span><span>)), </span><span class="identifier">int</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Num</span><span>(</span><span class="identifier">_</span><span>))) :+
-        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="type-name">Mul</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>))) :+
-        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="type-name">Add</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>)), </span><span class="string-literal">&quot;-&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="type-name">Sub</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>)))
-    )
-</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@6729b353
+    </span><span class="identifier">precedence</span><span> {
+        </span><span class="type-name">Atoms</span><span>(</span><span class="identifier">ident</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Var</span><span>), </span><span class="identifier">int</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Num</span><span>)) :+
+        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Mul</span><span>) :+
+        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span class="identifier">as</span><span> </span><span class="type-name">Add</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Sub</span><span>)
+    }
+</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@5161e1d1
 </span><span>
 </span><span class="identifier">expr</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;x+5*y&quot;</span><span>)
 </span><span class="comment">// res1: parsley.Result[String, Expr] = Success(Add(Var(x),Mul(Num(5),Var(y))))</span></code></pre>
@@ -303,30 +303,30 @@
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">expr</span><span>.</span><span class="type-name">InfixR</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Expr</span><span>] =
-    </span><span class="identifier">precedence</span><span>(
-        </span><span class="type-name">Atoms</span><span>(</span><span class="identifier">ident</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Var</span><span>(</span><span class="identifier">_</span><span>)), </span><span class="identifier">int</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Num</span><span>(</span><span class="identifier">_</span><span>))) :+
-        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixR</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="type-name">Mul</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>))) :+
-        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="type-name">Add</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>)), </span><span class="string-literal">&quot;-&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="type-name">Sub</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>)))
-    )
+    </span><span class="identifier">precedence</span><span> {
+        </span><span class="type-name">Atoms</span><span>(</span><span class="identifier">ident</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Var</span><span>), </span><span class="identifier">int</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Num</span><span>)) :+
+        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixR</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Mul</span><span>) :+
+        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Add</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Sub</span><span>)
+    }
 </span><span class="comment">// error: type mismatch;
-//  found   : parsley.Parsley[(Term, Atom) =&gt; Mul]
+//  found   : parsley.Parsley[Mul.type]
 //  required: parsley.Parsley[parsley.expr.InfixR.Op[Term,Term]]
 //     (which expands to)  parsley.Parsley[(Term, Term) =&gt; Term]
-//         SOps(InfixR)(&quot;*&quot;.as(Mul(_, _))) :+
-//                      ^^^^^^^^^^^^^^^^^</span></code></pre>
+//         SOps(InfixR)(&quot;*&quot; as Mul) :+
+//                      ^^^^^^^^^^</span></code></pre>
         <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Expr</span><span>] =
-    </span><span class="identifier">precedence</span><span>(
-        </span><span class="type-name">Atoms</span><span>(</span><span class="identifier">ident</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Var</span><span>(</span><span class="identifier">_</span><span>)), </span><span class="identifier">int</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Num</span><span>(</span><span class="identifier">_</span><span>))) :+
-        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="type-name">Add</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>)), </span><span class="string-literal">&quot;-&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="type-name">Sub</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>))) :+
-        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="type-name">Mul</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>)))
-    )
+    </span><span class="identifier">precedence</span><span> {
+        </span><span class="type-name">Atoms</span><span>(</span><span class="identifier">ident</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Var</span><span>), </span><span class="identifier">int</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Num</span><span>)) :+
+        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Add</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Sub</span><span>) :+
+        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Mul</span><span>)
+    }
 </span><span class="comment">// error: inferred type arguments [Atom,Term] do not conform to method :+&#39;s type parameter bounds [Aʹ &gt;: Expr,B]
-//         Atoms(ident.map(Var(_)), int.map(Num(_))) :+
+//         Atoms(ident.map(Var), int.map(Num)) :+
 //         ^
 // error: type mismatch;
 //  found   : parsley.expr.Ops[Atom,Term]
 //  required: parsley.expr.Ops[Aʹ,B]
-//         SOps(InfixL)(&quot;*&quot;.as(Mul(_, _)))
+//         SOps(InfixL)(&quot;*&quot; as Mul)
 //         ^^^^^^^^^^^^</span></code></pre>
 
         

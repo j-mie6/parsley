@@ -201,7 +201,7 @@
         The <code>char</code> combinator is new: given a specific character it will parse that character only.
         We&#39;ll see how you can define this and <code>item</code> in terms of another, more general, combinator soon.
         Notice that the type of <code>ab</code> is no longer just a <code>Parsley[Char]</code>, but a <code>Parsley[(Char, Char)]</code>:
-        this is due to the <code>&lt;~&gt;</code> combinator with the following type (in a pseudo-syntax, for simplicity).</p>
+        this is due to the <code>&lt;~&gt;</code> (pronounced &quot;zip&quot;) combinator with the following type (in a pseudo-syntax, for simplicity).</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span>(</span><span class="identifier">_</span><span> &lt;~&gt; </span><span class="identifier">_</span><span>): (</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>], </span><span class="identifier">q</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">B</span><span>]) =&gt; </span><span class="type-name">Parsley</span><span>[(</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>)]</span></code></pre>
         <p>What this combinator does (pronounced &quot;zip&quot;) is that it first parses <code>p</code>, then <code>q</code> afterwards
         and then combines their results into a tuple. Suppose we had <code>char(&#39;a&#39;) &lt;~&gt; char(&#39;b&#39;) &lt;~&gt; char(&#39;c&#39;)</code>
@@ -211,7 +211,7 @@
 (</span><span class="identifier">_</span><span> &lt;~ </span><span class="identifier">_</span><span>): (</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>], </span><span class="identifier">q</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">B</span><span>]) =&gt; </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]</span></code></pre>
         <p>They are pronounced <code>then</code> and <code>then discard</code> respectively. Again, they both parse both <code>p</code> and then
         <code>q</code>, but they only return the result they are &quot;pointing&quot; at. Notice that <code>&lt;~&gt;</code> points at <em>both</em>
-        results. These are more commonly known as <code>*&gt;</code> and <code>&lt;*</code>, but they are otherwise identical, so use
+        results. These are more widely known as <code>*&gt;</code> and <code>&lt;*</code>, but they are otherwise identical, so use
         whatever resonates more strongly with you. We&#39;ll see soon how we can define them in terms of <code>&lt;~&gt;</code>
         to get a sense of how combinators can be built up in terms of more primitive ones.</p>
         
@@ -238,14 +238,14 @@
 </span><span class="identifier">digit</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;a&quot;</span><span>)
 </span><span class="comment">// res7: parsley.Result[String, Char] = Failure(
 // ...</span></code></pre>
-        <p>This is, however, already implemented by <code>parsley.character.digit</code>. Parsley is very rich in terms
+        <p>This is, however, already implemented by <code>parsley.character.digit</code>; <code>parsley</code> is very rich in terms
         of the combinators it supports out of the box, so do hunt around before reinventing the wheel!</p>
         
         <h3 id="changing-the-result-type" class="section"><a class="anchor-link left" href="#changing-the-result-type"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1.2 </span>Changing the result type</h3>
         <p>It&#39;s all well and good being able to sequence together reading single characters, but this doesn&#39;t
         exactly scale well to larger, more complex, parsers. Indeed, it&#39;s likely we aren&#39;t interested in an
         increasing deeply nested tuple! A good starting point for this is the humble <code>map</code> combinator:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">_</span><span>)): (</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>], </span><span class="identifier">f</span><span>: </span><span class="type-name">A</span><span> =&gt; </span><span class="type-name">B</span><span>) =&gt; </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">B</span><span>]</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">_</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">_</span><span>): (</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>], </span><span class="identifier">f</span><span>: </span><span class="type-name">A</span><span> =&gt; </span><span class="type-name">B</span><span>) =&gt; </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">B</span><span>]</span></code></pre>
         <p>This can be used to change the result of a parser <code>p</code> with the parser <code>f</code>, presumably into something
         more useful. Let&#39;s see a couple of examples of this in action! Firstly, let&#39;s suppose we wanted
         our <code>digit</code> combinator from before to return an <code>Int</code> instead of a <code>Char</code>...</p>
@@ -304,7 +304,7 @@
         far:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">char</span><span>, </span><span class="identifier">string</span><span>}
 
-(</span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>) &lt;* </span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;d&#39;</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abcd&quot;</span><span>)
+(</span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>) &lt;~ </span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;d&#39;</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abcd&quot;</span><span>)
 </span><span class="comment">// res14: parsley.Result[String, String] = Success(x = &quot;abc&quot;)
 </span><span>(</span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>) ~&gt; </span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;d&#39;</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abcd&quot;</span><span>)
 </span><span class="comment">// res15: parsley.Result[String, Char] = Success(x = &#39;d&#39;)
@@ -396,14 +396,16 @@
 // ...</span></code></pre>
         <p>Here, the <code>&lt;|&gt;</code> combinator (pronounced &quot;alt&quot; or &quot;or&quot;) allows the parser to try an alternative
         branch when the first fails (and so on for a longer chain of them). To be well typed, the <code>&lt;|&gt;</code>
-        combinator requires both branches to return the same type (or at least a super-type of both).
+        combinator requires both branches to return the same type (or at least a super-type of both). There is also a shorter way of writing this combinator,
+        called <code>|</code> - this doesn&#39;t work properly on the character literals though, for
+        obvious reasons.
         For this specific usecase, <code>character.oneOf(&#39;a&#39;, &#39;b&#39;)</code> would probably have been more appropriate.</p>
         <p>Let&#39;s carry on reinforcing the connections with what we&#39;ve seen so far, and see how sequencing
         and branching interact:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">charLift</span><span>, </span><span class="identifier">stringLift</span><span>}
 
-</span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="char-literal">&#39;a&#39;</span><span> *&gt; (</span><span class="string-literal">&quot;a&quot;</span><span> &lt;|&gt; </span><span class="string-literal">&quot;bc&quot;</span><span>) &lt;* </span><span class="char-literal">&#39;d&#39;</span><span>
+</span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="char-literal">&#39;a&#39;</span><span> ~&gt; (</span><span class="string-literal">&quot;a&quot;</span><span> | </span><span class="string-literal">&quot;bc&quot;</span><span>) &lt;~ </span><span class="char-literal">&#39;d&#39;</span><span>
 
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;bcd&quot;</span><span>) </span><span class="comment">// fails, there isn&#39;t an &#39;a&#39;
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;ad&quot;</span><span>) </span><span class="comment">// fails, why?
@@ -418,7 +420,7 @@
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">stringLift</span><span>
 
-</span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> &lt;|&gt; </span><span class="string-literal">&quot;def&quot;</span><span> &lt;|&gt; </span><span class="string-literal">&quot;dead&quot;</span></code></pre>
+</span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> | </span><span class="string-literal">&quot;def&quot;</span><span> | </span><span class="string-literal">&quot;dead&quot;</span></code></pre>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>)
 </span><span class="comment">// res27: parsley.Result[String, String] = Success(x = &quot;abc&quot;)
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>)
@@ -433,8 +435,8 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">stringLift</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">debug</span><span>.</span><span class="identifier">_</span><span>
 
-</span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = (</span><span class="string-literal">&quot;abc&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading abc&quot;</span><span>) &lt;|&gt;
-            (</span><span class="string-literal">&quot;def&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading def&quot;</span><span>) &lt;|&gt; </span><span class="string-literal">&quot;dead&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading dead&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;second branch&quot;</span><span>)
+</span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = (</span><span class="string-literal">&quot;abc&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading abc&quot;</span><span>) |
+            (</span><span class="string-literal">&quot;def&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading def&quot;</span><span>) | </span><span class="string-literal">&quot;dead&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading dead&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;second branch&quot;</span><span>)
         ).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;first branch&quot;</span><span>)</span></code></pre>
         <p>The <code>debug</code> combinator can be attached to any operation (by default Parsley associates <code>&lt;|&gt;</code> to the
         right, which is why I&#39;ve bracketed them this way round). It will provide printouts when it enters
@@ -495,14 +497,14 @@
         pointing at the first character. Then the second branch is taken as the alternative to the first:
         this time the parser tries to read <code>&quot;def&quot;</code> and gets <em>two characters</em> of the way through it before
         failing at the <code>&#39;a&#39;</code>. Notice though, that the second branch immediately exited without attempting
-        the third alternative! This is the key: when a parser fails but has <em>consumed input</em>, the <code>&lt;|&gt;</code>
+        the third alternative! This is the key: when a parser fails but has <em>consumed input</em>, the <code>|</code>
         combinator will not work. The reason for this is to improve the quality of error messages, as well
         as keeping parsers efficient. The &quot;best&quot; solution to this problem is to change our parser slightly
         to remove the common leading string of the last two alternatives like so:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">charLift</span><span>, </span><span class="identifier">stringLift</span><span>}
 
-</span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> &lt;|&gt; (</span><span class="string-literal">&quot;de&quot;</span><span> *&gt; (</span><span class="char-literal">&#39;f&#39;</span><span> #&gt; </span><span class="string-literal">&quot;def&quot;</span><span> &lt;|&gt; </span><span class="string-literal">&quot;ad&quot;</span><span> #&gt; </span><span class="string-literal">&quot;dead&quot;</span><span>))</span></code></pre>
+</span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> | (</span><span class="string-literal">&quot;de&quot;</span><span> ~&gt; (</span><span class="char-literal">&#39;f&#39;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>) | </span><span class="string-literal">&quot;ad&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="string-literal">&quot;dead&quot;</span><span>)))</span></code></pre>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>)
 </span><span class="comment">// res34: parsley.Result[String, String] = Success(x = &quot;abc&quot;)
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>)
@@ -510,28 +512,28 @@
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;dead&quot;</span><span>)
 </span><span class="comment">// res36: parsley.Result[String, String] = Success(x = &quot;dead&quot;)</span></code></pre>
         <p>In this version of the parser, the leading <code>&quot;de&quot;</code> has been factored out, leaving an alternative
-        of <code>&quot;f&quot; &lt;|&gt; &quot;ad&quot;</code> remaining. But the original parser returned the full string, and this wouldn&#39;t:
-        it would return &quot;abc&quot;, &quot;f&quot;, or &quot;ad&quot;. The <code>#&gt;</code> (pronounced &quot;as&quot;) combinator will replace the result
-        of parser on the left with the value found on the right (e.g. <code>&quot;123&quot; #&gt; 123 &lt;|&gt; &quot;456&quot; #&gt; 456</code> would
-        be <code>Parsley[Int]</code>). You can think of it as a <code>map</code> with the constant function or as <code>p *&gt; pure(x)</code>.
-        Using <code>#&gt;</code> we can replace the results of the last two parsers with the results we expected from
+        of <code>&quot;f&quot; | &quot;ad&quot;</code> remaining. But the original parser returned the full string, and this wouldn&#39;t:
+        it would return &quot;abc&quot;, &quot;f&quot;, or &quot;ad&quot;. The <code>as</code> combinator (which can be written as <code>#&gt;</code>) will replace the result
+        of parser on the left with the value found on the right (e.g. <code>&quot;123&quot;.as(123) | &quot;456&quot;.as(456)</code> would
+        be <code>Parsley[Int]</code>). You can think of it as a <code>map</code> with the constant function or as <code>p ~&gt; pure(x)</code>.
+        Using <code>as</code> we can replace the results of the last two parsers with the results we expected from
         before. This is the most efficient way of dealing with our problem, because this parser is still
         linear time in the worst case. But sometimes this transformation isn&#39;t so straight-forward,
         especially in deeply nested grammars. In this case we can reach for another, easier to read, tool.</p>
         
         <h3 id="backtracking" class="section"><a class="anchor-link left" href="#backtracking"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2.2 </span>Backtracking</h3>
-        <p>In the last section, we saw that the <code>&lt;|&gt;</code> doesn&#39;t proceed with the second alternative if the
+        <p>In the last section, we saw that the <code>|</code> doesn&#39;t proceed with the second alternative if the
         first consumed input before failing. That is to say it doesn&#39;t <em>backtrack</em>. There is, however, a
-        combinator that permits backtracking to happen, called <code>atomic</code>. Let&#39;s see it in action:</p>
+        combinator that allows <code>|</code> to backtrack in these circumstances, called <code>atomic</code>. Let&#39;s see it in action:</p>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>, </span><span class="type-name">Parsley</span><span>.</span><span class="identifier">atomic</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">stringLift</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">debug</span><span>.</span><span class="identifier">_</span><span>
 
-</span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> &lt;|&gt; </span><span class="identifier">atomic</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>) &lt;|&gt; </span><span class="string-literal">&quot;dead&quot;</span><span>
-</span><span class="comment">// p: Parsley[String] = parsley.Parsley@7e79ff18
-</span><span class="keyword">val</span><span> </span><span class="identifier">q</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> &lt;|&gt; (</span><span class="identifier">atomic</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading def&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;backtrack!&quot;</span><span>) &lt;|&gt;
+</span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> | </span><span class="identifier">atomic</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>) | </span><span class="string-literal">&quot;dead&quot;</span><span>
+</span><span class="comment">// p: Parsley[String] = parsley.Parsley@30bbd62c
+</span><span class="keyword">val</span><span> </span><span class="identifier">q</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> | (</span><span class="identifier">atomic</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading def&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;backtrack!&quot;</span><span>) |
                    </span><span class="string-literal">&quot;dead&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading dead&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;branch&quot;</span><span>)
-</span><span class="comment">// q: Parsley[String] = parsley.Parsley@70a188a1
+</span><span class="comment">// q: Parsley[String] = parsley.Parsley@3caa32c3
 </span><span>
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;dead&quot;</span><span>)
 </span><span class="comment">// res37: parsley.Result[String, String] = Success(dead)
@@ -579,9 +581,9 @@
 // def notFollowedBy(p: Parsley[_]): Parsley[Unit]
 </span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">eof</span><span> = </span><span class="identifier">notFollowedBy</span><span>(</span><span class="identifier">item</span><span>)
-</span><span class="comment">// eof: Parsley[Unit] = parsley.Parsley@261c4bc4
-</span><span class="keyword">val</span><span> </span><span class="identifier">abcOnly</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> &lt;* </span><span class="identifier">eof</span><span>
-</span><span class="comment">// abcOnly: Parsley[String] = parsley.Parsley@12f1cecf
+</span><span class="comment">// eof: Parsley[Unit] = parsley.Parsley@39952922
+</span><span class="keyword">val</span><span> </span><span class="identifier">abcOnly</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> &lt;~ </span><span class="identifier">eof</span><span>
+</span><span class="comment">// abcOnly: Parsley[String] = parsley.Parsley@62c92e1
 </span><span>
 </span><span class="identifier">abcOnly</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>)
 </span><span class="comment">// res39: parsley.Result[String, String] = Success(abc)
@@ -591,8 +593,8 @@
 //   &gt;abcd
 //       ^)
 </span><span>
-</span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>) &lt;* </span><span class="identifier">lookAhead</span><span>(</span><span class="string-literal">&quot;!!&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;!!&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;lookahead&quot;</span><span>)
-</span><span class="comment">// p: Parsley[String] = parsley.Parsley@6702bc99
+</span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>) &lt;~ </span><span class="identifier">lookAhead</span><span>(</span><span class="string-literal">&quot;!!&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;!!&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;lookahead&quot;</span><span>)
+</span><span class="comment">// p: Parsley[String] = parsley.Parsley@f3931cf
 </span><span>
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc!!&quot;</span><span>)
 </span><span class="comment">// &gt;abc&gt; (1, 1): abc!!•
@@ -635,12 +637,12 @@
         
         <h4 id="takeaways-2" class="section"><a class="anchor-link left" href="#takeaways-2"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2.3.1 </span>Takeaways</h4>
         <ul>
-          <li>Alternative branches of a grammar are encoded by <code>&lt;|&gt;</code></li>
+          <li>Alternative branches of a grammar are encoded by <code>|</code> (also known as <code>&lt;|&gt;</code> or <code>orElse</code>)</li>
           <li>Within a branch, you are free to do whatever you want, but you must ensure both branches&#39; types
           match</li>
           <li>When a branch fails having consumed input it won&#39;t take the second branch.</li>
           <li>The <code>atomic</code> combinator can be used to enable backtracking so that consumed input is undone when
-          passing back through (it doesn&#39;t affect any <code>&lt;|&gt;</code>s that execute inside it, however)</li>
+          passing back through (it doesn&#39;t affect any <code>|</code>s that execute inside it, however)</li>
           <li>When parsers go wrong, <code>debug</code> is a fantastic tool to investigate it with: use it early and often!</li>
           <li>Negative and positive look-ahead can be done with <code>lookAhead</code> and <code>notFollowedBy</code></li>
         </ul>
@@ -662,14 +664,14 @@
 </span><span class="comment">// This is the regex +
 // similar to many, except it requires at least 1 `p` to succeed
 </span><span class="keyword">def</span><span> </span><span class="declaration-name">some</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">List</span><span>[</span><span class="type-name">A</span><span>]] = </span><span class="identifier">p</span><span> &lt;::&gt; </span><span class="identifier">many</span><span>(</span><span class="identifier">p</span><span>)
-</span><span class="keyword">def</span><span> </span><span class="declaration-name">skipSome</span><span>(</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="identifier">_</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">p</span><span> *&gt; </span><span class="identifier">skipMany</span><span>(</span><span class="identifier">p</span><span>)
+</span><span class="keyword">def</span><span> </span><span class="declaration-name">skipSome</span><span>(</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="identifier">_</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">p</span><span> ~&gt; </span><span class="identifier">skipMany</span><span>(</span><span class="identifier">p</span><span>)
 
 </span><span class="comment">// This is the regex ?
 // it will either parse `p` or will return `x` otherwise
-</span><span class="keyword">def</span><span> </span><span class="declaration-name">optionally</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="identifier">_</span><span>], </span><span class="identifier">x</span><span>: </span><span class="type-name">A</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">p</span><span> #&gt; </span><span class="identifier">x</span><span> &lt;|&gt; </span><span class="identifier">pure</span><span>(</span><span class="identifier">x</span><span>)
+</span><span class="keyword">def</span><span> </span><span class="declaration-name">optionally</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="identifier">_</span><span>], </span><span class="identifier">x</span><span>: </span><span class="type-name">A</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">p</span><span>.</span><span class="identifier">as</span><span>(</span><span class="identifier">x</span><span>) &lt;|&gt; </span><span class="identifier">pure</span><span>(</span><span class="identifier">x</span><span>)
 </span><span class="keyword">def</span><span> </span><span class="declaration-name">optional</span><span>(</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="identifier">_</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">optionally</span><span>(</span><span class="identifier">p</span><span>, ())
 </span><span class="keyword">def</span><span> </span><span class="declaration-name">option</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Option</span><span>[</span><span class="type-name">A</span><span>]] =
-    </span><span class="identifier">p</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Some</span><span>(</span><span class="identifier">_</span><span>)) &lt;|&gt; </span><span class="identifier">pure</span><span>(</span><span class="type-name">None</span><span>)
+    </span><span class="identifier">p</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Some</span><span>(</span><span class="identifier">_</span><span>)) | </span><span class="identifier">pure</span><span>(</span><span class="type-name">None</span><span>)
 
 </span><span class="comment">// This is the regex [^ .. ]
 // it will parse any character _not_ passed to it
@@ -680,37 +682,36 @@
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>, </span><span class="type-name">Parsley</span><span>.</span><span class="identifier">atomic</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.{</span><span class="identifier">many</span><span>, </span><span class="identifier">some</span><span>, </span><span class="identifier">optional</span><span>, </span><span class="identifier">eof</span><span>}
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">charLift</span><span>, </span><span class="identifier">stringLift</span><span>}
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">voidImplicitly</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">noneOf</span><span>, </span><span class="identifier">oneOf</span><span>, </span><span class="identifier">item</span><span>}
 
 </span><span class="comment">// regex .at
-</span><span class="keyword">val</span><span> </span><span class="identifier">r1</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">item</span><span> *&gt; </span><span class="string-literal">&quot;at&quot;</span><span>
+</span><span class="keyword">val</span><span> </span><span class="identifier">r1</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">item</span><span> ~&gt; </span><span class="string-literal">&quot;at&quot;</span><span>.</span><span class="identifier">void</span><span>
 
 </span><span class="comment">// regex [hc]at
-</span><span class="keyword">val</span><span> </span><span class="identifier">r2</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">oneOf</span><span>(</span><span class="char-literal">&#39;h&#39;</span><span>, </span><span class="char-literal">&#39;c&#39;</span><span>) *&gt; </span><span class="string-literal">&quot;at&quot;</span><span>
+</span><span class="keyword">val</span><span> </span><span class="identifier">r2</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">oneOf</span><span>(</span><span class="char-literal">&#39;h&#39;</span><span>, </span><span class="char-literal">&#39;c&#39;</span><span>) ~&gt; </span><span class="string-literal">&quot;at&quot;</span><span>.</span><span class="identifier">void</span><span>
 
 </span><span class="comment">// regex [^hc]at
-</span><span class="keyword">val</span><span> </span><span class="identifier">r3</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">noneOf</span><span>(</span><span class="char-literal">&#39;h&#39;</span><span>, </span><span class="char-literal">&#39;c&#39;</span><span>) *&gt; </span><span class="string-literal">&quot;at&quot;</span><span>
+</span><span class="keyword">val</span><span> </span><span class="identifier">r3</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">noneOf</span><span>(</span><span class="char-literal">&#39;h&#39;</span><span>, </span><span class="char-literal">&#39;c&#39;</span><span>) ~&gt; </span><span class="string-literal">&quot;at&quot;</span><span>.</span><span class="identifier">void</span><span>
 
 </span><span class="comment">// regex [hc]at$
-</span><span class="keyword">val</span><span> </span><span class="identifier">r4</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">oneOf</span><span>(</span><span class="char-literal">&#39;h&#39;</span><span>, </span><span class="char-literal">&#39;c&#39;</span><span>) *&gt; </span><span class="string-literal">&quot;at&quot;</span><span> *&gt; </span><span class="identifier">eof</span><span>
+</span><span class="keyword">val</span><span> </span><span class="identifier">r4</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">oneOf</span><span>(</span><span class="char-literal">&#39;h&#39;</span><span>, </span><span class="char-literal">&#39;c&#39;</span><span>) ~&gt; </span><span class="string-literal">&quot;at&quot;</span><span> ~&gt; </span><span class="identifier">eof</span><span>
 
 </span><span class="comment">// regex s.*
-</span><span class="keyword">val</span><span> </span><span class="identifier">r5</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="char-literal">&#39;s&#39;</span><span> *&gt; </span><span class="identifier">many</span><span>(</span><span class="identifier">item</span><span>)
+</span><span class="keyword">val</span><span> </span><span class="identifier">r5</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="char-literal">&#39;s&#39;</span><span> ~&gt; </span><span class="identifier">many</span><span>(</span><span class="identifier">item</span><span>).</span><span class="identifier">void</span><span>
 
 </span><span class="comment">// regex [hc]?at
-</span><span class="keyword">val</span><span> </span><span class="identifier">r6</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">optional</span><span>(</span><span class="identifier">oneOf</span><span>(</span><span class="char-literal">&#39;h&#39;</span><span>, </span><span class="char-literal">&#39;c&#39;</span><span>)) *&gt; </span><span class="string-literal">&quot;at&quot;</span><span>
+</span><span class="keyword">val</span><span> </span><span class="identifier">r6</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">optional</span><span>(</span><span class="identifier">oneOf</span><span>(</span><span class="char-literal">&#39;h&#39;</span><span>, </span><span class="char-literal">&#39;c&#39;</span><span>)) ~&gt; </span><span class="string-literal">&quot;at&quot;</span><span>.</span><span class="identifier">void</span><span>
 
 </span><span class="comment">// regex [hc]+at
-</span><span class="keyword">val</span><span> </span><span class="identifier">r7</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">some</span><span>(</span><span class="identifier">oneOf</span><span>(</span><span class="char-literal">&#39;h&#39;</span><span>, </span><span class="char-literal">&#39;c&#39;</span><span>)) *&gt; </span><span class="string-literal">&quot;at&quot;</span><span>
+</span><span class="keyword">val</span><span> </span><span class="identifier">r7</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">some</span><span>(</span><span class="identifier">oneOf</span><span>(</span><span class="char-literal">&#39;h&#39;</span><span>, </span><span class="char-literal">&#39;c&#39;</span><span>)) ~&gt; </span><span class="string-literal">&quot;at&quot;</span><span>.</span><span class="identifier">void</span><span>
 
 </span><span class="comment">// regex h(i|ello|ey)( world)?(\!|\.)?
-</span><span class="keyword">val</span><span> </span><span class="identifier">r8</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="char-literal">&#39;h&#39;</span><span> *&gt; (</span><span class="string-literal">&quot;i&quot;</span><span> &lt;|&gt; </span><span class="identifier">atomic</span><span>(</span><span class="string-literal">&quot;ello&quot;</span><span>) &lt;|&gt; </span><span class="string-literal">&quot;ey&quot;</span><span>) *&gt;
-                        </span><span class="identifier">optional</span><span>(</span><span class="string-literal">&quot; world&quot;</span><span>) *&gt;
-                        </span><span class="identifier">optional</span><span>(</span><span class="char-literal">&#39;!&#39;</span><span> &lt;|&gt; </span><span class="char-literal">&#39;.&#39;</span><span>)</span></code></pre>
+</span><span class="keyword">val</span><span> </span><span class="identifier">r8</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="char-literal">&#39;h&#39;</span><span> ~&gt; (</span><span class="string-literal">&quot;i&quot;</span><span> | </span><span class="identifier">atomic</span><span>(</span><span class="string-literal">&quot;ello&quot;</span><span>) | </span><span class="string-literal">&quot;ey&quot;</span><span>) ~&gt;
+                        </span><span class="identifier">optional</span><span>(</span><span class="string-literal">&quot; world&quot;</span><span>) ~&gt;
+                        </span><span class="identifier">optional</span><span>(</span><span class="char-literal">&#39;!&#39;</span><span> &lt;|&gt; </span><span class="char-literal">&#39;.&#39;</span><span>).</span><span class="identifier">void</span></code></pre>
         <p>Have a play around with those in a REPL and make sure you understand how they work and what inputs
-        they will succeed on. I&#39;ve written the type explictly here so that the <code>voidImplicitly</code> function
-        will fire and make them all the right type.</p>
+        they will succeed on. The <code>void</code> combinator discards the result of a
+        parser and makes it <code>Unit</code>.</p>
         
         <h2 id="recursive-context-free-parsers" class="section"><a class="anchor-link left" href="#recursive-context-free-parsers"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">4 </span>Recursive Context-Free Parsers</h2>
         <p>Everything we&#39;ve seen so far has been as powerful as a regular expression. While regular expressions
@@ -759,13 +760,13 @@
         indirectly. If your parser infinite loops before running it, you&#39;ll know you&#39;ve missed one: but
         there are other, more obscure symptoms. Laziness is also important when you need to forward reference
         another parser. Here is an example:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">q</span><span> = ??? *&gt; </span><span class="identifier">p</span><span>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">q</span><span> = ??? ~&gt; </span><span class="identifier">p</span><span>
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = ???
 
 </span><span class="comment">// vs
 </span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = ???
-</span><span class="keyword">val</span><span> </span><span class="identifier">q</span><span> = ??? *&gt; </span><span class="identifier">p</span></code></pre>
+</span><span class="keyword">val</span><span> </span><span class="identifier">q</span><span> = ??? ~&gt; </span><span class="identifier">p</span></code></pre>
         <p>Usually, the parsers can be re-ordered so that their definitions do not &quot;cross over&quot; each other
         in the words of scalac. But when writing recursive parsers with multiple parts you may need to use
         <code>lazy val</code> to get scalac to accept the ordering. This can also depend on whether or not they are
@@ -891,19 +892,19 @@
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">or</span><span> = (</span><span class="identifier">x</span><span>: </span><span class="type-name">Boolean</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Boolean</span><span>) =&gt; </span><span class="identifier">x</span><span> || </span><span class="identifier">y</span><span>
 
-</span><span class="comment">// &lt;expr&gt; ::=        &lt;term&gt;   &#39;||&#39; &lt;expr&gt;   | &lt;term&gt;
+</span><span class="comment">// &lt;expr&gt; ::=        &lt;term&gt;  &#39;||&#39; &lt;expr&gt;  | &lt;term&gt;
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Boolean</span><span>] =
-      </span><span class="identifier">atomic</span><span>(</span><span class="identifier">or</span><span>.</span><span class="identifier">lift</span><span>(</span><span class="identifier">term</span><span> &lt;* </span><span class="string-literal">&quot;||&quot;</span><span>, </span><span class="identifier">expr</span><span>)) &lt;|&gt; </span><span class="identifier">term</span><span>
+      </span><span class="identifier">atomic</span><span>(</span><span class="identifier">or</span><span>.</span><span class="identifier">lift</span><span>(</span><span class="identifier">term</span><span> &lt;* </span><span class="string-literal">&quot;||&quot;</span><span>, </span><span class="identifier">expr</span><span>)) |  </span><span class="identifier">term</span><span>
 
-</span><span class="comment">// &lt;term&gt; ::= &lt;not&gt; &#39;&amp;&amp;&#39; &lt;term&gt;                  | &lt;not&gt;
+</span><span class="comment">// &lt;term&gt; ::= &lt;not&gt; &#39;&amp;&amp;&#39;   &lt;term&gt;                 | &lt;not&gt;
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">term</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Boolean</span><span>] =
-      </span><span class="identifier">atomic</span><span>((</span><span class="identifier">not</span><span>, </span><span class="string-literal">&quot;&amp;&amp;&quot;</span><span> *&gt; </span><span class="identifier">term</span><span>).</span><span class="identifier">zipped</span><span>(</span><span class="identifier">_</span><span> &amp;&amp; </span><span class="identifier">_</span><span>)) &lt;|&gt; </span><span class="identifier">not</span><span>
+       </span><span class="identifier">atomic</span><span>((</span><span class="identifier">not</span><span>, </span><span class="string-literal">&quot;&amp;&amp;&quot;</span><span> ~&gt; </span><span class="identifier">term</span><span>).</span><span class="identifier">zipped</span><span>(</span><span class="identifier">_</span><span> &amp;&amp; </span><span class="identifier">_</span><span>)) |  </span><span class="identifier">not</span><span>
 
-</span><span class="comment">// &lt;not&gt; ::=                     &#39;!&#39;   &lt;not&gt;         | &lt;atom&gt;
-</span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">not</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Boolean</span><span>] = </span><span class="string-literal">&quot;!&quot;</span><span> *&gt; </span><span class="identifier">not</span><span>.</span><span class="identifier">map</span><span>(!</span><span class="identifier">_</span><span>) &lt;|&gt; </span><span class="identifier">atom</span><span>
+</span><span class="comment">// &lt;not&gt; ::=                     &#39;!&#39;   &lt;not&gt;        | &lt;atom&gt;
+</span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">not</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Boolean</span><span>] = </span><span class="string-literal">&quot;!&quot;</span><span> *&gt; </span><span class="identifier">not</span><span>.</span><span class="identifier">map</span><span>(!</span><span class="identifier">_</span><span>) |  </span><span class="identifier">atom</span><span>
 
-</span><span class="comment">// &lt;atom&gt; ::= &#39;true&#39;          |  &#39;false&#39;           |   &#39;(&#39;   &lt;expr&gt;   &#39;)&#39;
-</span><span class="keyword">val</span><span> </span><span class="identifier">atom</span><span>    = </span><span class="string-literal">&quot;true&quot;</span><span> #&gt; </span><span class="boolean-literal">true</span><span> &lt;|&gt; </span><span class="string-literal">&quot;false&quot;</span><span> #&gt; </span><span class="boolean-literal">false</span><span> &lt;|&gt; (</span><span class="string-literal">&quot;(&quot;</span><span> *&gt; </span><span class="identifier">expr</span><span> &lt;* </span><span class="string-literal">&quot;)&quot;</span><span>)</span></code></pre>
+</span><span class="comment">// &lt;atom&gt; ::= &#39;true&#39;          | &#39;false&#39;           |  &#39;(&#39;   &lt;expr&gt;   &#39;)&#39;
+</span><span class="keyword">val</span><span> </span><span class="identifier">atom</span><span>    = </span><span class="string-literal">&quot;true&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="boolean-literal">true</span><span>) | </span><span class="string-literal">&quot;false&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="boolean-literal">false</span><span>) | (</span><span class="string-literal">&quot;(&quot;</span><span> ~&gt; </span><span class="identifier">expr</span><span> &lt;~ </span><span class="string-literal">&quot;)&quot;</span><span>)</span></code></pre>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">expr</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;!false&quot;</span><span>)
 </span><span class="comment">// res53: parsley.Result[String, Boolean] = Success(true)
 </span><span class="identifier">expr</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;true&amp;&amp;!(false||true)&quot;</span><span>)
@@ -938,17 +939,17 @@
 </span><span class="keyword">val</span><span> </span><span class="identifier">or</span><span> = (</span><span class="identifier">x</span><span>: </span><span class="type-name">Boolean</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">Boolean</span><span>]) =&gt; </span><span class="identifier">y</span><span>.</span><span class="identifier">foldLeft</span><span>(</span><span class="identifier">x</span><span>)(</span><span class="identifier">_</span><span> || </span><span class="identifier">_</span><span>)
 
 </span><span class="comment">// &lt;expr&gt; ::=                            &lt;term&gt;       [&#39;||&#39;   &lt;expr&gt; ]
-</span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Boolean</span><span>] = </span><span class="identifier">or</span><span>.</span><span class="identifier">lift</span><span>(</span><span class="identifier">term</span><span>, </span><span class="identifier">option</span><span>(</span><span class="string-literal">&quot;||&quot;</span><span> *&gt; </span><span class="identifier">expr</span><span>  ))
+</span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Boolean</span><span>] = </span><span class="identifier">or</span><span>.</span><span class="identifier">lift</span><span>(</span><span class="identifier">term</span><span>, </span><span class="identifier">option</span><span>(</span><span class="string-literal">&quot;||&quot;</span><span> ~&gt; </span><span class="identifier">expr</span><span>  ))
 
 </span><span class="comment">// &lt;term&gt; ::= &lt;not&gt;     (&#39;&amp;&amp;&#39;   &lt;term&gt;          |      epsilon      )
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">term</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Boolean</span><span>] =
-               </span><span class="identifier">not</span><span> &lt;**&gt; (</span><span class="string-literal">&quot;&amp;&amp;&quot;</span><span> *&gt; </span><span class="identifier">term</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">and</span><span>) &lt;/&gt; </span><span class="identifier">identity</span><span>[</span><span class="type-name">Boolean</span><span>])
+               </span><span class="identifier">not</span><span> &lt;**&gt; (</span><span class="string-literal">&quot;&amp;&amp;&quot;</span><span> ~&gt; </span><span class="identifier">term</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">and</span><span>) &lt;/&gt; </span><span class="identifier">identity</span><span>[</span><span class="type-name">Boolean</span><span>])
 
-</span><span class="comment">// &lt;not&gt; ::=                     &#39;!&#39;   &lt;not&gt;         | &lt;atom&gt;
-</span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">not</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Boolean</span><span>] = </span><span class="string-literal">&quot;!&quot;</span><span> *&gt; </span><span class="identifier">not</span><span>.</span><span class="identifier">map</span><span>(!</span><span class="identifier">_</span><span>) &lt;|&gt; </span><span class="identifier">atom</span><span>
+</span><span class="comment">// &lt;not&gt; ::=                     &#39;!&#39;   &lt;not&gt;        | &lt;atom&gt;
+</span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">not</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Boolean</span><span>] = </span><span class="string-literal">&quot;!&quot;</span><span> ~&gt; </span><span class="identifier">not</span><span>.</span><span class="identifier">map</span><span>(!</span><span class="identifier">_</span><span>) | </span><span class="identifier">atom</span><span>
 
-</span><span class="comment">// &lt;atom&gt; ::= &#39;true&#39;          |  &#39;false&#39;           |   &#39;(&#39;   &lt;expr&gt;   &#39;)&#39;
-</span><span class="keyword">val</span><span> </span><span class="identifier">atom</span><span>    = </span><span class="string-literal">&quot;true&quot;</span><span> #&gt; </span><span class="boolean-literal">true</span><span> &lt;|&gt; </span><span class="string-literal">&quot;false&quot;</span><span> #&gt; </span><span class="boolean-literal">false</span><span> &lt;|&gt; (</span><span class="string-literal">&quot;(&quot;</span><span> *&gt; </span><span class="identifier">expr</span><span> &lt;* </span><span class="string-literal">&quot;)&quot;</span><span>)</span></code></pre>
+</span><span class="comment">// &lt;atom&gt; ::= &#39;true&#39;          | &#39;false&#39;           |  &#39;(&#39;   &lt;expr&gt;   &#39;)&#39;
+</span><span class="keyword">val</span><span> </span><span class="identifier">atom</span><span>    = </span><span class="string-literal">&quot;true&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="boolean-literal">true</span><span>) | </span><span class="string-literal">&quot;false&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="boolean-literal">false</span><span>) | (</span><span class="string-literal">&quot;(&quot;</span><span> ~&gt; </span><span class="identifier">expr</span><span> &lt;~ </span><span class="string-literal">&quot;)&quot;</span><span>)</span></code></pre>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">expr</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;!false&quot;</span><span>)
 </span><span class="comment">// res56: parsley.Result[String, Boolean] = Success(true)
 </span><span class="identifier">expr</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;true&amp;&amp;!(false||true)&quot;</span><span>)
