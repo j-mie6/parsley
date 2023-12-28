@@ -1,3 +1,7 @@
+```scala mdoc:invisible
+import scala.annotation.unused
+```
+
 # Basics of Combinators
 
 Parsley is a _parser combinator_ library. In contrast to a parser generator library, like ANTLR,
@@ -181,10 +185,9 @@ Notice how the result of the parser is a string. The `string` combinator reads a
 exactly. Here are a couple more examples to help you get your head around everything we've seen so
 far:
 
-```scala mdoc:silent
-import parsley.character.{char, string}
-```
 ```scala mdoc:height=2
+import parsley.character.{char, string}
+
 (string("abc") <* char('d')).parse("abcd")
 (string("abc") ~> char('d')).parse("abcd")
 (string("abc") <~> char('d')).parse("abcd")
@@ -201,6 +204,9 @@ def string(str: String): Parsley[String] = {
     def helper(cs: List[Char]): Parsley[List[Char]] = ???
     helper(str.toList).map(_.mkString)
 }
+```
+```scala mdoc:invisible
+lazy val _ = string(""): @unused
 ```
 
 We've started here by defining the `string` function, and made the skeleton of an internal helper
@@ -221,6 +227,9 @@ def helper(cs: List[Char]): Parsley[List[Char]] = cs match {
     case _ :: _ => ???
 }
 ```
+```scala mdoc:invisible
+val _ = helper(Nil): @unused
+```
 
 Now the question is how to handle the recursive case? Well in the base case we transformed the
 empty list into a parser that returns the empty list. We'll follow that same shape here and use
@@ -234,6 +243,9 @@ def helper(cs: List[Char]): Parsley[List[Char]] = cs match {
     case Nil     => pure(Nil)
     case c :: cs => char(c) <::> helper(cs)
 }
+```
+```scala mdoc:invisible
+val _ = helper(Nil): @unused
 ```
 
 What happens here is that we take each character in the string, convert it to a parser that reads
@@ -253,6 +265,9 @@ def string(str: String): Parsley[String] = {
 }
 
 // string "abc" == (char('a') <::> (char ('b') <::> (char 'c' <::> pure(Nil)))).map(_.mkString)
+```
+```scala mdoc:invisible
+val _ = string("hi"): @unused
 ```
 
 Hopefully, this gives some intuition about how we can start to sequence together larger and larger
@@ -334,7 +349,10 @@ Ah, we have a problem! The first two alternatives parse fine, but the last one d
 to this is fairly simple, but I want to illustrate how we can make steps towards diagnosing this
 problem ourselves using the combinators found in `parsley.debug`:
 
-```scala mdoc:silent:nest
+```scala mdoc:invisible
+parsley.debug.disableColourRendering()
+```
+```scala mdoc:nest:silent
 import parsley.Parsley
 import parsley.implicits.character.stringLift
 import parsley.debug._
@@ -342,64 +360,17 @@ import parsley.debug._
 val p = ("abc".debug("reading abc") <|>
             ("def".debug("reading def") <|> "dead".debug("reading dead")).debug("second branch")
         ).debug("first branch")
-
-p.parse("abc")
-p.parse("def")
-p.parse("dead")
 ```
-@:todo(FIXME: fix ansi escape code rendering issues, so we can unsilence the debug printouts)
 
 The `debug` combinator can be attached to any operation (by default Parsley associates `<|>` to the
 right, which is why I've bracketed them this way round). It will provide printouts when it enters
 the debug and when it exits, along with information about the state of the parser. Let's see the
 three printouts:
 
-```
-scala> p.parse("abc")
->first branch> (1, 1): abc•
-                       ^
-  >reading abc> (1, 1): abc•
-                        ^
-  <reading abc< (1, 4): abc• Good
-                           ^
-<first branch< (1, 4): abc• Good
-                          ^
-
-scala> p.parse("def")
->first branch> (1, 1): def•
-                       ^
-  >reading abc> (1, 1): def•
-                        ^
-  <reading abc< (1, 1): def• Fail
-                        ^
-  >second branch> (1, 1): def•
-                          ^
-    >reading def> (1, 1): def•
-                          ^
-    <reading def< (1, 4): def• Good
-                             ^
-  <second branch< (1, 4): def• Good
-                             ^
-<first branch< (1, 4): def• Good
-                          ^
-
-scala> p.parse("dead")
->first branch> (1, 1): dead•
-                       ^
-  >reading abc> (1, 1): dead•
-                        ^
-  <reading abc< (1, 1): dead• Fail
-                        ^
-  >second branch> (1, 1): dead•
-                          ^
-    >reading def> (1, 1): dead•
-                          ^
-    <reading def< (1, 3): dead• Fail
-                            ^
-  <second branch< (1, 3): dead• Fail
-                            ^
-<first branch< (1, 3): dead• Fail
-                         ^
+```scala mdoc:to-string
+p.parse("abc")
+p.parse("def")
+p.parse("dead")
 ```
 
 Crucially, in the last printout, we can see the trace of the parser as it went wrong. It started
@@ -439,7 +410,7 @@ In the last section, we saw that the `<|>` doesn't proceed with the second alter
 first consumed input before failing. That is to say it doesn't _backtrack_. There is, however, a
 combinator that permits backtracking to happen, called `atomic`. Let's see it in action:
 
-```scala mdoc:silent:nest
+```scala mdoc:nest:to-string
 import parsley.Parsley, Parsley.atomic
 import parsley.implicits.character.stringLift
 import parsley.debug._
@@ -448,26 +419,8 @@ val p = "abc" <|> atomic("def") <|> "dead"
 val q = "abc" <|> (atomic("def".debug("reading def")).debug("backtrack!") <|>
                    "dead".debug("reading dead")).debug("branch")
 
-p.parse("dead") // returns Success("dead")
+p.parse("dead")
 q.parse("dead")
-/*
->branch> (1, 1): dead•
-                 ^
-  >backtrack!> (1, 1): dead•
-                       ^
-    >reading def> (1, 1): dead•
-                          ^
-    <reading def< (1, 3): dead• Fail
-                            ^
-  <backtrack!< (1, 1): dead• Fail
-                       ^
-  >reading dead> (1, 1): dead•
-                         ^
-  <reading dead< (1, 5): dead• Good
-                             ^
-<branch< (1, 5): dead• Good
-                     ^
-*/
 ```
 
 Here we can see `atomic` in action, as well as a debug trace so you can see what's going on.
@@ -488,7 +441,7 @@ come (in either a positive or a negative way): for instance checking if there is
 with the `eof` combinator is an example of negative look-ahead. There are two combinators for doing
 this, which we'll explore now:
 
-```scala mdoc:silent:nest
+```scala mdoc:nest:to-string
 import parsley.Parsley, Parsley.{notFollowedBy, lookAhead}
 import parsley.character.item
 import parsley.implicits.character.stringLift
@@ -500,42 +453,14 @@ import parsley.debug._
 val eof = notFollowedBy(item)
 val abcOnly = "abc" <* eof
 
-abcOnly.parse("abc") // returns Success("abc")
-abcOnly.parse("abcd") // returns Failure(..)
+abcOnly.parse("abc")
+abcOnly.parse("abcd")
 
 val p = "abc".debug("abc") <* lookAhead("!!".debug("!!")).debug("lookahead")
 
 p.parse("abc!!")
-/*
->abc> (1, 1): abc!•
-              ^
-<abc< (1, 4): abc!• Good
-                 ^
->lookahead> (1, 4): abc!•
-                       ^
-  >!!> (1, 4): abc!!•
-                  ^
-  <!!< (1, 6): abc!!• Good
-                    ^
-<lookahead< (1, 4): abc!!• Good
-                       ^
-*/
 
 p.parse("abc!")
-/*
->abc> (1, 1): abc!•
-              ^
-<abc< (1, 4): abc!• Good
-                 ^
->lookahead> (1, 4): abc!•
-                       ^
-  >!!> (1, 4): abc!•
-                  ^
-  <!!< (1, 5): abc!• Fail
-                   ^
-<lookahead< (1, 5): abc!• Fail
-                        ^
-*/
 ```
 
 Some key things to note here: the result of backtracking is always `()`. This is because the parser
@@ -585,6 +510,9 @@ def option[A](p: Parsley[A]): Parsley[Option[A]] =
 // This is the regex [^ .. ]
 // it will parse any character _not_ passed to it
 def noneOf[A](cs: Char*): Parsley[Char] = satisfy(!cs.contains(_))
+```
+```scala mdoc:invisible
+lazy val _ = some(skipSome(optional(option(noneOf())))): @unused
 ```
 
 With the exception of `many`, which we can't define just yet, all of these handy combinators are
@@ -716,80 +644,14 @@ Before we move on with a more fleshed out example, I want to annotate the `match
 <p>
 @:@
 
+```scala mdoc:invisible
+import parsley.debug._
+parsley.debug.disableColourRendering()
+lazy val matchingDebug: Parsley[Unit] = skipMany('('.debug("left") *> matchingDebug <* ')'.debug("right")).debug("matching")
+val onlyMatchingDebug = matchingDebug <* eof
 ```
-scala> onlyMatchingDebug.parse("(()(()))")
->matching> (1, 1): (()(()
-                   ^
-  >left> (1, 1): (()(()
-                 ^
-  <left< (1, 2): (()(()) Good
-                  ^
-  >matching> (1, 2): (()(())
-                      ^
-    >left> (1, 2): (()(())
-                    ^
-    <left< (1, 3): (()(()))• Good
-                     ^
-    >matching> (1, 3): (()(()))•
-                         ^
-      >left> (1, 3): (()(()))•
-                       ^
-      <left< (1, 3): (()(()))• Fail
-                       ^
-    <matching< (1, 3): (()(()))• Good
-                         ^
-    >right> (1, 3): (()(()))•
-                      ^
-    <right< (1, 4): (()(()))• Good
-                       ^
-    >left> (1, 4): (()(()))•
-                      ^
-    <left< (1, 5): (()(()))• Good
-                       ^
-    >matching> (1, 5): (()(()))•
-                           ^
-      >left> (1, 5): (()(()))•
-                         ^
-      <left< (1, 6): (()(()))• Good
-                          ^
-      >matching> (1, 6): (()(()))•
-                              ^
-        >left> (1, 6): (()(()))•
-                            ^
-        <left< (1, 6): (()(()))• Fail
-                            ^
-      <matching< (1, 6): (()(()))• Good
-                              ^
-      >right> (1, 6): (()(()))•
-                           ^
-      <right< (1, 7): ()(()))• Good
-                           ^
-      >left> (1, 7): ()(()))•
-                          ^
-      <left< (1, 7): ()(()))• Fail
-                          ^
-    <matching< (1, 7): ()(()))• Good
-                            ^
-    >right> (1, 7): ()(()))•
-                         ^
-    <right< (1, 8): )(()))• Good
-                         ^
-    >left> (1, 8): )(()))•
-                        ^
-    <left< (1, 8): )(()))• Fail
-                        ^
-  <matching< (1, 8): )(()))• Good
-                          ^
-  >right> (1, 8): )(()))•
-                       ^
-  <right< (1, 9): (()))• Good
-                       ^
-  >left> (1, 9): (()))•
-                      ^
-  <left< (1, 9): (()))• Fail
-                      ^
-<matching< (1, 9): (()))• Good
-                        ^
+```scala mdoc:to-string
+onlyMatchingDebug.parse("(()(()))")
 ```
 @:format(html)
 </p>
@@ -852,7 +714,7 @@ lazy val not: Parsley[Boolean] = "!" *> not.map(!_) <|> atom
 // <atom> ::= 'true'          |  'false'           |   '('   <expr>   ')'
 val atom    = "true" #> true <|> "false" #> false <|> ("(" *> expr <* ")")
 ```
-```scala mdoc:height=2
+```scala mdoc:to-string
 expr.parse("!false")
 expr.parse("true&&!(false||true)")
 ```
@@ -902,7 +764,7 @@ lazy val not: Parsley[Boolean] = "!" *> not.map(!_) <|> atom
 // <atom> ::= 'true'          |  'false'           |   '('   <expr>   ')'
 val atom    = "true" #> true <|> "false" #> false <|> ("(" *> expr <* ")")
 ```
-```scala mdoc:height=2
+```scala mdoc:to-string
 expr.parse("!false")
 expr.parse("true&&!(false||true)")
 ```
