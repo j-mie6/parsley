@@ -1,7 +1,8 @@
 # Effective Whitespace Parsing
 
 @:callout(info)
-This page is still being updated for the wiki port, so some things may be a bit broken or look a little strange.
+Note that this page describes conventions for whitespace handling, but these
+are handled directly by the [`parsley.token.Lexer`](../api-guide/token/Lexer.md) and its subfunctionality, which is expored at the end of the next page.
 @:@
 
 Previously, in [Basics of Combinators] and [Building Expression Parsers],
@@ -13,7 +14,7 @@ The first step in the correct handling of whitespace is to build the small parse
 recognise the grammar itself.  The two concerns usually are spaces and comments. For
 comments, the combinator `combinator.manyUntil` is _very_ useful. For example:
 
-```scala
+```scala mdoc:silent
 import parsley.Parsley, Parsley.atomic
 import parsley.character.{whitespace, string, item, endOfLine}
 import parsley.combinator.{manyUntil, skipMany}
@@ -21,11 +22,11 @@ import parsley.errors.combinator.ErrorMethods //for hide
 
 def symbol(str: String): Parsley[String] = atomic(string(str))
 
-val lineComment = symbol("//") *> manyUntil(item, endOfLine)
-val multiComment = symbol("/*") *> manyUntil(item, symbol("*/"))
-val comment = lineComment <|> multiComment
+val lineComment = symbol("//") ~> manyUntil(item, endOfLine)
+val multiComment = symbol("/*") ~> manyUntil(item, symbol("*/"))
+val comment = lineComment | multiComment
 
-val skipWhitespace = skipMany(whitespace <|> comment).hide
+val skipWhitespace = skipMany(whitespace | comment).hide
 ```
 
 Here, the `manyUntil` combinator is used to read up until the end of the comment. You may
@@ -43,12 +44,8 @@ to make an indivisible string, either you read the entire thing or none of it. T
 of the puzzle is a combinator called `lexeme`, which should perform a parser and then always
 read spaces after it:
 
-```scala
-import parsley.Parsley, Parsley.atomic
-
-...
-
-def lexeme[A](p: Parsley[A]): Parsley[A] = p <* skipWhitespace
+```scala mdoc
+def lexeme[A](p: Parsley[A]): Parsley[A] = p <~ skipWhitespace
 def token[A](p: Parsley[A]): Parsley[A] = lexeme(atomic(p))
 
 implicit def implicitSymbol(s: String): Parsley[String] = lexeme(symbol(s))
@@ -67,31 +64,16 @@ alphabetical character. This is out of scope for this post, however.
 Now let's take the example
 from [Building Expression Parsers] and see what needs to change to finish up recognising whitespace.
 
-```scala
-import parsley.Parsley, Parsley.atomic
-import parsley.character.{digit, whitespace, string, item, endOfLine}
-import parsley.combinator.{manyUntil, skipMany}
+```scala mdoc
+import parsley.character.digit
 import parsley.expr.{precedence, Ops, InfixL}
-import parsley.errors.combinator.ErrorMethods //for hide
-
-def symbol(str: String): Parsley[String] = atomic(string(str))
-
-val lineComment = symbol("//") *> manyUntil(item, endOfLine)
-val multiComment = symbol("/*") *> manyUntil(item, symbol("*/"))
-val comment = lineComment <|> multiComment
-val skipWhitespace = skipMany(whitespace <|> comment).hide
-
-def lexeme[A](p: Parsley[A]): Parsley[A] = p <* skipWhitespace
-def token[A](p: Parsley[A]): Parsley[A] = lexeme(atomic(p))
-
-implicit def implicitSymbol(s: String): Parsley[String] = lexeme(symbol(s))
 
 val number = token(digit.foldLeft1[BigInt](0)((n, d) => n * 10 + d.asDigit))
 
-lazy val atom: Parsley[BigInt] = "(" *> expr <* ")" <|> number
+lazy val atom: Parsley[BigInt] = "(" ~> expr <~ ")" | number
 lazy val expr = precedence[BigInt](atom)(
-  Ops(InfixL)("*" #> (_ * _)),
-  Ops(InfixL)("+" #> (_ + _), "-" #> (_ - _)))
+  Ops(InfixL)("*" as (_ * _)),
+  Ops(InfixL)("+" as (_ + _), "-" as (_ - _)))
 ```
 
 Other than introducing our new infrastructure, I've changed the characters in the original
@@ -100,19 +82,17 @@ how I've also marked the _whole_ of `number` as a token: we don't want to read w
 between the digits, but instead after the entire number has been read, and a number should be entirely
 atomic. Now that we've done this we can try running it on some input and see what happens:
 
-```scala
+```scala mdoc:to-string
 expr.parse("5 + \n6 /*hello!*/ * 7")
-// returns Success(47)
 
 expr.parse(" 5 * (\n2 + 3)")
-// returns Failure(..), talking about unexpected space at line 1 column 1
 ```
 
 Ah, we've forgotten one last bit! The way we've set it up so far is that every lexeme reads
 whitespace _after_ the token. This is nice and consistent and reduces any unnecessary extra
 work reading whitespace before and after a token (which inevitably means whitespace will be
 unnecessarily checked in between tokens _twice_). But this means we have to be careful to
-read whitespace once at the very beginning of the parser. Using `skipWhitespace *> expr` as
+read whitespace once at the very beginning of the parser. Using `skipWhitespace ~> expr` as
 our parser we run is the final step we need to make it all work. If we use `expr` in another
 parser, however, we don't want to read the whitespace at the beginning in that case. It should
 **only** be at the very start of the parser (so when `parse` is called).
@@ -126,7 +106,7 @@ used to, then Scala will report and ambiguous implicit and we'll be stuck. It's 
 to limit the scope of these implicits, so we can be clear about which we mean where. To illustrate
 what I mean, let's restructure the code a little for the parser and ensure we don't run into any issues.
 
-```scala
+```scala mdoc:reset
 import parsley.Parsley, Parsley.atomic
 import parsley.character.{digit, whitespace, string, item, endOfLine}
 import parsley.combinator.{manyUntil, skipMany, eof}
@@ -136,19 +116,20 @@ import parsley.errors.combinator.ErrorMethods //for hide
 object lexer {
     private def symbol(str: String): Parsley[String] = atomic(string(str))
 
-    private val lineComment = symbol("//") *> manyUntil(item, endOfLine)
-    private val multiComment = symbol("/*") *> manyUntil(item, symbol("*/"))
-    private val comment = lineComment <|> multiComment
-    private val skipWhitespace = skipMany(whitespace <|> comment).hide
+    private val lineComment = symbol("//") ~> manyUntil(item, endOfLine)
+    private val multiComment = symbol("/*") ~> manyUntil(item, symbol("*/"))
+    private val comment = lineComment | multiComment
+    private val skipWhitespace = skipMany(whitespace | comment).hide
 
-    private def lexeme[A](p: Parsley[A]): Parsley[A] = p <* skipWhitespace
+    private def lexeme[A](p: Parsley[A]): Parsley[A] = p <~ skipWhitespace
     private def token[A](p: Parsley[A]): Parsley[A] = lexeme(atomic(p))
-    def fully[A](p: Parsley[A]): Parsley[A] = skipWhitespace *> p <* eof
+    def fully[A](p: Parsley[A]): Parsley[A] = skipWhitespace ~> p <~ eof
 
     val number = token(digit.foldLeft1[BigInt](0)((n, d) => n * 10 + d.asDigit))
 
     object implicits {
-        implicit def implicitSymbol(s: String): Parsley[String] = lexeme(symbol(s)) // or `lexeme(token(string(s)))
+        implicit def implicitSymbol(s: String): Parsley[String] =
+            lexeme(symbol(s)) // or `token(string(s))
     }
 }
 
@@ -156,10 +137,10 @@ object expressions {
     import lexer.implicits.implicitSymbol
     import lexer.{number, fully}
 
-    private lazy val atom: Parsley[BigInt] = "(" *> expr <* ")" <|> number
+    private lazy val atom: Parsley[BigInt] = "(" ~> expr <~ ")" | number
     private lazy val expr = precedence[BigInt](atom)(
-        Ops(InfixL)("*" #> (_ * _)),
-        Ops(InfixL)("+" #> (_ + _), "-" #> (_ - _)))
+        Ops(InfixL)("*" as (_ * _)),
+        Ops(InfixL)("+" as (_ + _), "-" as (_ - _)))
 
     val parser = fully(expr)
 }
