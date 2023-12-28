@@ -72,9 +72,9 @@ case class Num(n: Int) extends Expr
 case class Var(v: String) extends Expr
 
 val expr: Parsley[Expr] =
-    precedence(ident.map(Var(_)), int.map(Num(_)))(
-        Ops(InfixL)("*".as(Mul(_, _))),
-        Ops(InfixL)("+".as(Add(_, _)), "-".as(Sub(_, _)))
+    precedence(ident.map(Var), int.map(Num))(
+        Ops(InfixL)("*" as Mul),
+        Ops(InfixL)("+" as Add, "-" as Sub)
     )
 
 expr.parse("x+5*y")
@@ -170,11 +170,11 @@ case class Num(n: Int) extends Atom
 case class Var(v: String) extends Atom
 
 val expr: Parsley[Expr] =
-    precedence(
-        Atoms(ident.map(Var(_)), int.map(Num(_))) :+
-        SOps(InfixL)("*".as(Mul(_, _))) :+
-        SOps(InfixL)("+".as(Add(_, _)), "-".as(Sub(_, _)))
-    )
+    precedence {
+        Atoms(ident.map(Var), int.map(Num)) :+
+        SOps(InfixL)("*" as Mul) :+
+        SOps(InfixL)("+"as Add, "-" as Sub)
+    }
 
 expr.parse("x+5*y")
 ```
@@ -191,17 +191,17 @@ are incorrectly stitched together, the table does not typecheck:
 import parsley.expr.InfixR
 
 val expr: Parsley[Expr] =
-    precedence(
-        Atoms(ident.map(Var(_)), int.map(Num(_))) :+
-        SOps(InfixR)("*".as(Mul(_, _))) :+
-        SOps(InfixL)("+".as(Add(_, _)), "-".as(Sub(_, _)))
-    )
+    precedence {
+        Atoms(ident.map(Var), int.map(Num)) :+
+        SOps(InfixR)("*" as Mul) :+
+        SOps(InfixL)("+" as Add, "-" as Sub)
+    }
 ```
 ```scala mdoc:fail:nest
 val expr: Parsley[Expr] =
-    precedence(
-        Atoms(ident.map(Var(_)), int.map(Num(_))) :+
-        SOps(InfixL)("+".as(Add(_, _)), "-".as(Sub(_, _))) :+
-        SOps(InfixL)("*".as(Mul(_, _)))
-    )
+    precedence {
+        Atoms(ident.map(Var), int.map(Num)) :+
+        SOps(InfixL)("+" as Add, "-" as Sub) :+
+        SOps(InfixL)("*" as Mul)
+    }
 ```
