@@ -302,8 +302,9 @@
         <p>Notice how the result of the parser is a string. The <code>string</code> combinator reads a specific string
         exactly. Here are a couple more examples to help you get your head around everything we&#39;ve seen so
         far:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">char</span><span>, </span><span class="identifier">string</span><span>}</span></code></pre>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span>(</span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>) &lt;* </span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;d&#39;</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abcd&quot;</span><span>)
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">char</span><span>, </span><span class="identifier">string</span><span>}
+
+(</span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>) &lt;* </span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;d&#39;</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abcd&quot;</span><span>)
 </span><span class="comment">// res14: parsley.Result[String, String] = Success(x = &quot;abc&quot;)
 </span><span>(</span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>) ~&gt; </span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;d&#39;</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abcd&quot;</span><span>)
 </span><span class="comment">// res15: parsley.Result[String, Char] = Success(x = &#39;d&#39;)
@@ -434,61 +435,61 @@
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = (</span><span class="string-literal">&quot;abc&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading abc&quot;</span><span>) &lt;|&gt;
             (</span><span class="string-literal">&quot;def&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading def&quot;</span><span>) &lt;|&gt; </span><span class="string-literal">&quot;dead&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading dead&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;second branch&quot;</span><span>)
-        ).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;first branch&quot;</span><span>)
-
-</span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>)
-</span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>)
-</span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;dead&quot;</span><span>)</span></code></pre>
-        
+        ).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;first branch&quot;</span><span>)</span></code></pre>
         <p>The <code>debug</code> combinator can be attached to any operation (by default Parsley associates <code>&lt;|&gt;</code> to the
         right, which is why I&#39;ve bracketed them this way round). It will provide printouts when it enters
         the debug and when it exits, along with information about the state of the parser. Let&#39;s see the
         three printouts:</p>
-        <pre><code>scala&gt; p.parse(&quot;abc&quot;)
-&gt;first branch&gt; (1, 1): abc•
-                       ^
-  &gt;reading abc&gt; (1, 1): abc•
-                        ^
-  &lt;reading abc&lt; (1, 4): abc• Good
-                           ^
-&lt;first branch&lt; (1, 4): abc• Good
-                          ^
-
-scala&gt; p.parse(&quot;def&quot;)
-&gt;first branch&gt; (1, 1): def•
-                       ^
-  &gt;reading abc&gt; (1, 1): def•
-                        ^
-  &lt;reading abc&lt; (1, 1): def• Fail
-                        ^
-  &gt;second branch&gt; (1, 1): def•
-                          ^
-    &gt;reading def&gt; (1, 1): def•
-                          ^
-    &lt;reading def&lt; (1, 4): def• Good
-                             ^
-  &lt;second branch&lt; (1, 4): def• Good
-                             ^
-&lt;first branch&lt; (1, 4): def• Good
-                          ^
-
-scala&gt; p.parse(&quot;dead&quot;)
-&gt;first branch&gt; (1, 1): dead•
-                       ^
-  &gt;reading abc&gt; (1, 1): dead•
-                        ^
-  &lt;reading abc&lt; (1, 1): dead• Fail
-                        ^
-  &gt;second branch&gt; (1, 1): dead•
-                          ^
-    &gt;reading def&gt; (1, 1): dead•
-                          ^
-    &lt;reading def&lt; (1, 3): dead• Fail
-                            ^
-  &lt;second branch&lt; (1, 3): dead• Fail
-                            ^
-&lt;first branch&lt; (1, 3): dead• Fail
-                         ^</code></pre>
+        <pre><code class="nohighlight"><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>)
+</span><span class="comment">// &gt;first branch&gt; (1, 1): abc•
+//                        ^
+//   &gt;reading abc&gt; (1, 1): abc•
+//                         ^
+//   &lt;reading abc&lt; (1, 4): abc• Good
+//                            ^
+// &lt;first branch&lt; (1, 4): abc• Good
+//                           ^
+// res31: parsley.Result[String, String] = Success(abc)
+</span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>)
+</span><span class="comment">// &gt;first branch&gt; (1, 1): def•
+//                        ^
+//   &gt;reading abc&gt; (1, 1): def•
+//                         ^
+//   &lt;reading abc&lt; (1, 1): def• Fail
+//                         ^
+//   &gt;second branch&gt; (1, 1): def•
+//                           ^
+//     &gt;reading def&gt; (1, 1): def•
+//                           ^
+//     &lt;reading def&lt; (1, 4): def• Good
+//                              ^
+//   &lt;second branch&lt; (1, 4): def• Good
+//                              ^
+// &lt;first branch&lt; (1, 4): def• Good
+//                           ^
+// res32: parsley.Result[String, String] = Success(def)
+</span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;dead&quot;</span><span>)
+</span><span class="comment">// &gt;first branch&gt; (1, 1): dead•
+//                        ^
+//   &gt;reading abc&gt; (1, 1): dead•
+//                         ^
+//   &lt;reading abc&lt; (1, 1): dead• Fail
+//                         ^
+//   &gt;second branch&gt; (1, 1): dead•
+//                           ^
+//     &gt;reading def&gt; (1, 1): dead•
+//                           ^
+//     &lt;reading def&lt; (1, 3): dead• Fail
+//                             ^
+//   &lt;second branch&lt; (1, 3): dead• Fail
+//                             ^
+// &lt;first branch&lt; (1, 3): dead• Fail
+//                          ^
+// res33: parsley.Result[String, String] = Failure((line 1, column 1):
+//   unexpected &quot;dea&quot;
+//   expected &quot;abc&quot; or &quot;def&quot;
+//   &gt;dead
+//    ^^^)</span></code></pre>
         <p>Crucially, in the last printout, we can see the trace of the parser as it went wrong. It started
         by executing the outermost branch, and tried to read <code>&quot;abc&quot;</code> and failed, but the caret is still
         pointing at the first character. Then the second branch is taken as the alternative to the first:
@@ -503,11 +504,11 @@ scala&gt; p.parse(&quot;dead&quot;)
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> &lt;|&gt; (</span><span class="string-literal">&quot;de&quot;</span><span> *&gt; (</span><span class="char-literal">&#39;f&#39;</span><span> #&gt; </span><span class="string-literal">&quot;def&quot;</span><span> &lt;|&gt; </span><span class="string-literal">&quot;ad&quot;</span><span> #&gt; </span><span class="string-literal">&quot;dead&quot;</span><span>))</span></code></pre>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>)
-</span><span class="comment">// res33: parsley.Result[String, String] = Success(x = &quot;abc&quot;)
+</span><span class="comment">// res34: parsley.Result[String, String] = Success(x = &quot;abc&quot;)
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>)
-</span><span class="comment">// res34: parsley.Result[String, String] = Success(x = &quot;def&quot;)
+</span><span class="comment">// res35: parsley.Result[String, String] = Success(x = &quot;def&quot;)
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;dead&quot;</span><span>)
-</span><span class="comment">// res35: parsley.Result[String, String] = Success(x = &quot;dead&quot;)</span></code></pre>
+</span><span class="comment">// res36: parsley.Result[String, String] = Success(x = &quot;dead&quot;)</span></code></pre>
         <p>In this version of the parser, the leading <code>&quot;de&quot;</code> has been factored out, leaving an alternative
         of <code>&quot;f&quot; &lt;|&gt; &quot;ad&quot;</code> remaining. But the original parser returned the full string, and this wouldn&#39;t:
         it would return &quot;abc&quot;, &quot;f&quot;, or &quot;ad&quot;. The <code>#&gt;</code> (pronounced &quot;as&quot;) combinator will replace the result
@@ -527,29 +528,31 @@ scala&gt; p.parse(&quot;dead&quot;)
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">debug</span><span>.</span><span class="identifier">_</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> &lt;|&gt; </span><span class="identifier">atomic</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>) &lt;|&gt; </span><span class="string-literal">&quot;dead&quot;</span><span>
+</span><span class="comment">// p: Parsley[String] = parsley.Parsley@7e79ff18
 </span><span class="keyword">val</span><span> </span><span class="identifier">q</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> &lt;|&gt; (</span><span class="identifier">atomic</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading def&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;backtrack!&quot;</span><span>) &lt;|&gt;
                    </span><span class="string-literal">&quot;dead&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading dead&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;branch&quot;</span><span>)
-
-</span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;dead&quot;</span><span>) </span><span class="comment">// returns Success(&quot;dead&quot;)
+</span><span class="comment">// q: Parsley[String] = parsley.Parsley@70a188a1
+</span><span>
+</span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;dead&quot;</span><span>)
+</span><span class="comment">// res37: parsley.Result[String, String] = Success(dead)
 </span><span class="identifier">q</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;dead&quot;</span><span>)
-</span><span class="comment">/*
-&gt;branch&gt; (1, 1): dead•
-                 ^
-  &gt;backtrack!&gt; (1, 1): dead•
-                       ^
-    &gt;reading def&gt; (1, 1): dead•
-                          ^
-    &lt;reading def&lt; (1, 3): dead• Fail
-                            ^
-  &lt;backtrack!&lt; (1, 1): dead• Fail
-                       ^
-  &gt;reading dead&gt; (1, 1): dead•
-                         ^
-  &lt;reading dead&lt; (1, 5): dead• Good
-                             ^
-&lt;branch&lt; (1, 5): dead• Good
-                     ^
-*/</span></code></pre>
+</span><span class="comment">// &gt;branch&gt; (1, 1): dead•
+//                  ^
+//   &gt;backtrack!&gt; (1, 1): dead•
+//                        ^
+//     &gt;reading def&gt; (1, 1): dead•
+//                           ^
+//     &lt;reading def&lt; (1, 3): dead• Fail
+//                             ^
+//   &lt;backtrack!&lt; (1, 1): dead• Fail
+//                        ^
+//   &gt;reading dead&gt; (1, 1): dead•
+//                          ^
+//   &lt;reading dead&lt; (1, 5): dead• Good
+//                              ^
+// &lt;branch&lt; (1, 5): dead• Good
+//                      ^
+// res38: parsley.Result[String, String] = Success(dead)</span></code></pre>
         <p>Here we can see <code>atomic</code> in action, as well as a debug trace so you can see what&#39;s going on.
         When we wrap the left hand side of a branch with <code>atomic</code>, when it fails we will rollback any
         input it consumed, which then allows the branch to accept the alternative. We can see that in the
@@ -576,44 +579,54 @@ scala&gt; p.parse(&quot;dead&quot;)
 // def notFollowedBy(p: Parsley[_]): Parsley[Unit]
 </span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">eof</span><span> = </span><span class="identifier">notFollowedBy</span><span>(</span><span class="identifier">item</span><span>)
+</span><span class="comment">// eof: Parsley[Unit] = parsley.Parsley@261c4bc4
 </span><span class="keyword">val</span><span> </span><span class="identifier">abcOnly</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> &lt;* </span><span class="identifier">eof</span><span>
-
-</span><span class="identifier">abcOnly</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>) </span><span class="comment">// returns Success(&quot;abc&quot;)
-</span><span class="identifier">abcOnly</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abcd&quot;</span><span>) </span><span class="comment">// returns Failure(..)
+</span><span class="comment">// abcOnly: Parsley[String] = parsley.Parsley@12f1cecf
+</span><span>
+</span><span class="identifier">abcOnly</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>)
+</span><span class="comment">// res39: parsley.Result[String, String] = Success(abc)
+</span><span class="identifier">abcOnly</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abcd&quot;</span><span>)
+</span><span class="comment">// res40: parsley.Result[String, String] = Failure((line 1, column 4):
+//   unexpected &quot;d&quot;
+//   &gt;abcd
+//       ^)
 </span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>) &lt;* </span><span class="identifier">lookAhead</span><span>(</span><span class="string-literal">&quot;!!&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;!!&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;lookahead&quot;</span><span>)
-
+</span><span class="comment">// p: Parsley[String] = parsley.Parsley@6702bc99
+</span><span>
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc!!&quot;</span><span>)
-</span><span class="comment">/*
-&gt;abc&gt; (1, 1): abc!•
-              ^
-&lt;abc&lt; (1, 4): abc!• Good
-                 ^
-&gt;lookahead&gt; (1, 4): abc!•
-                       ^
-  &gt;!!&gt; (1, 4): abc!!•
-                  ^
-  &lt;!!&lt; (1, 6): abc!!• Good
-                    ^
-&lt;lookahead&lt; (1, 4): abc!!• Good
-                       ^
-*/</span><span>
-
+</span><span class="comment">// &gt;abc&gt; (1, 1): abc!!•
+//               ^
+// &lt;abc&lt; (1, 4): abc!!• Good
+//                  ^
+// &gt;lookahead&gt; (1, 4): abc!!•
+//                        ^
+//   &gt;!!&gt; (1, 4): abc!!•
+//                   ^
+//   &lt;!!&lt; (1, 6): abc!!• Good
+//                     ^
+// &lt;lookahead&lt; (1, 4): abc!!• Good
+//                        ^
+// res41: parsley.Result[String, String] = Success(abc)
+</span><span>
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc!&quot;</span><span>)
-</span><span class="comment">/*
-&gt;abc&gt; (1, 1): abc!•
-              ^
-&lt;abc&lt; (1, 4): abc!• Good
-                 ^
-&gt;lookahead&gt; (1, 4): abc!•
-                       ^
-  &gt;!!&gt; (1, 4): abc!•
-                  ^
-  &lt;!!&lt; (1, 5): abc!• Fail
-                   ^
-&lt;lookahead&lt; (1, 5): abc!• Fail
-                        ^
-*/</span></code></pre>
+</span><span class="comment">// &gt;abc&gt; (1, 1): abc!•
+//               ^
+// &lt;abc&lt; (1, 4): abc!• Good
+//                  ^
+// &gt;lookahead&gt; (1, 4): abc!•
+//                        ^
+//   &gt;!!&gt; (1, 4): abc!•
+//                   ^
+//   &lt;!!&lt; (1, 5): abc!• Fail
+//                    ^
+// &lt;lookahead&lt; (1, 5): abc!• Fail
+//                         ^
+// res42: parsley.Result[String, String] = Failure((line 1, column 4):
+//   unexpected &quot;!&quot;
+//   expected &quot;!!&quot;
+//   &gt;abc!
+//       ^)</span></code></pre>
         <p>Some key things to note here: the result of backtracking is always <code>()</code>. This is because the parser
         has to fail for <code>notFollowedBy</code> to succeed, so it can&#39;t return the result of the look-ahead! On the
         other hand, <code>lookAhead</code> can return the result of the parser that was ran. You can see from the
@@ -770,79 +783,80 @@ scala&gt; p.parse(&quot;dead&quot;)
         <p><details>
         <summary>Trace of <code>onlyMatchingDebug.parse(&quot;(()(()))&quot;)</code> </summary>
         <p></p>
-        <pre><code>scala&gt; onlyMatchingDebug.parse(&quot;(()(()))&quot;)
-&gt;matching&gt; (1, 1): (()(()
-                   ^
-  &gt;left&gt; (1, 1): (()(()
-                 ^
-  &lt;left&lt; (1, 2): (()(()) Good
-                  ^
-  &gt;matching&gt; (1, 2): (()(())
-                      ^
-    &gt;left&gt; (1, 2): (()(())
-                    ^
-    &lt;left&lt; (1, 3): (()(()))• Good
-                     ^
-    &gt;matching&gt; (1, 3): (()(()))•
-                         ^
-      &gt;left&gt; (1, 3): (()(()))•
-                       ^
-      &lt;left&lt; (1, 3): (()(()))• Fail
-                       ^
-    &lt;matching&lt; (1, 3): (()(()))• Good
-                         ^
-    &gt;right&gt; (1, 3): (()(()))•
-                      ^
-    &lt;right&lt; (1, 4): (()(()))• Good
-                       ^
-    &gt;left&gt; (1, 4): (()(()))•
-                      ^
-    &lt;left&lt; (1, 5): (()(()))• Good
-                       ^
-    &gt;matching&gt; (1, 5): (()(()))•
-                           ^
-      &gt;left&gt; (1, 5): (()(()))•
-                         ^
-      &lt;left&lt; (1, 6): (()(()))• Good
-                          ^
-      &gt;matching&gt; (1, 6): (()(()))•
-                              ^
-        &gt;left&gt; (1, 6): (()(()))•
-                            ^
-        &lt;left&lt; (1, 6): (()(()))• Fail
-                            ^
-      &lt;matching&lt; (1, 6): (()(()))• Good
-                              ^
-      &gt;right&gt; (1, 6): (()(()))•
-                           ^
-      &lt;right&lt; (1, 7): ()(()))• Good
-                           ^
-      &gt;left&gt; (1, 7): ()(()))•
-                          ^
-      &lt;left&lt; (1, 7): ()(()))• Fail
-                          ^
-    &lt;matching&lt; (1, 7): ()(()))• Good
-                            ^
-    &gt;right&gt; (1, 7): ()(()))•
-                         ^
-    &lt;right&lt; (1, 8): )(()))• Good
-                         ^
-    &gt;left&gt; (1, 8): )(()))•
-                        ^
-    &lt;left&lt; (1, 8): )(()))• Fail
-                        ^
-  &lt;matching&lt; (1, 8): )(()))• Good
-                          ^
-  &gt;right&gt; (1, 8): )(()))•
-                       ^
-  &lt;right&lt; (1, 9): (()))• Good
-                       ^
-  &gt;left&gt; (1, 9): (()))•
-                      ^
-  &lt;left&lt; (1, 9): (()))• Fail
-                      ^
-&lt;matching&lt; (1, 9): (()))• Good
-                        ^</code></pre>
+        <pre><code class="nohighlight"><span class="identifier">onlyMatchingDebug</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;(()(()))&quot;</span><span>)
+</span><span class="comment">// &gt;matching&gt; (1, 1): (()(()
+//                    ^
+//   &gt;left&gt; (1, 1): (()(()
+//                  ^
+//   &lt;left&lt; (1, 2): (()(()) Good
+//                   ^
+//   &gt;matching&gt; (1, 2): (()(())
+//                       ^
+//     &gt;left&gt; (1, 2): (()(())
+//                     ^
+//     &lt;left&lt; (1, 3): (()(()))• Good
+//                      ^
+//     &gt;matching&gt; (1, 3): (()(()))•
+//                          ^
+//       &gt;left&gt; (1, 3): (()(()))•
+//                        ^
+//       &lt;left&lt; (1, 3): (()(()))• Fail
+//                        ^
+//     &lt;matching&lt; (1, 3): (()(()))• Good
+//                          ^
+//     &gt;right&gt; (1, 3): (()(()))•
+//                       ^
+//     &lt;right&lt; (1, 4): (()(()))• Good
+//                        ^
+//     &gt;left&gt; (1, 4): (()(()))•
+//                       ^
+//     &lt;left&lt; (1, 5): (()(()))• Good
+//                        ^
+//     &gt;matching&gt; (1, 5): (()(()))•
+//                            ^
+//       &gt;left&gt; (1, 5): (()(()))•
+//                          ^
+//       &lt;left&lt; (1, 6): (()(()))• Good
+//                           ^
+//       &gt;matching&gt; (1, 6): (()(()))•
+//                               ^
+//         &gt;left&gt; (1, 6): (()(()))•
+//                             ^
+//         &lt;left&lt; (1, 6): (()(()))• Fail
+//                             ^
+//       &lt;matching&lt; (1, 6): (()(()))• Good
+//                               ^
+//       &gt;right&gt; (1, 6): (()(()))•
+//                            ^
+//       &lt;right&lt; (1, 7): ()(()))• Good
+//                            ^
+//       &gt;left&gt; (1, 7): ()(()))•
+//                           ^
+//       &lt;left&lt; (1, 7): ()(()))• Fail
+//                           ^
+//     &lt;matching&lt; (1, 7): ()(()))• Good
+//                             ^
+//     &gt;right&gt; (1, 7): ()(()))•
+//                          ^
+//     &lt;right&lt; (1, 8): )(()))• Good
+//                          ^
+//     &gt;left&gt; (1, 8): )(()))•
+//                         ^
+//     &lt;left&lt; (1, 8): )(()))• Fail
+//                         ^
+//   &lt;matching&lt; (1, 8): )(()))• Good
+//                           ^
+//   &gt;right&gt; (1, 8): )(()))•
+//                        ^
+//   &lt;right&lt; (1, 9): (()))• Good
+//                        ^
+//   &gt;left&gt; (1, 9): (()))•
+//                       ^
+//   &lt;left&lt; (1, 9): (()))• Fail
+//                       ^
+// &lt;matching&lt; (1, 9): (()))• Good
+//                         ^
+// res52: parsley.Result[String, Unit] = Success(())</span></code></pre>
         <p></p>
         </details></p>
         <p>Take a moment to just absorb that and be comfortable with how recursive parsing works out.</p>
@@ -891,9 +905,9 @@ scala&gt; p.parse(&quot;dead&quot;)
 </span><span class="comment">// &lt;atom&gt; ::= &#39;true&#39;          |  &#39;false&#39;           |   &#39;(&#39;   &lt;expr&gt;   &#39;)&#39;
 </span><span class="keyword">val</span><span> </span><span class="identifier">atom</span><span>    = </span><span class="string-literal">&quot;true&quot;</span><span> #&gt; </span><span class="boolean-literal">true</span><span> &lt;|&gt; </span><span class="string-literal">&quot;false&quot;</span><span> #&gt; </span><span class="boolean-literal">false</span><span> &lt;|&gt; (</span><span class="string-literal">&quot;(&quot;</span><span> *&gt; </span><span class="identifier">expr</span><span> &lt;* </span><span class="string-literal">&quot;)&quot;</span><span>)</span></code></pre>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">expr</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;!false&quot;</span><span>)
-</span><span class="comment">// res50: parsley.Result[String, Boolean] = Success(x = true)
+</span><span class="comment">// res53: parsley.Result[String, Boolean] = Success(true)
 </span><span class="identifier">expr</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;true&amp;&amp;!(false||true)&quot;</span><span>)
-</span><span class="comment">// res51: parsley.Result[String, Boolean] = Success(x = false)</span></code></pre>
+</span><span class="comment">// res54: parsley.Result[String, Boolean] = Success(false)</span></code></pre>
         <p>Here I&#39;ve introduced a tiny bit of sugar: by importing <code>implicits.lift.Lift2</code>, I&#39;ve enabled the <code>lift</code>
         method on two argument functions: essentially the same as <code>lift2</code> itself:
         <code>(or.lift _): (Parsley[Boolean], Parsley[Boolean]) =&gt; Parsley[Boolean]</code>. The <code>lift</code> is used to
@@ -936,9 +950,9 @@ scala&gt; p.parse(&quot;dead&quot;)
 </span><span class="comment">// &lt;atom&gt; ::= &#39;true&#39;          |  &#39;false&#39;           |   &#39;(&#39;   &lt;expr&gt;   &#39;)&#39;
 </span><span class="keyword">val</span><span> </span><span class="identifier">atom</span><span>    = </span><span class="string-literal">&quot;true&quot;</span><span> #&gt; </span><span class="boolean-literal">true</span><span> &lt;|&gt; </span><span class="string-literal">&quot;false&quot;</span><span> #&gt; </span><span class="boolean-literal">false</span><span> &lt;|&gt; (</span><span class="string-literal">&quot;(&quot;</span><span> *&gt; </span><span class="identifier">expr</span><span> &lt;* </span><span class="string-literal">&quot;)&quot;</span><span>)</span></code></pre>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">expr</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;!false&quot;</span><span>)
-</span><span class="comment">// res53: parsley.Result[String, Boolean] = Success(x = true)
+</span><span class="comment">// res56: parsley.Result[String, Boolean] = Success(true)
 </span><span class="identifier">expr</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;true&amp;&amp;!(false||true)&quot;</span><span>)
-</span><span class="comment">// res54: parsley.Result[String, Boolean] = Success(x = false)</span></code></pre>
+</span><span class="comment">// res57: parsley.Result[String, Boolean] = Success(false)</span></code></pre>
         <p>The new example is the more efficient, linear time, form of the parser. Here I&#39;ve employed two
         different approaches of compiling the first <code>term</code>/<code>not</code> with the <em>possible</em> result after a <em>possible</em>
         operator. In the <code>expr</code> case, I&#39;ve used a form very similar to our original parser, except by using
