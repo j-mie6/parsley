@@ -1,30 +1,32 @@
 # Effective Lexing
 
 @:callout(info)
-This page is still being updated for the wiki port, so some things may be a bit broken or look a little strange.
+Note that the start of this page describes the underlying fundamentals behind
+lexing with parser combinators, but this is abstracted by the functionality
+at the end.
 @:@
 
 In the previous post, we saw the basic principles behind handling whitespace in a transparent manner.
 To remind ourselves of what we ended up lets pick up where we left off:
 
-```scala
+```scala mdoc
 import parsley.Parsley, Parsley.atomic
 import parsley.character.{digit, whitespace, string, item, endOfLine}
 import parsley.combinator.{manyUntil, skipMany, eof}
-import parsley.expr.{precedence, Ops, InfixL, Prefix}
-import parsley.errors.combinator.ErrorMethods //for hide
+import parsley.expr.{precedence, Ops, InfixL}
+import parsley.errors.combinator.ErrorMethods
 
 object lexer {
     private def symbol(str: String): Parsley[String] = atomic(string(str))
 
-    private val lineComment = symbol("//") *> manyUntil(item, endOfLine)
-    private val multiComment = symbol("/*") *> manyUntil(item, symbol("*/"))
-    private val comment = lineComment <|> multiComment
-    private val skipWhitespace = skipMany(whitespace <|> comment).hide
+    private val lineComment = symbol("//") ~> manyUntil(item, endOfLine)
+    private val multiComment = symbol("/*") ~> manyUntil(item, symbol("*/"))
+    private val comment = lineComment | multiComment
+    private val skipWhitespace = skipMany(whitespace | comment).hide
 
-    private def lexeme[A](p: Parsley[A]): Parsley[A] = p <* skipWhitespace
+    private def lexeme[A](p: Parsley[A]): Parsley[A] = p <~ skipWhitespace
     private def token[A](p: Parsley[A]): Parsley[A] = lexeme(atomic(p))
-    def fully[A](p: Parsley[A]): Parsley[A] = skipWhitespace *> p <* eof
+    def fully[A](p: Parsley[A]): Parsley[A] = skipWhitespace ~> p <~ eof
 
     val number = token(digit.foldLeft1[BigInt](0)((n, d) => n * 10 + d.asDigit))
 
@@ -37,10 +39,10 @@ object expressions {
     import lexer.implicits.implicitSymbol
     import lexer.{number, fully}
 
-    private lazy val atom: Parsley[Int] = "(" *> expr <* ")" <|> number
-    private lazy val expr = precedence[Int](atom)(
-        Ops(InfixL)("*" #> (_ * _)),
-        Ops(InfixL)("+" #> (_ + _), "-" #> (_ - _)))
+    private lazy val atom: Parsley[BigInt] = "(" ~> expr <~ ")" | number
+    private lazy val expr = precedence[BigInt](atom)(
+        Ops(InfixL)("*" as (_ * _)),
+        Ops(InfixL)("+" as (_ + _), "-" as (_ - _)))
 
     val parser = fully(expr)
 }
@@ -54,11 +56,35 @@ object later on in the post, I want to first extend our "language" to add in var
 language and a `negate` operator. In the process I'm going to swap the integer result for an
 abstract syntax tree.
 
-```scala
+```scala mdoc:nest:invisible
+import parsley.character.{stringOfSome, letter}
+object lexer {
+    def symbol(str: String): Parsley[String] = atomic(string(str))
+
+    private val lineComment = symbol("//") ~> manyUntil(item, endOfLine)
+    private val multiComment = symbol("/*") ~> manyUntil(item, symbol("*/"))
+    private val comment = lineComment | multiComment
+    private val skipWhitespace = skipMany(whitespace | comment).hide
+
+    def lexeme[A](p: Parsley[A]): Parsley[A] = p <~ skipWhitespace
+    def token[A](p: Parsley[A]): Parsley[A] = lexeme(atomic(p))
+    def fully[A](p: Parsley[A]): Parsley[A] = skipWhitespace ~> p <~ eof
+
+    val number = token(digit.foldLeft1[BigInt](0)((n, d) => n * 10 + d.asDigit))
+    val identifier = token(stringOfSome(letter))
+
+    object implicits {
+        implicit def implicitSymbol(s: String): Parsley[Unit] = lexeme(symbol(s)).void
+    }
+}
+```
+
+```scala mdoc
+import parsley.expr.{precedence, Ops, InfixL, Prefix}
 object expressions {
     import lexer.implicits.implicitSymbol
     import lexer.{number, fully, identifier}
-    // for now, assume that `identifier` is just 1 or more alpha-numeric characters
+    // for now, assume that `identifier` is just 1 or more alphabetical characters
 
     sealed trait Expr
     case class Add(x: Expr, y: Expr) extends Expr
@@ -69,30 +95,31 @@ object expressions {
     case class Var(x: String) extends Expr
 
     private lazy val atom: Parsley[Expr] =
-        "(" *> expr <* ")" <|> number.map(Num) <|> identifier.map(Var)
+        "(" ~> expr <~ ")" | number.map(Num) | identifier.map(Var)
     private lazy val expr = precedence[Expr](atom)(
-        Ops(Prefix)("negate" #> Neg),
-        Ops(InfixL)("*" #> Mul),
-        Ops(InfixL)("+" #> Add, "-" #> Sub))
+        Ops(Prefix)("negate" as Neg),
+        Ops(InfixL)("*" as Mul),
+        Ops(InfixL)("+" as Add, "-" as Sub))
 
     val parser = fully(expr)
 }
 ```
+```scala mdoc:invisible
+import parsley.Success
+import expressions.{Add, Num, Mul, Var}
+assert(expressions.parser.parse("5 + 6 * x") == Success(Add(Num(5), Mul(Num(6), Var("x")))))
+```
 
 Now, we can assume that, since `identifier` comes from the lexer, this parser handles all the whitespace correctly. The question is, does it work?
 
-```
+```scala mdoc:to-string
 expressions.parser.parse("x + y")
-=> Success(Add(Var(x),Var(y)))
 
 expressions.parser.parse("negate + z")
-=> Failure(..)
 
 expressions.parser.parse("negate x + z")
-=> Success(Add(Neg(Var(x)),Var(z)))
 
 expressions.parser.parse("negatex + z")
-=> Success(Add(Neg(Var(x)),Var(z)))
 ```
 
 So, looking at these examples, the first one seems to work fine. The second one also works
@@ -109,7 +136,7 @@ strings has no awareness of keywords (or indeed operators) and identifiers that 
 alpha-numeric sequence are an accident waiting to happen. Let's start by creating a couple of
 sets to represent the valid keywords and operators in the language:
 
-```scala
+```scala mdoc:silent
 val keywords = Set("negate")
 val operators = Set("*", "+", "-")
 ```
@@ -126,12 +153,15 @@ valid keyword we can use the `filter` family of combinators. In particular, `fil
 provides an error message that explains why the parser has failed. Here is our new and improved
 identifier:
 
-```scala
+```scala mdoc:invisible
+import lexer._
+```
+```scala mdoc:silent:nest
 import parsley.errors.combinator.ErrorMethods //for filterOut
-import parsley.character.{letterOrDigit, stringOfSome}
+import parsley.character.{letter, stringOfSome}
 
 // `stringOfSome(letter)` is loosely equivalent to `some(letter).map(_.mkString)`
-val identifier = token(stringOfSome(letterOrDigit).filterOut {
+val identifier = token(stringOfSome(letter).filterOut {
     case v if keywords(v) => s"keyword $v may not be used as an identifier"
 })
 ```
@@ -145,8 +175,9 @@ a keyword, we want the ability to backtrack. Filtering after the input has been 
 Next we'll tackle the keywords, using the handy `notFollowedBy` combinator that was briefly
 referenced in the very first post:
 
-```scala
-def keyword(k: String): Parsley[Unit] = token(string(k) *> notFollowedBy(letterOrDigit))
+```scala mdoc
+import parsley.Parsley.notFollowedBy
+def keyword(k: String): Parsley[Unit] = token(string(k) ~> notFollowedBy(letter))
 ```
 
 Again, notice that I've been very careful to perform the negative-lookahead within the scope of
@@ -159,7 +190,7 @@ Finally, let's look at how operator is dealt with. It's a bit trickier, and in t
 meaningless, because all of our operators are single character and don't form valid prefixes of
 each other. But it will be useful to discuss anyway:
 
-```scala
+```scala mdoc
 import parsley.character.strings
 
 def operator(op: String): Parsley[Unit] = {
@@ -170,9 +201,13 @@ def operator(op: String): Parsley[Unit] = {
     biggerOps match {
         case Nil => lexeme(symbol(op)).void
         // strings requires one non-varargs argument
-        case biggerOp :: biggerOps => token(string(op) *> notFollowedBy(strings(biggerOp, biggerOps: _*)))
+        case biggerOp :: biggerOps =>
+            token(string(op) ~> notFollowedBy(strings(biggerOp, biggerOps: _*)))
     }
 }
+```
+```scala mdoc:invisible
+assert(operator("+").parse("+") == Success(()))
 ```
 
 Let's unpack what's going on here: first we read the op as normal, then we ensure that it's
@@ -189,7 +224,7 @@ any of the replacements. And, in addition, we lose the nice string literal synta
 good use of until this point. So, a better solution would be to change our definition of
 `implicitSymbol`:
 
-```scala
+```scala mdoc
 object implicits {
     implicit def implicitSymbol(s: String): Parsley[Unit] = {
         if (keywords(s))       keyword(s)
@@ -198,52 +233,58 @@ object implicits {
     }
 }
 ```
+```scala mdoc:invisible
+import parsley.Failure
+assert(implicits.implicitSymbol("negate").parse("negatex").isInstanceOf[Failure[_]])
+```
 
 Now, when we use a string literal in our original parser, it will first check to see if that is
-a valid keyword or an operator and, if so, it can use our specialised combinators: neat! With this
-done, the output of our dodgy case from before is:
+a valid keyword or an operator and, if so, it can use our specialised combinators: neat! With this done, let's see what the new lexer looks like and
+relook at the problematic example:
 
+```scala mdoc:invisible:reset
+import parsley.Parsley, Parsley.{atomic, notFollowedBy}
+import parsley.character.{digit, letter, whitespace, string, item, endOfLine, strings, stringOfSome}
+import parsley.combinator.{manyUntil, skipMany, eof}
+import parsley.expr.{precedence, Ops, InfixL, Prefix}
+import parsley.errors.combinator.ErrorMethods
 ```
-expressions.parser.parse("negatex + z")
-=> Success(Add(Var(negatex),Var(z)))
-```
-
-Exactly as desired! Here is our new `lexer` object with all the changes incorporated:
-
-```scala
+```scala mdoc
 object lexer {
-    val keywords = Set("negate")
-    val operators = Set("*", "+", "-")
+    private val keywords = Set("negate")
+    private val operators = Set("*", "+", "-")
 
     private def symbol(str: String): Parsley[String] = atomic(string(str))
 
-    private val lineComment = symbol("//") *> manyUntil(item, endOfLine)
-    private val multiComment = symbol("/*") *> manyUntil(item, symbol("*/"))
-    private val comment = lineComment <|> multiComment
-    private val skipWhitespace = skipMany(whitespace <|> comment).hide
+    private val lineComment = symbol("//") ~> manyUntil(item, endOfLine)
+    private val multiComment = symbol("/*") ~> manyUntil(item, symbol("*/"))
+    private val comment = lineComment | multiComment
+    private val skipWhitespace = skipMany(whitespace | comment).hide
 
-    private def lexeme[A](p: =>Parsley[A]): Parsley[A] = p <* skipWhitespace
-    private def token[A](p: =>Parsley[A]): Parsley[A] = lexeme(atomic(p))
-    def fully[A](p: =>Parsley[A]): Parsley[A] = skipWhitespace *> p <* eof
+    private def lexeme[A](p: Parsley[A]): Parsley[A] = p <~ skipWhitespace
+    private def token[A](p: Parsley[A]): Parsley[A] = lexeme(atomic(p))
+    def fully[A](p: Parsley[A]): Parsley[A] = skipWhitespace ~> p <~ eof
 
     val number = token(digit.foldLeft1[BigInt](0)((n, d) => n * 10 + d.asDigit))
-
-    val identifier = token(stringOfSome(letterOrDigit).filterOut {
+    val identifier = token(stringOfSome(letter).filterOut {
         case v if keywords(v) => s"keyword $v may not be used as an identifier"
     })
 
-    def keyword(k: String): Parsley[Unit] = token(string(k) *> notFollowedBy(letterOrDigit))
-
-    def operator(op: String): Parsley[Unit] = {
+    private def operator(op: String): Parsley[Unit] = {
         val biggerOps = operators.collect {
             case biggerOp if biggerOp.startsWith(op)
-                          && biggerOp > op => biggerOp.substring(op.length)
+                        && biggerOp > op => biggerOp.substring(op.length)
         }.toList
         biggerOps match {
             case Nil => lexeme(symbol(op)).void
-            case biggerOp :: biggerOps => token(string(op) *> notFollowedBy(strings(biggerOp, biggerOps: _*)))
+            // strings requires one non-varargs argument
+            case biggerOp :: biggerOps =>
+                token(string(op) ~> notFollowedBy(strings(biggerOp, biggerOps: _*)))
         }
     }
+
+    private def keyword(k: String): Parsley[Unit] = token(string(k) ~> notFollowedBy(letter))
+
 
     object implicits {
         implicit def implicitSymbol(s: String): Parsley[Unit] = {
@@ -254,12 +295,40 @@ object lexer {
     }
 }
 ```
+```scala mdoc:invisible
+object expressions {
+    import lexer.implicits.implicitSymbol
+    import lexer.{number, fully, identifier}
+    // for now, assume that `identifier` is just 1 or more alphabetical characters
 
-## Using `token.LanguageDef` and `token.Lexer`
-@:callout(warning)
-_This section is out-of-date, and describes the situation in `parsley:3.x.y` and not `parsley:@VERSION@`. In this release, the entire `token` package was reworked, so this doesn't apply._
-@:@
+    sealed trait Expr
+    case class Add(x: Expr, y: Expr) extends Expr
+    case class Mul(x: Expr, y: Expr) extends Expr
+    case class Sub(x: Expr, y: Expr) extends Expr
+    case class Neg(x: Expr) extends Expr
+    case class Num(x: BigInt) extends Expr
+    case class Var(x: String) extends Expr
 
+    private lazy val atom: Parsley[Expr] =
+        "(" ~> expr <~ ")" | number.map(Num) | identifier.map(Var)
+    private lazy val expr = precedence[Expr](atom)(
+        Ops(Prefix)("negate" as Neg),
+        Ops(InfixL)("*" as Mul),
+        Ops(InfixL)("+" as Add, "-" as Sub))
+
+    val parser = fully(expr)
+}
+```
+
+And the original failing example:
+
+```scala mdoc:to-string
+expressions.parser.parse("negatex + z")
+```
+
+Exactly as desired!
+
+## Using `token.descriptions.LexicalDesc` and `token.Lexer`
 Whilst everything we have done above is nice and instructive, in practice all this work is
 already done for us with `token.Lexer`. By providing a suitable `token.descriptions.LexicalDesc`,
 we can get a whole bunch of combinators for dealing with tokens for free. There is a lot of
@@ -267,9 +336,7 @@ functionality found inside the `Lexer`, and most of it is highly configurable wi
 and its sub-components. Let's make use of this new found power and change up our `lexer` object one
 last time:
 
-```scala
-...
-
+```scala mdoc:nest
 object lexer {
     import parsley.token.{Lexer, predicate}
     import parsley.token.descriptions.{LexicalDesc, NameDesc, SymbolDesc}
@@ -278,7 +345,7 @@ object lexer {
         nameDesc = NameDesc.plain.copy(
             // Unicode is also possible instead of Basic
             identifierStart = predicate.Basic(_.isLetter),
-            identifierLetter = predicate.Basic(_.isLetterOrDigit),
+            identifierLetter = predicate.Basic(_.isLetter),
         ),
         symbolDesc = SymbolDesc.plain.copy(
             hardKeywords = Set("negate"),
@@ -295,6 +362,10 @@ object lexer {
     val implicits = lexer.lexeme.symbol.implicits
 }
 ```
+```scala mdoc:invisible
+import parsley.Failure
+assert(lexer.implicits.implicitSymbol("negate").parse("negatex").isInstanceOf[Failure[_]])
+```
 
 The `implicitSymbol` function we developed before, along with `operator` and
 `keyword` are all implemented by `lexer.lexeme.symbol`. The `names.identifier` parser
@@ -304,3 +375,5 @@ is arbitrary precision. By using `token.lexeme`, this will already handle the
 whitespace and atomicity of the token for us. This is just the tip of the iceberg
 when it comes to the lexer functionality within Parsley. It is well worth having a
 play around with this functionality and getting used to it!
+
+A more detailed description of this functionality can be found in the [API Guide](../api-guide/token/Lexer.md).
