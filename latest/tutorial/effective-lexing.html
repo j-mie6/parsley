@@ -134,7 +134,7 @@
 
   <ul class="nav-list">
     <li class="level1 nav-leaf"><a href="#keywords-identifiers-and-operators"><span class="section-number">1 </span>Keywords, Identifiers and Operators</a></li>
-    <li class="level1 nav-leaf"><a href="#using-token-languagedef-and-token-lexer"><span class="section-number">2 </span>Using <code>token.LanguageDef</code> and <code>token.Lexer</code></a></li>
+    <li class="level1 nav-leaf"><a href="#using-token-descriptions-lexicaldesc-and-token-lexer"><span class="section-number">2 </span>Using <code>token.descriptions.LexicalDesc</code> and <code>token.Lexer</code></a></li>
   </ul>
 
   <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/wiki-improvements/docs/tutorial/effective-lexing.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
@@ -146,27 +146,29 @@
         <h1 id="effective-lexing" class="title">Effective Lexing</h1>
         <div class="callout info">
           <i class="icofont-laika info">&#xef4e;</i>
-          <p>This page is still being updated for the wiki port, so some things may be a bit broken or look a little strange.</p>
+          <p>Note that the start of this page describes the underlying fundamentals behind
+          lexing with parser combinators, but this is abstracted by the functionality
+          at the end.</p>
         </div>
         <p>In the previous post, we saw the basic principles behind handling whitespace in a transparent manner.
         To remind ourselves of what we ended up lets pick up where we left off:</p>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>, </span><span class="type-name">Parsley</span><span>.</span><span class="identifier">atomic</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">digit</span><span>, </span><span class="identifier">whitespace</span><span>, </span><span class="identifier">string</span><span>, </span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>}
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.{</span><span class="identifier">manyUntil</span><span>, </span><span class="identifier">skipMany</span><span>, </span><span class="identifier">eof</span><span>}
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">expr</span><span>.{</span><span class="identifier">precedence</span><span>, </span><span class="type-name">Ops</span><span>, </span><span class="type-name">InfixL</span><span>, </span><span class="type-name">Prefix</span><span>}
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="type-name">ErrorMethods</span><span> </span><span class="comment">//for hide
-</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">expr</span><span>.{</span><span class="identifier">precedence</span><span>, </span><span class="type-name">Ops</span><span>, </span><span class="type-name">InfixL</span><span>}
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="type-name">ErrorMethods</span><span>
+
 </span><span class="keyword">object</span><span> </span><span class="identifier">lexer</span><span> {
     </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">symbol</span><span>(</span><span class="identifier">str</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">atomic</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">str</span><span>))
 
-    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">lineComment</span><span> = </span><span class="identifier">symbol</span><span>(</span><span class="string-literal">&quot;//&quot;</span><span>) *&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>)
-    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">multiComment</span><span> = </span><span class="identifier">symbol</span><span>(</span><span class="string-literal">&quot;/*&quot;</span><span>) *&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">symbol</span><span>(</span><span class="string-literal">&quot;*/&quot;</span><span>))
-    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">comment</span><span> = </span><span class="identifier">lineComment</span><span> &lt;|&gt; </span><span class="identifier">multiComment</span><span>
-    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">skipWhitespace</span><span> = </span><span class="identifier">skipMany</span><span>(</span><span class="identifier">whitespace</span><span> &lt;|&gt; </span><span class="identifier">comment</span><span>).</span><span class="identifier">hide</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">lineComment</span><span> = </span><span class="identifier">symbol</span><span>(</span><span class="string-literal">&quot;//&quot;</span><span>) ~&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>)
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">multiComment</span><span> = </span><span class="identifier">symbol</span><span>(</span><span class="string-literal">&quot;/*&quot;</span><span>) ~&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">symbol</span><span>(</span><span class="string-literal">&quot;*/&quot;</span><span>))
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">comment</span><span> = </span><span class="identifier">lineComment</span><span> | </span><span class="identifier">multiComment</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">skipWhitespace</span><span> = </span><span class="identifier">skipMany</span><span>(</span><span class="identifier">whitespace</span><span> | </span><span class="identifier">comment</span><span>).</span><span class="identifier">hide</span><span>
 
-    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">lexeme</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">p</span><span> &lt;* </span><span class="identifier">skipWhitespace</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">lexeme</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">p</span><span> &lt;~ </span><span class="identifier">skipWhitespace</span><span>
     </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">token</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">atomic</span><span>(</span><span class="identifier">p</span><span>))
-    </span><span class="keyword">def</span><span> </span><span class="declaration-name">fully</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">skipWhitespace</span><span> *&gt; </span><span class="identifier">p</span><span> &lt;* </span><span class="identifier">eof</span><span>
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">fully</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">skipWhitespace</span><span> ~&gt; </span><span class="identifier">p</span><span> &lt;~ </span><span class="identifier">eof</span><span>
 
     </span><span class="keyword">val</span><span> </span><span class="identifier">number</span><span> = </span><span class="identifier">token</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">foldLeft1</span><span>[</span><span class="type-name">BigInt</span><span>](</span><span class="number-literal">0</span><span>)((</span><span class="identifier">n</span><span>, </span><span class="identifier">d</span><span>) =&gt; </span><span class="identifier">n</span><span> * </span><span class="number-literal">10</span><span> + </span><span class="identifier">d</span><span>.</span><span class="identifier">asDigit</span><span>))
 
@@ -179,10 +181,10 @@
     </span><span class="keyword">import</span><span> </span><span class="identifier">lexer</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">implicitSymbol</span><span>
     </span><span class="keyword">import</span><span> </span><span class="identifier">lexer</span><span>.{</span><span class="identifier">number</span><span>, </span><span class="identifier">fully</span><span>}
 
-    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">atom</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Int</span><span>] = </span><span class="string-literal">&quot;(&quot;</span><span> *&gt; </span><span class="identifier">expr</span><span> &lt;* </span><span class="string-literal">&quot;)&quot;</span><span> &lt;|&gt; </span><span class="identifier">number</span><span>
-    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span> = </span><span class="identifier">precedence</span><span>[</span><span class="type-name">Int</span><span>](</span><span class="identifier">atom</span><span>)(
-        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> #&gt; (</span><span class="identifier">_</span><span> * </span><span class="identifier">_</span><span>)),
-        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> #&gt; (</span><span class="identifier">_</span><span> + </span><span class="identifier">_</span><span>), </span><span class="string-literal">&quot;-&quot;</span><span> #&gt; (</span><span class="identifier">_</span><span> - </span><span class="identifier">_</span><span>)))
+    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">atom</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">BigInt</span><span>] = </span><span class="string-literal">&quot;(&quot;</span><span> ~&gt; </span><span class="identifier">expr</span><span> &lt;~ </span><span class="string-literal">&quot;)&quot;</span><span> | </span><span class="identifier">number</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span> = </span><span class="identifier">precedence</span><span>[</span><span class="type-name">BigInt</span><span>](</span><span class="identifier">atom</span><span>)(
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="identifier">as</span><span> (</span><span class="identifier">_</span><span> * </span><span class="identifier">_</span><span>)),
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> </span><span class="identifier">as</span><span> (</span><span class="identifier">_</span><span> + </span><span class="identifier">_</span><span>), </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="identifier">as</span><span> (</span><span class="identifier">_</span><span> - </span><span class="identifier">_</span><span>)))
 
     </span><span class="keyword">val</span><span> </span><span class="identifier">parser</span><span> = </span><span class="identifier">fully</span><span>(</span><span class="identifier">expr</span><span>)
 }</span></code></pre>
@@ -193,10 +195,11 @@
         object later on in the post, I want to first extend our &quot;language&quot; to add in variables into the
         language and a <code>negate</code> operator. In the process I&#39;m going to swap the integer result for an
         abstract syntax tree.</p>
-        <pre><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="identifier">expressions</span><span> {
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">expr</span><span>.{</span><span class="identifier">precedence</span><span>, </span><span class="type-name">Ops</span><span>, </span><span class="type-name">InfixL</span><span>, </span><span class="type-name">Prefix</span><span>}
+</span><span class="keyword">object</span><span> </span><span class="identifier">expressions</span><span> {
     </span><span class="keyword">import</span><span> </span><span class="identifier">lexer</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">implicitSymbol</span><span>
     </span><span class="keyword">import</span><span> </span><span class="identifier">lexer</span><span>.{</span><span class="identifier">number</span><span>, </span><span class="identifier">fully</span><span>, </span><span class="identifier">identifier</span><span>}
-    </span><span class="comment">// for now, assume that `identifier` is just 1 or more alpha-numeric characters
+    </span><span class="comment">// for now, assume that `identifier` is just 1 or more alphabetical characters
 </span><span>
     </span><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">Expr</span><span>
     </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Add</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Expr</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Expr</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Expr</span><span>
@@ -207,26 +210,30 @@
     </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Var</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">String</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Expr</span><span>
 
     </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">atom</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Expr</span><span>] =
-        </span><span class="string-literal">&quot;(&quot;</span><span> *&gt; </span><span class="identifier">expr</span><span> &lt;* </span><span class="string-literal">&quot;)&quot;</span><span> &lt;|&gt; </span><span class="identifier">number</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Num</span><span>) &lt;|&gt; </span><span class="identifier">identifier</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Var</span><span>)
+        </span><span class="string-literal">&quot;(&quot;</span><span> ~&gt; </span><span class="identifier">expr</span><span> &lt;~ </span><span class="string-literal">&quot;)&quot;</span><span> | </span><span class="identifier">number</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Num</span><span>) | </span><span class="identifier">identifier</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Var</span><span>)
     </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span> = </span><span class="identifier">precedence</span><span>[</span><span class="type-name">Expr</span><span>](</span><span class="identifier">atom</span><span>)(
-        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">Prefix</span><span>)(</span><span class="string-literal">&quot;negate&quot;</span><span> #&gt; </span><span class="type-name">Neg</span><span>),
-        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> #&gt; </span><span class="type-name">Mul</span><span>),
-        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> #&gt; </span><span class="type-name">Add</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> #&gt; </span><span class="type-name">Sub</span><span>))
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">Prefix</span><span>)(</span><span class="string-literal">&quot;negate&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Neg</span><span>),
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Mul</span><span>),
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Add</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Sub</span><span>))
 
     </span><span class="keyword">val</span><span> </span><span class="identifier">parser</span><span> = </span><span class="identifier">fully</span><span>(</span><span class="identifier">expr</span><span>)
 }</span></code></pre>
         <p>Now, we can assume that, since <code>identifier</code> comes from the lexer, this parser handles all the whitespace correctly. The question is, does it work?</p>
-        <pre><code>expressions.parser.parse(&quot;x + y&quot;)
-=&gt; Success(Add(Var(x),Var(y)))
-
-expressions.parser.parse(&quot;negate + z&quot;)
-=&gt; Failure(..)
-
-expressions.parser.parse(&quot;negate x + z&quot;)
-=&gt; Success(Add(Neg(Var(x)),Var(z)))
-
-expressions.parser.parse(&quot;negatex + z&quot;)
-=&gt; Success(Add(Neg(Var(x)),Var(z)))</code></pre>
+        <pre><code class="nohighlight"><span class="identifier">expressions</span><span>.</span><span class="identifier">parser</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;x + y&quot;</span><span>)
+</span><span class="comment">// res1: parsley.Result[String, expressions.Expr] = Success(Add(Var(x),Var(y)))
+</span><span>
+</span><span class="identifier">expressions</span><span>.</span><span class="identifier">parser</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;negate + z&quot;</span><span>)
+</span><span class="comment">// res2: parsley.Result[String, expressions.Expr] = Failure((line 1, column 8):
+//   unexpected &quot;+&quot;
+//   expected &quot;(&quot;, &quot;negate&quot;, digit, or letter
+//   &gt;negate + z
+//           ^)
+</span><span>
+</span><span class="identifier">expressions</span><span>.</span><span class="identifier">parser</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;negate x + z&quot;</span><span>)
+</span><span class="comment">// res3: parsley.Result[String, expressions.Expr] = Success(Add(Neg(Var(x)),Var(z)))
+</span><span>
+</span><span class="identifier">expressions</span><span>.</span><span class="identifier">parser</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;negatex + z&quot;</span><span>)
+</span><span class="comment">// res4: parsley.Result[String, expressions.Expr] = Success(Add(Neg(Var(x)),Var(z)))</span></code></pre>
         <p>So, looking at these examples, the first one seems to work fine. The second one also works
         fine, but given that we&#39;ve said that identifiers are just alpha-numeric characters, you might
         assume it was legal (indeed, it really <em>shouldn&#39;t</em> be legal in most languages that don&#39;t have
@@ -254,10 +261,10 @@ expressions.parser.parse(&quot;negatex + z&quot;)
         provides an error message that explains why the parser has failed. Here is our new and improved
         identifier:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="type-name">ErrorMethods</span><span> </span><span class="comment">//for filterOut
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">letterOrDigit</span><span>, </span><span class="identifier">stringOfSome</span><span>}
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">letter</span><span>, </span><span class="identifier">stringOfSome</span><span>}
 
 </span><span class="comment">// `stringOfSome(letter)` is loosely equivalent to `some(letter).map(_.mkString)`
-</span><span class="keyword">val</span><span> </span><span class="identifier">identifier</span><span> = </span><span class="identifier">token</span><span>(</span><span class="identifier">stringOfSome</span><span>(</span><span class="identifier">letterOrDigit</span><span>).</span><span class="identifier">filterOut</span><span> {
+</span><span class="keyword">val</span><span> </span><span class="identifier">identifier</span><span> = </span><span class="identifier">token</span><span>(</span><span class="identifier">stringOfSome</span><span>(</span><span class="identifier">letter</span><span>).</span><span class="identifier">filterOut</span><span> {
     </span><span class="keyword">case</span><span> </span><span class="identifier">v</span><span> </span><span class="keyword">if</span><span> </span><span class="identifier">keywords</span><span>(</span><span class="identifier">v</span><span>) =&gt; </span><span class="string-literal">s&quot;keyword </span><span class="substitution">$v</span><span class="string-literal"> may not be used as an identifier&quot;</span><span>
 })</span></code></pre>
         <p>The <code>filterOut</code> combinator takes a <code>PartialFunction</code> from the parser&#39;s result to <code>String</code>. If
@@ -267,7 +274,8 @@ expressions.parser.parse(&quot;negatex + z&quot;)
         a keyword, we want the ability to backtrack. Filtering after the input has been irrevocably consumed will mean this parser fails more strongly than it should.</p>
         <p>Next we&#39;ll tackle the keywords, using the handy <code>notFollowedBy</code> combinator that was briefly
         referenced in the very first post:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">keyword</span><span>(</span><span class="identifier">k</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">token</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">k</span><span>) *&gt; </span><span class="identifier">notFollowedBy</span><span>(</span><span class="identifier">letterOrDigit</span><span>))</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>.</span><span class="identifier">notFollowedBy</span><span>
+</span><span class="keyword">def</span><span> </span><span class="declaration-name">keyword</span><span>(</span><span class="identifier">k</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">token</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">k</span><span>) ~&gt; </span><span class="identifier">notFollowedBy</span><span>(</span><span class="identifier">letter</span><span>))</span></code></pre>
         <p>Again, notice that I&#39;ve been very careful to perform the negative-lookahead within the scope of
         the <code>token</code> so that we can backtrack if necessary (indeed, it&#39;s likely that a valid
         alternative was an identifier!). Additionally, we also need to ensure that whitespace isn&#39;t
@@ -286,7 +294,8 @@ expressions.parser.parse(&quot;negatex + z&quot;)
     </span><span class="identifier">biggerOps</span><span> </span><span class="keyword">match</span><span> {
         </span><span class="keyword">case</span><span> </span><span class="type-name">Nil</span><span> =&gt; </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">symbol</span><span>(</span><span class="identifier">op</span><span>)).</span><span class="identifier">void</span><span>
         </span><span class="comment">// strings requires one non-varargs argument
-</span><span>        </span><span class="keyword">case</span><span> </span><span class="identifier">biggerOp</span><span> :: </span><span class="identifier">biggerOps</span><span> =&gt; </span><span class="identifier">token</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">op</span><span>) *&gt; </span><span class="identifier">notFollowedBy</span><span>(</span><span class="identifier">strings</span><span>(</span><span class="identifier">biggerOp</span><span>, </span><span class="identifier">biggerOps</span><span>: </span><span class="identifier">_</span><span>*)))
+</span><span>        </span><span class="keyword">case</span><span> </span><span class="identifier">biggerOp</span><span> :: </span><span class="identifier">biggerOps</span><span> =&gt;
+            </span><span class="identifier">token</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">op</span><span>) ~&gt; </span><span class="identifier">notFollowedBy</span><span>(</span><span class="identifier">strings</span><span>(</span><span class="identifier">biggerOp</span><span>, </span><span class="identifier">biggerOps</span><span>: </span><span class="identifier">_</span><span>*)))
     }
 }</span></code></pre>
         <p>Let&#39;s unpack what&#39;s going on here: first we read the op as normal, then we ensure that it&#39;s
@@ -309,44 +318,43 @@ expressions.parser.parse(&quot;negatex + z&quot;)
     }
 }</span></code></pre>
         <p>Now, when we use a string literal in our original parser, it will first check to see if that is
-        a valid keyword or an operator and, if so, it can use our specialised combinators: neat! With this
-        done, the output of our dodgy case from before is:</p>
-        <pre><code>expressions.parser.parse(&quot;negatex + z&quot;)
-=&gt; Success(Add(Var(negatex),Var(z)))</code></pre>
-        <p>Exactly as desired! Here is our new <code>lexer</code> object with all the changes incorporated:</p>
+        a valid keyword or an operator and, if so, it can use our specialised combinators: neat! With this done, let&#39;s see what the new lexer looks like and
+        relook at the problematic example:</p>
         <pre><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="identifier">lexer</span><span> {
-    </span><span class="keyword">val</span><span> </span><span class="identifier">keywords</span><span> = </span><span class="type-name">Set</span><span>(</span><span class="string-literal">&quot;negate&quot;</span><span>)
-    </span><span class="keyword">val</span><span> </span><span class="identifier">operators</span><span> = </span><span class="type-name">Set</span><span>(</span><span class="string-literal">&quot;*&quot;</span><span>, </span><span class="string-literal">&quot;+&quot;</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span>)
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">keywords</span><span> = </span><span class="type-name">Set</span><span>(</span><span class="string-literal">&quot;negate&quot;</span><span>)
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">operators</span><span> = </span><span class="type-name">Set</span><span>(</span><span class="string-literal">&quot;*&quot;</span><span>, </span><span class="string-literal">&quot;+&quot;</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span>)
 
     </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">symbol</span><span>(</span><span class="identifier">str</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">atomic</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">str</span><span>))
 
-    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">lineComment</span><span> = </span><span class="identifier">symbol</span><span>(</span><span class="string-literal">&quot;//&quot;</span><span>) *&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>)
-    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">multiComment</span><span> = </span><span class="identifier">symbol</span><span>(</span><span class="string-literal">&quot;/*&quot;</span><span>) *&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">symbol</span><span>(</span><span class="string-literal">&quot;*/&quot;</span><span>))
-    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">comment</span><span> = </span><span class="identifier">lineComment</span><span> &lt;|&gt; </span><span class="identifier">multiComment</span><span>
-    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">skipWhitespace</span><span> = </span><span class="identifier">skipMany</span><span>(</span><span class="identifier">whitespace</span><span> &lt;|&gt; </span><span class="identifier">comment</span><span>).</span><span class="identifier">hide</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">lineComment</span><span> = </span><span class="identifier">symbol</span><span>(</span><span class="string-literal">&quot;//&quot;</span><span>) ~&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>)
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">multiComment</span><span> = </span><span class="identifier">symbol</span><span>(</span><span class="string-literal">&quot;/*&quot;</span><span>) ~&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">symbol</span><span>(</span><span class="string-literal">&quot;*/&quot;</span><span>))
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">comment</span><span> = </span><span class="identifier">lineComment</span><span> | </span><span class="identifier">multiComment</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">skipWhitespace</span><span> = </span><span class="identifier">skipMany</span><span>(</span><span class="identifier">whitespace</span><span> | </span><span class="identifier">comment</span><span>).</span><span class="identifier">hide</span><span>
 
-    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">lexeme</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">p</span><span> &lt;* </span><span class="identifier">skipWhitespace</span><span>
-    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">token</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">atomic</span><span>(</span><span class="identifier">p</span><span>))
-    </span><span class="keyword">def</span><span> </span><span class="declaration-name">fully</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">skipWhitespace</span><span> *&gt; </span><span class="identifier">p</span><span> &lt;* </span><span class="identifier">eof</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">lexeme</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">p</span><span> &lt;~ </span><span class="identifier">skipWhitespace</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">token</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">atomic</span><span>(</span><span class="identifier">p</span><span>))
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">fully</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">skipWhitespace</span><span> ~&gt; </span><span class="identifier">p</span><span> &lt;~ </span><span class="identifier">eof</span><span>
 
     </span><span class="keyword">val</span><span> </span><span class="identifier">number</span><span> = </span><span class="identifier">token</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">foldLeft1</span><span>[</span><span class="type-name">BigInt</span><span>](</span><span class="number-literal">0</span><span>)((</span><span class="identifier">n</span><span>, </span><span class="identifier">d</span><span>) =&gt; </span><span class="identifier">n</span><span> * </span><span class="number-literal">10</span><span> + </span><span class="identifier">d</span><span>.</span><span class="identifier">asDigit</span><span>))
-
-    </span><span class="keyword">val</span><span> </span><span class="identifier">identifier</span><span> = </span><span class="identifier">token</span><span>(</span><span class="identifier">stringOfSome</span><span>(</span><span class="identifier">letterOrDigit</span><span>).</span><span class="identifier">filterOut</span><span> {
+    </span><span class="keyword">val</span><span> </span><span class="identifier">identifier</span><span> = </span><span class="identifier">token</span><span>(</span><span class="identifier">stringOfSome</span><span>(</span><span class="identifier">letter</span><span>).</span><span class="identifier">filterOut</span><span> {
         </span><span class="keyword">case</span><span> </span><span class="identifier">v</span><span> </span><span class="keyword">if</span><span> </span><span class="identifier">keywords</span><span>(</span><span class="identifier">v</span><span>) =&gt; </span><span class="string-literal">s&quot;keyword </span><span class="substitution">$v</span><span class="string-literal"> may not be used as an identifier&quot;</span><span>
     })
 
-    </span><span class="keyword">def</span><span> </span><span class="declaration-name">keyword</span><span>(</span><span class="identifier">k</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">token</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">k</span><span>) *&gt; </span><span class="identifier">notFollowedBy</span><span>(</span><span class="identifier">letterOrDigit</span><span>))
-
-    </span><span class="keyword">def</span><span> </span><span class="declaration-name">operator</span><span>(</span><span class="identifier">op</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = {
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">operator</span><span>(</span><span class="identifier">op</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = {
         </span><span class="keyword">val</span><span> </span><span class="identifier">biggerOps</span><span> = </span><span class="identifier">operators</span><span>.</span><span class="identifier">collect</span><span> {
             </span><span class="keyword">case</span><span> </span><span class="identifier">biggerOp</span><span> </span><span class="keyword">if</span><span> </span><span class="identifier">biggerOp</span><span>.</span><span class="identifier">startsWith</span><span>(</span><span class="identifier">op</span><span>)
-                          &amp;&amp; </span><span class="identifier">biggerOp</span><span> &gt; </span><span class="identifier">op</span><span> =&gt; </span><span class="identifier">biggerOp</span><span>.</span><span class="identifier">substring</span><span>(</span><span class="identifier">op</span><span>.</span><span class="identifier">length</span><span>)
+                        &amp;&amp; </span><span class="identifier">biggerOp</span><span> &gt; </span><span class="identifier">op</span><span> =&gt; </span><span class="identifier">biggerOp</span><span>.</span><span class="identifier">substring</span><span>(</span><span class="identifier">op</span><span>.</span><span class="identifier">length</span><span>)
         }.</span><span class="identifier">toList</span><span>
         </span><span class="identifier">biggerOps</span><span> </span><span class="keyword">match</span><span> {
             </span><span class="keyword">case</span><span> </span><span class="type-name">Nil</span><span> =&gt; </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">symbol</span><span>(</span><span class="identifier">op</span><span>)).</span><span class="identifier">void</span><span>
-            </span><span class="keyword">case</span><span> </span><span class="identifier">biggerOp</span><span> :: </span><span class="identifier">biggerOps</span><span> =&gt; </span><span class="identifier">token</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">op</span><span>) *&gt; </span><span class="identifier">notFollowedBy</span><span>(</span><span class="identifier">strings</span><span>(</span><span class="identifier">biggerOp</span><span>, </span><span class="identifier">biggerOps</span><span>: </span><span class="identifier">_</span><span>*)))
+            </span><span class="comment">// strings requires one non-varargs argument
+</span><span>            </span><span class="keyword">case</span><span> </span><span class="identifier">biggerOp</span><span> :: </span><span class="identifier">biggerOps</span><span> =&gt;
+                </span><span class="identifier">token</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">op</span><span>) ~&gt; </span><span class="identifier">notFollowedBy</span><span>(</span><span class="identifier">strings</span><span>(</span><span class="identifier">biggerOp</span><span>, </span><span class="identifier">biggerOps</span><span>: </span><span class="identifier">_</span><span>*)))
         }
     }
+
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">keyword</span><span>(</span><span class="identifier">k</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">token</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">k</span><span>) ~&gt; </span><span class="identifier">notFollowedBy</span><span>(</span><span class="identifier">letter</span><span>))
+
 
     </span><span class="keyword">object</span><span> </span><span class="identifier">implicits</span><span> {
         </span><span class="keyword">implicit</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">implicitSymbol</span><span>(</span><span class="identifier">s</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = {
@@ -356,21 +364,19 @@ expressions.parser.parse(&quot;negatex + z&quot;)
         }
     }
 }</span></code></pre>
+        <p>And the original failing example:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">expressions</span><span>.</span><span class="identifier">parser</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;negatex + z&quot;</span><span>)
+</span><span class="comment">// res8: parsley.Result[String, expressions.Expr] = Success(Add(Var(negatex),Var(z)))</span></code></pre>
+        <p>Exactly as desired!</p>
         
-        <h2 id="using-token-languagedef-and-token-lexer" class="section"><a class="anchor-link left" href="#using-token-languagedef-and-token-lexer"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2 </span>Using <code>token.LanguageDef</code> and <code>token.Lexer</code></h2>
-        <div class="callout warning">
-          <i class="icofont-laika warning">&#xf026;</i>
-          <p><em>This section is out-of-date, and describes the situation in <code>parsley:3.x.y</code> and not <code>parsley:4.4.0</code>. In this release, the entire <code>token</code> package was reworked, so this doesn&#39;t apply.</em></p>
-        </div>
+        <h2 id="using-token-descriptions-lexicaldesc-and-token-lexer" class="section"><a class="anchor-link left" href="#using-token-descriptions-lexicaldesc-and-token-lexer"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2 </span>Using <code>token.descriptions.LexicalDesc</code> and <code>token.Lexer</code></h2>
         <p>Whilst everything we have done above is nice and instructive, in practice all this work is
         already done for us with <code>token.Lexer</code>. By providing a suitable <code>token.descriptions.LexicalDesc</code>,
         we can get a whole bunch of combinators for dealing with tokens for free. There is a lot of
         functionality found inside the <code>Lexer</code>, and most of it is highly configurable with the <code>LexicalDesc</code>
         and its sub-components. Let&#39;s make use of this new found power and change up our <code>lexer</code> object one
         last time:</p>
-        <pre><code class="nohighlight"><span>...
-
-</span><span class="keyword">object</span><span> </span><span class="identifier">lexer</span><span> {
+        <pre><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="identifier">lexer</span><span> {
     </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">token</span><span>.{</span><span class="type-name">Lexer</span><span>, </span><span class="identifier">predicate</span><span>}
     </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">token</span><span>.</span><span class="identifier">descriptions</span><span>.{</span><span class="type-name">LexicalDesc</span><span>, </span><span class="type-name">NameDesc</span><span>, </span><span class="type-name">SymbolDesc</span><span>}
 
@@ -378,7 +384,7 @@ expressions.parser.parse(&quot;negatex + z&quot;)
         </span><span class="identifier">nameDesc</span><span> = </span><span class="type-name">NameDesc</span><span>.</span><span class="identifier">plain</span><span>.</span><span class="identifier">copy</span><span>(
             </span><span class="comment">// Unicode is also possible instead of Basic
 </span><span>            </span><span class="identifier">identifierStart</span><span> = </span><span class="identifier">predicate</span><span>.</span><span class="type-name">Basic</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">isLetter</span><span>),
-            </span><span class="identifier">identifierLetter</span><span> = </span><span class="identifier">predicate</span><span>.</span><span class="type-name">Basic</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">isLetterOrDigit</span><span>),
+            </span><span class="identifier">identifierLetter</span><span> = </span><span class="identifier">predicate</span><span>.</span><span class="type-name">Basic</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">isLetter</span><span>),
         ),
         </span><span class="identifier">symbolDesc</span><span> = </span><span class="type-name">SymbolDesc</span><span>.</span><span class="identifier">plain</span><span>.</span><span class="identifier">copy</span><span>(
             </span><span class="identifier">hardKeywords</span><span> = </span><span class="type-name">Set</span><span>(</span><span class="string-literal">&quot;negate&quot;</span><span>),
@@ -402,6 +408,7 @@ expressions.parser.parse(&quot;negatex + z&quot;)
         whitespace and atomicity of the token for us. This is just the tip of the iceberg
         when it comes to the lexer functionality within Parsley. It is well worth having a
         play around with this functionality and getting used to it!</p>
+        <p>A more detailed description of this functionality can be found in the <a href="../api-guide/token/Lexer.html">API Guide</a>.</p>
 
         
 <hr class="footer-rule"/>
