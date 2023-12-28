@@ -1,7 +1,39 @@
+```scala mdoc:invisible
+import parsley.Parsley
+object lexer {
+    import parsley.token.{Lexer, predicate}
+    import parsley.token.descriptions.{LexicalDesc, NameDesc, SymbolDesc}
+
+    private val desc = LexicalDesc.plain.copy(
+        nameDesc = NameDesc.plain.copy(
+            // Unicode is also possible instead of Basic
+            identifierStart = predicate.Basic(_.isLetter),
+            identifierLetter = predicate.Basic(_.isLetter),
+        ),
+        symbolDesc = SymbolDesc.plain.copy(
+            hardKeywords = Set("negate", "let", "in"),
+            hardOperators = Set("*", "+", "-"),
+        ),
+    )
+
+    private val lexer = new Lexer(desc)
+
+    val identifier = lexer.lexeme.names.identifier
+    val number = lexer.lexeme.numeric.natural.decimal
+
+    def fully[A](p: Parsley[A]) = lexer.fully(p)
+    val implicits = lexer.lexeme.symbol.implicits
+}
+```
+
 # The Parser Bridge Pattern
 
 @:callout(info)
-This page is still being updated for the wiki port, so some things may be a bit broken or look a little strange.
+The first part of this page helps to motivate the *Parser Bridge* pattern, and
+the second part shows how to implement it from scratch. This is useful to know,
+but the API Guide [Generic Bridges](../api-guide/generic.md) page can get you
+started with the technique faster. The latter parts of this page can be helpful
+when the generic bridges no longer suffice.
 @:@
 
 By this point, we've seen how to effectively build expression parsers, lexers, and how to handle
@@ -40,7 +72,7 @@ in x * y
 
 Now let's see how this changes the parser:
 
-```scala
+```scala mdoc
 import parsley.Parsley
 
 object ast {
@@ -62,27 +94,27 @@ object expressions {
     import parsley.combinator.sepEndBy1
     import parsley.implicits.lift.Lift2
 
-    import lexer.implicits.implicitToken
+    import lexer.implicits.implicitSymbol
     import lexer.{number, fully, identifier}
     import ast._
 
-    private lazy val atom: Parsley[Expr] =
-        "(" *> expr <* ")" <|> number.map(Num) <|> identifier.map(Var)
-    private lazy val expr = precedence[Expr](atom)(
-        Ops(Prefix)("negate" #> Neg),
-        Ops(InfixL)("*" #> Mul),
-        Ops(InfixL)("+" #> Add, "-" #> Sub))
+    lazy val atom: Parsley[Expr] =
+        "(" ~> expr <~ ")" | number.map(Num) | identifier.map(Var)
+    lazy val expr = precedence[Expr](atom)(
+        Ops(Prefix)("negate" as Neg),
+        Ops(InfixL)("*" as Mul),
+        Ops(InfixL)("+" as Add, "-" as Sub))
 
-    private lazy val binding = Binding.lift(identifier, "=" *> letExpr)
-    private lazy val bindings = sepEndBy1(binding, ";")
-    private lazy val letExpr: Parsley[LetExpr] =
-      Let.lift("let" *> bindings, "in" *> expr) <|> expr
+    lazy val binding = Binding.lift(identifier, "=" ~> letExpr)
+    lazy val bindings = sepEndBy1(binding, ";")
+    lazy val letExpr: Parsley[LetExpr] =
+      Let.lift("let" ~> bindings, "in" ~> expr) | expr
 
     val parser = fully(letExpr)
 }
 ```
 
-So far, so good. I've added a couple of now nodes to the ast, and three extra parser
+So far, so good. I've added a couple of now nodes to the AST, and three extra parser
 definitions. The only new thing here is the helpful `sepEndBy1` combinator, which is
 particularly good (along with its cousins, `sepBy1` and `endBy1`) at dealing with things like
 commas and semi-colons. However, if I now said that we need to encode position information into
@@ -95,7 +127,7 @@ arguments will not appear in the pattern match, but _are_ required to build an i
 we're going to add an extra argument to each constructor containing the position information
 like so:
 
-```scala
+```scala mdoc:nest
 object ast {
     sealed trait LetExpr
     case class Let(bindings: List[Binding], x: Expr)(val pos: (Int, Int)) extends LetExpr
@@ -118,7 +150,7 @@ this affects our parsers. Let's just take a look at a single parser and see what
 will do:
 
 ```scala
-val binding: Parsley[Binding] = Binding.lift(identifier, "=" *> letExpr)
+val binding: Parsley[Binding] = Binding.lift(identifier, "=" ~> letExpr)
 ```
 
 This no longer compiles for _several_ reasons. The first is that `Binding.lift` doesn't work
@@ -133,18 +165,19 @@ get that position information in and get it "working" again. The combinators for
 position information are:
 
 ```scala
+import parsley.position._
 val line: Parsley[Int]
 val col: Parsley[Int]
-val pos: Parsley[(Int, Int)] = line <~> col
+val pos: Parsley[(Int, Int)] = line.zip(col)
 ```
 
 So in this case, `pos` is what we are after, our first instinct might be to just add it as an
-extra parameter to the lift: `Binding.lift(identifier, "=" *> letExpr, pos)`, but `Binding` is
+extra parameter to the lift: `Binding.lift(identifier, "=" ~> letExpr, pos)`, but `Binding` is
 curried, and lift takes an uncurried function. Instead, we can use `<*>` to apply a parser
 returning a function to its next argument:
 
 ```scala
-val binding: Parsley[Binding] = Binding.lift(identifier, "=" *> letExpr) <*> pos
+val binding: Parsley[Binding] = Binding.lift(identifier, "=" ~> letExpr) <*> pos
 ```
 
 Again, assuming that `Binding.lift` compiles with this snippet, this would compile fine.
@@ -161,9 +194,17 @@ val binding: Parsley[Binding] = pos <**> Binding.lift(identifier, "=" *> letExpr
 Now, to get it properly compiling again, we'll need to lean on the `zipped` notation instead, to
 help Scala's type inference figure out what we want.
 
-```scala
+```scala mdoc:invisible
+import ast.{Binding, LetExpr}
+import parsley.Parsley.empty
+import parsley.position._
+import lexer.identifier
+import lexer.implicits._
+val letExpr: Parsley[LetExpr] = empty
+```
+```scala mdoc:silent
 import parsley.implicits.zipped.Zipped2
-val binding: Parsley[Binding] = pos <**> (identifier, "=" *> letExpr).zipped(Binding(_, _) _)
+val binding: Parsley[Binding] = pos <**> (identifier, "=" ~> letExpr).zipped(Binding(_, _) _)
 ```
 
 This _finally_ compiles and works as intended. The `Binding(_, _) _` is desugared as follows:
@@ -181,6 +222,11 @@ to correctly annotate the types of our anonymous function for us, which would ot
 size of the code even _worse_.
 
 ## The _Parser Bridge_ Pattern
+
+@:callout(warning)
+From this point on, this page may be out of date for `parsley:@VERSION@`.
+@:@
+
 The work we've done is unavoidable, but that doesn't mean we can't move it somewhere more
 sensible and, at the same time, get a nice new syntax to abstract the way that AST nodes are
 constructed. I call this technique the _Parser Bridge_ pattern, and it takes many shapes depending on
