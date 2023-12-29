@@ -164,7 +164,7 @@
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">_</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="char-literal">&#39;a&#39;</span><span> ~&gt; </span><span class="string-literal">&quot;bc&quot;</span><span>
-</span><span class="comment">// p: parsley.Parsley[String] = parsley.Parsley@5fe09e9c
+</span><span class="comment">// p: parsley.Parsley[String] = parsley.Parsley@41e36040
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>)
 </span><span class="comment">// res0: parsley.Result[String, String] = Success(bc)
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;axy&quot;</span><span>)
@@ -213,10 +213,10 @@
         <p>However, while <code>lift</code> works well when the function has its type fully elaborated,
         it does not infer well:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span>(</span><span class="identifier">_</span><span> + </span><span class="identifier">_</span><span>).</span><span class="identifier">lift</span><span>(</span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;a&#39;</span><span>).</span><span class="identifier">as</span><span>(</span><span class="number-literal">5</span><span>), </span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;b&#39;</span><span>).</span><span class="identifier">as</span><span>(</span><span class="number-literal">6</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;ab&quot;</span><span>)
-</span><span class="comment">// error: missing parameter type for expanded function ((&lt;x$1: error&gt;, x$2) =&gt; x$1.$plus(x$2))
+</span><span class="comment">// error: missing parameter type for expanded function ((&lt;x$2: error&gt;, x$3) =&gt; x$2.$plus(x$3))
 // (_ + _).lift(char(&#39;a&#39;).as(5), char(&#39;b&#39;).as(6)).parse(&quot;ab&quot;)
 //  ^
-// error: missing parameter type for expanded function ((&lt;x$1: error&gt;, &lt;x$2: error&gt;) =&gt; x$1.$plus(x$2))
+// error: missing parameter type for expanded function ((&lt;x$2: error&gt;, &lt;x$3: error&gt;) =&gt; x$2.$plus(x$3))
 // (_ + _).lift(char(&#39;a&#39;).as(5), char(&#39;b&#39;).as(6)).parse(&quot;ab&quot;)
 //      ^</span></code></pre>
         <p>This is where <code>zipped</code> comes in: by placing the function to the right of its

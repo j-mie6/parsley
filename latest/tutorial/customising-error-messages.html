@@ -137,8 +137,7 @@
     <li class="level2 nav-leaf"><a href="#using-label"><span class="section-number">1.1 </span>Using <code>label</code></a></li>
     <li class="level2 nav-leaf"><a href="#wrapping-up-the-expression-example"><span class="section-number">1.2 </span>Wrapping up the Expression Example</a></li>
     <li class="level2 nav-leaf"><a href="#using-explain"><span class="section-number">1.3 </span>Using <code>explain</code></a></li>
-    <li class="level1 nav-node"><a href="#adjusting-error-formatting"><span class="section-number">2 </span>Adjusting Error Formatting</a></li>
-    <li class="level2 nav-leaf"><a href="#example-unit-tests"><span class="section-number">2.1 </span>Example: Unit Tests</a></li>
+    <li class="level1 nav-leaf"><a href="#adjusting-error-formatting"><span class="section-number">2 </span>Adjusting Error Formatting</a></li>
   </ul>
 
   <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/wiki-improvements/docs/tutorial/customising-error-messages.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
@@ -148,16 +147,10 @@
       <main class="content">
 
         <h1 id="customising-error-messages" class="title">Customising Error Messages</h1>
-        <div class="callout info">
-          <i class="icofont-laika info">&#xef4e;</i>
-          <p>This page is still being updated for the wiki port, so some things may be a bit broken or look a little strange.</p>
-        </div>
-        <p>Previously, in <a href="effective-whitespace-parsing.html#effective-whitespace-parsing">Effective Whitespace Parsing</a>
-        we saw how we could extend our parsers to handle whitespace. In this wiki post we&#39;ll finally address
+        <p>Previously, in <a href="effective-lexing.html#effective-lexing">Effective Lexing</a>
+        we saw how we could extend our parsers to handle whitespace and lexing. In this wiki post we&#39;ll finally address
         error messages. Thoughout all the other entries in this series I have neglected to talk about error
-        messages at all, but they are a very important part of a parser. Recently, Parsley 2.6.1 overhauled
-        the entire way error messages work and what they look like, and Parsley 3.0.0 added the <code>ErrorBuilder</code>
-        mechanism, so I will be targeting 3.0.0 and above for this post.</p>
+        messages at all, but they are a very important part of a parser.</p>
         
         <h1 id="adjusting-error-content" class="section"><a class="anchor-link left" href="#adjusting-error-content"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1 </span>Adjusting Error Content</h1>
         <p>I&#39;m going to start with the parser from last time, but before we introduced the <code>Lexer</code> class. The
@@ -171,46 +164,47 @@
     </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">digit</span><span>, </span><span class="identifier">whitespace</span><span>, </span><span class="identifier">string</span><span>, </span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>}
     </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.{</span><span class="identifier">manyUntil</span><span>, </span><span class="identifier">skipMany</span><span>, </span><span class="identifier">eof</span><span>}
 
-    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">symbol</span><span>(</span><span class="identifier">str</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">atomic</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">str</span><span>))
-    </span><span class="keyword">private</span><span> </span><span class="keyword">implicit</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">implicitSymbol</span><span>(</span><span class="identifier">tok</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">symbol</span><span>(</span><span class="identifier">tok</span><span>)
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">symbol</span><span>(</span><span class="identifier">str</span><span>: </span><span class="type-name">String</span><span>) = </span><span class="identifier">atomic</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">str</span><span>)).</span><span class="identifier">void</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">implicit</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">implicitSymbol</span><span>(</span><span class="identifier">tok</span><span>: </span><span class="type-name">String</span><span>) = </span><span class="identifier">symbol</span><span>(</span><span class="identifier">tok</span><span>)
 
-    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">lineComment</span><span> = </span><span class="string-literal">&quot;//&quot;</span><span> *&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>)
-    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">multiComment</span><span> = </span><span class="string-literal">&quot;/*&quot;</span><span> *&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="string-literal">&quot;*/&quot;</span><span>)
-    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">comment</span><span> = </span><span class="identifier">lineComment</span><span> &lt;|&gt; </span><span class="identifier">multiComment</span><span>
-    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">skipWhitespace</span><span> = </span><span class="identifier">skipMany</span><span>(</span><span class="identifier">whitespace</span><span> &lt;|&gt; </span><span class="identifier">comment</span><span>)
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">lineComment</span><span> = </span><span class="string-literal">&quot;//&quot;</span><span> ~&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>)
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">multiComment</span><span> = </span><span class="string-literal">&quot;/*&quot;</span><span> ~&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="string-literal">&quot;*/&quot;</span><span>)
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">comment</span><span> = </span><span class="identifier">lineComment</span><span> | </span><span class="identifier">multiComment</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">skipWhitespace</span><span> = </span><span class="identifier">skipMany</span><span>(</span><span class="identifier">whitespace</span><span> | </span><span class="identifier">comment</span><span>)
 
-    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">lexeme</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">p</span><span> &lt;* </span><span class="identifier">skipWhitespace</span><span>
-    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">token</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">atomic</span><span>(</span><span class="identifier">p</span><span>))
-    </span><span class="keyword">def</span><span> </span><span class="declaration-name">fully</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">skipWhitespace</span><span> *&gt; </span><span class="identifier">p</span><span> &lt;* </span><span class="identifier">eof</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">lexeme</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]) = </span><span class="identifier">p</span><span> &lt;~ </span><span class="identifier">skipWhitespace</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">token</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]) = </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">atomic</span><span>(</span><span class="identifier">p</span><span>))
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">fully</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">skipWhitespace</span><span> ~&gt; </span><span class="identifier">p</span><span> &lt;~ </span><span class="identifier">eof</span><span>
 
-    </span><span class="keyword">val</span><span> </span><span class="identifier">number</span><span> = </span><span class="identifier">token</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">foldLeft1</span><span>[</span><span class="type-name">Int</span><span>](</span><span class="number-literal">0</span><span>)((</span><span class="identifier">n</span><span>, </span><span class="identifier">d</span><span>) =&gt; </span><span class="identifier">n</span><span> * </span><span class="number-literal">10</span><span> + </span><span class="identifier">d</span><span>.</span><span class="identifier">asDigit</span><span>))
+    </span><span class="keyword">val</span><span> </span><span class="identifier">number</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">BigInt</span><span>] = </span><span class="identifier">token</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">foldLeft1</span><span>[</span><span class="type-name">BigInt</span><span>](</span><span class="number-literal">0</span><span>)((</span><span class="identifier">n</span><span>, </span><span class="identifier">d</span><span>) =&gt; </span><span class="identifier">n</span><span> * </span><span class="number-literal">10</span><span> + </span><span class="identifier">d</span><span>.</span><span class="identifier">asDigit</span><span>))
 
     </span><span class="keyword">object</span><span> </span><span class="identifier">implicits</span><span> {
-        </span><span class="keyword">implicit</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">implicitToken</span><span>(</span><span class="identifier">s</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">symbol</span><span>(</span><span class="identifier">s</span><span>))
+        </span><span class="keyword">implicit</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">implicitSymbol</span><span>(</span><span class="identifier">s</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">symbol</span><span>(</span><span class="identifier">s</span><span>))
     }
 }
 
 </span><span class="keyword">object</span><span> </span><span class="identifier">expressions</span><span> {
     </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">expr</span><span>.{</span><span class="identifier">precedence</span><span>, </span><span class="type-name">Ops</span><span>, </span><span class="type-name">InfixL</span><span>}
 
-    </span><span class="keyword">import</span><span> </span><span class="identifier">lexer</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">implicitToken</span><span>
+    </span><span class="keyword">import</span><span> </span><span class="identifier">lexer</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">implicitSymbol</span><span>
     </span><span class="keyword">import</span><span> </span><span class="identifier">lexer</span><span>.{</span><span class="identifier">number</span><span>, </span><span class="identifier">fully</span><span>}
 
-    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">atom</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Int</span><span>] = </span><span class="string-literal">&quot;(&quot;</span><span> *&gt; </span><span class="identifier">expr</span><span> &lt;* </span><span class="string-literal">&quot;)&quot;</span><span> &lt;|&gt; </span><span class="identifier">number</span><span>
-    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span> = </span><span class="identifier">precedence</span><span>[</span><span class="type-name">Int</span><span>](</span><span class="identifier">atom</span><span>)(
-        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> #&gt; (</span><span class="identifier">_</span><span> * </span><span class="identifier">_</span><span>)),
-        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> #&gt; (</span><span class="identifier">_</span><span> + </span><span class="identifier">_</span><span>), </span><span class="string-literal">&quot;-&quot;</span><span> #&gt; (</span><span class="identifier">_</span><span> - </span><span class="identifier">_</span><span>)))
+    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">atom</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">BigInt</span><span>] = </span><span class="string-literal">&quot;(&quot;</span><span> ~&gt; </span><span class="identifier">expr</span><span> &lt;~ </span><span class="string-literal">&quot;)&quot;</span><span> | </span><span class="identifier">number</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span> = </span><span class="identifier">precedence</span><span>[</span><span class="type-name">BigInt</span><span>](</span><span class="identifier">atom</span><span>)(
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="identifier">as</span><span> (</span><span class="identifier">_</span><span> * </span><span class="identifier">_</span><span>)),
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> </span><span class="identifier">as</span><span> (</span><span class="identifier">_</span><span> + </span><span class="identifier">_</span><span>), </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="identifier">as</span><span> (</span><span class="identifier">_</span><span> - </span><span class="identifier">_</span><span>)))
 
     </span><span class="keyword">val</span><span> </span><span class="identifier">parser</span><span> = </span><span class="identifier">fully</span><span>(</span><span class="identifier">expr</span><span>)
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">parse</span><span>(</span><span class="identifier">input</span><span>: </span><span class="type-name">String</span><span>) = </span><span class="identifier">parser</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="identifier">input</span><span>)
 }</span></code></pre>
         <p>So, before, we saw how this ran on succesful cases. Let&#39;s now start to see how it works on <em>bad</em>
         input.</p>
-        <pre><code>expressions.parser.parse(&quot;5d&quot;)
-(line 1, column 2):
-  unexpected &quot;d&quot;
-  expected &quot;*&quot;, &quot;+&quot;, &quot;-&quot;, &quot;/*&quot;, &quot;//&quot;, digit, end of input, or whitespace
-  &gt;5d
-    ^</code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">expressions</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;5d&quot;</span><span>)
+</span><span class="comment">// res0: parsley.Result[String, BigInt] = Failure((line 1, column 2):
+//   unexpected &quot;d&quot;
+//   expected &quot;*&quot;, &quot;+&quot;, &quot;-&quot;, &quot;/*&quot;, &quot;//&quot;, digit, end of input, or whitespace
+//   &gt;5d
+//     ^)</span></code></pre>
         <p>Let&#39;s start by breaking this error down first and understanding what the components of it are and
         why this information has appeared. The first line of the error reports the line and column number
         of the message (in Parsley hard tabs are treated as aligning to the nearest 4th column). If you are
@@ -228,12 +222,12 @@
         would run perfectly fine. Notice how <code>(</code> and <code>)</code> are not suggested as alternatives despite appearing
         in the parser: <code>5(</code> or <code>5)</code> makes no sense either. As another small example, let&#39;s see what happens
         to the error if we add a space between the 5 and the d.</p>
-        <pre><code>expressions.parser.parse(&quot;5 d&quot;)
-(line 1, column 3):
-  unexpected &quot;d&quot;
-  expected &quot;*&quot;, &quot;+&quot;, &quot;-&quot;, &quot;/*&quot;, &quot;//&quot;, end of input, or whitespace
-  &gt;5 d
-     ^</code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">expressions</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;5 d&quot;</span><span>)
+</span><span class="comment">// res1: parsley.Result[String, BigInt] = Failure((line 1, column 3):
+//   unexpected &quot;d&quot;
+//   expected &quot;*&quot;, &quot;+&quot;, &quot;-&quot;, &quot;/*&quot;, &quot;//&quot;, end of input, or whitespace
+//   &gt;5 d
+//      ^)</span></code></pre>
         <p>Neat, so this time round <code>digit</code> is no longer a valid alternative: clearly the number has come to
         an end because we wrote a space. But the other possibilities from before are still valid. So, how
         can we start making improvements? There are seven combinators available to us for this purpose:</p>
@@ -250,8 +244,7 @@
           like <code>fail</code>, immediately fails except it reports a custom unexpected message. Currently, only
           one unexpected message can be present in the error at once, so this is not very useful unless you
           really know what you are doing.</li>
-          <li><code>.hide</code> is a method that removes the output of a parser from the error, it is essentially a nice
-          name for <code>.label(&quot;&quot;)</code></li>
+          <li><code>.hide</code> is a method that removes the output of a parser from the error.</li>
           <li><code>.explain</code> is a method that can provide <em>reasons</em> for a parser&#39;s failure. If the parser can recover
           and move onto other alternatives, the reasons may be lost. But they can still be quite nice when
           used in the correct place!</li>
@@ -266,16 +259,15 @@
         there are no compelling use-cases for it in this example. Let&#39;s start off by giving a label to
         <code>comment</code> and see what happens:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">_</span><span>
-...
-</span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">comment</span><span> = (</span><span class="identifier">lineComment</span><span> &lt;|&gt; </span><span class="identifier">multiComment</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;comment&quot;</span><span>)
-...</span></code></pre>
+
+</span><span class="keyword">val</span><span> </span><span class="identifier">comment</span><span> = (</span><span class="identifier">lineComment</span><span> | </span><span class="identifier">multiComment</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;comment&quot;</span><span>)</span></code></pre>
         <p>Now let&#39;s run our parser from before:</p>
-        <pre><code>expressions.parser.parse(&quot;5d&quot;)
-(line 1, column 2):
-  unexpected &quot;d&quot;
-  expected &quot;*&quot;, &quot;+&quot;, &quot;-&quot;, comment, digit, end of input, or whitespace
-  &gt;5d
-    ^</code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">expressions</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;5d&quot;</span><span>)
+</span><span class="comment">// res3: parsley.Result[String, BigInt] = Failure((line 1, column 2):
+//   unexpected &quot;d&quot;
+//   expected &quot;*&quot;, &quot;+&quot;, &quot;-&quot;, comment, digit, end of input, or whitespace
+//   &gt;5d
+//     ^)</span></code></pre>
         <p>Nice! So, if you compare the two, you&#39;ll notice that <code>&quot;/*&quot;</code> and <code>&quot;//&quot;</code> both disappeared from the
         message, but <code>comment</code> was added. You can tell when <code>label</code> is being used because there are not
         quotes surrounding the items. Knowing this, you can probably guess that <code>digit</code>, <code>eof</code>, and
@@ -287,86 +279,79 @@
         able to write whitespace in places, it&#39;s not <em>usually</em> the solution to someone&#39;s problem. This makes
         it a good candidate for the <code>hide</code> combinator:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">_</span><span>
-...
-</span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">skipWhitespace</span><span> = </span><span class="identifier">skipMany</span><span>(</span><span class="identifier">whitespace</span><span> &lt;|&gt; </span><span class="identifier">comment</span><span>).</span><span class="identifier">hide</span><span>
-...</span></code></pre>
+
+</span><span class="keyword">val</span><span> </span><span class="identifier">skipWhitespace</span><span> = </span><span class="identifier">skipMany</span><span>(</span><span class="identifier">whitespace</span><span> &lt;|&gt; </span><span class="identifier">comment</span><span>).</span><span class="identifier">hide</span></code></pre>
         <p>Now let&#39;s check again:</p>
-        <pre><code>expressions.parser.parse(&quot;5d&quot;)
-(line 1, column 2):
-  unexpected &quot;d&quot;
-  expected &quot;*&quot;, &quot;+&quot;, &quot;-&quot;, digit, or end of input
-  &gt;5d
-    ^</code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">expressions</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;5d&quot;</span><span>)
+</span><span class="comment">// res4: parsley.Result[String, BigInt] = Failure((line 1, column 2):
+//   unexpected &quot;d&quot;
+//   expected &quot;*&quot;, &quot;+&quot;, &quot;-&quot;, digit, or end of input
+//   &gt;5d
+//     ^)</span></code></pre>
         <p>Great! The <code>hide</code> combinator has removed the information from the error message, and now it&#39;s
         looking a lot cleaner. But what if we started writing a comment, what would happen then?</p>
-        <pre><code>expressions.parser.parse(&quot;5/*&quot;)
-(line 1, column 4):
-  unexpected end of input
-  expected &quot;*/&quot; or any character
-  &gt;5/*
-      ^</code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">expressions</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;5/*&quot;</span><span>)
+</span><span class="comment">// res5: parsley.Result[String, BigInt] = Failure((line 1, column 4):
+//   unexpected end of input
+//   expected &quot;*/&quot; or any character
+//   &gt;5/*
+//       ^)</span></code></pre>
         <p>So, as I mentioned earlier, <code>hide</code> is just a <code>label</code>, and <code>label</code> will not relabel something if it
         fails and consumes input. That means, by opening our comment but not <em>finishing</em> it, we can see
         some different suggestions. In this case, end of input is not allowed, and any character will work
         to extend the comment, but clearly <code>*/</code> is a way to properly end it. Let&#39;s add a label to that,
         however, to make it a bit friendlier:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span>...
-</span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">lineComment</span><span> = </span><span class="string-literal">&quot;//&quot;</span><span> *&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;end of comment&quot;</span><span>))
-</span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">multiComment</span><span> = </span><span class="string-literal">&quot;/*&quot;</span><span> *&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="string-literal">&quot;*/&quot;</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;end of comment&quot;</span><span>))
-...</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">lineComment</span><span> = </span><span class="string-literal">&quot;//&quot;</span><span> *&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;end of comment&quot;</span><span>))
+</span><span class="keyword">val</span><span> </span><span class="identifier">multiComment</span><span> = </span><span class="string-literal">&quot;/*&quot;</span><span> *&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="string-literal">&quot;*/&quot;</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;end of comment&quot;</span><span>))</span></code></pre>
         <p>Now we get a more informative error message of:</p>
-        <pre><code>expressions.parser.parse(&quot;5/*&quot;)
-(line 1, column 4):
-  unexpected end of input
-  expected any character or end of comment
-  &gt;5/*
-      ^</code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">expressions</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;5/*&quot;</span><span>)
+</span><span class="comment">// res6: parsley.Result[String, BigInt] = Failure((line 1, column 4):
+//   unexpected end of input
+//   expected any character or end of comment
+//   &gt;5/*
+//       ^)</span></code></pre>
         <p>Great! Now let&#39;s turn our attention back to expressions and not whitespace.</p>
         
         <h3 id="labelling-our-numbers" class="section"><a class="anchor-link left" href="#labelling-our-numbers"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1.1.2 </span>Labelling our numbers</h3>
         <p>Let&#39;s take a look at a very simple bad input and see how we can improve on it:</p>
-        <pre><code>expressions.parser.parse(&quot;d&quot;)
-(line 1, column 1):
-  unexpected &quot;d&quot;
-  expected &quot;(&quot; or digit
-  &gt;d
-   ^</code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">expressions</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;d&quot;</span><span>)
+</span><span class="comment">// res7: parsley.Result[String, BigInt] = Failure((line 1, column 1):
+//   unexpected &quot;d&quot;
+//   expected &quot;(&quot; or digit
+//   &gt;d
+//    ^)</span></code></pre>
         <p>So this time, we can see two possible ways of resolving this error are opening brackets, or a
         <code>digit</code>. Now <code>digit</code> is really a poor name here, what we really mean is <code>integer</code> or <code>number</code>:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span>...
-</span><span class="keyword">val</span><span> </span><span class="identifier">number</span><span> = </span><span class="identifier">token</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">foldLeft1</span><span>[</span><span class="type-name">Int</span><span>](</span><span class="number-literal">0</span><span>)((</span><span class="identifier">n</span><span>, </span><span class="identifier">d</span><span>) =&gt; </span><span class="identifier">n</span><span> * </span><span class="number-literal">10</span><span> + </span><span class="identifier">d</span><span>.</span><span class="identifier">asDigit</span><span>)).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;number&quot;</span><span>)
-...</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">number</span><span> = </span><span class="identifier">token</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">foldLeft1</span><span>[</span><span class="type-name">BigInt</span><span>](</span><span class="number-literal">0</span><span>)((</span><span class="identifier">n</span><span>, </span><span class="identifier">d</span><span>) =&gt; </span><span class="identifier">n</span><span> * </span><span class="number-literal">10</span><span> + </span><span class="identifier">d</span><span>.</span><span class="identifier">asDigit</span><span>)).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;number&quot;</span><span>)</span></code></pre>
         <p>Now we get, the following, nicer error message:</p>
-        <pre><code>expressions.parser.parse(&quot;d&quot;)
-(line 1, column 1):
-  unexpected &quot;d&quot;
-  expected &quot;(&quot; or number
-  &gt;d
-   ^
-
-expressions.parser.parse(&quot;5x&quot;)
-(line 1, column 2):
-  unexpected &quot;x&quot;
-  expected &quot;*&quot;, &quot;+&quot;, &quot;-&quot;, digit, or end of input
-  &gt;5x
-    ^</code></pre>
+        <pre><code class="nohighlight"><span class="identifier">expressions</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;d&quot;</span><span>)
+</span><span class="comment">// res8: parsley.Result[String, BigInt] = Failure((line 1, column 1):
+//   unexpected &quot;d&quot;
+//   expected &quot;(&quot; or number
+//   &gt;d
+//    ^)
+</span><span>
+</span><span class="identifier">expressions</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;5x&quot;</span><span>)
+</span><span class="comment">// res9: parsley.Result[String, BigInt] = Failure((line 1, column 2):
+//   unexpected &quot;x&quot;
+//   expected &quot;*&quot;, &quot;+&quot;, &quot;-&quot;, digit, or end of input
+//   &gt;5x
+//     ^)</span></code></pre>
         <p>But notice in the second error message, again we have been given <code>digit</code> and not <code>number</code> as our
         alternative. This is good, once we&#39;ve started reading a number by reading <code>5</code> it would be
         inappropriate to suggest a number as a good next step. But <code>digit</code> here is not particularly descriptive
         and we can do better still:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span>...
-</span><span class="keyword">val</span><span> </span><span class="identifier">number</span><span> =
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">number</span><span> =
     </span><span class="identifier">token</span><span>(
-        </span><span class="identifier">digit</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;end of number&quot;</span><span>).</span><span class="identifier">foldLeft1</span><span>[</span><span class="type-name">Int</span><span>](</span><span class="number-literal">0</span><span>)((</span><span class="identifier">n</span><span>, </span><span class="identifier">d</span><span>) =&gt; </span><span class="identifier">n</span><span> * </span><span class="number-literal">10</span><span> + </span><span class="identifier">d</span><span>.</span><span class="identifier">asDigit</span><span>)
-    ).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;number&quot;</span><span>)
-...</span></code></pre>
+        </span><span class="identifier">digit</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;end of number&quot;</span><span>).</span><span class="identifier">foldLeft1</span><span>[</span><span class="type-name">BigInt</span><span>](</span><span class="number-literal">0</span><span>)((</span><span class="identifier">n</span><span>, </span><span class="identifier">d</span><span>) =&gt; </span><span class="identifier">n</span><span> * </span><span class="number-literal">10</span><span> + </span><span class="identifier">d</span><span>.</span><span class="identifier">asDigit</span><span>)
+    ).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;number&quot;</span><span>)</span></code></pre>
         <p>This gives us, again, a much nicer message:</p>
-        <pre><code>expressions.parser.parse(&quot;5x&quot;)
-(line 1, column 2):
-  unexpected &quot;x&quot;
-  expected &quot;*&quot;, &quot;+&quot;, &quot;-&quot;, end of input, or end of number
-  &gt;5x
-    ^</code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">expressions</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;5x&quot;</span><span>)
+</span><span class="comment">// res10: parsley.Result[String, BigInt] = Failure((line 1, column 2):
+//   unexpected &quot;x&quot;
+//   expected &quot;*&quot;, &quot;+&quot;, &quot;-&quot;, end of input, or end of number
+//   &gt;5x
+//     ^)</span></code></pre>
         
         <h3 id="merging-multiple-labels" class="section"><a class="anchor-link left" href="#merging-multiple-labels"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1.1.3 </span>Merging multiple labels</h3>
         <p>With an example grammar as small as this, I think we are almost done here! The last thing we could
@@ -374,25 +359,23 @@ expressions.parser.parse(&quot;5x&quot;)
         about any of them individually, so we could more concisely replace this them with <code>arithmetic operator</code>,
         or since we only have arithmetic operators here <code>operator</code> will do. we don&#39;t need to do anything
         special here, when multiple labels are encountered with the same name, they will only appear once!</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span>...
-</span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span> = </span><span class="identifier">precedence</span><span>[</span><span class="type-name">Int</span><span>](</span><span class="identifier">atom</span><span>)(
-  </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;operator&quot;</span><span>) #&gt; (</span><span class="identifier">_</span><span> * </span><span class="identifier">_</span><span>)),
-  </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;operator&quot;</span><span>) #&gt; (</span><span class="identifier">_</span><span> + </span><span class="identifier">_</span><span>), </span><span class="string-literal">&quot;-&quot;</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;operator&quot;</span><span>) #&gt; (</span><span class="identifier">_</span><span> - </span><span class="identifier">_</span><span>)))
-...</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span> = </span><span class="identifier">precedence</span><span>[</span><span class="type-name">BigInt</span><span>](</span><span class="identifier">atom</span><span>)(
+  </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;operator&quot;</span><span>) </span><span class="identifier">as</span><span> (</span><span class="identifier">_</span><span> * </span><span class="identifier">_</span><span>)),
+  </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;operator&quot;</span><span>) </span><span class="identifier">as</span><span> (</span><span class="identifier">_</span><span> + </span><span class="identifier">_</span><span>), </span><span class="string-literal">&quot;-&quot;</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;operator&quot;</span><span>) </span><span class="identifier">as</span><span> (</span><span class="identifier">_</span><span> - </span><span class="identifier">_</span><span>)))</span></code></pre>
         <p>Now we arrive at our final form:</p>
-        <pre><code>expressions.parser.parse(&quot;5x&quot;)
-(line 1, column 2):
-  unexpected &quot;x&quot;
-  expected end of input, end of number, or operator
-  &gt;5x
-    ^
-
-expressions.parser.parse( 67 + )
-(line 1, column 7):
-  unexpected end of input
-  expected &quot;(&quot; or number
-  &gt; 67 +
-         ^</code></pre>
+        <pre><code class="nohighlight"><span class="identifier">expressions</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;5x&quot;</span><span>)
+</span><span class="comment">// res11: parsley.Result[String, BigInt] = Failure((line 1, column 2):
+//   unexpected &quot;x&quot;
+//   expected end of input, end of number, or operator
+//   &gt;5x
+//     ^)
+</span><span>
+</span><span class="identifier">expressions</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot; 67 + &quot;</span><span>)
+</span><span class="comment">// res12: parsley.Result[String, BigInt] = Failure((line 1, column 7):
+//   unexpected end of input
+//   expected &quot;(&quot; or number
+//   &gt; 67 + 
+//          ^)</span></code></pre>
         <p>Great! Now obviously you could take this even further and make <code>&quot;(&quot;</code> become <code>opening parenthesis</code>
         or something, but I don&#39;t really feel that adds much.</p>
         
@@ -410,12 +393,12 @@ expressions.parser.parse( 67 + )
         this &quot;grammar&quot; in particular. That can make error messages needlessly intimidating for the average
         Joe. The take home from this is to try and avoid labelling <code>expr</code> with <code>.label(&quot;expression&quot;)</code>,
         because that just ends up making something that is no longer useful or informative:</p>
-        <pre><code>expressions.parser.parse(&quot;&quot;)
-(line 1, column 1):
-  unexpected end of input
-  expected expression
-  &gt;
-   ^</code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">expressions</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;&quot;</span><span>)
+</span><span class="comment">// res13: parsley.Result[String, BigInt] = Failure((line 1, column 1):
+//   unexpected end of input
+//   expected expression
+//   &gt;
+//    ^)</span></code></pre>
         <p>What use is that to anybody? The same idea applies to statements, and various other abstract
         grammatical notions. Something like
         <code>&quot;expected if statement, while loop, for loop, variable declaration, or assignment&quot;</code> is so much more
@@ -430,40 +413,40 @@ expressions.parser.parse( 67 + )
     </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">digit</span><span>, </span><span class="identifier">whitespace</span><span>, </span><span class="identifier">string</span><span>, </span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>}
     </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.{</span><span class="identifier">manyUntil</span><span>, </span><span class="identifier">skipMany</span><span>, </span><span class="identifier">eof</span><span>}
 
-    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">symbol</span><span>(</span><span class="identifier">str</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">atomic</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">str</span><span>))
-    </span><span class="keyword">private</span><span> </span><span class="keyword">implicit</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">implicitSymbol</span><span>(</span><span class="identifier">s</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">symbol</span><span>(</span><span class="identifier">s</span><span>)
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">symbol</span><span>(</span><span class="identifier">str</span><span>: </span><span class="type-name">String</span><span>) = </span><span class="identifier">atomic</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">str</span><span>)).</span><span class="identifier">void</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">implicit</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">implicitSymbol</span><span>(</span><span class="identifier">tok</span><span>: </span><span class="type-name">String</span><span>) = </span><span class="identifier">symbol</span><span>(</span><span class="identifier">tok</span><span>)
 
-    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">lineComment</span><span> = </span><span class="string-literal">&quot;//&quot;</span><span> *&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;end of comment&quot;</span><span>))
-    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">multiComment</span><span> = </span><span class="string-literal">&quot;/*&quot;</span><span> *&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="string-literal">&quot;*/&quot;</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;end of comment&quot;</span><span>))
-    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">comment</span><span> = (</span><span class="identifier">lineComment</span><span> &lt;|&gt; </span><span class="identifier">multiComment</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;comment&quot;</span><span>)
-    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">skipWhitespace</span><span> = </span><span class="identifier">skipMany</span><span>(</span><span class="identifier">whitespace</span><span> &lt;|&gt; </span><span class="identifier">comment</span><span>).</span><span class="identifier">hide</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">lineComment</span><span> = </span><span class="string-literal">&quot;//&quot;</span><span> ~&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;end of comment&quot;</span><span>)
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">multiComment</span><span> = </span><span class="string-literal">&quot;/*&quot;</span><span> ~&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="string-literal">&quot;*/&quot;</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;end of comment&quot;</span><span>)
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">comment</span><span> = (</span><span class="identifier">lineComment</span><span> | </span><span class="identifier">multiComment</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;comment&quot;</span><span>)
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">skipWhitespace</span><span> = </span><span class="identifier">skipMany</span><span>(</span><span class="identifier">whitespace</span><span> | </span><span class="identifier">comment</span><span>).</span><span class="identifier">hide</span><span>
 
-    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">lexeme</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">p</span><span> &lt;* </span><span class="identifier">skipWhitespace</span><span>
-    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">token</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">atomic</span><span>(</span><span class="identifier">p</span><span>))
-    </span><span class="keyword">def</span><span> </span><span class="declaration-name">fully</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">skipWhitespace</span><span> *&gt; </span><span class="identifier">p</span><span> &lt;* </span><span class="identifier">eof</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">lexeme</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]) = </span><span class="identifier">p</span><span> &lt;~ </span><span class="identifier">skipWhitespace</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">token</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]) = </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">atomic</span><span>(</span><span class="identifier">p</span><span>))
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">fully</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">skipWhitespace</span><span> ~&gt; </span><span class="identifier">p</span><span> &lt;~ </span><span class="identifier">eof</span><span>
 
-    </span><span class="keyword">val</span><span> </span><span class="identifier">number</span><span> =
-        </span><span class="identifier">token</span><span>(
-            </span><span class="identifier">digit</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;end of number&quot;</span><span>).</span><span class="identifier">foldLeft1</span><span>[</span><span class="type-name">Int</span><span>](</span><span class="number-literal">0</span><span>)((</span><span class="identifier">n</span><span>, </span><span class="identifier">d</span><span>) =&gt; </span><span class="identifier">n</span><span> * </span><span class="number-literal">10</span><span> + </span><span class="identifier">d</span><span>.</span><span class="identifier">asDigit</span><span>)
-        ).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;number&quot;</span><span>)
+    </span><span class="keyword">val</span><span> </span><span class="identifier">number</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">BigInt</span><span>] = </span><span class="identifier">token</span><span> {
+        </span><span class="identifier">digit</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;end of number&quot;</span><span>).</span><span class="identifier">foldLeft1</span><span>[</span><span class="type-name">BigInt</span><span>](</span><span class="number-literal">0</span><span>)((</span><span class="identifier">n</span><span>, </span><span class="identifier">d</span><span>) =&gt; </span><span class="identifier">n</span><span> * </span><span class="number-literal">10</span><span> + </span><span class="identifier">d</span><span>.</span><span class="identifier">asDigit</span><span>)
+    }.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;number&quot;</span><span>)
 
     </span><span class="keyword">object</span><span> </span><span class="identifier">implicits</span><span> {
-        </span><span class="keyword">implicit</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">implicitToken</span><span>(</span><span class="identifier">s</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">symbol</span><span>(</span><span class="identifier">s</span><span>))
+        </span><span class="keyword">implicit</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">implicitSymbol</span><span>(</span><span class="identifier">s</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">symbol</span><span>(</span><span class="identifier">s</span><span>))
     }
 }
 
 </span><span class="keyword">object</span><span> </span><span class="identifier">expressions</span><span> {
     </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">expr</span><span>.{</span><span class="identifier">precedence</span><span>, </span><span class="type-name">Ops</span><span>, </span><span class="type-name">InfixL</span><span>}
 
-    </span><span class="keyword">import</span><span> </span><span class="identifier">lexer</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">implicitToken</span><span>
+    </span><span class="keyword">import</span><span> </span><span class="identifier">lexer</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">implicitSymbol</span><span>
     </span><span class="keyword">import</span><span> </span><span class="identifier">lexer</span><span>.{</span><span class="identifier">number</span><span>, </span><span class="identifier">fully</span><span>}
 
-    </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">atom</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Int</span><span>] = </span><span class="string-literal">&quot;(&quot;</span><span> *&gt; </span><span class="identifier">expr</span><span> &lt;* </span><span class="string-literal">&quot;)&quot;</span><span> &lt;|&gt; </span><span class="identifier">number</span><span>
-    </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span> = </span><span class="identifier">precedence</span><span>[</span><span class="type-name">Int</span><span>](</span><span class="identifier">atom</span><span>)(
-        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;operator&quot;</span><span>) #&gt; (</span><span class="identifier">_</span><span> * </span><span class="identifier">_</span><span>)),
-        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;operator&quot;</span><span>) #&gt; (</span><span class="identifier">_</span><span> + </span><span class="identifier">_</span><span>), </span><span class="string-literal">&quot;-&quot;</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;operator&quot;</span><span>) #&gt; (</span><span class="identifier">_</span><span> - </span><span class="identifier">_</span><span>)))
+    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">atom</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">BigInt</span><span>] = </span><span class="string-literal">&quot;(&quot;</span><span> ~&gt; </span><span class="identifier">expr</span><span> &lt;~ </span><span class="string-literal">&quot;)&quot;</span><span> | </span><span class="identifier">number</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span> = </span><span class="identifier">precedence</span><span>[</span><span class="type-name">BigInt</span><span>](</span><span class="identifier">atom</span><span>)(
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;operator&quot;</span><span>) </span><span class="identifier">as</span><span> (</span><span class="identifier">_</span><span> * </span><span class="identifier">_</span><span>)),
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;operator&quot;</span><span>) </span><span class="identifier">as</span><span> (</span><span class="identifier">_</span><span> + </span><span class="identifier">_</span><span>), </span><span class="string-literal">&quot;-&quot;</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;operator&quot;</span><span>) </span><span class="identifier">as</span><span> (</span><span class="identifier">_</span><span> - </span><span class="identifier">_</span><span>)))
 
-    </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="identifier">fully</span><span>(</span><span class="identifier">expr</span><span>)
+    </span><span class="keyword">val</span><span> </span><span class="identifier">parser</span><span> = </span><span class="identifier">fully</span><span>(</span><span class="identifier">expr</span><span>)
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">parse</span><span>(</span><span class="identifier">input</span><span>: </span><span class="type-name">String</span><span>) = </span><span class="identifier">parser</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="identifier">input</span><span>)
 }</span></code></pre>
         
         <h2 id="using-explain" class="section"><a class="anchor-link left" href="#using-explain"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1.3 </span>Using <code>explain</code></h2>
@@ -480,79 +463,81 @@ expressions.parser.parse( 67 + )
         cook up a string literal parser, supporting some (limited) escape sequences.</p>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">charLift</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.{</span><span class="identifier">many</span><span>, </span><span class="identifier">between</span><span>, </span><span class="identifier">choice</span><span>}
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.{</span><span class="identifier">between</span><span>, </span><span class="identifier">choice</span><span>}
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">_</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">_</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">escapeChar</span><span> =
-    </span><span class="identifier">choice</span><span>(</span><span class="char-literal">&#39;n&#39;</span><span> #&gt; </span><span class="char-literal">&#39;</span><span class="escape-sequence">\n</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;t&#39;</span><span> #&gt; </span><span class="char-literal">&#39;</span><span class="escape-sequence">\t</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span> #&gt; </span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span> #&gt; </span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span>)
-</span><span class="keyword">val</span><span> </span><span class="identifier">stringLetter</span><span> = </span><span class="identifier">noneOf</span><span>(</span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;string character&quot;</span><span>) &lt;|&gt; (</span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span> ~&gt; </span><span class="identifier">escapeChar</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;escape character&quot;</span><span>)
+    </span><span class="identifier">choice</span><span>(</span><span class="char-literal">&#39;n&#39;</span><span> </span><span class="identifier">as</span><span> </span><span class="char-literal">&#39;</span><span class="escape-sequence">\n</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;t&#39;</span><span> </span><span class="identifier">as</span><span> </span><span class="char-literal">&#39;</span><span class="escape-sequence">\t</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span>)
+</span><span class="keyword">val</span><span> </span><span class="identifier">stringLetter</span><span> = </span><span class="identifier">noneOf</span><span>(</span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;string character&quot;</span><span>) | (</span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span> ~&gt; </span><span class="identifier">escapeChar</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;escape character&quot;</span><span>)
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">stringLiteral</span><span> =
     </span><span class="identifier">between</span><span>(</span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span>,
             </span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;end of string&quot;</span><span>),
-            </span><span class="identifier">many</span><span>(</span><span class="identifier">stringLetter</span><span>))
-        .</span><span class="identifier">map</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">mkString</span><span>)
+            </span><span class="identifier">stringOfMany</span><span>(</span><span class="identifier">stringLetter</span><span>))
         .</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;string&quot;</span><span>)</span></code></pre>
         <p>Let&#39;s start with something like this. If we run a couple of examples, we can see where it performs
         well and where it performs less well:</p>
-        <pre><code>stringLiteral.parse(&quot;&quot;)
-(line 1, column 1):
-  unexpected end of input
-  expected string
-  &gt;
-   ^
-
-stringLiteral.parse(&quot;\&quot;&quot;)
-(line 1, column 2):
-  unexpected end of input
-  expected end of string, escape character, or string character
-  &gt;&quot;
-    ^
-
-stringLiteral.parse(&quot;\&quot;\\a&quot;)
-(line 1, column 3):
-  unexpected &quot;a&quot;
-  expected &quot;&quot;&quot;, &quot;\&quot;, &quot;n&quot;, or &quot;t&quot;
-  &gt;&quot;\a
-     ^</code></pre>
+        <pre><code class="nohighlight"><span class="identifier">stringLiteral</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;&quot;</span><span>)
+</span><span class="comment">// res16: parsley.Result[String, String] = Failure((line 1, column 1):
+//   unexpected end of input
+//   expected string
+//   &gt;
+//    ^)
+</span><span>
+</span><span class="identifier">stringLiteral</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;</span><span class="escape-sequence">\&quot;</span><span class="string-literal">&quot;</span><span>)
+</span><span class="comment">// res17: parsley.Result[String, String] = Failure((line 1, column 2):
+//   unexpected end of input
+//   expected end of string, escape character, or string character
+//   &gt;&quot;
+//     ^)
+</span><span>
+</span><span class="identifier">stringLiteral</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;</span><span class="escape-sequence">\&quot;\\</span><span class="string-literal">a&quot;</span><span>)
+</span><span class="comment">// res18: parsley.Result[String, String] = Failure((line 1, column 3):
+//   unexpected &quot;a&quot;
+//   expected &quot;&quot;&quot;, &quot;\&quot;, &quot;n&quot;, or &quot;t&quot;
+//   &gt;&quot;\a
+//      ^)</span></code></pre>
         <p>So, for the first two cases, the error message performs quite well. But the last message is a bit
         noisy. One possible approach to improve this could be to label each alternative to give them a
         slightly clearer name, which would result in something like:</p>
-        <pre><code>(line 1, column 3):
-  unexpected &quot;a&quot;
-  expected \&quot;, \\, \n, or \t
-  &gt;&quot;\a
-     ^</code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">stringLiteral</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;</span><span class="escape-sequence">\&quot;\\</span><span class="string-literal">a&quot;</span><span>)
+</span><span class="comment">// res19: parsley.Result[String, String] = Failure((line 1, column 3):
+//   unexpected &quot;a&quot;
+//   expected \&quot;, \\, \n, or \t
+//   &gt;&quot;\a
+//      ^)</span></code></pre>
         <p>This is <em>better</em>, but a bit misleading, we don&#39;t expect a <code>\</code>! Now, you could instead opt to remove
         the backslashes, but then that doesn&#39;t give much information about why these things are expected.
         Another option would be to label all alternatives with some common name:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">escapeChar</span><span> =
-    </span><span class="identifier">choice</span><span>(</span><span class="char-literal">&#39;n&#39;</span><span> #&gt; </span><span class="char-literal">&#39;</span><span class="escape-sequence">\n</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;t&#39;</span><span> #&gt; </span><span class="char-literal">&#39;</span><span class="escape-sequence">\t</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span> #&gt; </span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span> #&gt; </span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span>)
+    </span><span class="identifier">choice</span><span>(</span><span class="char-literal">&#39;n&#39;</span><span> </span><span class="identifier">as</span><span> </span><span class="char-literal">&#39;</span><span class="escape-sequence">\n</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;t&#39;</span><span> </span><span class="identifier">as</span><span> </span><span class="char-literal">&#39;</span><span class="escape-sequence">\t</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span>)
         .</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;end of escape sequence&quot;</span><span>)</span></code></pre>
         <p>Which would yield</p>
-        <pre><code>(line 1, column 3):
-  unexpected &quot;a&quot;
-  expected end of escape sequence
-  &gt;&quot;\a
-     ^</code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">stringLiteral</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;</span><span class="escape-sequence">\&quot;\\</span><span class="string-literal">a&quot;</span><span>)
+</span><span class="comment">// res20: parsley.Result[String, String] = Failure((line 1, column 3):
+//   unexpected &quot;a&quot;
+//   expected end of escape sequence
+//   &gt;&quot;\a
+//      ^)</span></code></pre>
         <p>This is a bit more helpful, in that it does provide a good name to what we expected. But at the same
         time it doesn&#39;t help the user to understand how to fix their problem: &quot;what is an escape sequence&quot;.
         This is similar to the &quot;statement&quot; problem I described above. In this case, (and indeed in the
         &quot;statement&quot; case), we can add an <code>explain</code> to help the user understand what we mean:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">escapeChar</span><span> =
-    </span><span class="identifier">choice</span><span>(</span><span class="char-literal">&#39;n&#39;</span><span> #&gt; </span><span class="char-literal">&#39;</span><span class="escape-sequence">\n</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;t&#39;</span><span> #&gt; </span><span class="char-literal">&#39;</span><span class="escape-sequence">\t</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span> #&gt; </span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span> #&gt; </span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span>)
+    </span><span class="identifier">choice</span><span>(</span><span class="char-literal">&#39;n&#39;</span><span> </span><span class="identifier">as</span><span> </span><span class="char-literal">&#39;</span><span class="escape-sequence">\n</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;t&#39;</span><span> </span><span class="identifier">as</span><span> </span><span class="char-literal">&#39;</span><span class="escape-sequence">\t</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span>)
         .</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;end of escape sequence&quot;</span><span>)
         .</span><span class="identifier">explain</span><span>(</span><span class="string-literal">&quot;valid escape sequences include </span><span class="escape-sequence">\\</span><span class="string-literal">n, </span><span class="escape-sequence">\\</span><span class="string-literal">t, </span><span class="escape-sequence">\\\&quot;</span><span class="string-literal">, or </span><span class="escape-sequence">\\\\</span><span class="string-literal">&quot;</span><span>)</span></code></pre>
         <p>The <code>explain</code> combinator annotates failure messages with an additional reason. These can stack, and
         are displayed each on their own line in the error message. With this in place, let&#39;s see what the
         new error message is:</p>
-        <pre><code>(line 1, column 3):
-  unexpected &quot;a&quot;
-  expected end of escape sequence
-  valid escape sequences include \n, \t, \&quot;, or \\
-  &gt;&quot;\a
-     ^</code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">stringLiteral</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;</span><span class="escape-sequence">\&quot;\\</span><span class="string-literal">a&quot;</span><span>)
+</span><span class="comment">// res21: parsley.Result[String, String] = Failure((line 1, column 3):
+//   unexpected &quot;a&quot;
+//   expected end of escape sequence
+//   valid escape sequences include \n, \t, \&quot;, or \\
+//   &gt;&quot;\a
+//      ^)</span></code></pre>
         <p>This time, we keep the name of the expected token clear and concise, but we <em>also</em> help the user to
         understand what this actually means. The error isn&#39;t misleading in the sense that we aren&#39;t
         suggesting that a <code>\n</code> would fix the parse error <em>after</em> the <code>\</code> we already wrote, but have have
@@ -730,308 +715,11 @@ stringLiteral.parse(&quot;\&quot;\\a&quot;)
         how many raw lines of input both before and after the problematic line to provide to <code>lineInfo</code>. In
         a pinch, overriding these values from <code>DefaultErrorBuilder</code> is a quick way of changing how specific
         your errors are to other lines in the input. The <code>unexpectedToken</code> method is
-        special, but I&#39;ll leave a discussion of this to another page. All of the other methods in the <code>ErrorBuilder</code> will make
+        special, but I&#39;ll leave a discussion of this <a href="../api-guide/errors/tokenextractors.html">another page</a>. All of the other methods in the <code>ErrorBuilder</code> will make
         use of the refined results from the methods above.</p>
         <p>I hope that, by this point, you have a reasonable idea of how this system all ties together. But, if
-        you don&#39;t, or you want an example, let&#39;s take a look at how Parsley&#39;s own unit tests format error
-        messages to be easier to pattern match on and test against.</p>
-        
-        <h2 id="example-unit-tests" class="section"><a class="anchor-link left" href="#example-unit-tests"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2.1 </span>Example: Unit Tests</h2>
-        <p>When testing parsers, it is sometimes worth checking that the error messages contain the <em>correct</em>
-        content. Usually, the order doesn&#39;t matter, but the presence or absence of certain items is important.
-        This makes <code>String</code> the <em>worst</em> possible choice for testing, as order matters and its hard to test
-        for inclusion without string spliting and other nasty work. Instead, Parsley opts to build its own
-        <code>TestError</code> type that strips away the junk and only keeps the important information, without any
-        ordering. Let&#39;s take a look at it:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">TestError</span><span>(</span><span class="identifier">pos</span><span>: (</span><span class="type-name">Int</span><span>, </span><span class="type-name">Int</span><span>), </span><span class="identifier">lines</span><span>: </span><span class="type-name">TestErrorLines</span><span>)
-
-</span><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">TestErrorLines</span><span>
-</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">VanillaError</span><span>(</span><span class="identifier">unexpected</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">TestErrorItem</span><span>], </span><span class="identifier">expecteds</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">TestErrorItem</span><span>], </span><span class="identifier">reasons</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">String</span><span>]) </span><span class="keyword">extends</span><span> </span><span class="type-name">TestErrorLines</span><span>
-</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">SpecialisedError</span><span>(</span><span class="identifier">msgs</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">String</span><span>]) </span><span class="keyword">extends</span><span> </span><span class="type-name">TestErrorLines</span><span>
-
-</span><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">TestErrorItem</span><span>
-</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">TestRaw</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">TestErrorItem</span><span>
-</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">TestNamed</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">TestErrorItem</span><span>
-</span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">TestEndOfInput</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">TestErrorItem</span></code></pre>
-        <p>This type represents the vanilla and specialised errors with separate case classes, and stores the
-        position as a pair of ints. All of the error items in the messages are stored in a set to avoid
-        ordering issues, and the line info that provides the surrounding input context is not present, as
-        it isn&#39;t critical to the tests. This is <em>very</em> stripped down, essentially, but gets the job done.</p>
-        <p>So, how is the builder implemented? Well, we are going to make a subclass that extends <code>ErrorBuilder[TestError]</code>
-        and proceed from there. We&#39;ll start with the stub implementation and fill each in from there:</p>
-        <pre><code class="nohighlight"><span class="keyword">class</span><span> </span><span class="type-name">TestErrorBuilder</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ErrorBuilder</span><span>[</span><span class="type-name">TestError</span><span>] </span><span class="keyword">with</span><span> </span><span class="identifier">tokenextractors</span><span>.</span><span class="type-name">MatchParserDemand</span><span> {
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">format</span><span>(</span><span class="identifier">pos</span><span>: </span><span class="type-name">Position</span><span>, </span><span class="identifier">source</span><span>: </span><span class="type-name">Source</span><span>, </span><span class="identifier">lines</span><span>: </span><span class="type-name">ErrorInfoLines</span><span>): </span><span class="type-name">TestError</span><span> = ???
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">Position</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">pos</span><span>(</span><span class="identifier">line</span><span>: </span><span class="type-name">Int</span><span>, </span><span class="identifier">col</span><span>: </span><span class="type-name">Int</span><span>): </span><span class="type-name">Position</span><span> = ???
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">Source</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">source</span><span>(</span><span class="identifier">sourceName</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">String</span><span>]): </span><span class="type-name">Source</span><span> = ???
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">ErrorInfoLines</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">vanillaError</span><span>(</span><span class="identifier">unexpected</span><span>: </span><span class="type-name">UnexpectedLine</span><span>, </span><span class="identifier">expected</span><span>: </span><span class="type-name">ExpectedLine</span><span>, </span><span class="identifier">reasons</span><span>: </span><span class="type-name">Messages</span><span>, </span><span class="identifier">line</span><span>: </span><span class="type-name">LineInfo</span><span>): </span><span class="type-name">ErrorInfoLines</span><span> = ???
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">specialisedError</span><span>(</span><span class="identifier">msgs</span><span>: </span><span class="type-name">Messages</span><span>, </span><span class="identifier">line</span><span>: </span><span class="type-name">LineInfo</span><span>): </span><span class="type-name">ErrorInfoLines</span><span> = ???
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">ExpectedItems</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">combineExpectedItems</span><span>(</span><span class="identifier">alts</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">Item</span><span>]): </span><span class="type-name">ExpectedItems</span><span> = ???
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">Messages</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">combineMessages</span><span>(</span><span class="identifier">alts</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">Message</span><span>]): </span><span class="type-name">Messages</span><span> = ???
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">UnexpectedLine</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">unexpected</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">Item</span><span>]): </span><span class="type-name">UnexpectedLine</span><span> = ???
-    </span><span class="keyword">type</span><span> </span><span class="type-name">ExpectedLine</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">expected</span><span>(</span><span class="identifier">alts</span><span>: </span><span class="type-name">ExpectedItems</span><span>): </span><span class="type-name">ExpectedLine</span><span> = ???
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">Message</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">reason</span><span>(</span><span class="identifier">reason</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Message</span><span> = ???
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">message</span><span>(</span><span class="identifier">msg</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Message</span><span> = ???
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">LineInfo</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">lineInfo</span><span>(</span><span class="identifier">line</span><span>: </span><span class="type-name">String</span><span>, </span><span class="identifier">linesBefore</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">String</span><span>], </span><span class="identifier">linesAfter</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">String</span><span>], </span><span class="identifier">errorPointsAt</span><span>: </span><span class="type-name">Int</span><span>): </span><span class="type-name">LineInfo</span><span> = ???
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">Item</span><span>
-    </span><span class="keyword">type</span><span> </span><span class="type-name">Raw</span><span> &lt;: </span><span class="type-name">Item</span><span>
-    </span><span class="keyword">type</span><span> </span><span class="type-name">Named</span><span> &lt;: </span><span class="type-name">Item</span><span>
-    </span><span class="keyword">type</span><span> </span><span class="type-name">EndOfInput</span><span> &lt;: </span><span class="type-name">Item</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">raw</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Raw</span><span> = ???
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">named</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Named</span><span> = ???
-    </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">endOfInput</span><span>: </span><span class="type-name">EndOfInput</span><span> = ???
-
-    </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">numLinesBefore</span><span>: </span><span class="type-name">Int</span><span> = </span><span class="number-literal">0</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">numLinesAfter</span><span>: </span><span class="type-name">Int</span><span> = </span><span class="number-literal">0</span><span>
-}</span></code></pre>
-        <p>Quickly note the addition of <code>with tokenextractors.MatchParserDemand</code> in the
-        declaration line: this is used to provide the implementation of <code>unexpectedToken</code> for us, for more information see &quot;Advanced Error Messages&quot;.
-        The first task is to work out what each of the types should be. Let&#39;s start by identifying
-        the components of the error message we <em>don&#39;t</em> need and set their type to <code>Unit</code>. This provides a
-        trivial implementation of the relevant methods: they just return <code>()</code>. The error format we defined
-        didn&#39;t require any line info, or the source file:</p>
-        <pre><code class="nohighlight"><span class="keyword">class</span><span> </span><span class="type-name">TestErrorBuilder</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ErrorBuilder</span><span>[</span><span class="type-name">TestError</span><span>] </span><span class="keyword">with</span><span> </span><span class="identifier">tokenextractors</span><span>.</span><span class="type-name">MatchParserDemand</span><span> {
-    ...
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">Source</span><span> = </span><span class="type-name">Unit</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">source</span><span>(</span><span class="identifier">sourceName</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">String</span><span>]): </span><span class="type-name">Source</span><span> = ()
-
-    ...
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">LineInfo</span><span> = </span><span class="type-name">Unit</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">lineInfo</span><span>(</span><span class="identifier">line</span><span>: </span><span class="type-name">String</span><span>, </span><span class="identifier">linesBefore</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">String</span><span>], </span><span class="identifier">linesAfter</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">String</span><span>], </span><span class="identifier">errorPointsAt</span><span>: </span><span class="type-name">Int</span><span>): </span><span class="type-name">LineInfo</span><span> = ()
-
-    ...
-}</span></code></pre>
-        <p>Easy. Now, lets work top down to fill in the rest! The top-most method is <code>format</code>, which we know
-        needs to return a <code>TestError</code>. In this case we are given a <code>Position</code>, a <code>Unit</code>, and some <code>ErrorInfoLines</code>.
-        Well, the constructor for <code>TestError</code> requires <code>(Int, Int)</code> and <code>TestErrorLines</code>, so this helps us
-        fill in some more types, and the definition of <code>format</code> can just invoke the constructor:</p>
-        <pre><code class="nohighlight"><span class="keyword">class</span><span> </span><span class="type-name">TestErrorBuilder</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ErrorBuilder</span><span>[</span><span class="type-name">TestError</span><span>] </span><span class="keyword">with</span><span> </span><span class="identifier">tokenextractors</span><span>.</span><span class="type-name">MatchParserDemand</span><span> {
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">format</span><span>(</span><span class="identifier">pos</span><span>: </span><span class="type-name">Position</span><span>, </span><span class="identifier">source</span><span>: </span><span class="type-name">Source</span><span>, </span><span class="identifier">lines</span><span>: </span><span class="type-name">ErrorInfoLines</span><span>): </span><span class="type-name">TestError</span><span> = </span><span class="type-name">TestError</span><span>(</span><span class="identifier">pos</span><span>, </span><span class="identifier">lines</span><span>)
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">Position</span><span> = (</span><span class="type-name">Int</span><span>, </span><span class="type-name">Int</span><span>)
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">pos</span><span>(</span><span class="identifier">line</span><span>: </span><span class="type-name">Int</span><span>, </span><span class="identifier">col</span><span>: </span><span class="type-name">Int</span><span>): </span><span class="type-name">Position</span><span> = ???
-
-    ...
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">ErrorInfoLines</span><span> = </span><span class="type-name">TestErrorLines</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">vanillaError</span><span>(</span><span class="identifier">unexpected</span><span>: </span><span class="type-name">UnexpectedLine</span><span>, </span><span class="identifier">expected</span><span>: </span><span class="type-name">ExpectedLine</span><span>, </span><span class="identifier">reasons</span><span>: </span><span class="type-name">Messages</span><span>, </span><span class="identifier">line</span><span>: </span><span class="type-name">LineInfo</span><span>): </span><span class="type-name">ErrorInfoLines</span><span> = ???
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">specialisedError</span><span>(</span><span class="identifier">msgs</span><span>: </span><span class="type-name">Messages</span><span>, </span><span class="identifier">line</span><span>: </span><span class="type-name">LineInfo</span><span>): </span><span class="type-name">ErrorInfoLines</span><span> = ???
-
-    ...
-}</span></code></pre>
-        <p>Right, well, <code>pos</code> is easy to define, we need to return <code>(Int, Int)</code>, so we just tuple them up.
-        The <code>TestErrorLines</code> trait has two sub-classes: <code>VanillaError</code> and <code>SpecialisedError</code>. This means
-        that these two constructors will be used in the <code>vanillaError</code> and <code>specialisedError</code> implementations.
-        This allows us to resolve a few more types: we know <code>LineInfo = Unit</code> already, so lets compare how
-        the <em>other</em> arguments of these methods line up to the constructors:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span>        </span><span class="declaration-name">vanillaError</span><span>(</span><span class="identifier">unexpected</span><span>: </span><span class="type-name">UnexpectedLine</span><span>,        </span><span class="identifier">expected</span><span>:  </span><span class="type-name">ExpectedLine</span><span>,       </span><span class="identifier">reasons</span><span>: </span><span class="type-name">Messages</span><span>):           </span><span class="type-name">TestErrorLines</span><span>
-</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">VanillaError</span><span>(</span><span class="identifier">unexpected</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">TestErrorItem</span><span>], </span><span class="identifier">expecteds</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">TestErrorItem</span><span>], </span><span class="identifier">reasons</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">String</span><span>]) </span><span class="keyword">extends</span><span> </span><span class="type-name">TestErrorLines</span><span>
-
-</span><span class="keyword">def</span><span>        </span><span class="declaration-name">specialisedError</span><span>(</span><span class="identifier">msgs</span><span>: </span><span class="type-name">Messages</span><span>   ):        </span><span class="type-name">TestErrorLines</span><span>
-</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">SpecialisedError</span><span>(</span><span class="identifier">msgs</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">String</span><span>]) </span><span class="keyword">extends</span><span> </span><span class="type-name">TestErrorLines</span></code></pre>
-        <p>This tells us the following:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">type</span><span> </span><span class="type-name">UnexpectedLine</span><span> = </span><span class="type-name">Option</span><span>[</span><span class="type-name">TestErrorItem</span><span>]
-</span><span class="keyword">type</span><span> </span><span class="type-name">ExpectedLine</span><span> = </span><span class="type-name">Set</span><span>[</span><span class="type-name">TestErrorItem</span><span>]
-</span><span class="keyword">type</span><span> </span><span class="type-name">Messages</span><span> = </span><span class="type-name">Set</span><span>[</span><span class="type-name">String</span><span>]</span></code></pre>
-        <p>Great, let&#39;s fill those types in as well as the, again straightforward, implementation:</p>
-        <pre><code class="nohighlight"><span class="keyword">class</span><span> </span><span class="type-name">TestErrorBuilder</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ErrorBuilder</span><span>[</span><span class="type-name">TestError</span><span>] </span><span class="keyword">with</span><span> </span><span class="identifier">tokenextractors</span><span>.</span><span class="type-name">MatchParserDemand</span><span> {
-    ...
-
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">pos</span><span>(</span><span class="identifier">line</span><span>: </span><span class="type-name">Int</span><span>, </span><span class="identifier">col</span><span>: </span><span class="type-name">Int</span><span>): </span><span class="type-name">Position</span><span> = (</span><span class="identifier">line</span><span>, </span><span class="identifier">col</span><span>)
-
-    ...
-
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">vanillaError</span><span>(</span><span class="identifier">unexpected</span><span>: </span><span class="type-name">UnexpectedLine</span><span>, </span><span class="identifier">expected</span><span>: </span><span class="type-name">ExpectedLine</span><span>, </span><span class="identifier">reasons</span><span>: </span><span class="type-name">Messages</span><span>, </span><span class="identifier">line</span><span>: </span><span class="type-name">LineInfo</span><span>): </span><span class="type-name">ErrorInfoLines</span><span> =
-        </span><span class="type-name">VanillaError</span><span>(</span><span class="identifier">unexpected</span><span>, </span><span class="identifier">expected</span><span>, </span><span class="identifier">reasons</span><span>)
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">specialisedError</span><span>(</span><span class="identifier">msgs</span><span>: </span><span class="type-name">Messages</span><span>, </span><span class="identifier">line</span><span>: </span><span class="type-name">LineInfo</span><span>): </span><span class="type-name">ErrorInfoLines</span><span> = </span><span class="type-name">SpecialisedError</span><span>(</span><span class="identifier">msgs</span><span>)
-
-    ...
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">Messages</span><span> = </span><span class="type-name">Set</span><span>[</span><span class="type-name">String</span><span>]
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">combineMessages</span><span>(</span><span class="identifier">alts</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">Message</span><span>]): </span><span class="type-name">Messages</span><span> = ???
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">UnexpectedLine</span><span> = </span><span class="type-name">Option</span><span>[</span><span class="type-name">TestErrorItem</span><span>]
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">unexpected</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">Item</span><span>]): </span><span class="type-name">UnexpectedLine</span><span> = ???
-    </span><span class="keyword">type</span><span> </span><span class="type-name">ExpectedLine</span><span> = </span><span class="type-name">Set</span><span>[</span><span class="type-name">TestErrorItem</span><span>]
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">expected</span><span>(</span><span class="identifier">alts</span><span>: </span><span class="type-name">ExpectedItems</span><span>): </span><span class="type-name">ExpectedLine</span><span> = ???
-
-    ...
-}</span></code></pre>
-        <p>These three new methods don&#39;t have much choice about how to plumb them together. It looks as if
-        <code>Message = String</code>, so <code>combineMessages</code> just needs to convert the sequence of messages into a set.
-        The <code>unexpected</code> method is converting an <code>Option[Item]</code> to an <code>Option[TestErrorItem]</code>, so it seems
-        like <code>Item = TestErrorItem</code> and this is the identity function. In a similar vein <code>ExpectedItems = Set[TestErrorItem]</code>
-        and this can be the identity function too.</p>
-        <pre><code class="nohighlight"><span class="keyword">class</span><span> </span><span class="type-name">TestErrorBuilder</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ErrorBuilder</span><span>[</span><span class="type-name">TestError</span><span>] </span><span class="keyword">with</span><span> </span><span class="identifier">tokenextractors</span><span>.</span><span class="type-name">MatchParserDemand</span><span> {
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">combineMessages</span><span>(</span><span class="identifier">alts</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">Message</span><span>]): </span><span class="type-name">Messages</span><span> = </span><span class="identifier">alts</span><span>.</span><span class="identifier">toSet</span><span>
-
-    ...
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">ExpectedItems</span><span> = </span><span class="type-name">Set</span><span>[</span><span class="type-name">TestErrorItem</span><span>]
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">combineExpectedItems</span><span>(</span><span class="identifier">alts</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">Item</span><span>]): </span><span class="type-name">ExpectedItems</span><span> = ???
-
-    ...
-
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">unexpected</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">Item</span><span>]): </span><span class="type-name">UnexpectedLine</span><span> = </span><span class="identifier">item</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">expected</span><span>(</span><span class="identifier">alts</span><span>: </span><span class="type-name">ExpectedItems</span><span>): </span><span class="type-name">ExpectedLine</span><span> = </span><span class="identifier">alts</span><span>
-
-    ...
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">Message</span><span> = </span><span class="type-name">String</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">reason</span><span>(</span><span class="identifier">reason</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Message</span><span> = ???
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">message</span><span>(</span><span class="identifier">msg</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Message</span><span> = ???
-
-    ...
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">Item</span><span> = </span><span class="type-name">TestErrorItem</span><span>
-    </span><span class="keyword">type</span><span> </span><span class="type-name">Raw</span><span> &lt;: </span><span class="type-name">Item</span><span>
-    </span><span class="keyword">type</span><span> </span><span class="type-name">Named</span><span> &lt;: </span><span class="type-name">Item</span><span>
-    </span><span class="keyword">type</span><span> </span><span class="type-name">EndOfInput</span><span> &lt;: </span><span class="type-name">Item</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">raw</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Raw</span><span> = ???
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">named</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Named</span><span> = ???
-    </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">endOfInput</span><span>: </span><span class="type-name">EndOfInput</span><span> = ???
-
-    </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">numLinesBefore</span><span>: </span><span class="type-name">Int</span><span> = </span><span class="number-literal">0</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">numLinesAfter</span><span>: </span><span class="type-name">Int</span><span> = </span><span class="number-literal">0</span><span>
-}</span></code></pre>
-        <p>This is the final stretch now: we know that, actually <code>Set[Item] =:= ExpectedItems</code> already, since
-        <code>ExpectedItems</code> is a <code>Set[TestErrorItem]</code> and <code>Item = TestErrorItem</code>, so <code>combineExpectedItems</code> is,
-        once again, the identity function. This is the case for <code>reason</code> and <code>message</code> too! Finally, we know
-        that <code>Item = TestErrorItem</code> and it has three subtypes called <code>Raw</code>, <code>Named</code>, and <code>EndOfInput</code>.
-        Happily, <code>TestErrorItem</code> has three subtypes called <code>TestRaw</code>, <code>TestNamed</code>, and <code>TestEndOfInput</code>, so
-        these will match up nicely! The three relevant methods can just invoke the constructors:</p>
-        <pre><code class="nohighlight"><span class="keyword">class</span><span> </span><span class="type-name">TestErrorBuilder</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ErrorBuilder</span><span>[</span><span class="type-name">TestError</span><span>] </span><span class="keyword">with</span><span> </span><span class="identifier">tokenextractors</span><span>.</span><span class="type-name">MatchParserDemand</span><span> {
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">combineExpectedItems</span><span>(</span><span class="identifier">alts</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">Item</span><span>]): </span><span class="type-name">ExpectedItems</span><span> = </span><span class="identifier">alts</span><span>
-
-    ...
-
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">reason</span><span>(</span><span class="identifier">reason</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Message</span><span> = </span><span class="identifier">reason</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">message</span><span>(</span><span class="identifier">msg</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Message</span><span> = </span><span class="identifier">msg</span><span>
-
-    ...
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">Raw</span><span> = </span><span class="type-name">TestRaw</span><span>
-    </span><span class="keyword">type</span><span> </span><span class="type-name">Named</span><span> = </span><span class="type-name">TestNamed</span><span>
-    </span><span class="keyword">type</span><span> </span><span class="type-name">EndOfInput</span><span> = </span><span class="type-name">TestEndOfInput</span><span>.</span><span class="keyword">type</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">raw</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Raw</span><span> = </span><span class="type-name">TestRaw</span><span>(</span><span class="identifier">item</span><span>)
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">named</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Named</span><span> = </span><span class="type-name">TestNamed</span><span>(</span><span class="identifier">item</span><span>)
-    </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">endOfInput</span><span>: </span><span class="type-name">EndOfInput</span><span> = </span><span class="type-name">TestEndOfInput</span><span>
-
-    </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">numLinesBefore</span><span>: </span><span class="type-name">Int</span><span> = </span><span class="number-literal">0</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">numLinesAfter</span><span>: </span><span class="type-name">Int</span><span> = </span><span class="number-literal">0</span><span>
-}</span></code></pre>
-        <p>Phew! Let&#39;s take a look at the finished result:</p>
-        <pre><code class="nohighlight"><span class="keyword">class</span><span> </span><span class="type-name">TestErrorBuilder</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ErrorBuilder</span><span>[</span><span class="type-name">TestError</span><span>] </span><span class="keyword">with</span><span> </span><span class="identifier">tokenextractors</span><span>.</span><span class="type-name">MatchParserDemand</span><span> {
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">format</span><span>(</span><span class="identifier">pos</span><span>: </span><span class="type-name">Position</span><span>, </span><span class="identifier">source</span><span>: </span><span class="type-name">Source</span><span>, </span><span class="identifier">lines</span><span>: </span><span class="type-name">ErrorInfoLines</span><span>): </span><span class="type-name">TestError</span><span> = </span><span class="type-name">TestError</span><span>(</span><span class="identifier">pos</span><span>, </span><span class="identifier">lines</span><span>)
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">Position</span><span> = (</span><span class="type-name">Int</span><span>, </span><span class="type-name">Int</span><span>)
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">pos</span><span>(</span><span class="identifier">line</span><span>: </span><span class="type-name">Int</span><span>, </span><span class="identifier">col</span><span>: </span><span class="type-name">Int</span><span>): </span><span class="type-name">Position</span><span> = (</span><span class="identifier">line</span><span>, </span><span class="identifier">col</span><span>)
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">Source</span><span> = </span><span class="type-name">Unit</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">source</span><span>(</span><span class="identifier">sourceName</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">String</span><span>]): </span><span class="type-name">Source</span><span> = ()
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">ErrorInfoLines</span><span> = </span><span class="type-name">TestErrorLines</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">vanillaError</span><span>(</span><span class="identifier">unexpected</span><span>: </span><span class="type-name">UnexpectedLine</span><span>, </span><span class="identifier">expected</span><span>: </span><span class="type-name">ExpectedLine</span><span>, </span><span class="identifier">reasons</span><span>: </span><span class="type-name">Messages</span><span>, </span><span class="identifier">line</span><span>: </span><span class="type-name">LineInfo</span><span>): </span><span class="type-name">ErrorInfoLines</span><span> =
-        </span><span class="type-name">VanillaError</span><span>(</span><span class="identifier">unexpected</span><span>, </span><span class="identifier">expected</span><span>, </span><span class="identifier">reasons</span><span>)
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">specialisedError</span><span>(</span><span class="identifier">msgs</span><span>: </span><span class="type-name">Messages</span><span>, </span><span class="identifier">line</span><span>: </span><span class="type-name">LineInfo</span><span>): </span><span class="type-name">ErrorInfoLines</span><span> = </span><span class="type-name">SpecialisedError</span><span>(</span><span class="identifier">msgs</span><span>)
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">ExpectedItems</span><span> = </span><span class="type-name">Set</span><span>[</span><span class="type-name">TestErrorItem</span><span>]
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">combineExpectedItems</span><span>(</span><span class="identifier">alts</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">Item</span><span>]): </span><span class="type-name">ExpectedItems</span><span> = </span><span class="identifier">alts</span><span>
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">Messages</span><span> = </span><span class="type-name">Set</span><span>[</span><span class="type-name">String</span><span>]
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">combineMessages</span><span>(</span><span class="identifier">alts</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">Message</span><span>]): </span><span class="type-name">Messages</span><span> = </span><span class="identifier">alts</span><span>.</span><span class="identifier">toSet</span><span>
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">UnexpectedLine</span><span> = </span><span class="type-name">Option</span><span>[</span><span class="type-name">TestErrorItem</span><span>]
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">unexpected</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">Item</span><span>]): </span><span class="type-name">UnexpectedLine</span><span> = </span><span class="identifier">item</span><span>
-    </span><span class="keyword">type</span><span> </span><span class="type-name">ExpectedLine</span><span> = </span><span class="type-name">Set</span><span>[</span><span class="type-name">TestErrorItem</span><span>]
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">expected</span><span>(</span><span class="identifier">alts</span><span>: </span><span class="type-name">ExpectedItems</span><span>): </span><span class="type-name">ExpectedLine</span><span> = </span><span class="identifier">alts</span><span>
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">Message</span><span> = </span><span class="type-name">String</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">reason</span><span>(</span><span class="identifier">reason</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Message</span><span> = </span><span class="identifier">reason</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">message</span><span>(</span><span class="identifier">msg</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Message</span><span> = </span><span class="identifier">msg</span><span>
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">LineInfo</span><span> = </span><span class="type-name">Unit</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">lineInfo</span><span>(</span><span class="identifier">line</span><span>: </span><span class="type-name">String</span><span>, </span><span class="identifier">linesBefore</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">String</span><span>], </span><span class="identifier">linesAfter</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">String</span><span>], </span><span class="identifier">errorPointsAt</span><span>: </span><span class="type-name">Int</span><span>): </span><span class="type-name">LineInfo</span><span> = ()
-
-    </span><span class="keyword">type</span><span> </span><span class="type-name">Item</span><span> = </span><span class="type-name">TestErrorItem</span><span>
-    </span><span class="keyword">type</span><span> </span><span class="type-name">Raw</span><span> = </span><span class="type-name">TestRaw</span><span>
-    </span><span class="keyword">type</span><span> </span><span class="type-name">Named</span><span> = </span><span class="type-name">TestNamed</span><span>
-    </span><span class="keyword">type</span><span> </span><span class="type-name">EndOfInput</span><span> = </span><span class="type-name">TestEndOfInput</span><span>.</span><span class="keyword">type</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">raw</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Raw</span><span> = </span><span class="type-name">TestRaw</span><span>(</span><span class="identifier">item</span><span>)
-    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">named</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Named</span><span> = </span><span class="type-name">TestNamed</span><span>(</span><span class="identifier">item</span><span>)
-    </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">endOfInput</span><span>: </span><span class="type-name">EndOfInput</span><span> = </span><span class="type-name">TestEndOfInput</span><span>
-
-    </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">numLinesBefore</span><span>: </span><span class="type-name">Int</span><span> = </span><span class="number-literal">0</span><span>
-    </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">numLinesAfter</span><span>: </span><span class="type-name">Int</span><span> = </span><span class="number-literal">0</span><span>
-}</span></code></pre>
-        <p>This could be cleaned up a bit by, for instance, setting <code>type Messages = Set[Message]</code> etc. Regardless,
-        this is a fully working <code>ErrorBuilder[TestError]</code>! How do we use it?</p>
-        <p>Well, we can either define an implicit value like <code>implicit val eb: ErrorBuilder[TestError] = new TestErrorBuilder</code>
-        and then using <code>parser.parse</code> will automatically use that value if its in scope, or we
-        can provide one explicitly by writing something like <code>parser.parse(input)(new TestErrorBuilder)</code>.
-        If there is no <code>ErrorBuilder</code> implicitly in scope, Scala is smart enough to go and fetch the one Parsley
-        defines, which maps to a <code>DefaultErrorBuilder &lt;: ErrorBuilder[String] with tokenextractors.TillNextWhitespace</code>, which is what we&#39;ve been
-        relying on so far in this wiki.</p>
-        <p>So what do errors look like if we are using this new <code>ErrorBuilder</code>?</p>
-        <pre><code class="nohighlight"><span>(</span><span class="identifier">line</span><span> </span><span class="number-literal">1</span><span>, </span><span class="identifier">column</span><span> </span><span class="number-literal">5</span><span>):
-  </span><span class="identifier">unexpected</span><span> </span><span class="identifier">end</span><span> </span><span class="identifier">of</span><span> </span><span class="identifier">input</span><span>
-  </span><span class="identifier">expected</span><span> </span><span class="string-literal">&quot;(&quot;</span><span>, </span><span class="string-literal">&quot;negate&quot;</span><span>, </span><span class="identifier">digit</span><span>, </span><span class="identifier">or</span><span> </span><span class="identifier">letter</span><span>
-  </span><span class="char-literal">&#39;-&#39;</span><span> </span><span class="identifier">is</span><span> </span><span class="identifier">a</span><span> </span><span class="identifier">binary</span><span> </span><span class="identifier">operator</span><span>
-  &gt;</span><span class="number-literal">3</span><span>+</span><span class="number-literal">4</span><span>-
-       ^
-
-=====&gt;
-
-</span><span class="identifier">builder</span><span>.</span><span class="identifier">format</span><span> (
-    </span><span class="identifier">builder</span><span>.</span><span class="identifier">pos</span><span>(</span><span class="number-literal">1</span><span>, </span><span class="number-literal">5</span><span>),
-    </span><span class="identifier">builder</span><span>.</span><span class="identifier">source</span><span>(</span><span class="type-name">None</span><span>),
-    </span><span class="identifier">builder</span><span>.</span><span class="identifier">vanillaError</span><span> (
-        </span><span class="identifier">builder</span><span>.</span><span class="identifier">unexpected</span><span>(</span><span class="type-name">Some</span><span>(</span><span class="identifier">builder</span><span>.</span><span class="identifier">endOfInput</span><span>)),
-        </span><span class="identifier">builder</span><span>.</span><span class="identifier">expected</span><span> (
-            </span><span class="identifier">builder</span><span>.</span><span class="identifier">combineExpectedItems</span><span>(</span><span class="type-name">Set</span><span> (
-                </span><span class="identifier">builder</span><span>.</span><span class="identifier">raw</span><span>(</span><span class="string-literal">&quot;(&quot;</span><span>),
-                </span><span class="identifier">builder</span><span>.</span><span class="identifier">raw</span><span>(</span><span class="string-literal">&quot;negate&quot;</span><span>),
-                </span><span class="identifier">builder</span><span>.</span><span class="identifier">named</span><span>(</span><span class="string-literal">&quot;digit&quot;</span><span>),
-                </span><span class="identifier">builder</span><span>.</span><span class="identifier">named</span><span>(</span><span class="string-literal">&quot;letter&quot;</span><span>)
-            ))
-        ),
-        </span><span class="identifier">builder</span><span>.</span><span class="identifier">combineMessages</span><span>(</span><span class="type-name">List</span><span>(
-            </span><span class="identifier">builder</span><span>.</span><span class="identifier">reason</span><span>(</span><span class="string-literal">&quot;&#39;-&#39; is a binary operator&quot;</span><span>)
-        )),
-        </span><span class="identifier">builder</span><span>.</span><span class="identifier">lineInfo</span><span>(</span><span class="string-literal">&quot;3+4-&quot;</span><span>, </span><span class="type-name">Nil</span><span>, </span><span class="type-name">Nil</span><span>, </span><span class="number-literal">4</span><span>)
-    )
-)
-
-=====&gt;
-
-</span><span class="type-name">TestError</span><span>((</span><span class="number-literal">1</span><span>, </span><span class="number-literal">5</span><span>),
-    </span><span class="type-name">VanillaError</span><span>(
-        </span><span class="type-name">Some</span><span>(</span><span class="type-name">TestEndOfInput</span><span>),
-        </span><span class="type-name">Set</span><span>(</span><span class="type-name">TestRaw</span><span>(</span><span class="string-literal">&quot;(&quot;</span><span>),
-            </span><span class="type-name">TestRaw</span><span>(</span><span class="string-literal">&quot;negate&quot;</span><span>),
-            </span><span class="type-name">TestNamed</span><span>(</span><span class="string-literal">&quot;digit&quot;</span><span>),
-            </span><span class="type-name">TestNamed</span><span>(</span><span class="string-literal">&quot;letter&quot;</span><span>)),
-        </span><span class="type-name">Set</span><span>(</span><span class="string-literal">&quot;&#39;-&#39; is a binary operator&quot;</span><span>)))</span></code></pre>
-        <p>Cool! Hopefully seeing these examples side-by-side helps settle any last issues you have.</p>
+        you don&#39;t, or you want an example, take a look at how <code>parsley</code>&#39;s own unit tests format error
+        messages to be easier to pattern match on and test against, the implementation can be found <a href="../api-guide/errors/ErrorBuilder.html#constructing-test-errors">here</a>.</p>
 
         
 <hr class="footer-rule"/>
