@@ -1,15 +1,8 @@
 # Customising Error Messages
-
-@:callout(info)
-This page is still being updated for the wiki port, so some things may be a bit broken or look a little strange.
-@:@
-
-Previously, in [Effective Whitespace Parsing]
-we saw how we could extend our parsers to handle whitespace. In this wiki post we'll finally address
+Previously, in [Effective Lexing]
+we saw how we could extend our parsers to handle whitespace and lexing. In this wiki post we'll finally address
 error messages. Thoughout all the other entries in this series I have neglected to talk about error
-messages at all, but they are a very important part of a parser. Recently, Parsley 2.6.1 overhauled
-the entire way error messages work and what they look like, and Parsley 3.0.0 added the `ErrorBuilder`
-mechanism, so I will be targeting 3.0.0 and above for this post.
+messages at all, but they are a very important part of a parser.
 
 # Adjusting Error Content
 I'm going to start with the parser from last time, but before we introduced the `Lexer` class. The
@@ -18,57 +11,53 @@ post would be even shorter! It's not perfect, however, but it does make some goo
 your basic lexemes. There is nothing stopping you from using the techniques here to change those
 messages if you wish though. Simply put: the original grammar has more room for exploration for us.
 
-```scala
+```scala mdoc
 import parsley.Parsley, Parsley.atomic
 
 object lexer {
     import parsley.character.{digit, whitespace, string, item, endOfLine}
     import parsley.combinator.{manyUntil, skipMany, eof}
 
-    private def symbol(str: String): Parsley[String] = atomic(string(str))
-    private implicit def implicitSymbol(tok: String): Parsley[String] = symbol(tok)
+    private def symbol(str: String) = atomic(string(str)).void
+    private implicit def implicitSymbol(tok: String) = symbol(tok)
 
-    private val lineComment = "//" *> manyUntil(item, endOfLine)
-    private val multiComment = "/*" *> manyUntil(item, "*/")
-    private val comment = lineComment <|> multiComment
-    private val skipWhitespace = skipMany(whitespace <|> comment)
+    private val lineComment = "//" ~> manyUntil(item, endOfLine)
+    private val multiComment = "/*" ~> manyUntil(item, "*/")
+    private val comment = lineComment | multiComment
+    private val skipWhitespace = skipMany(whitespace | comment)
 
-    private def lexeme[A](p: =>Parsley[A]): Parsley[A] = p <* skipWhitespace
-    private def token[A](p: =>Parsley[A]): Parsley[A] = lexeme(atomic(p))
-    def fully[A](p: =>Parsley[A]): Parsley[A] = skipWhitespace *> p <* eof
+    private def lexeme[A](p: =>Parsley[A]) = p <~ skipWhitespace
+    private def token[A](p: =>Parsley[A]) = lexeme(atomic(p))
+    def fully[A](p: =>Parsley[A]): Parsley[A] = skipWhitespace ~> p <~ eof
 
-    val number = token(digit.foldLeft1[Int](0)((n, d) => n * 10 + d.asDigit))
+    val number: Parsley[BigInt] = token(digit.foldLeft1[BigInt](0)((n, d) => n * 10 + d.asDigit))
 
     object implicits {
-        implicit def implicitToken(s: String): Parsley[String] = lexeme(symbol(s))
+        implicit def implicitSymbol(s: String): Parsley[Unit] = lexeme(symbol(s))
     }
 }
 
 object expressions {
     import parsley.expr.{precedence, Ops, InfixL}
 
-    import lexer.implicits.implicitToken
+    import lexer.implicits.implicitSymbol
     import lexer.{number, fully}
 
-    private lazy val atom: Parsley[Int] = "(" *> expr <* ")" <|> number
-    private lazy val expr = precedence[Int](atom)(
-        Ops(InfixL)("*" #> (_ * _)),
-        Ops(InfixL)("+" #> (_ + _), "-" #> (_ - _)))
+    private lazy val atom: Parsley[BigInt] = "(" ~> expr <~ ")" | number
+    private lazy val expr = precedence[BigInt](atom)(
+        Ops(InfixL)("*" as (_ * _)),
+        Ops(InfixL)("+" as (_ + _), "-" as (_ - _)))
 
     val parser = fully(expr)
+    def parse(input: String) = parser.parse(input)
 }
 ```
 
 So, before, we saw how this ran on succesful cases. Let's now start to see how it works on _bad_
 input.
 
-```
-expressions.parser.parse("5d")
-(line 1, column 2):
-  unexpected "d"
-  expected "*", "+", "-", "/*", "//", digit, end of input, or whitespace
-  >5d
-    ^
+```scala mdoc:to-string
+expressions.parse("5d")
 ```
 
 Let's start by breaking this error down first and understanding what the components of it are and
@@ -90,13 +79,8 @@ would run perfectly fine. Notice how `(` and `)` are not suggested as alternativ
 in the parser: `5(` or `5)` makes no sense either. As another small example, let's see what happens
 to the error if we add a space between the 5 and the d.
 
-```
-expressions.parser.parse("5 d")
-(line 1, column 3):
-  unexpected "d"
-  expected "*", "+", "-", "/*", "//", end of input, or whitespace
-  >5 d
-     ^
+```scala mdoc:to-string
+expressions.parse("5 d")
 ```
 
 Neat, so this time round `digit` is no longer a valid alternative: clearly the number has come to
@@ -115,8 +99,7 @@ can we start making improvements? There are seven combinators available to us fo
   like `fail`, immediately fails except it reports a custom unexpected message. Currently, only
   one unexpected message can be present in the error at once, so this is not very useful unless you
   really know what you are doing.
-* `.hide` is a method that removes the output of a parser from the error, it is essentially a nice
-  name for `.label("")`
+* `.hide` is a method that removes the output of a parser from the error.
 * `.explain` is a method that can provide _reasons_ for a parser's failure. If the parser can recover
   and move onto other alternatives, the reasons may be lost. But they can still be quite nice when
   used in the correct place!
@@ -125,28 +108,62 @@ can we start making improvements? There are seven combinators available to us fo
 
 All of these can be found in the `parsley.errors.combinator` module.
 
+```scala mdoc:reset:invisible
+// welcome to the mad house, we need to do it this way to "hide behind"
+// the curtain
+import parsley.Parsley, Parsley.atomic
+import parsley.character.{digit, whitespace, string, item, endOfLine}
+import parsley.combinator.{manyUntil, skipMany}
+
+def symbol(str: String) = atomic(string(str))
+implicit def implicitSymbol(tok: String) = symbol(tok)
+
+val lineComment = "//" ~> manyUntil(item, endOfLine)
+val multiComment = "/*" ~> manyUntil(item, "*/")
+val comment = lineComment | multiComment
+val skipWhitespace = skipMany(whitespace | comment)
+
+def lexeme[A](p: =>Parsley[A]) = p <~ skipWhitespace
+def token[A](p: =>Parsley[A]) = lexeme(atomic(p))
+
+def mkNumber(digit: Parsley[Char], ws: Parsley[Unit]): Parsley[BigInt] =
+    atomic(digit.foldLeft1[BigInt](0)((n, d) => n * 10 + d.asDigit)) <~ ws
+
+def mkExpressions(number: Parsley[BigInt], whiteSpace: Parsley[Unit]) = new {
+    import parsley.combinator.eof
+    import parsley.expr.{precedence, Ops, InfixL}
+
+    private implicit def implicitSymbol(str: String): Parsley[Unit] = symbol(str) ~> whiteSpace
+
+    private lazy val atom: Parsley[BigInt] = "(" ~> expr <~ ")" | number
+    private lazy val expr = precedence[BigInt](atom)(
+        Ops(InfixL)("*" as (_ * _)),
+        Ops(InfixL)("+" as (_ + _), "-" as (_ - _)))
+
+    def parse(input: String) = (whiteSpace ~> expr <~ eof).parse(input)
+}
+```
+
 ## Using `label`
 From this section, we are only going to be using `label` and `hide`, as they are by far the most useful
 and effective of the five methods. That being said, `explain` can be _very_ useful, but we'll find
 there are no compelling use-cases for it in this example. Let's start off by giving a label to
 `comment` and see what happens:
 
-```scala
+```scala mdoc:nest:silent
 import parsley.errors.combinator._
-...
-private val comment = (lineComment <|> multiComment).label("comment")
-...
+
+val comment = (lineComment | multiComment).label("comment")
+```
+```scala mdoc:invisible
+val skipWhitespace = skipMany(whitespace | comment)
+val expressions = mkExpressions(mkNumber(digit, skipWhitespace), skipWhitespace)
 ```
 
 Now let's run our parser from before:
 
-```
-expressions.parser.parse("5d")
-(line 1, column 2):
-  unexpected "d"
-  expected "*", "+", "-", comment, digit, end of input, or whitespace
-  >5d
-    ^
+```scala mdoc:to-string
+expressions.parse("5d")
 ```
 
 Nice! So, if you compare the two, you'll notice that `"/*"` and `"//"` both disappeared from the
@@ -160,34 +177,26 @@ that whitespace suggestions in an error message are normally just noise: of cour
 able to write whitespace in places, it's not _usually_ the solution to someone's problem. This makes
 it a good candidate for the `hide` combinator:
 
-```scala
+```scala mdoc:silent:nest
 import parsley.errors.combinator._
-...
-private val skipWhitespace = skipMany(whitespace <|> comment).hide
-...
+
+val skipWhitespace = skipMany(whitespace <|> comment).hide
+```
+```scala mdoc:invisible
+val expressions = mkExpressions(mkNumber(digit, skipWhitespace), skipWhitespace)
 ```
 
 Now let's check again:
 
-```
-expressions.parser.parse("5d")
-(line 1, column 2):
-  unexpected "d"
-  expected "*", "+", "-", digit, or end of input
-  >5d
-    ^
+```scala mdoc:to-string
+expressions.parse("5d")
 ```
 
 Great! The `hide` combinator has removed the information from the error message, and now it's
 looking a lot cleaner. But what if we started writing a comment, what would happen then?
 
-```
-expressions.parser.parse("5/*")
-(line 1, column 4):
-  unexpected end of input
-  expected "*/" or any character
-  >5/*
-      ^
+```scala mdoc:to-string
+expressions.parse("5/*")
 ```
 
 So, as I mentioned earlier, `hide` is just a `label`, and `label` will not relabel something if it
@@ -196,22 +205,22 @@ some different suggestions. In this case, end of input is not allowed, and any c
 to extend the comment, but clearly `*/` is a way to properly end it. Let's add a label to that,
 however, to make it a bit friendlier:
 
-```scala
-...
-private val lineComment = "//" *> manyUntil(item, endOfLine.label("end of comment"))
-private val multiComment = "/*" *> manyUntil(item, "*/".label("end of comment"))
-...
+```scala mdoc:silent:nest
+val lineComment = "//" *> manyUntil(item, endOfLine.label("end of comment"))
+val multiComment = "/*" *> manyUntil(item, "*/".label("end of comment"))
+```
+```scala mdoc:invisible
+import parsley.errors.combinator._
+
+val comment = (lineComment | multiComment).label("comment")
+val skipWhitespace = skipMany(whitespace <|> comment).hide
+val expressions = mkExpressions(mkNumber(digit, skipWhitespace), skipWhitespace)
 ```
 
 Now we get a more informative error message of:
 
-```
-expressions.parser.parse("5/*")
-(line 1, column 4):
-  unexpected end of input
-  expected any character or end of comment
-  >5/*
-      ^
+```scala mdoc:to-string
+expressions.parse("5/*")
 ```
 
 Great! Now let's turn our attention back to expressions and not whitespace.
@@ -219,40 +228,29 @@ Great! Now let's turn our attention back to expressions and not whitespace.
 ### Labelling our numbers
 Let's take a look at a very simple bad input and see how we can improve on it:
 
-```
-expressions.parser.parse("d")
-(line 1, column 1):
-  unexpected "d"
-  expected "(" or digit
-  >d
-   ^
+```scala mdoc:to-string
+expressions.parse("d")
 ```
 
 So this time, we can see two possible ways of resolving this error are opening brackets, or a
 `digit`. Now `digit` is really a poor name here, what we really mean is `integer` or `number`:
 
-```scala
-...
-val number = token(digit.foldLeft1[Int](0)((n, d) => n * 10 + d.asDigit)).label("number")
-...
+```scala mdoc:invisible
+def token[A](p: Parsley[A]): Parsley[A] = atomic(p) <~ skipWhitespace
+```
+```scala mdoc:silent:nest
+val number = token(digit.foldLeft1[BigInt](0)((n, d) => n * 10 + d.asDigit)).label("number")
+```
+```scala mdoc:invisible
+val expressions = mkExpressions(number, skipWhitespace)
 ```
 
 Now we get, the following, nicer error message:
 
-```
-expressions.parser.parse("d")
-(line 1, column 1):
-  unexpected "d"
-  expected "(" or number
-  >d
-   ^
+```scala mdoc:to-string
+expressions.parse("d")
 
-expressions.parser.parse("5x")
-(line 1, column 2):
-  unexpected "x"
-  expected "*", "+", "-", digit, or end of input
-  >5x
-    ^
+expressions.parse("5x")
 ```
 
 But notice in the second error message, again we have been given `digit` and not `number` as our
@@ -260,24 +258,20 @@ alternative. This is good, once we've started reading a number by reading `5` it
 inappropriate to suggest a number as a good next step. But `digit` here is not particularly descriptive
 and we can do better still:
 
-```scala
-...
+```scala mdoc:silent:nest
 val number =
     token(
-        digit.label("end of number").foldLeft1[Int](0)((n, d) => n * 10 + d.asDigit)
+        digit.label("end of number").foldLeft1[BigInt](0)((n, d) => n * 10 + d.asDigit)
     ).label("number")
-...
+```
+```scala mdoc:invisible
+val expressions = mkExpressions(number, skipWhitespace)
 ```
 
 This gives us, again, a much nicer message:
 
-```
-expressions.parser.parse("5x")
-(line 1, column 2):
-  unexpected "x"
-  expected "*", "+", "-", end of input, or end of number
-  >5x
-    ^
+```scala mdoc:to-string
+expressions.parse("5x")
 ```
 
 ### Merging multiple labels
@@ -287,30 +281,33 @@ about any of them individually, so we could more concisely replace this them wit
 or since we only have arithmetic operators here `operator` will do. we don't need to do anything
 special here, when multiple labels are encountered with the same name, they will only appear once!
 
-```scala
-...
-private lazy val expr = precedence[Int](atom)(
-  Ops(InfixL)("*".label("operator") #> (_ * _)),
-  Ops(InfixL)("+".label("operator") #> (_ + _), "-".label("operator") #> (_ - _)))
-...
+```scala mdoc:nest:invisible
+import parsley.combinator.eof
+import parsley.expr.{precedence, Ops, InfixL}
+
+implicit def implicitSymbol(str: String): Parsley[Unit] = symbol(str) ~> skipWhitespace
+
+lazy val atom: Parsley[BigInt] = "(" ~> expr <~ ")" | number
+```
+
+```scala mdoc:silent
+lazy val expr = precedence[BigInt](atom)(
+  Ops(InfixL)("*".label("operator") as (_ * _)),
+  Ops(InfixL)("+".label("operator") as (_ + _), "-".label("operator") as (_ - _)))
+```
+
+```scala mdoc:invisible
+val expressions = new {
+    def parse(input: String) = (skipWhitespace ~> expr <~ eof).parse(input)
+}
 ```
 
 Now we arrive at our final form:
 
-```
-expressions.parser.parse("5x")
-(line 1, column 2):
-  unexpected "x"
-  expected end of input, end of number, or operator
-  >5x
-    ^
+```scala mdoc:to-string
+expressions.parse("5x")
 
-expressions.parser.parse( 67 + )
-(line 1, column 7):
-  unexpected end of input
-  expected "(" or number
-  > 67 +
-         ^
+expressions.parse(" 67 + ")
 ```
 
 Great! Now obviously you could take this even further and make `"("` become `opening parenthesis`
@@ -331,13 +328,14 @@ this "grammar" in particular. That can make error messages needlessly intimidati
 Joe. The take home from this is to try and avoid labelling `expr` with `.label("expression")`,
 because that just ends up making something that is no longer useful or informative:
 
+```scala mdoc:nest:invisible
+val expressions = new {
+    def parse(input: String) = (skipWhitespace ~> expr.label("expression") <~ eof).parse(input)
+}
 ```
-expressions.parser.parse("")
-(line 1, column 1):
-  unexpected end of input
-  expected expression
-  >
-   ^
+
+```scala mdoc:to-string
+expressions.parse("")
 ```
 
 What use is that to anybody? The same idea applies to statements, and various other abstract
@@ -348,7 +346,7 @@ work with this parser, here is the full code of the finished product. Obviously,
 `Lexer`, some of this work is already done, but you can still apply the lessons learnt here to the
 wider parser!
 
-```scala
+```scala mdoc:reset
 import parsley.Parsley, Parsley.atomic
 import parsley.errors.combinator._
 
@@ -356,40 +354,40 @@ object lexer {
     import parsley.character.{digit, whitespace, string, item, endOfLine}
     import parsley.combinator.{manyUntil, skipMany, eof}
 
-    private def symbol(str: String): Parsley[String] = atomic(string(str))
-    private implicit def implicitSymbol(s: String): Parsley[String] = symbol(s)
+    private def symbol(str: String) = atomic(string(str)).void
+    private implicit def implicitSymbol(tok: String) = symbol(tok)
 
-    private val lineComment = "//" *> manyUntil(item, endOfLine.label("end of comment"))
-    private val multiComment = "/*" *> manyUntil(item, "*/".label("end of comment"))
-    private val comment = (lineComment <|> multiComment).label("comment")
-    private val skipWhitespace = skipMany(whitespace <|> comment).hide
+    private val lineComment = "//" ~> manyUntil(item, endOfLine).label("end of comment")
+    private val multiComment = "/*" ~> manyUntil(item, "*/").label("end of comment")
+    private val comment = (lineComment | multiComment).label("comment")
+    private val skipWhitespace = skipMany(whitespace | comment).hide
 
-    private def lexeme[A](p: =>Parsley[A]): Parsley[A] = p <* skipWhitespace
-    private def token[A](p: =>Parsley[A]): Parsley[A] = lexeme(atomic(p))
-    def fully[A](p: =>Parsley[A]): Parsley[A] = skipWhitespace *> p <* eof
+    private def lexeme[A](p: =>Parsley[A]) = p <~ skipWhitespace
+    private def token[A](p: =>Parsley[A]) = lexeme(atomic(p))
+    def fully[A](p: =>Parsley[A]): Parsley[A] = skipWhitespace ~> p <~ eof
 
-    val number =
-        token(
-            digit.label("end of number").foldLeft1[Int](0)((n, d) => n * 10 + d.asDigit)
-        ).label("number")
+    val number: Parsley[BigInt] = token {
+        digit.label("end of number").foldLeft1[BigInt](0)((n, d) => n * 10 + d.asDigit)
+    }.label("number")
 
     object implicits {
-        implicit def implicitToken(s: String): Parsley[String] = lexeme(symbol(s))
+        implicit def implicitSymbol(s: String): Parsley[Unit] = lexeme(symbol(s))
     }
 }
 
 object expressions {
     import parsley.expr.{precedence, Ops, InfixL}
 
-    import lexer.implicits.implicitToken
+    import lexer.implicits.implicitSymbol
     import lexer.{number, fully}
 
-    lazy val atom: Parsley[Int] = "(" *> expr <* ")" <|> number
-    lazy val expr = precedence[Int](atom)(
-        Ops(InfixL)("*".label("operator") #> (_ * _)),
-        Ops(InfixL)("+".label("operator") #> (_ + _), "-".label("operator") #> (_ - _)))
+    private lazy val atom: Parsley[BigInt] = "(" ~> expr <~ ")" | number
+    private lazy val expr = precedence[BigInt](atom)(
+        Ops(InfixL)("*".label("operator") as (_ * _)),
+        Ops(InfixL)("+".label("operator") as (_ + _), "-".label("operator") as (_ - _)))
 
-    val p = fully(expr)
+    val parser = fully(expr)
+    def parse(input: String) = parser.parse(input)
 }
 ```
 
@@ -407,81 +405,74 @@ bit... too descriptive. Again, the `Lexer` class already makes use of this techn
 own error messages, but let's suppose we wanted to write some of its functionality ourselves. Let's
 cook up a string literal parser, supporting some (limited) escape sequences.
 
-```scala
+```scala mdoc:reset:silent
 import parsley.Parsley
 import parsley.implicits.character.charLift
-import parsley.combinator.{many, between, choice}
+import parsley.combinator.{between, choice}
 import parsley.character._
 import parsley.errors.combinator._
 
 val escapeChar =
-    choice('n' #> '\n', 't' #> '\t', '\"' #> '\"', '\\' #> '\\')
-val stringLetter = noneOf('\"', '\\').label("string character") <|> ('\\' ~> escapeChar).label("escape character")
+    choice('n' as '\n', 't' as '\t', '\"', '\\')
+val stringLetter = noneOf('\"', '\\').label("string character") | ('\\' ~> escapeChar).label("escape character")
 
 val stringLiteral =
     between('\"',
             '\"'.label("end of string"),
-            many(stringLetter))
-        .map(_.mkString)
+            stringOfMany(stringLetter))
         .label("string")
 ```
 
 Let's start with something like this. If we run a couple of examples, we can see where it performs
 well and where it performs less well:
 
-```
+```scala mdoc:to-string
 stringLiteral.parse("")
-(line 1, column 1):
-  unexpected end of input
-  expected string
-  >
-   ^
 
 stringLiteral.parse("\"")
-(line 1, column 2):
-  unexpected end of input
-  expected end of string, escape character, or string character
-  >"
-    ^
 
 stringLiteral.parse("\"\\a")
-(line 1, column 3):
-  unexpected "a"
-  expected """, "\", "n", or "t"
-  >"\a
-     ^
 ```
 
 So, for the first two cases, the error message performs quite well. But the last message is a bit
 noisy. One possible approach to improve this could be to label each alternative to give them a
 slightly clearer name, which would result in something like:
 
+```scala mdoc:nest:invisible
+def mkString(escapeChar: Parsley[Char]) = {
+    val stringLetter = noneOf('\"', '\\').label("string character") | ('\\' ~> escapeChar).label("escape character")
+
+    between('\"',
+            '\"'.label("end of string"),
+            stringOfMany(stringLetter))
+        .label("string")
+}
+val escapeChar =
+    choice('n'.label("\\n") as '\n', 't'.label("\\t") as '\t', '\"'.label("\\\""), '\\'.label("\\\\"))
+val stringLiteral = mkString(escapeChar)
 ```
-(line 1, column 3):
-  unexpected "a"
-  expected \", \\, \n, or \t
-  >"\a
-     ^
+
+```scala mdoc:to-string
+stringLiteral.parse("\"\\a")
 ```
 
 This is _better_, but a bit misleading, we don't expect a `\`! Now, you could instead opt to remove
 the backslashes, but then that doesn't give much information about why these things are expected.
 Another option would be to label all alternatives with some common name:
 
-```scala
+```scala mdoc:nest:silent
 val escapeChar =
-    choice('n' #> '\n', 't' #> '\t', '\"' #> '\"', '\\' #> '\\')
+    choice('n' as '\n', 't' as '\t', '\"', '\\')
         .label("end of escape sequence")
+```
+```scala mdoc:invisible
+val stringLiteral = mkString(escapeChar)
 ```
 
 Which would yield
 
-```
-(line 1, column 3):
-  unexpected "a"
-  expected end of escape sequence
-  >"\a
-     ^
+```scala mdoc:to-string
+stringLiteral.parse("\"\\a")
 ```
 
 This is a bit more helpful, in that it does provide a good name to what we expected. But at the same
@@ -489,24 +480,22 @@ time it doesn't help the user to understand how to fix their problem: "what is a
 This is similar to the "statement" problem I described above. In this case, (and indeed in the
 "statement" case), we can add an `explain` to help the user understand what we mean:
 
-```scala
+```scala mdoc:nest:silent
 val escapeChar =
-    choice('n' #> '\n', 't' #> '\t', '\"' #> '\"', '\\' #> '\\')
+    choice('n' as '\n', 't' as '\t', '\"', '\\')
         .label("end of escape sequence")
         .explain("valid escape sequences include \\n, \\t, \\\", or \\\\")
+```
+```scala mdoc:invisible
+val stringLiteral = mkString(escapeChar)
 ```
 
 The `explain` combinator annotates failure messages with an additional reason. These can stack, and
 are displayed each on their own line in the error message. With this in place, let's see what the
 new error message is:
 
-```
-(line 1, column 3):
-  unexpected "a"
-  expected end of escape sequence
-  valid escape sequences include \n, \t, \", or \\
-  >"\a
-     ^
+```scala mdoc:to-string
+stringLiteral.parse("\"\\a")
 ```
 
 This time, we keep the name of the expected token clear and concise, but we _also_ help the user to
@@ -709,353 +698,9 @@ The two attributes `numLinesBefore` and `numLinesAfter` are used by the Parsley 
 how many raw lines of input both before and after the problematic line to provide to `lineInfo`. In
 a pinch, overriding these values from `DefaultErrorBuilder` is a quick way of changing how specific
 your errors are to other lines in the input. The `unexpectedToken` method is
-special, but I'll leave a discussion of this to another page. All of the other methods in the `ErrorBuilder` will make
+special, but I'll leave a discussion of this [another page](../api-guide/errors/tokenextractors.md). All of the other methods in the `ErrorBuilder` will make
 use of the refined results from the methods above.
 
 I hope that, by this point, you have a reasonable idea of how this system all ties together. But, if
-you don't, or you want an example, let's take a look at how Parsley's own unit tests format error
-messages to be easier to pattern match on and test against.
-
-## Example: Unit Tests
-When testing parsers, it is sometimes worth checking that the error messages contain the _correct_
-content. Usually, the order doesn't matter, but the presence or absence of certain items is important.
-This makes `String` the _worst_ possible choice for testing, as order matters and its hard to test
-for inclusion without string spliting and other nasty work. Instead, Parsley opts to build its own
-`TestError` type that strips away the junk and only keeps the important information, without any
-ordering. Let's take a look at it:
-
-```scala
-case class TestError(pos: (Int, Int), lines: TestErrorLines)
-
-sealed trait TestErrorLines
-case class VanillaError(unexpected: Option[TestErrorItem], expecteds: Set[TestErrorItem], reasons: Set[String]) extends TestErrorLines
-case class SpecialisedError(msgs: Set[String]) extends TestErrorLines
-
-sealed trait TestErrorItem
-case class TestRaw(item: String) extends TestErrorItem
-case class TestNamed(item: String) extends TestErrorItem
-case object TestEndOfInput extends TestErrorItem
-```
-
-This type represents the vanilla and specialised errors with separate case classes, and stores the
-position as a pair of ints. All of the error items in the messages are stored in a set to avoid
-ordering issues, and the line info that provides the surrounding input context is not present, as
-it isn't critical to the tests. This is _very_ stripped down, essentially, but gets the job done.
-
-So, how is the builder implemented? Well, we are going to make a subclass that extends `ErrorBuilder[TestError]`
-and proceed from there. We'll start with the stub implementation and fill each in from there:
-
-```scala
-class TestErrorBuilder extends ErrorBuilder[TestError] with tokenextractors.MatchParserDemand {
-    override def format(pos: Position, source: Source, lines: ErrorInfoLines): TestError = ???
-
-    type Position
-    override def pos(line: Int, col: Int): Position = ???
-
-    type Source
-    override def source(sourceName: Option[String]): Source = ???
-
-    type ErrorInfoLines
-    override def vanillaError(unexpected: UnexpectedLine, expected: ExpectedLine, reasons: Messages, line: LineInfo): ErrorInfoLines = ???
-    override def specialisedError(msgs: Messages, line: LineInfo): ErrorInfoLines = ???
-
-    type ExpectedItems
-    override def combineExpectedItems(alts: Set[Item]): ExpectedItems = ???
-
-    type Messages
-    override def combineMessages(alts: Seq[Message]): Messages = ???
-
-    type UnexpectedLine
-    override def unexpected(item: Option[Item]): UnexpectedLine = ???
-    type ExpectedLine
-    override def expected(alts: ExpectedItems): ExpectedLine = ???
-
-    type Message
-    override def reason(reason: String): Message = ???
-    override def message(msg: String): Message = ???
-
-    type LineInfo
-    override def lineInfo(line: String, linesBefore: Seq[String], linesAfter: Seq[String], errorPointsAt: Int): LineInfo = ???
-
-    type Item
-    type Raw <: Item
-    type Named <: Item
-    type EndOfInput <: Item
-    override def raw(item: String): Raw = ???
-    override def named(item: String): Named = ???
-    override val endOfInput: EndOfInput = ???
-
-    override val numLinesBefore: Int = 0
-    override val numLinesAfter: Int = 0
-}
-```
-
-Quickly note the addition of `with tokenextractors.MatchParserDemand` in the
-declaration line: this is used to provide the implementation of `unexpectedToken` for us, for more information see "Advanced Error Messages".
-The first task is to work out what each of the types should be. Let's start by identifying
-the components of the error message we _don't_ need and set their type to `Unit`. This provides a
-trivial implementation of the relevant methods: they just return `()`. The error format we defined
-didn't require any line info, or the source file:
-
-```scala
-class TestErrorBuilder extends ErrorBuilder[TestError] with tokenextractors.MatchParserDemand {
-    ...
-
-    type Source = Unit
-    override def source(sourceName: Option[String]): Source = ()
-
-    ...
-
-    type LineInfo = Unit
-    override def lineInfo(line: String, linesBefore: Seq[String], linesAfter: Seq[String], errorPointsAt: Int): LineInfo = ()
-
-    ...
-}
-```
-
-Easy. Now, lets work top down to fill in the rest! The top-most method is `format`, which we know
-needs to return a `TestError`. In this case we are given a `Position`, a `Unit`, and some `ErrorInfoLines`.
-Well, the constructor for `TestError` requires `(Int, Int)` and `TestErrorLines`, so this helps us
-fill in some more types, and the definition of `format` can just invoke the constructor:
-
-```scala
-class TestErrorBuilder extends ErrorBuilder[TestError] with tokenextractors.MatchParserDemand {
-    override def format(pos: Position, source: Source, lines: ErrorInfoLines): TestError = TestError(pos, lines)
-
-    type Position = (Int, Int)
-    override def pos(line: Int, col: Int): Position = ???
-
-    ...
-
-    type ErrorInfoLines = TestErrorLines
-    override def vanillaError(unexpected: UnexpectedLine, expected: ExpectedLine, reasons: Messages, line: LineInfo): ErrorInfoLines = ???
-    override def specialisedError(msgs: Messages, line: LineInfo): ErrorInfoLines = ???
-
-    ...
-}
-```
-
-Right, well, `pos` is easy to define, we need to return `(Int, Int)`, so we just tuple them up.
-The `TestErrorLines` trait has two sub-classes: `VanillaError` and `SpecialisedError`. This means
-that these two constructors will be used in the `vanillaError` and `specialisedError` implementations.
-This allows us to resolve a few more types: we know `LineInfo = Unit` already, so lets compare how
-the _other_ arguments of these methods line up to the constructors:
-
-```scala
-def        vanillaError(unexpected: UnexpectedLine,        expected:  ExpectedLine,       reasons: Messages):           TestErrorLines
-case class VanillaError(unexpected: Option[TestErrorItem], expecteds: Set[TestErrorItem], reasons: Set[String]) extends TestErrorLines
-
-def        specialisedError(msgs: Messages   ):        TestErrorLines
-case class SpecialisedError(msgs: Set[String]) extends TestErrorLines
-```
-
-This tells us the following:
-
-```scala
-type UnexpectedLine = Option[TestErrorItem]
-type ExpectedLine = Set[TestErrorItem]
-type Messages = Set[String]
-```
-
-Great, let's fill those types in as well as the, again straightforward, implementation:
-
-```scala
-class TestErrorBuilder extends ErrorBuilder[TestError] with tokenextractors.MatchParserDemand {
-    ...
-
-    override def pos(line: Int, col: Int): Position = (line, col)
-
-    ...
-
-    override def vanillaError(unexpected: UnexpectedLine, expected: ExpectedLine, reasons: Messages, line: LineInfo): ErrorInfoLines =
-        VanillaError(unexpected, expected, reasons)
-    override def specialisedError(msgs: Messages, line: LineInfo): ErrorInfoLines = SpecialisedError(msgs)
-
-    ...
-
-    type Messages = Set[String]
-    override def combineMessages(alts: Seq[Message]): Messages = ???
-
-    type UnexpectedLine = Option[TestErrorItem]
-    override def unexpected(item: Option[Item]): UnexpectedLine = ???
-    type ExpectedLine = Set[TestErrorItem]
-    override def expected(alts: ExpectedItems): ExpectedLine = ???
-
-    ...
-}
-```
-
-These three new methods don't have much choice about how to plumb them together. It looks as if
-`Message = String`, so `combineMessages` just needs to convert the sequence of messages into a set.
-The `unexpected` method is converting an `Option[Item]` to an `Option[TestErrorItem]`, so it seems
-like `Item = TestErrorItem` and this is the identity function. In a similar vein `ExpectedItems = Set[TestErrorItem]`
-and this can be the identity function too.
-
-```scala
-class TestErrorBuilder extends ErrorBuilder[TestError] with tokenextractors.MatchParserDemand {
-    override def combineMessages(alts: Seq[Message]): Messages = alts.toSet
-
-    ...
-
-    type ExpectedItems = Set[TestErrorItem]
-    override def combineExpectedItems(alts: Set[Item]): ExpectedItems = ???
-
-    ...
-
-    override def unexpected(item: Option[Item]): UnexpectedLine = item
-    override def expected(alts: ExpectedItems): ExpectedLine = alts
-
-    ...
-
-    type Message = String
-    override def reason(reason: String): Message = ???
-    override def message(msg: String): Message = ???
-
-    ...
-
-    type Item = TestErrorItem
-    type Raw <: Item
-    type Named <: Item
-    type EndOfInput <: Item
-    override def raw(item: String): Raw = ???
-    override def named(item: String): Named = ???
-    override val endOfInput: EndOfInput = ???
-
-    override val numLinesBefore: Int = 0
-    override val numLinesAfter: Int = 0
-}
-```
-
-This is the final stretch now: we know that, actually `Set[Item] =:= ExpectedItems` already, since
-`ExpectedItems` is a `Set[TestErrorItem]` and `Item = TestErrorItem`, so `combineExpectedItems` is,
-once again, the identity function. This is the case for `reason` and `message` too! Finally, we know
-that `Item = TestErrorItem` and it has three subtypes called `Raw`, `Named`, and `EndOfInput`.
-Happily, `TestErrorItem` has three subtypes called `TestRaw`, `TestNamed`, and `TestEndOfInput`, so
-these will match up nicely! The three relevant methods can just invoke the constructors:
-
-```scala
-class TestErrorBuilder extends ErrorBuilder[TestError] with tokenextractors.MatchParserDemand {
-    override def combineExpectedItems(alts: Set[Item]): ExpectedItems = alts
-
-    ...
-
-    override def reason(reason: String): Message = reason
-    override def message(msg: String): Message = msg
-
-    ...
-
-    type Raw = TestRaw
-    type Named = TestNamed
-    type EndOfInput = TestEndOfInput.type
-    override def raw(item: String): Raw = TestRaw(item)
-    override def named(item: String): Named = TestNamed(item)
-    override val endOfInput: EndOfInput = TestEndOfInput
-
-    override val numLinesBefore: Int = 0
-    override val numLinesAfter: Int = 0
-}
-```
-
-Phew! Let's take a look at the finished result:
-
-```scala
-class TestErrorBuilder extends ErrorBuilder[TestError] with tokenextractors.MatchParserDemand {
-    override def format(pos: Position, source: Source, lines: ErrorInfoLines): TestError = TestError(pos, lines)
-
-    type Position = (Int, Int)
-    override def pos(line: Int, col: Int): Position = (line, col)
-
-    type Source = Unit
-    override def source(sourceName: Option[String]): Source = ()
-
-    type ErrorInfoLines = TestErrorLines
-    override def vanillaError(unexpected: UnexpectedLine, expected: ExpectedLine, reasons: Messages, line: LineInfo): ErrorInfoLines =
-        VanillaError(unexpected, expected, reasons)
-    override def specialisedError(msgs: Messages, line: LineInfo): ErrorInfoLines = SpecialisedError(msgs)
-
-    type ExpectedItems = Set[TestErrorItem]
-    override def combineExpectedItems(alts: Set[Item]): ExpectedItems = alts
-
-    type Messages = Set[String]
-    override def combineMessages(alts: Seq[Message]): Messages = alts.toSet
-
-    type UnexpectedLine = Option[TestErrorItem]
-    override def unexpected(item: Option[Item]): UnexpectedLine = item
-    type ExpectedLine = Set[TestErrorItem]
-    override def expected(alts: ExpectedItems): ExpectedLine = alts
-
-    type Message = String
-    override def reason(reason: String): Message = reason
-    override def message(msg: String): Message = msg
-
-    type LineInfo = Unit
-    override def lineInfo(line: String, linesBefore: Seq[String], linesAfter: Seq[String], errorPointsAt: Int): LineInfo = ()
-
-    type Item = TestErrorItem
-    type Raw = TestRaw
-    type Named = TestNamed
-    type EndOfInput = TestEndOfInput.type
-    override def raw(item: String): Raw = TestRaw(item)
-    override def named(item: String): Named = TestNamed(item)
-    override val endOfInput: EndOfInput = TestEndOfInput
-
-    override val numLinesBefore: Int = 0
-    override val numLinesAfter: Int = 0
-}
-```
-
-This could be cleaned up a bit by, for instance, setting `type Messages = Set[Message]` etc. Regardless,
-this is a fully working `ErrorBuilder[TestError]`! How do we use it?
-
-Well, we can either define an implicit value like `implicit val eb: ErrorBuilder[TestError] = new TestErrorBuilder`
-and then using `parser.parse` will automatically use that value if its in scope, or we
-can provide one explicitly by writing something like `parser.parse(input)(new TestErrorBuilder)`.
-If there is no `ErrorBuilder` implicitly in scope, Scala is smart enough to go and fetch the one Parsley
-defines, which maps to a `DefaultErrorBuilder <: ErrorBuilder[String] with tokenextractors.TillNextWhitespace`, which is what we've been
-relying on so far in this wiki.
-
-So what do errors look like if we are using this new `ErrorBuilder`?
-
-```scala
-(line 1, column 5):
-  unexpected end of input
-  expected "(", "negate", digit, or letter
-  '-' is a binary operator
-  >3+4-
-       ^
-
-=====>
-
-builder.format (
-    builder.pos(1, 5),
-    builder.source(None),
-    builder.vanillaError (
-        builder.unexpected(Some(builder.endOfInput)),
-        builder.expected (
-            builder.combineExpectedItems(Set (
-                builder.raw("("),
-                builder.raw("negate"),
-                builder.named("digit"),
-                builder.named("letter")
-            ))
-        ),
-        builder.combineMessages(List(
-            builder.reason("'-' is a binary operator")
-        )),
-        builder.lineInfo("3+4-", Nil, Nil, 4)
-    )
-)
-
-=====>
-
-TestError((1, 5),
-    VanillaError(
-        Some(TestEndOfInput),
-        Set(TestRaw("("),
-            TestRaw("negate"),
-            TestNamed("digit"),
-            TestNamed("letter")),
-        Set("'-' is a binary operator")))
-```
-
-Cool! Hopefully seeing these examples side-by-side helps settle any last issues you have.
+you don't, or you want an example, take a look at how `parsley`'s own unit tests format error
+messages to be easier to pattern match on and test against, the implementation can be found [here][Constructing Test Errors].

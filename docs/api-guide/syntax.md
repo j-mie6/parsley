@@ -35,9 +35,11 @@ If you see an error like this, when you otherwise have the implicit imported:
 ```scala mdoc:nest:invisible
 import parsley.token.Lexer
 import parsley.token.descriptions.LexicalDesc
+import scala.annotation.unused
 val lexer = new Lexer(LexicalDesc.plain)
 
 import lexer.lexeme.symbol.implicits._
+val _ = implicitSymbol("a"): @unused
 ```
 
 ```scala mdoc:fail
