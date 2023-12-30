@@ -848,7 +848,9 @@ to start with:
 ```scala mdoc:nest:silent
 lazy val `<type-atom>` = ( `<con-id>`
                          | (ListConTy from "[]")
-                         | atomic("(" ~> ((FunConTy from "->") | TupleConTy(count1(","))) <~ ")")
+                         | atomic("(" ~> ( (FunConTy from "->")
+                                         | TupleConTy(count1(","))
+                                         ) <~ ")")
                          | `<var-id>` | (UnitTy from "()")
                          | ListTy("[" ~> `<type>` <~ "]")
                          | ParenTyOrTupleTy("(" ~> sepBy1(`<type>`, ",") <~ ")")
@@ -868,7 +870,9 @@ lazy val `<type-atom>` = ( `<con-id>`
                          | (ListConTy from "[]")
                          | `<var-id>` | (UnitTy from "()")
                          | ListTy("[" ~> `<type>` <~ "]")
-                         | atomic("(" ~> ((FunConTy from "->") | TupleConTy(count1(","))) <~ ")")
+                         | atomic("(" ~> ( (FunConTy from "->")
+                                         | TupleConTy(count1(","))
+                                         ) <~ ")")
                          | ParenTyOrTupleTy("(" ~> sepBy1(`<type>`, ",") <~ ")")
                          )
 ```
