@@ -148,13 +148,9 @@
       <main class="content">
 
         <h1 id="advanced-error-messages" class="title">Advanced Error Messages</h1>
-        <div class="callout info">
-          <i class="icofont-laika info">&#xef4e;</i>
-          <p>This page is still being updated for the wiki port, so some things may be a bit broken or look a little strange.</p>
-        </div>
-        <div class="callout warning">
-          <i class="icofont-laika warning">&#xf026;</i>
-          <p><em>This page is out-of-date, and describes the situation in <code>parsley-3.x.y</code> and not <code>parsley-4.0.0</code>. Much of the content remains the same, but some individual things may be incorrect.</em></p>
+        <div class="callout error">
+          <i class="icofont-laika error">&#xeedd;</i>
+          <p><em>This page is <strong>very</strong> out-of-date, and describes the situation in <code>parsley-3.x.y</code> and not <code>parsley-4.4.0</code>. The page needs an entire rewrite.</em></p>
         </div>
         <p>Previously, we saw the most basic approach to improving error messages: <code>.label</code> and <code>.explain</code>.
         However, the other tools I listed in the post are valuable in their own right, but can be slightly
@@ -175,33 +171,26 @@
         
         <h2 id="using-amend-and-entrench" class="section"><a class="anchor-link left" href="#using-amend-and-entrench"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1 </span>Using <code>amend</code> and <code>entrench</code></h2>
         <p>I&#39;m going to start by introducing this dynamic duo, as they can be very useful in the right
-        circumstances. In fact, let&#39;s revisit the <code>identifier</code> parser we made when we did <em>Effective Lexing</em>:</p>
-        <pre><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="identifier">lexer</span><span> {
-    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">keywords</span><span> = </span><span class="type-name">Set</span><span>(</span><span class="string-literal">&quot;while&quot;</span><span>, </span><span class="string-literal">&quot;then&quot;</span><span>, </span><span class="string-literal">&quot;else&quot;</span><span>)
+        circumstances. In fact, let&#39;s revisit the <code>identifier</code> parser we made when we did <a href="effective-lexing.html#effective-lexing">Effective Lexing</a>:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">keywords</span><span> = </span><span class="type-name">Set</span><span>(</span><span class="string-literal">&quot;while&quot;</span><span>, </span><span class="string-literal">&quot;then&quot;</span><span>, </span><span class="string-literal">&quot;else&quot;</span><span>)
 
-    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">lexeme</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">p</span><span> &lt;* </span><span class="identifier">skipWhitespace</span><span>
-    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">token</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">atomic</span><span>(</span><span class="identifier">p</span><span>))
-
-    </span><span class="keyword">val</span><span> </span><span class="identifier">identifier</span><span> =
-        </span><span class="identifier">token</span><span> {
-            </span><span class="identifier">some</span><span>(</span><span class="identifier">alphaNum</span><span>).</span><span class="identifier">map</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">mkString</span><span>).</span><span class="identifier">filterOut</span><span> {
-                </span><span class="keyword">case</span><span> </span><span class="identifier">v</span><span> </span><span class="keyword">if</span><span> </span><span class="identifier">keywords</span><span>(</span><span class="identifier">v</span><span>) =&gt;
-                    </span><span class="string-literal">s&quot;keyword </span><span class="substitution">$v</span><span class="string-literal"> may not be used as an identifier&quot;</span><span>
-            }
-        }.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;identifier&quot;</span><span>)
-}</span></code></pre>
+</span><span class="keyword">val</span><span> </span><span class="identifier">identifier</span><span> = </span><span class="identifier">token</span><span> {
+    </span><span class="identifier">some</span><span>(</span><span class="identifier">letter</span><span>).</span><span class="identifier">map</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">mkString</span><span>).</span><span class="identifier">filterOut</span><span> {
+        </span><span class="keyword">case</span><span> </span><span class="identifier">v</span><span> </span><span class="keyword">if</span><span> </span><span class="identifier">keywords</span><span>(</span><span class="identifier">v</span><span>) =&gt;
+            </span><span class="string-literal">s&quot;keyword </span><span class="substitution">$v</span><span class="string-literal"> may not be used as an identifier&quot;</span><span>
+    }
+}.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;identifier&quot;</span><span>)</span></code></pre>
         <p>To recap, the idea behind this parser is that it first reads some alpha-numeric characters, then
         converts them to a string. After this it ensures that the parsed identifier is not in <code>keywords</code>.
         The <code>atomic</code> is wrapped round that entire block so that, if we did read a keyword, we are able to
         backtrack out in case the keyword was indeed valid (for another branch). After we are done we can
         read whitespace. This time, let&#39;s take a look at the error messages when it goes wrong:</p>
-        <pre><code>lexer.identifier.parse(&quot;then&quot;)
-(line 1, column 5):
-  unexpected end of input
-  expected identifier
-  keyword then may not be used as an identifier
-  &gt;then
-       ^</code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">identifier</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;then&quot;</span><span>)
+</span><span class="comment">// res0: parsley.Result[String, String] = Failure((line 1, column 1):
+//   expected identifier
+//   keyword then may not be used as an identifier
+//   &gt;then
+//    ^^^^)</span></code></pre>
         <p>Cool! But there is something bugging me about this message. It&#39;s pointing at column 5, but since we
         used <code>atomic</code> in <code>token</code>, surely no input was consumed? Let&#39;s verify:</p>
         <pre><code>(lexer.identifier &lt;|&gt; &quot;then&quot;).parse(&quot;then&quot;)
