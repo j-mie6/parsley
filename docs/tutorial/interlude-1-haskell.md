@@ -1088,21 +1088,19 @@ All I've done there is move it one parser to the left, that way, we commit to th
 we've seen either a `,` or a `:` and can't backtrack out of the closing bracket. That's as good as
 we're going to get. A little unsatisfying, perhaps, but it's really such a minor point.
 
-@:callout(warning)
-Below this point has not been properly ported over to the new wiki yet, it's
-likely that it's fine, but might have errors!
-
-It uses the old "best style" for writing `parsley`.
-@:@
-
 So, now what? Well, we have one final `atomic` we can look at. And it's trickier than it looks.
 
-```scala
-private lazy val `<program>` = atomic(sepEndBy(`<data>` <|> atomic(`<declaration>`) <|> `<clause>`, skipSome(NEWLINE)))
+```scala mdoc:nest:silent
+val `<declaration>` = Decl(`<var-id>`, "::" ~> `<type>`)
 
-private lazy val `<declaration>` = Decl(`<var-id>`, "::" *> `<type>`)
+val `<clause>` =
+    Clause(`<var-id>`, many(`<pat-naked>`), option(`<guard>`), "=" ~> `<expr>`)
 
-private lazy val `<clause>` = Clause(`<var-id>`, many(`<pat-naked>`), option(`<guard>`), "=" *> `<expr>`)
+val `<program>` =
+    fully(sepEndBy(`<data>` | atomic(`<declaration>`) | `<clause>`, skipSome(NEWLINE)))
+```
+```scala mdoc:invisible
+val _ = `<program>`: @unused
 ```
 
 I've skipped out the irrelevant `<data>` parser here. So, from the outset, this `atomic` doesn't
@@ -1114,65 +1112,79 @@ factory would be dealing with `Either[Type, (List[PatNaked], Option[Expr], Expr)
 this approach first, and then see an alternative that keeps the two bridges separate and avoids the
 tuple.
 
-```scala
+```scala mdoc:nest
+// These make use of `ast.Clause` because they are defined outside of `ast` (in this .md file)
 type PartialClause = (List[PatNaked], Option[Expr], Expr)
 object DeclOrClause extends ParserBridge2[VarId, Either[Type, PartialClause], ProgramUnit] {
     def apply(id: VarId, declOrClause: Either[Type, PartialClause]): ProgramUnit =
         declOrClause match {
             case Left(ty) => Decl(id, ty)
-            case Right((args, guard, body)) => Clause(id, args, guard, body)
+            case Right((args, guard, body)) => ast.Clause(id, args, guard, body)
         }
 }
 
 object Clause extends ParserBridge2[VarId, PartialClause, Clause] {
     def apply(id: VarId, partialClause: PartialClause): Clause = {
         val (args, guard, body) = partialClause
-        Clause(id, args, guard, body)
+        ast.Clause(id, args, guard, body)
     }
 }
 ```
 
-Now, to make this work nicely, I'm going to make use of the `<+>` combinator: pronounced "sum", this parser works like `<|>` except it returns its result into a co-product (`Either`). Using
+Now, to make this work nicely, I'm going to make use of the `<+>` combinator: pronounced "sum", this parser works like `|` except it returns its result into a co-product (`Either`). Using
 this, we can define the factored `<program>`:
 
-```scala
-private lazy val `<program>` = atomic(sepEndBy(`<data>` <|> `<decl-or-clause>`, skipSome(NEWLINE)))
+```scala mdoc:nest:silent
+import parsley.implicits.zipped.Zipped3
 
-private lazy val `<decl-or-clause>` = DeclOrClause(`<var-id>`, `<declaration>` <+> `<partial-clause>`)
+val `<declaration>` = "::" ~> `<type>`
 
-private lazy val `<declaration>` = "::" *> `<type>`
+val `<partial-clause>` = (many(`<pat-naked>`), option(`<guard>`), "=" ~> `<expr>`).zipped
+val `<clause>` = Clause(`<var-id>`, `<partial-clause>`)
 
-private lazy val `<clause>` = Clause(`<var-id>`, `<partial-clause>`)
-private lazy val `<partial-clause>` = (many(`<pat-naked>`), option(`<guard>`), "=" *> `<expr>`).zipped
+val `<decl-or-clause>` = DeclOrClause(`<var-id>`, `<declaration>` <+> `<partial-clause>`)
+val `<program>` =
+    fully(sepEndBy(`<data>` | `<decl-or-clause>`, skipSome(NEWLINE)))
+```
+```scala mdoc:invisible
+val _ = `<program>`: @unused
+val _ = `<clause>`: @unused
 ```
 
 Why have we got two `<clause>`s? Well, we also need a `<clause>` for the `let`-expressions further
 down the parser. Now, there isn't anything wrong with this parser, and its a perfectly reasonable
-approach. But let's also take a look at the other way we could have done this. This time, we'll change
+approach.
+
+Let's also take a look at the other way we could have done this. This time, we'll change
 the two original bridge constructors, but won't introduce a third:
 
-```scala
-object Decl extends ParserBridge1[Type, VarId => Decl] {
-    def apply(ty: Type): VarId => Decl = Decl(_, ty)
+```scala mdoc:nest
+// These make use of `ast.Clause` because they are defined outside of `ast` (in this .md file)
+object Decl extends ParserBridge1[Type, VarId => ast.Decl] {
+    def apply(ty: Type): VarId => ast.Decl = ast.Decl(_, ty)
 }
-object Clause extends ParserBridge3[List[PatNaked], Option[Expr], Expr, VarId => Clause] {
-    def apply(pats: List[PatNaked], guard: Option[Expr], rhs: Expr): VarId => Clause =
-        Clause(_, pats, guard, rhs)
+object Clause extends ParserBridge3[List[PatNaked], Option[Expr], Expr, VarId => ast.Clause] {
+    def apply(pats: List[PatNaked], guard: Option[Expr], rhs: Expr): VarId => ast.Clause =
+        ast.Clause(_, pats, guard, rhs)
 }
 ```
 
 This time, the two bridge constructors return functions that take the factored `VarId`. How does this
 change the parser?
 
-```scala
-private lazy val `<program>` = atomic(sepEndBy(`<data>` <|> `<decl-or-clause>`, skipSome(NEWLINE)))
+```scala mdoc:nest:silent
+val `<declaration>` = Decl("::" ~> `<type>`)
 
-private lazy val `<decl-or-clause>` = `<var-id>` <**> (`<declaration>` <|> `<partial-clause>`)
+val `<partial-clause>` = Clause(many(`<pat-naked>`), option(`<guard>`), "=" ~> `<expr>`)
+val `<clause>` = `<var-id>` <**> `<partial-clause>`
 
-private lazy val `<declaration>` = Decl("::" *> `<type>`)
-
-private lazy val `<clause>` = `<var-id>` <**> `<partial-clause>`
-private lazy val `<partial-clause>` = Clause(many(`<pat-naked>`), option(`<guard>`), "=" *> `<expr>`)
+val `<decl-or-clause>` = `<var-id>` <**> (`<declaration>` | `<partial-clause>`)
+val `<program>` =
+    fully(sepEndBy(`<data>` | `<decl-or-clause>`, skipSome(NEWLINE)))
+```
+```scala mdoc:invisible
+val _ = `<program>`: @unused
+val _ = `<clause>`: @unused
 ```
 
 This also works completely fine. This time, we use `<**>` to apply the `<var-id>` to the partially
@@ -1181,9 +1193,17 @@ unnecessary object construction. _However_, this version has a subtle flaw: supp
 add position information to the AST, then where would the `pos` go? The position information would
 be in the `var-id>`, and we'd have to extract it out in our bridges, for example:
 
-```scala
+```scala mdoc:nest:invisible
+case class VarId(v: String)(val pos: (Int, Int))
+case class Decl(id: VarId, ty: Type)(val pos: (Int, Int)) extends ProgramUnit
+
+case class Clause(id: VarId, pats: List[PatNaked], guard: Option[Expr], rhs: Expr)(val pos: (Int, Int))
+    extends ProgramUnit
+```
+
+```scala mdoc
 object Decl extends ParserBridge1[Type, VarId => Decl] {
-    def apply(ty: Type): VarId => Decl = v => Decl(v, t)(v.pos)
+    def apply(ty: Type): VarId => Decl = v => Decl(v, ty)(v.pos)
 }
 object Clause extends ParserBridge3[List[PatNaked], Option[Expr], Expr, VarId => Clause] {
     def apply(pats: List[PatNaked], guard: Option[Expr], rhs: Expr): VarId => Clause =
@@ -1194,7 +1214,10 @@ object Clause extends ParserBridge3[List[PatNaked], Option[Expr], Expr, VarId =>
 This is really brittle: it is relying on the `VarId` type having _and exposing_ its position
 information. In contrast, here's how our other bridge factory would be transformed:
 
-```scala
+```scala mdoc:invisible
+trait ParserBridgePos2[A, B, C]
+```
+```scala mdoc
 object DeclOrClause extends ParserBridgePos2[VarId, Either[Type, PartialClause], ProgramUnit] {
     def apply(id: VarId, declOrClause: Either[Type, PartialClause])(pos: (Int, Int)): ProgramUnit =
         declOrClause match {
@@ -1203,11 +1226,13 @@ object DeclOrClause extends ParserBridgePos2[VarId, Either[Type, PartialClause],
         }
 }
 ```
+```scala mdoc:invisible
+val _ = DeclOrClause: @unused
+```
 
 Much more straightforward, with no effect on any other bridge! This is worth considering if you do
-find yourself in this sort of position (no pun intended). That being said, in our case we have opted
-not to track position information in the parser, so I'm going to go with the `<**>` based version,
-which is slightly cleaner and a _tiny_ bit more efficient. Regardless of which method we pick, however,
+find yourself in this sort of position (no pun intended). That being said, the `<**>`-based version
+is slightly cleaner and a _tiny_ bit more efficient. Regardless of which method we pick, however,
 that pesky `atomic` is gone! That leaves us in a final state with a _single_ `atomic` which has a
 maximum backtrack of one character. In other words, this parser runs in linear-time. Excellent!
 
