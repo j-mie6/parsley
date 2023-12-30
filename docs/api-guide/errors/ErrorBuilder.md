@@ -254,7 +254,8 @@ methods make it very easy to fill in the gaps:
 ```scala
 class TestErrorBuilder extends ErrorBuilder[TestError] {
     //...
-    def format(pos: (Int, Int), source: Unit, lines: TestErrorLines): TestError = TestError(pos, lines)
+    def format(pos: (Int, Int), source: Unit,
+               lines: TestErrorLines): TestError = TestError(pos, lines)
     def vanillaError(
         unexpected: Option[TestErrorItem],
         expected: Set[TestErrorItem],

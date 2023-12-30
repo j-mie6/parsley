@@ -37,7 +37,8 @@ lexing.
 
 <type>      ::= <type-app> ['->' <type>]
 <type-app>  ::= <type-atom>+
-<type-atom> ::= <type-con> | <var-id> | '()'  | '[' <type> ']' | '(' <type> (',' <type> ')')+ | '(' <type> ')'
+<type-atom> ::= <type-con> | <var-id> | '()'  | '[' <type> ']'
+              | '(' <type> (',' <type> ')')+ | '(' <type> ')'
 <type-con>  ::= <con-id> | '[]' | '(' '->' ')' | '(' ','+ ')'
 
 <expr>    ::= [<expr> '$'] <expr-1>
@@ -76,18 +77,21 @@ import parsley.Parsley
 
 object lexer {
     import parsley.token.Lexer
-    import parsley.token.descriptions.{LexicalDesc, NameDesc, SymbolDesc, SpaceDesc, numeric, text}
+    import parsley.token.descriptions.{LexicalDesc, NameDesc, SymbolDesc, SpaceDesc,
+                                       numeric, text}
     import parsley.token.predicate.{Unicode, Basic}
     import parsley.character.newline
     private val haskellDesc = LexicalDesc(
         NameDesc.plain.copy(
             identifierStart = Unicode(c => Character.isLetter(c) || c == '_'),
-            identifierLetter = Unicode(c => Character.isLetterOrDigit(c) || c == '_' || c == '\''),
+            identifierLetter =
+                Unicode(c => Character.isLetterOrDigit(c) || c == '_' || c == '\''),
         ),
         SymbolDesc.plain.copy(
-            hardKeywords = Set("if", "then", "else", "data", "where", "let", "in", "case", "of"),
-            hardOperators = Set("$", "||", "&&", "<", "<=", ">", ">=", "==", "/=", ":", "++",
-                                "+", "-", "*", "/", "^", "."),
+            hardKeywords = Set("if", "then", "else", "data", "where",
+                                "let", "in", "case", "of"),
+            hardOperators = Set("$", "||", "&&", "<", "<=", ">", ">=", "==", "/=", ":",
+                                "++", "+", "-", "*", "/", "^", "."),
         ),
         numeric.NumericDesc.plain.copy(
             octalExponentDesc = numeric.ExponentDesc.NoExponents,

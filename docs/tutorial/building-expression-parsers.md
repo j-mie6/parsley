@@ -142,7 +142,7 @@ the transformation from recursive to `chains` follows these shape:
 ```scala
 self <**> (op <*> next) | next        == chain.left1(next, op)  // flipped op
 self <**> op <*> next | next          == chain.left1(next, op)  // normal op
-next <**> (op <*> self </> identity)  == chain.right1(next, op) // no backtracking, op flipped
+next <**> (op <*> self </> identity)  == chain.right1(next, op) // no backtracking, flipped
 atomic(next <**> op <*> self) | next  == chain.right1(next, op) // backtracking, normal op
 ```
 
@@ -162,7 +162,7 @@ ability to work with parsers as values and develop combinators with them is the 
 the approach. That being said, most combinator libraries provide this sort of functionality out of the box
 and Parsley is no exception. Let's see the same parser one last time and see what's changed:
 
-```scala mdoc:nest
+```scala mdoc:nest:silent
 import parsley.Parsley
 import parsley.character.digit
 import parsley.implicits.character.charLift

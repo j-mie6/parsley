@@ -178,7 +178,8 @@ import parsley.combinator.choice
 import parsley.character.{noneOf, stringOfMany}
 
 val escapeChar = choice('n'.as('\n'), 't'.as('\t'), '\"', '\\')
-val strLetter = noneOf('\"', '\\').label("string char") | ('\\' ~> escapeChar).label("escape char")
+val strLetter =
+    noneOf('\"', '\\').label("string char") | ('\\' ~> escapeChar).label("escape char")
 val strLit = '\"' ~> stringOfMany(strLetter) <~ '\"'
 ```
 ```scala mdoc:to-string
@@ -209,8 +210,9 @@ providing an explanation:
 import parsley.Parsley.empty
 val escapeChar = choice('n'.as('\n'), 't'.as('\t'), '\"', '\\') | empty(2)
 val strLetter = noneOf('\"', '\\').label("string char") |
-                amend('\\' ~> escapeChar).label("escape char")
-                                         .explain("escape characters are \\n, \\t, \\\", or \\\\")
+                amend('\\' ~> escapeChar)
+                  .label("escape char")
+                  .explain("escape characters are \\n, \\t, \\\", or \\\\")
 ```
 ```scala mdoc:invisible
 val strLit = '\"' ~> stringOfMany(strLetter) <~ '\"'

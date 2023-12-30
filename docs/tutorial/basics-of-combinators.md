@@ -748,7 +748,8 @@ import parsley.combinator.option
 
 val and = (y: Boolean) => (x: Boolean) => x && y
 
-// This is possible here, because false is the "zero" of ||, but more generally we'd want the other definition
+// This is possible here, because false is the "zero" of ||
+// but more generally we'd want the other definition
 // val or = (x: Boolean, y: Option[Boolean]) => x || y.getOrElse(false)
 val or = (x: Boolean, y: Option[Boolean]) => y.foldLeft(x)(_ || _)
 

@@ -283,7 +283,8 @@ object lexer {
         }
     }
 
-    private def keyword(k: String): Parsley[Unit] = token(string(k) ~> notFollowedBy(letter))
+    private def keyword(k: String): Parsley[Unit] =
+        token(string(k) ~> notFollowedBy(letter))
 
 
     object implicits {

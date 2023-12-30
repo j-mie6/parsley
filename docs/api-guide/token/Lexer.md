@@ -37,10 +37,10 @@ objects: `lexeme` and `nonlexeme`. Broadly speaking, everything within `nonlexem
 found inside `lexeme`, but not the other way around. The name "lexeme" is not an amazing one
 terminology wise, but there is a historical precedent set by `parsec`.
 
-@:style(paragraph) Non-lexeme things @:@ @:todo(TODO: LexToken referenced here please!)
+@:style(paragraph) Non-lexeme things @:@
 A non-lexeme thing does not care about whitespace: these are raw tokens. It is highly likely that
 you wouldn't want to use these in a regular parser, but they may be handy for **custom error handling**
-or **building composite tokens**.
+or [**building composite tokens**](../errors/tokenextractors.md).
 
 @:style(paragraph) Lexeme things @:@
 These do account for whitespace that occurs *after* a token, consuming everything up until the
@@ -284,7 +284,8 @@ generated:
 
 ```scala mdoc:to-string
 val aboveSpace = predicate.Unicode(_ >= 0x20)
-def stringParsers(graphicChar: CharPredicate = aboveSpace, escapeDesc: EscapeDesc = EscapeDesc.plain) =
+def stringParsers(graphicChar: CharPredicate = aboveSpace,
+                  escapeDesc: EscapeDesc = EscapeDesc.plain) =
     new Lexer(LexicalDesc.plain.copy(
         textDesc = TextDesc.plain.copy(
             escapeSequences = escapeDesc,

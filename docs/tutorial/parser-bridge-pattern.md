@@ -204,7 +204,8 @@ val letExpr: Parsley[LetExpr] = empty
 ```
 ```scala mdoc:silent
 import parsley.implicits.zipped.Zipped2
-val binding: Parsley[Binding] = pos <**> (identifier, "=" ~> letExpr).zipped(Binding(_, _) _)
+val binding: Parsley[Binding] =
+    pos <**> (identifier, "=" ~> letExpr).zipped(Binding(_, _) _)
 ```
 
 This _finally_ compiles and works as intended. The `Binding(_, _) _` is desugared as follows:
@@ -447,7 +448,7 @@ import parsley.position.pos
 trait ParserBridgePos1[-A, +B] {
     // this is called the "hook": it's the hole in the template that must be implemented
     def apply(x: A)(pos: (Int, Int)): B
-    // this is the template method, in this case its the template for the bridge constructor
+    // this is the template method, in this case the template for the bridge constructor
     def apply(x: Parsley[A]): Parsley[B] = pos <**> x.map(this.apply(_) _)
 }
 
@@ -538,7 +539,8 @@ being another template method provided by our generic bridge traits:
 trait ParserBridgePos1[-A, +B] {
     def apply(x: A)(pos: (Int, Int)): B
     def apply(x: Parsley[A]): Parsley[B] = pos <**> x.map(this.apply(_) _)
-    def from(op: Parsley[_]): Parsley[A => B] = pos.map[A => B](p => this.apply(_)(p)) <~ op
+    def from(op: Parsley[_]): Parsley[A => B] =
+        pos.map[A => B](p => this.apply(_)(p)) <~ op
     final def <#(op: Parsley[_]): Parsley[A => B] = this from op
 }
 

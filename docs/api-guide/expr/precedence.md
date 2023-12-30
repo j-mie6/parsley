@@ -134,7 +134,8 @@ object SOps {
 }
 
 object GOps {
-    def apply[A, B](fixity: Fixity)(ops: Parsley[fixity.Op[A, B]]*)(implicit wrap: A => B): Ops[A, B]
+    def apply[A, B](fixity: Fixity)(ops: Parsley[fixity.Op[A, B]]*)
+                   (implicit wrap: A => B): Ops[A, B]
 }
 ```
 

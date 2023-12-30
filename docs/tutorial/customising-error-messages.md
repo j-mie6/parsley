@@ -30,7 +30,8 @@ object lexer {
     private def token[A](p: =>Parsley[A]) = lexeme(atomic(p))
     def fully[A](p: =>Parsley[A]): Parsley[A] = skipWhitespace ~> p <~ eof
 
-    val number: Parsley[BigInt] = token(digit.foldLeft1[BigInt](0)((n, d) => n * 10 + d.asDigit))
+    val number: Parsley[BigInt] =
+        token(digit.foldLeft1[BigInt](0)((n, d) => n * 10 + d.asDigit))
 
     object implicits {
         implicit def implicitSymbol(s: String): Parsley[Unit] = lexeme(symbol(s))
@@ -133,7 +134,8 @@ def mkExpressions(number: Parsley[BigInt], whiteSpace: Parsley[Unit]) = new {
     import parsley.combinator.eof
     import parsley.expr.{precedence, Ops, InfixL}
 
-    private implicit def implicitSymbol(str: String): Parsley[Unit] = symbol(str) ~> whiteSpace
+    private implicit def implicitSymbol(str: String): Parsley[Unit] =
+        symbol(str) ~> whiteSpace
 
     private lazy val atom: Parsley[BigInt] = "(" ~> expr <~ ")" | number
     private lazy val expr = precedence[BigInt](atom)(
@@ -239,7 +241,8 @@ So this time, we can see two possible ways of resolving this error are opening b
 def token[A](p: Parsley[A]): Parsley[A] = atomic(p) <~ skipWhitespace
 ```
 ```scala mdoc:silent:nest
-val number = token(digit.foldLeft1[BigInt](0)((n, d) => n * 10 + d.asDigit)).label("number")
+val number =
+    token(digit.foldLeft1[BigInt](0)((n, d) => n * 10 + d.asDigit)).label("number")
 ```
 ```scala mdoc:invisible
 val expressions = mkExpressions(number, skipWhitespace)
@@ -330,7 +333,8 @@ because that just ends up making something that is no longer useful or informati
 
 ```scala mdoc:nest:invisible
 val expressions = new {
-    def parse(input: String) = (skipWhitespace ~> expr.label("expression") <~ eof).parse(input)
+    def parse(input: String) =
+        (skipWhitespace ~> expr.label("expression") <~ eof).parse(input)
 }
 ```
 
@@ -414,7 +418,9 @@ import parsley.errors.combinator._
 
 val escapeChar =
     choice('n' as '\n', 't' as '\t', '\"', '\\')
-val stringLetter = noneOf('\"', '\\').label("string character") | ('\\' ~> escapeChar).label("escape character")
+val stringLetter =
+    noneOf('\"', '\\').label("string character") |
+    ('\\' ~> escapeChar).label("escape character")
 
 val stringLiteral =
     between('\"',
@@ -440,7 +446,9 @@ slightly clearer name, which would result in something like:
 
 ```scala mdoc:nest:invisible
 def mkString(escapeChar: Parsley[Char]) = {
-    val stringLetter = noneOf('\"', '\\').label("string character") | ('\\' ~> escapeChar).label("escape character")
+    val stringLetter =
+        noneOf('\"', '\\').label("string character") |
+        ('\\' ~> escapeChar).label("escape character")
 
     between('\"',
             '\"'.label("end of string"),
@@ -448,7 +456,8 @@ def mkString(escapeChar: Parsley[Char]) = {
         .label("string")
 }
 val escapeChar =
-    choice('n'.label("\\n") as '\n', 't'.label("\\t") as '\t', '\"'.label("\\\""), '\\'.label("\\\\"))
+    choice('n'.label("\\n") as '\n', 't'.label("\\t") as '\t',
+           '\"'.label("\\\""), '\\'.label("\\\\"))
 val stringLiteral = mkString(escapeChar)
 ```
 
@@ -613,7 +622,8 @@ all the sub-formatters to understand what I mean:
 
 ```scala
 trait ErrorBuilder[Err] {
-    // This is the top level function which takes all the sub-parts and combines them into the final `Err`
+    // This is the top level function which takes all the sub-parts
+    // and combines them into the final `Err`
     def format(pos: Position, source: Source, lines: ErrorInfoLines): Err
 
     type Position
@@ -650,7 +660,8 @@ trait ErrorBuilder[Err] {
     def pos(line: Int, col: Int): Position
     def source(sourceName: Option[String]): Source
 
-    def vanillaError(unexpected: UnexpectedLine, expected: ExpectedLine, reasons: Messages, line: LineInfo): ErrorInfoLines
+    def vanillaError(unexpected: UnexpectedLine, expected: ExpectedLine,
+                     reasons: Messages, line: LineInfo): ErrorInfoLines
     def specialisedError(msgs: Messages, line: LineInfo): ErrorInfoLines
 
     ...
@@ -682,7 +693,8 @@ trait ErrorBuilder[Err] {
 
     def reason(reason: String): Message
     def message(msg: String): Message
-    def lineInfo(line: String, linesBefore: Seq[String], linesAfter: Seq[String], errorPointsAt: Int): LineInfo
+    def lineInfo(line: String, linesBefore: Seq[String],
+                 linesAfter: Seq[String], errorPointsAt: Int): LineInfo
     val numLinesBefore: Int
     val numLinesAfter: Int
 
@@ -690,7 +702,8 @@ trait ErrorBuilder[Err] {
     def named(item: String): Named
     val endOfInput: EndOfInput
 
-    def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token
+    def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int,
+                        lexicalError: Boolean): Token
 }
 ```
 

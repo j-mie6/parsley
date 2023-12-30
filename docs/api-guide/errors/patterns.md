@@ -55,13 +55,16 @@ import parsley.character.char
 
 // assume that a `lexer` is available
 val float = lexer.nonlexeme.numeric.floating.decimal
-val _noFloat = float.verifiedUnexpected("floating-point values may not be used as array indices")
+val _noFloat =
+    float.verifiedUnexpected("floating-point values may not be used as array indices")
 
 _noFloat.parse("hello")
 _noFloat.parse("3.142")
 
 val int = lexer.nonlexeme.numeric.unsigned.decimal
-val _noPlus = (char('+') ~> int).verifiedFail(n => Seq(s"the number $n may not be preceeded by \"+\""))
+val _noPlus = (char('+') ~> int).verifiedFail { n =>
+    Seq(s"the number $n may not be preceeded by \"+\"")
+}
 _noPlus.parse("+10")
 ```
 
@@ -75,7 +78,8 @@ an `ErrorGen` object -- this can either be `VanillaGen` or `SpecialisedGen`.
 import parsley.errors.SpecialisedGen
 val _noPlus = (char('+') ~> int).verifiedWith {
     new SpecialisedGen[BigInt] {
-        def messages(n: BigInt): Seq[String] = Seq("a number may not be preceeded by \"+\"")
+        def messages(n: BigInt): Seq[String] =
+            Seq("a number may not be preceeded by \"+\"")
         override def adjustWidth(x: BigInt, width: Int) = 1
     }
 }
@@ -90,7 +94,8 @@ would also have the ability to change the unexpected message:
 import parsley.errors.VanillaGen
 val _noFloat = float.verifiedWith {
     new VanillaGen[BigDecimal] {
-        override def reason(x: BigDecimal): Option[String] = Some("floats may not be array indices")
+        override def reason(x: BigDecimal): Option[String] =
+            Some("floats may not be array indices")
         override def unexpected(x: BigDecimal): VanillaGen.UnexpectedItem = {
             VanillaGen.NamedItem("floating-point number")
         }
