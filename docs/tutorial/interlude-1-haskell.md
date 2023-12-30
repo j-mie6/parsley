@@ -1218,12 +1218,13 @@ information. In contrast, here's how our other bridge factory would be transform
 trait ParserBridgePos2[A, B, C]
 ```
 ```scala mdoc
-object DeclOrClause extends ParserBridgePos2[VarId, Either[Type, PartialClause], ProgramUnit] {
-    def apply(id: VarId, declOrClause: Either[Type, PartialClause])(pos: (Int, Int)): ProgramUnit =
-        declOrClause match {
-            case Left(ty) => Decl(id, ty)(pos)
-            case Right((args, guard, body)) => Clause(id, args, guard, body)(pos)
-        }
+object DeclOrClause
+    extends ParserBridgePos2[VarId, Either[Type, PartialClause], ProgramUnit] {
+    def apply(id: VarId, declOrClause: Either[Type, PartialClause])
+             (pos: (Int, Int)): ProgramUnit = declOrClause match {
+        case Left(ty) => Decl(id, ty)(pos)
+        case Right((args, guard, body)) => Clause(id, args, guard, body)(pos)
+    }
 }
 ```
 ```scala mdoc:invisible
