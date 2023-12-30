@@ -1,9 +1,5 @@
 # Interlude 1: Building a Parser for Haskell
 
-@:callout(info)
-This page is still being updated for the wiki port, so some things may be a bit broken or look a little strange.
-@:@
-
 We've covered a lot of ground in the series so far! I think it's time to take a medium-length
 break and implement a parser for a (somewhat) simplified Haskell from scratch. Haskell is a
 deceptively simple looking language, but is actually a minefield of ambiguous parses and the
@@ -75,7 +71,7 @@ lexing.
 As it turns out, lexing Haskell in Parsley is particularly easy: the `Lexer` class is compliant
 with the Haskell specification!
 
-```scala
+```scala mdoc:silent
 import parsley.Parsley
 
 object lexer {
@@ -90,7 +86,8 @@ object lexer {
         ),
         SymbolDesc.plain.copy(
             hardKeywords = Set("if", "then", "else", "data", "where", "let", "in", "case", "of"),
-            hardOperators = Set("$", "||", "&&", "<", "<=", ">", ">=", "==", "/=", ":", "++", "+", "-", "*", "/", "^", "."),
+            hardOperators = Set("$", "||", "&&", "<", "<=", ">", ">=", "==", "/=", ":", "++",
+                                "+", "-", "*", "/", "^", "."),
         ),
         numeric.NumericDesc.plain.copy(
             octalExponentDesc = numeric.ExponentDesc.NoExponents,
@@ -113,7 +110,7 @@ object lexer {
     val CON_ID = lexer.lexeme.names.identifier(Basic(_.isUpper))
     val VAR_ID = lexer.lexeme.names.identifier(Basic(_.isLower))
     val INTEGER = lexer.lexeme.numeric.natural.number
-    val FLOAT = lexer.lexeme.numeric.positiveReal.number
+    val FLOAT = lexer.lexeme.numeric.floating.number
     val INT_OR_FLOAT = lexer.lexeme.numeric.unsignedCombined.number
     // Strictly speaking, Haskell files are probably encoded as UTF-8, but this
     // is not supported by Parsley _yet_
@@ -140,9 +137,9 @@ did change my mind, I could do it here by changing which generic bridge trait is
 interesting will be what bridge constructor shapes I pick for each of the AST nodes. Let's start by
 just outlining the datatypes themselves and why they are how they are:
 
-```scala
+```scala mdoc
 object ast {
-    import parsley.implicits.zipped.{Zipped2, Zipped3, Zipped4}
+    import parsley.genericbridges._
 
     case class HaskellProgram(lines: List[ProgramUnit])
     sealed trait ProgramUnit
@@ -151,34 +148,35 @@ object ast {
 
     case class Decl(id: VarId, ty: Type) extends ProgramUnit
 
-    case class Clause(id: VarId, pats: List[PatNaked], guard: Option[Expr], rhs: Expr) extends ProgramUnit
+    case class Clause(id: VarId, pats: List[PatNaked], guard: Option[Expr], rhs: Expr)
+        extends ProgramUnit
     sealed trait Pat
     case class PatCons(x: PatParen, xs: Pat) extends Pat
     sealed trait PatParen extends Pat
     case class PatApp(con: PatCon, args: List[PatNaked]) extends PatParen
     sealed trait PatNaked extends PatParen
-    case object NilCon extends PatNaked
-    case object Wild extends PatNaked
+    case object NilCon extends PatNaked with ParserBridge0[PatNaked]
+    case object Wild extends PatNaked with ParserBridge0[PatNaked]
     case class NestedPat(pat: Pat) extends PatNaked
     case class PatTuple(xs: List[Pat]) extends PatNaked
     case class PatList(xs: List[Pat]) extends PatNaked
     sealed trait PatCon extends PatNaked
-    case object ConsCon extends PatCon
+    case object ConsCon extends PatCon with ParserBridge0[PatCon]
 
     sealed trait Type
     case class FunTy(argTy: Type_, resTy: Type) extends Type
     sealed trait Type_ extends Type
     case class TyApp(tyF: Type_, tyX: TyAtom) extends Type_
     sealed trait TyAtom extends Type_
-    case object UnitTy extends TyAtom
+    case object UnitTy extends TyAtom with ParserBridge0[TyAtom]
     case class ListTy(ty: Type) extends TyAtom
     case class TupleTy(tys: List[Type]) extends TyAtom
     // This is needed if we want to maximise the well-typedness of the parser
     // For a parser as big as this one, it's definitely desirable: we can always
     // weaken the types later if we want to!
     case class ParenTy(ty: Type) extends TyAtom
-    case object ListConTy extends TyAtom
-    case object FunConTy extends TyAtom
+    case object ListConTy extends TyAtom with ParserBridge0[TyAtom]
+    case object FunConTy extends TyAtom with ParserBridge0[TyAtom]
     case class TupleConTy(arity: Int) extends TyAtom
 
     // We'll model this layer by layer, to maximise the flexiblity whilst maintaining
@@ -226,7 +224,7 @@ object ast {
     sealed trait Term extends Expr10_
     case class ConId(v: String) extends Term with PatCon with TyAtom
     case class VarId(v: String) extends Term with PatNaked with TyAtom
-    case object UnitCon extends Term with PatNaked
+    case object UnitCon extends Term with PatNaked with ParserBridge0[Term with PatNaked]
     case class TupleCon(arity: Int) extends Term with PatCon
     case class ParensVal(x: Expr) extends Term
     case class TupleLit(xs: List[Expr]) extends Term
@@ -237,6 +235,54 @@ object ast {
     case class HsString(s: String) extends Literal
     case class HsChar(c: Int) extends Literal
     case class HsDouble(x: BigDecimal) extends Literal
+
+    object WeakApp extends ParserBridge2[Expr, Expr1, Expr]
+    object Or extends ParserBridge2[Expr2, Expr1, Expr1]
+    object And extends ParserBridge2[Expr3, Expr2, Expr2]
+    object Less extends ParserBridge2[Expr4, Expr4, Expr3]
+    object LessEqual extends ParserBridge2[Expr4, Expr4, Expr3]
+    object Greater extends ParserBridge2[Expr4, Expr4, Expr3]
+    object GreaterEqual extends ParserBridge2[Expr4, Expr4, Expr3]
+    object Equal extends ParserBridge2[Expr4, Expr4, Expr3]
+    object NotEqual extends ParserBridge2[Expr4, Expr4, Expr3]
+    object Cons extends ParserBridge2[Expr5, Expr4, Expr4]
+    object Append extends ParserBridge2[Expr5, Expr4, Expr4]
+    object Add extends ParserBridge2[Expr5, Expr6, Expr5]
+    object Sub extends ParserBridge2[Expr5, Expr6, Expr5]
+    object Negate extends ParserBridge1[Expr6, Expr6]
+    object Mul extends ParserBridge2[Expr7, Expr8, Expr7]
+    object Div extends ParserBridge2[Expr7, Expr8, Expr7]
+    object Exp extends ParserBridge2[Expr9, Expr8, Expr8]
+    object Comp extends ParserBridge2[Expr10, Expr9, Expr9]
+    object FunTy extends ParserBridge2[Type_, Type, Type]
+    object Lam extends ParserBridge2[List[Pat], Expr, Lam]
+    object Let extends ParserBridge2[Clause, Expr, Let]
+    object If extends ParserBridge3[Expr, Expr, Expr, If]
+    object Case extends ParserBridge2[Expr, List[Alt], Case]
+    object Alt extends ParserBridge2[Pat, Expr, Alt]
+    object ConId extends ParserBridge1[String, ConId]
+    object VarId extends ParserBridge1[String, VarId]
+    object TupleCon extends ParserBridge1[Int, TupleCon]
+    object ParensVal extends ParserBridge1[Expr, ParensVal]
+    object TupleLit extends ParserBridge1[List[Expr], TupleLit]
+    object ListLit extends ParserBridge1[List[Expr], ListLit]
+    object HsInt extends ParserBridge1[BigInt, HsInt]
+    object HsString extends ParserBridge1[String, HsString]
+    object HsChar extends ParserBridge1[Int, HsChar]
+    object HsDouble extends ParserBridge1[BigDecimal, HsDouble]
+    object Data extends ParserBridge3[ConId, List[VarId], List[Con], Data]
+    object Con extends ParserBridge2[ConId, List[TyAtom], Con]
+    object Decl extends ParserBridge2[VarId, Type, Decl]
+    object Clause extends ParserBridge4[VarId, List[PatNaked], Option[Expr], Expr, Clause]
+    object PatCons extends ParserBridge2[PatParen, Pat, Pat]
+    object PatApp extends ParserBridge2[PatCon, List[PatNaked], PatApp]
+    object NestedPat extends ParserBridge1[Pat, NestedPat]
+    object PatTuple extends ParserBridge1[List[Pat], PatTuple]
+    object PatList extends ParserBridge1[List[Pat], PatList]
+    object TupleConTy extends ParserBridge1[Int, TupleConTy]
+    object ParenTy extends ParserBridge1[Type, ParenTy]
+    object TupleTy extends ParserBridge1[List[Type], TupleTy]
+    object ListTy extends ParserBridge1[Type, ListTy]
 }
 ```
 
@@ -251,129 +297,16 @@ guide for us, and in fact it will also ensure that we can't get the precedence t
 consequence, as we'll see later, is we will be forced to use `SOps` instead of `Ops` in the
 precedence tables.
 
-### The Bridges
-Next up, we can define the bridge constructors for each of these AST nodes, the only annoyance being
-that because they are supposed to be _companion objects_ to the classes, they have to be defined in
-the same file. We could get around this by creating a separate bridge objects and not
-importing the AST in the parser object, but for simplicity I won't do that here and the bridge
-constructors will be in the companion objects of the AST nodes. Note that, when an AST node is
-already a `case object`, we can't give it a companion object, so this forms a good candidate to just
-extend `ParserSingletonBridge`. We won't encode position information into the tree for this example,
-so the `parsley.genericbridges` implementation will be used from now on.
+The bridges have all also been defined above as well, including those marked
+with `ParserBridge0`, which is done on the object itself.
 
-Just to re-iterate how these generic bridge traits work, here are the companion objects
-for the operators that form the expression hierarchy:
-
-```scala
-import parsley.genericbridges._
-object WeakApp extends ParserBridge2[Expr, Expr1, Expr]
-object Or extends ParserBridge2[Expr2, Expr1, Expr1]
-object And extends ParserBridge2[Expr3, Expr2, Expr2]
-object Less extends ParserBridge2[Expr4, Expr4, Expr3]
-object LessEqual extends ParserBridge2[Expr4, Expr4, Expr3]
-object Greater extends ParserBridge2[Expr4, Expr4, Expr3]
-object GreaterEqual extends ParserBridge2[Expr4, Expr4, Expr3]
-object Equal extends ParserBridge2[Expr4, Expr4, Expr3]
-object NotEqual extends ParserBridge2[Expr4, Expr4, Expr3]
-object Cons extends ParserBridge2[Expr5, Expr4, Expr4]
-object Append extends ParserBridge2[Expr5, Expr4, Expr4]
-object Add extends ParserBridge2[Expr5, Expr6, Expr5]
-object Sub extends ParserBridge2[Expr5, Expr6, Expr5]
-object Negate extends ParserBridge1[Expr6, Expr6]
-object Mul extends ParserBridge2[Expr7, Expr8, Expr7]
-object Div extends ParserBridge2[Expr7, Expr8, Expr7]
-object Exp extends ParserBridge2[Expr9, Expr8, Expr8]
-object Comp extends ParserBridge2[Expr10, Expr9, Expr9]
-```
-
-There's, again, nothing much to see here:
-
-* The companion objects now extend the `ParserBridgeN` for their supertype
-* The operators have to be careful to upcast to their super-type: otherwise the precedence table
-  will complain that we can't produce, say, `Or`s from just an `Expr2` on its own. `Expr2 <: Expr1`, not a subtype of `Or`!
-
-In addition to the generic bridge traits we've already seen, I also want to introduce one more
-(also implemented by `genericbridges`):
-
-```scala
-trait ParserBridge0[A] extends ParserSingletonBridge[A] { this: A =>
-    override final def con: A = this
-}
-```
-
-This is designed to reduce the boilerplate for "true singletons"
-in the grammar, of which there are some for this parser. This requires an obscure feature
-from Scala called a "self-type", which allows for a trait to specify what kind of classes or
-traits it must be mixed into. In this case, when a class `Foo` extends `ParserBridge0[Foo]`,
-this satisfies `ParserBridge0[A]` requirement that the type it is mixed into (in this case `Foo`)
-is a subtype of `A` (`Foo <: Foo` trivially). This will be useful for a few nodes within the AST,
-namely:
-
-```scala
-case object NilCon extends PatNaked with ParserBridge0[PatNaked]
-case object Wild extends PatNaked with ParserBridge0[PatNaked]
-case object ConsCon extends PatCon with ParserBridge0[PatCon]
-case object UnitTy extends TyAtom with ParserBridge0[TyAtom]
-case object ListConTy extends TyAtom with ParserBridge0[TyAtom]
-case object FunConTy extends TyAtom with ParserBridge0[TyAtom]
-case object UnitCon extends Term with PatNaked with ParserBridge0[Term with PatNaked]
-```
-
-These are all nodes in the AST that are singletons, so these are all `case object`s as opposed to
-the companion objects we've been working with up to this point.
-
-The rest of the bridges are straight forward, so I'll include them in a spoiler
-below, since they are pretty mechanical, like those we've already seen. Notably though, there are
-two AST nodes I'm _not_ going to give bridge constructors to: `StrongApp`, `TyApp`. If you look at
+Notably though, there are two AST nodes I'm _not_ going to give bridge constructors to: `StrongApp`, `TyApp`. If you look at
 the grammar, you'll see that the two relevant rules are both just `many`-like. Another option for
 these datatypes would have been to have taken a `List` of the sub-parses. But, morally, Haskell
 function applications are done one at a time so I've not flattened the structure, and as we'll see,
 we'll use a `reduce` to handle these cases. In reality, providing a position to either of these two
 nodes is quite difficult, because they are actually both delimited by `' '`, so there really isn't a
 sensible position to latch on to.
-
-@:format(html)
-<details>
-<summary>The remainder of the bridges</summary>
-<p>
-@:@
-
-```scala
-object FunTy extends ParserBridge2[Type_, Type, Type]
-
-object Lam extends ParserBridge2[List[Pat], Expr, Lam]
-object Let extends ParserBridge2[Clause, Expr, Let]
-object If extends ParserBridge3[Expr, Expr, Expr, If]
-object Case extends ParserBridge2[Expr, List[Alt], Case]
-object Alt extends ParserBridge2[Pat, Expr, Alt]
-object ConId extends ParserBridge1[String, ConId]
-object VarId extends ParserBridge1[String, VarId]
-object TupleCon extends ParserBridge1[Int, TupleCon]
-object ParensVal extends ParserBridge1[Expr, ParensVal]
-object TupleLit extends ParserBridge[List[Expr], TupleLit]
-object ListLit extends ParserBridge1[List[Expr], ListLit]
-object HsInt extends ParserBridge1[BigInt, HsInt]
-object HsString extends ParserBridge1[String, HsString]
-object HsChar extends ParserBridge1[Int, HsChar]
-object HsDouble extends ParserBridge [BigDecimal, HsDouble]
-object Data extends ParserBridge3[ConId, List[VarId], List[Con], Data]
-object Con extends ParserBridge2[ConId, List[TyAtom], Con]
-object Decl extends ParserBridge2[VarId, Type, Decl]
-object Clause extends ParserBridge4[VarId, List[PatNaked], Option[Expr], Expr, Clause]
-object PatCons extends ParserBridge2[PatParen, Pat, Pat]
-object PatApp extends ParserBridge2[PatCon, List[PatNaked], PatApp]
-object NestedPat extends ParserBridge1[Pat, NestedPat]
-object PatTuple extends ParserBridge1[List[Pat], PatTuple]
-object PatList extends ParserBridge1[List[Pat], PatList]
-object TupleConTy extends ParserBridge1[Int, TupleConTy]
-object ParenTy extends ParserBridge1[Type, ParenTy]
-object TupleTy extends ParserBridge1[List[Type], TupleTy]
-object ListTy extends ParserBridge1[Type, ListTy]
-```
-@:format(html)
-</p>
-</details>
-@:@
 
 ## Parsing
 Now it's finally time to tackle the parser itself. Remember, our lexer handles all whitespace
@@ -393,30 +326,31 @@ case together and then disambiguate which of the constructors should be used in 
 going to take the first approach for now, and then we can revisit later. Now for the `<term>`
 parser:
 
-```scala
-object parser {
-    import parsley.combinator.{sepBy, sepBy1}
+```scala mdoc:invisible
+val /???/ = parsley.Parsley.empty
+```
 
-    import lexer._
-    import implicits.implicitSymbol
-    import ast._
+```scala mdoc:silent
+import parsley.Parsley.atomic
+import parsley.combinator.{sepBy, sepBy1, count1}
 
-    private def count1(p: =>Parsley[_]): Parsley[Int] = p.foldLeft1(0)((n, _) => n + 1)
+import lexer._
+import implicits.implicitSymbol
+import ast._
 
-    private val `<literal>` = atomic(HsDouble(FLOAT)) <|> HsInt(INTEGER) <|> HsString(STRING) <|> HsChar(CHAR)
-    private val `<var-id>` = VarId(VAR_ID)
-    private val `<con-id>` = ConId(CON_ID)
+val `<literal>` = atomic(HsDouble(FLOAT)) | HsInt(INTEGER) | HsString(STRING) | HsChar(CHAR)
+val `<var-id>` = VarId(VAR_ID)
+val `<con-id>` = ConId(CON_ID)
 
-    private val `<expr>`: Parsley[Expr] = ???
+val `<expr>`: Parsley[Expr] = /???/
 
-    private val `<term>` = (`<var-id>` <|> `<con-id>` <|> (UnitCon <# "()")
-                        <|> atomic(TupleCon("(" *> count1(",") <* ")"))
-                        <|> atomic(ParensVal("(" *> `<expr>` <* ")"))
-                        <|> TupleLit("(" *> sepBy1(`<expr>`, ",") <* ")")
-                        <|> ListLit("[" *> sepBy(`<expr>`, ",") <* "]")
-                        <|> `<literal>`)
-}
-
+val `<term>` = ( `<var-id>` | `<con-id>` | (UnitCon from "()")
+               | atomic(TupleCon("(" ~> count1(",") <~ ")"))
+               | atomic(ParensVal("(" ~> `<expr>` <~ ")"))
+               | TupleLit("(" ~> sepBy1(`<expr>`, ",") <~ ")")
+               | ListLit("[" ~> sepBy(`<expr>`, ",") <~ "]")
+               | `<literal>`
+               )
 ```
 
 Here, I've followed the structure of the grammar quite closely. I'm even making sure to follow the
@@ -442,28 +376,29 @@ Next we'll tackle up to `<expr>`. By now, we should know that the correct tool t
 `precedence`. While `<expr-10>` can be considered to have operators in it, they do not fit with
 any associativity in Haskell so I will split them out for digestibility. Without further ado, let's get going:
 
-```scala
-object parser {
-    import parsley.expr.{precedence, SOps, InfixL, InfixR, InfixN, Prefix, Atoms}
-    ...
+```scala mdoc:nest
+import parsley.expr.{precedence, SOps, InfixL, InfixR, InfixN, Prefix, Atoms}
 
-    private lazy val `<expr>`: Parsley[Expr] =
-        precedence(SOps(InfixL)(WeakApp   <# "$") +:
-                   SOps(InfixR)(Or        <# "||") +:
-                   SOps(InfixR)(And       <# "&&") +:
-                   SOps(InfixN)(Less    <# "<",  LessEqual    <# "<=",
-                                Greater <# ">",  GreaterEqual <# ">=",
-                                Equal   <# "==", NotEqual     <# "/=") +:
-                   SOps(InfixR)(Cons      <# ":",  Append       <# "++") +:
-                   SOps(InfixL)(Add       <# "+",  Sub          <# "-") +:
-                   SOps(Prefix)(Negate    <# "-") +:
-                   SOps(InfixL)(Mul       <# "*",  Div          <# "/") +:
-                   SOps(InfixR)(Exp       <# "^") +:
-                   SOps(InfixR)(Comp      <# ".") +:
-                   `<expr-10>`)
-
-    private lazy val `<expr-10>` = Atoms(???)
+lazy val `<expr>`: Parsley[Expr] = precedence {
+    SOps(InfixL)(WeakApp from "$") +:
+    SOps(InfixR)(Or      from "||") +:
+    SOps(InfixR)(And     from "&&") +:
+    SOps(InfixN)(Less    from "<",  LessEqual    from "<=",
+                 Greater from ">",  GreaterEqual from ">=",
+                 Equal   from "==", NotEqual     from "/=") +:
+    SOps(InfixR)(Cons    from ":",  Append       from "++") +:
+    SOps(InfixL)(Add     from "+",  Sub          from "-") +:
+    SOps(Prefix)(Negate  from "-") +:
+    SOps(InfixL)(Mul     from "*",  Div          from "/") +:
+    SOps(InfixR)(Exp     from "^") +:
+    SOps(InfixR)(Comp    from ".") +:
+    `<expr-10>`
 }
+lazy val `<expr-10>` = Atoms(/???/)
+```
+```scala mdoc:invisible
+import scala.annotation.unused
+val _ = `<expr>`: @unused
 ```
 
 Here we can see a whole bunch of interesting things! Firstly, up to this point we've been used to
@@ -480,27 +415,25 @@ complex and general `SOps` precedence architecture. This has some really nice co
 
 Next up is the remaining three rules: `<expr-10>`, `<alt>`, and `<func-app>`.
 
-```scala
-object parser {
-    import parsley.combinator.{..., some, skipMany}
+```scala mdoc:nest:silent
+import parsley.combinator.{some, skipMany}
 
-    ...
-    private val `<clause>`: Parsley[Clause] = ???
-    private val `<pat-naked>`: Parsley[PatNaked] = ???
-    private val `<pat>`: Parsley[Pat] = ???
-    ...
+val `<clause>`: Parsley[Clause] = /???/
+val `<pat-naked>`: Parsley[PatNaked] = /???/
+val `<pat>`: Parsley[Pat] = /???/
 
-    private lazy val `<expr-10>` = Atoms(
-        Lam("\\" *> some(`<pat-naked>`), "->" *> `<expr>`),
-        Let("let" *> `<clause>`, "in" *> `<expr>`),
-        If("if" *> `<expr>`, "then" *> `<expr>`, "else" *> `<expr>`),
-        Case("case" *> `<expr>`, "of" *> "{" *> sepBy1(`<alt>`, (";" <|> NEWLINE) <* skipMany(NEWLINE)) <* "}"),
-        `<func-app>`)
-    private val `<alt>` = Alt(`<pat>`, "->" *> `<expr>`)
-    private lazy val `<func-app>` = `<term>`.reduceLeft(StrongApp)
-
-    ...
-}
+val `<alt>` = Alt(`<pat>`, "->" ~> `<expr>`)
+lazy val `<func-app>` = `<term>`.reduceLeft(StrongApp)
+lazy val `<expr-10>` = Atoms(
+    Lam("\\" ~> some(`<pat-naked>`), "->" ~> `<expr>`),
+    Let("let" ~> `<clause>`, "in" ~> `<expr>`),
+    If("if" ~> `<expr>`, "then" ~> `<expr>`, "else" ~> `<expr>`),
+    Case("case" ~> `<expr>`,
+         "of" ~> "{" ~> sepBy1(`<alt>`, (";" | NEWLINE) <~ skipMany(NEWLINE)) <~ "}"),
+    `<func-app>`)
+```
+```scala mdoc:invisible
+val _ = `<expr-10>`: @unused
 ```
 
 This section of the parser is much more straightforward: we are using the regular shape of the
@@ -510,7 +443,7 @@ curly braces to delimit the start and end of the `case`. Note here that the `"\\
 `\`, but the backslash much be escaped to fit within the Scala string! The `<func-app>` rule is
 interesting, because it is the same as ```some(`<term>`).map(_.reduceLeft(StrongApp))```, but is
 more efficient, not having to have to construct an intermediate list. It's always a good idea to
-check out Parsley's API to see if you can find any hidden gems like this one!
+check out `parsley`'s API to see if you can find any hidden gems like this one!
 
 Now we have tackled everything from `<expr>` down, we are now in a position to deal with `<clause>`
 and its sub grammars.
@@ -520,34 +453,35 @@ These set of parsers are similar to what we saw with `<term>`. There are going t
 ambiguity in the grammar that need to be resolved with `atomic`, specifically those involving
 parentheses. But other than that there isn't anything really new here.
 
-```scala
-object parser {
-    import parsley.combinator.{..., many, option}
-    import parsley.expr.chain
-    ...
+```scala mdoc:nest
+import parsley.combinator.{many, option}
+import parsley.expr.infix
 
-    private lazy val `<clause>` =
-        Clause(`<var-id>`, many(`<pat-naked>`), option(`<guard>`), "=" *> `<expr>`)
-    private lazy val `<pat-naked>`: Parsley[PatNaked] =
-        (`<var-id>` <|> atomic(`<pat-con>`) <|> (UnitCon <# "()") <|> (NilCon <# "[]") <|> `<literal>` <|> (Wild <# "_")
-     <|> atomic(NestedPat("(" *> `<pat>` <* ")"))
-     <|> PatTuple("(" *> sepBy1(`<pat>`, ",") <* ")")
-     <|> PatList("[" *> sepBy(`<pat>`, ",") <* "]"))
-    private lazy val `<pat>` = chain.right1(`<pat-paren>`, PatCons <# ":")
-    private lazy val `<pat-paren>` = atomic(`<pat-app>`) <|> `<pat-naked>`
-    private lazy val `<pat-app>` = PatApp(`<pat-con>`, some(`<pat-naked>`))
-    private lazy val `<pat-con>` = (atomic("(" *> (ConsCon <# ":") <* ")")
-                                <|> TupleCon("(" *> count1(",") <* ")")
-                                <|> `<con-id>`)
+lazy val `<clause>` =
+    Clause(`<var-id>`, many(`<pat-naked>`), option(`<guard>`), "=" ~> `<expr>`)
+lazy val `<pat-naked>`: Parsley[PatNaked] =
+    ( `<var-id>` | atomic(`<pat-con>`)
+    | (UnitCon from "()") | (NilCon from "[]") | `<literal>` | (Wild from "_")
+    | atomic(NestedPat("(" ~> `<pat>` <~ ")"))
+    | PatTuple("(" ~> sepBy1(`<pat>`, ",") <~ ")")
+    | PatList("[" ~> sepBy(`<pat>`, ",") <~ "]")
+    )
+lazy val `<pat>` = infix.right1(`<pat-paren>`, PatCons from ":")
+lazy val `<pat-paren>` = atomic(`<pat-app>`) | `<pat-naked>`
+lazy val `<pat-app>` = PatApp(`<pat-con>`, some(`<pat-naked>`))
+lazy val `<pat-con>` = ( atomic("(" ~> (ConsCon from ":") <~ ")")
+                       | TupleCon("(" ~> count1(",") <~ ")")
+                       | `<con-id>`
+                       )
 
-    private lazy val `<guard>` = "|" *> `<expr>`
-
-    ...
-}
+lazy val `<guard>` = "|" ~> `<expr>`
+```
+```scala mdoc:invisible
+val _ = `<clause>`: @unused
 ```
 
 Like I said, nothing too interesting here. Notice, however, that for `<pat>` I have used a
-`chain.right1`: we've been used to using `precedence`, but in cases like these the `chain`s are just
+`infix.right1`: we've been used to using `precedence`, but in cases like these the `chain`s are just
 so much more simple. Don't be afraid to make use of them! There are plenty of  `atomic`s here that we
 will come back and eliminate later on: notably, the `atomic` in `<pat-paren>` is used to guard
 against a `<pat-con>` being parsed without any `<pat-naked>` - this needs to be parsed again in
@@ -559,25 +493,22 @@ There is a sense in which we've really reached the limit of stuff we need for ou
 cases: there isn't much more to say until we try and deal with much more complex grammatical
 features.
 
-```scala
-object parser {
-    ...
-
-    private lazy val `<type>`: Parsley[Type] = chain.right1(`<type-app>`, FunTy <# "->")
-    private lazy val `<type-app>` = `<type-atom>`.reduceLeft(TyApp)
-    private lazy val `<type-atom>` = (`<type-con>` <|> `<var-id>` <|> (UnitTy <# "()")
-                                  <|> ListTy("[" *> `<type>` <* "]")
-                                  <|> atomic(ParenTy("(" *> `<type>` <* ")"))
-                                  <|> TupleTy("(" *> sepBy1(`<type>`, ",") <* ")"))
-    private val `<type-con>` = (`<con-id>`
-                            <|> (ListConTy <# "[]")
-                            <|> atomic("(" *> (FunConTy <# "->") <* ")")
-                            <|> atomic(TupleConTy("(" *> count1(",") <* ")")))
-    ...
-}
+```scala mdoc
+lazy val `<type>`: Parsley[Type] = infix.right1(`<type-app>`, FunTy from "->")
+lazy val `<type-app>` = `<type-atom>`.reduceLeft(TyApp)
+lazy val `<type-atom>` = ( `<type-con>` | `<var-id>` | (UnitTy from "()")
+                         | ListTy("[" ~> `<type>` <~ "]")
+                         | atomic(ParenTy("(" ~> `<type>` <~ ")"))
+                         | TupleTy("(" ~> sepBy1(`<type>`, ",") <~ ")")
+                         )
+lazy val `<type-con>` = ( `<con-id>`
+                        | (ListConTy from "[]")
+                        | atomic("(" ~> (FunConTy from "->") <~ ")")
+                        | atomic(TupleConTy("(" ~> count1(",") <~ ")"))
+                        )
 ```
 
-We can see another instance of `chain.right1` out in the wild here, as well as the other `reduceLeft`
+We can see another instance of `infix.right1` out in the wild here, as well as the other `reduceLeft`
 used for type application. Yet again, there is some ambiguity evidenced by the `atomic` here, and
 just like in the other instances, it's to do with parentheses. The second `atomic` in `<type-con>` is
 interesting: it's not clear from the rule itself why it is there. In fact, it's there because we
@@ -589,29 +520,25 @@ the more challenging aspect of managing a parser of this size and complexity.
 
 ### Declarations and Data
 Here is a nice easy finish. These last rules are really just book-keeping. I'm also going to
-introduce a way of running the parser directly without exposing the `<program>` parser (but this
-is moot if we wanted to test these parsers individually instead).
+introduce a way of running the parser directly.
 
-```scala
-object parser {
-    import parsley.combinator.{..., sepEndBy, skipSome}
-    import parsley.errors.ErrorBuilder
-    import parsley.Result
-    ...
+```scala mdoc
+import parsley.combinator.{sepEndBy, skipSome}
+import parsley.errors.ErrorBuilder
 
-    def parse[Err: ErrorBuilder](input: String): Result[Err, List[ProgramUnit]] =
-        `<program>`.parse(input)
+def parse[Err: ErrorBuilder](input: String) = `<program>`.parse(input)
 
-    private lazy val `<program>` = fully(sepEndBy(`<data>` <|> atomic(`<declaration>`) <|> `<clause>`, skipSome(NEWLINE)))
+lazy val `<program>` =
+    fully(sepEndBy(`<data>` | atomic(`<declaration>`) | `<clause>`, skipSome(NEWLINE)))
 
-    private lazy val `<data>` = Data("data" *> `<con-id>`, many(`<var-id>`), "=" *> `<constructors>`)
-    private lazy val `<constructors>` = sepBy1(`<constructor>`, "|")
-    private lazy val `<constructor>` = Con(`<con-id>`, many(`<type-atom>`))
+lazy val `<data>` = Data("data" ~> `<con-id>`, many(`<var-id>`), "=" ~> `<constructors>`)
+lazy val `<constructors>` = sepBy1(`<constructor>`, "|")
+lazy val `<constructor>` = Con(`<con-id>`, many(`<type-atom>`))
 
-    private lazy val `<declaration>` = Decl(`<var-id>`, "::" *> `<type>`)
-
-    ...
-}
+lazy val `<declaration>` = Decl(`<var-id>`, "::" ~> `<type>`)
+```
+```scala mdoc:invisible
+val _ = (x: String) => parse(x): @unused
 ```
 
 We do have to be careful here, there is some overlap between `<declaration>` and `<clause>`. This,
@@ -640,27 +567,33 @@ most cases the trickiest part of actually writing a parser. Make sure you unders
 has been built up so far and convince yourself about why each instance of `atomic` in the previous
 parsers has been necessary before continuing.
 
-#### Part 1: `<pat-con>`, `<type-con>`, and `<term>`
+#### `<pat-con>`, `<type-con>`, and `<term>`
 These three grammar rules are very straightforward to factor out and remove the backtracking for,
 so we will start with them first. Let's remind ourselves of the three rules in question and identify
 the parts we can handle:
 
-```scala
-private lazy val `<pat-con>` = (atomic("(" *> (ConsCon <# ":") <* ")")
-                            <|> TupleCon("(" *> count1(",") <* ")")
-                            <|> `<con-id>`)
+```scala mdoc:nest:silent
+lazy val `<pat-con>` = ( atomic("(" ~> (ConsCon from ":") <~ ")")
+                       | TupleCon("(" ~> count1(",") <~ ")")
+                       | `<con-id>`
+                       )
 
-private val `<type-con>` = (`<con-id>`
-                        <|> (ListConTy <# "[]")
-                        <|> atomic("(" *> (FunConTy <# "->") <* ")")
-                        <|> atomic(TupleConTy("(" *> count1(",") <* ")")))
+val `<type-con>` = ( `<con-id>`
+                   | (ListConTy from "[]")
+                   | atomic("(" ~> (FunConTy from "->") <~ ")")
+                   | atomic(TupleConTy("(" ~> count1(",") <~ ")"))
+                   )
 
-private val `<term>` = (`<var-id>` <|> `<con-id>` <|> (UnitCon <# "()")
-                    <|> atomic(TupleCon("(" *> count1(",") <* ")"))
-                    <|> atomic(ParensVal("(" *> `<expr>` <* ")"))
-                    <|> TupleLit("(" *> sepBy1(`<expr>`, ",") <* ")")
-                    <|> ListLit("[" *> sepBy(`<expr>`, ",") <* "]")
-                    <|> `<literal>`)
+val `<term>` = ( `<var-id>` | `<con-id>` | (UnitCon from "()")
+               | atomic(TupleCon("(" ~> count1(",") <~ ")"))
+               | atomic(ParensVal("(" ~> `<expr>` <~ ")"))
+               | TupleLit("(" ~> sepBy1(`<expr>`, ",") <~ ")")
+               | ListLit("[" ~> sepBy(`<expr>`, ",") <~ "]")
+               | `<literal>`
+               )
+```
+```scala mdoc:invisible
+val _ = `<pat-con>`: @unused
 ```
 
 Now, with `<pat-con>` and `<type-con>`, they both contain backtracking because there are two portions
@@ -669,41 +602,54 @@ however, as we'll see, `<term>` will require a bit more extra work to fix the se
 backtracking. Thankfully, these are all relatively easy to fix: we just need to distribute the
 parentheses through the rules that contain them on the _inside_. This is a nice warm-up exercise:
 
-```scala
-private lazy val `<pat-con>` = (atomic("(" *> (ConsCon <# ":") <* ")")
-                            <|> ("(" *> TupleCon(count1(",")) <* ")")
-                            <|> `<con-id>`)
+```scala mdoc:nest:silent
+lazy val `<pat-con>` = ( atomic("(" ~> (ConsCon from ":") <~ ")")
+                       | "(" ~> TupleCon(count1(",")) <~ ")"
+                       | `<con-id>`
+                       )
 
-private val `<type-con>` = (`<con-id>`
-                        <|> (ListConTy <# "[]")
-                        <|> atomic("(" *> (FunConTy <# "->") <* ")")
-                        <|> atomic("(" *> TupleConTy(count1(",")) <* ")"))
+val `<type-con>` = ( `<con-id>`
+                   | (ListConTy from "[]")
+                   | atomic("(" ~> (FunConTy from "->") <~ ")")
+                   | atomic("(" ~> TupleConTy(count1(",")) <~ ")")
+                   )
 
-private val `<term>` = (`<var-id>` <|> `<con-id>` <|> (UnitCon <# "()")
-                    <|> atomic("(" *> TupleCon(count1(",")) <* ")")
-                    <|> atomic("(" *> ParensVal(`<expr>`) <* ")")
-                    <|> ("(" *> TupleLit(sepBy1(`<expr>`, ",")) <* ")")
-                    <|> ListLit("[" *> sepBy(`<expr>`, ",") <* "]")
-                    <|> `<literal>`)
+val `<term>` = ( `<var-id>` | `<con-id>` | (UnitCon from "()")
+               | atomic("(" ~> TupleCon(count1(",")) <~ ")")
+               | atomic("(" ~> ParensVal(`<expr>`) <~ ")")
+               | "(" ~> TupleLit(sepBy1(`<expr>`, ",")) <~ ")"
+               | ListLit("[" ~> sepBy(`<expr>`, ",") <~ "]")
+               | `<literal>`
+               )
+```
+```scala mdoc:invisible
+val _ = `<pat-con>`: @unused
 ```
 
 With the parentheses distributed, we can see that they are easily factored out (on both the left-
 and the right-hand sides):
 
-```scala
-private lazy val `<pat-con>` = (("(" *> (ConsCon <# ":" <|> TupleCon(count1(","))) <* ")")
-                            <|> `<con-id>`)
+```scala mdoc:nest:silent
+lazy val `<pat-con>` = ( "(" ~> ((ConsCon from ":") | TupleCon(count1(","))) <~ ")"
+                       | `<con-id>`
+                       )
 
-private val `<type-con>` = (`<con-id>`
-                        <|> (ListConTy <# "[]")
-                        <|> atomic("(" *> (FunConTy <# "->" <|> TupleConTy(count1(","))) <* ")"))
+val `<type-con>` = ( `<con-id>`
+                   | (ListConTy from "[]")
+                   | atomic("(" ~> ((FunConTy from "->") | TupleConTy(count1(","))) <~ ")")
+                   )
 
-private val `<term>` = (`<var-id>` <|> `<con-id>` <|> (UnitCon <# "()")
-                    <|> ("(" *> (TupleCon(count1(","))
-                             <|> atomic(ParensVal(`<expr>`))
-                             <|> TupleLit(sepBy1(`<expr>`, ","))) <* ")")
-                    <|> ListLit("[" *> sepBy(`<expr>`, ",") <* "]")
-                    <|> `<literal>`)
+val `<term>` = ( `<var-id>` | `<con-id>` | (UnitCon from "()")
+               | "(" ~> ( TupleCon(count1(","))
+                        | atomic(ParensVal(`<expr>`))
+                        | TupleLit(sepBy1(`<expr>`, ","))
+                        ) <~ ")"
+               | ListLit("[" ~> sepBy(`<expr>`, ",") <~ "]")
+               | `<literal>`
+               )
+```
+```scala mdoc:invisible
+val _ = `<pat-con>`: @unused
 ```
 
 This has immediately eliminated three of the `atomic`s, but one persists inside `<term>`: this is
@@ -711,60 +657,83 @@ because `ParensVal` and `TupleLit` both share an `<expr>`. This is a bit trickie
 let's move on to tackling these. Note that the other `atomic` in `<type-con>` is due to a conflict
 in the wider grammar, we can look at that in part 4.
 
-#### Part 2: `<pat-naked>`, `<type-atom>`, and `<term>` (again)
+#### `<pat-naked>`, `<type-atom>`, and `<term>` (again)
 The next three grammar rules contain similar patterns to the last three, but solving the backtracking
 is less obvious. Let's start by recapping what the three rules are:
 
-```scala
-private lazy val `<pat-naked>`: Parsley[PatNaked] =
-    (`<var-id>` <|> atomic(`<pat-con>`) <|> (UnitCon <# "()") <|> (NilCon <# "[]") <|> `<literal>` <|> (Wild <# "_")
- <|> atomic(NestedPat("(" *> `<pat>` <* ")"))
- <|> PatTuple("(" *> sepBy1(`<pat>`, ",") <* ")")
- <|> PatList("[" *> sepBy(`<pat>`, ",") <* "]"))
+```scala mdoc:nest:silent
+lazy val `<pat-naked>`: Parsley[PatNaked] =
+    ( `<var-id>` | atomic(`<pat-con>`)
+    | (UnitCon from "()") | (NilCon from "[]") | `<literal>` | (Wild from "_")
+    | atomic(NestedPat("(" ~> `<pat>` <~ ")"))
+    | PatTuple("(" ~> sepBy1(`<pat>`, ",") <~ ")")
+    | PatList("[" ~> sepBy(`<pat>`, ",") <~ "]")
+    )
 
-private lazy val `<type-atom>` = (`<type-con>` <|> `<var-id>` <|> (UnitTy <# "()")
-                              <|> ListTy("[" *> `<type>` <* "]")
-                              <|> atomic(ParenTy("(" *> `<type>` <* ")"))
-                              <|> TupleTy("(" *> sepBy1(`<type>`, ",") <* ")"))
+lazy val `<type-atom>` = ( `<type-con>` | `<var-id>` | (UnitTy from "()")
+                         | ListTy("[" ~> `<type>` <~ "]")
+                         | atomic(ParenTy("(" ~> `<type>` <~ ")"))
+                         | TupleTy("(" ~> sepBy1(`<type>`, ",") <~ ")")
+                         )
 
-private val `<term>` = (`<var-id>` <|> `<con-id>` <|> (UnitCon <# "()")
-                    <|> ("(" *> (TupleCon(count1(","))
-                             <|> atomic(ParensVal(`<expr>`))
-                             <|> TupleLit(sepBy1(`<expr>`, ","))) <* ")")
-                    <|> ListLit("[" *> sepBy(`<expr>`, ",") <* "]")
-                    <|> `<literal>`)
+val `<term>` = ( `<var-id>` | `<con-id>` | (UnitCon from "()")
+               | "(" ~> ( TupleCon(count1(","))
+                        | atomic(ParensVal(`<expr>`))
+                        | TupleLit(sepBy1(`<expr>`, ","))
+                        ) <~ ")"
+               | ListLit("[" ~> sepBy(`<expr>`, ",") <~ "]")
+               | `<literal>`
+               )
+```
+```scala mdoc:invisible
+val _ = `<pat-naked>`: @unused
+val _ = `<type-atom>`: @unused
 ```
 
 First, let's do what we did to `<term>` to `<pat-naked>` and `<type-atom>`:
 
-```scala
-private lazy val `<pat-naked>`: Parsley[PatNaked] =
-    (`<var-id>` <|> atomic(`<pat-con>`) <|> (UnitCon <# "()") <|> (NilCon <# "[]") <|> `<literal>` <|> (Wild <# "_")
- <|> ("(" *> (atomic(NestedPat(`<pat>`))
-          <|> PatTuple(sepBy1(`<pat>`, ","))) <* ")")
- <|> PatList("[" *> sepBy(`<pat>`, ",") <* "]"))
+```scala mdoc:nest:silent
+lazy val `<pat-naked>`: Parsley[PatNaked] =
+    ( `<var-id>` | atomic(`<pat-con>`)
+    | (UnitCon from "()") | (NilCon from "[]") | `<literal>` | (Wild from "_")
+    | "(" ~> ( atomic(NestedPat(`<pat>`))
+             | PatTuple(sepBy1(`<pat>`, ","))
+             ) <~ ")"
+    | PatList("[" ~> sepBy(`<pat>`, ",") <~ "]")
+    )
 
-private lazy val `<type-atom>` = (`<type-con>` <|> `<var-id>` <|> (UnitTy <# "()")
-                              <|> ListTy("[" *> `<type>` <* "]")
-                              <|> ("(" *> (atomic(ParenTy(`<type>`))
-                                       <|> TupleTy(sepBy1(`<type>`, ","))) <* ")"))
+lazy val `<type-atom>` = ( `<type-con>` | `<var-id>` | (UnitTy from "()")
+                         | ListTy("[" ~> `<type>` <~ "]")
+                         | "(" ~> ( atomic(ParenTy(`<type>`))
+                                  | TupleTy(sepBy1(`<type>`, ","))
+                                  ) <~ ")"
+                         )
 
-private val `<term>` = (`<var-id>` <|> `<con-id>` <|> (UnitCon <# "()")
-                    <|> ("(" *> (TupleCon(count1(","))
-                             <|> atomic(ParensVal(`<expr>`))
-                             <|> TupleLit(sepBy1(`<expr>`, ","))) <* ")")
-                    <|> ListLit("[" *> sepBy(`<expr>`, ",") <* "]")
-                    <|> `<literal>`)
+val `<term>` = ( `<var-id>` | `<con-id>` | (UnitCon from "()")
+               | "(" ~> ( TupleCon(count1(","))
+                        | atomic(ParensVal(`<expr>`))
+                        | TupleLit(sepBy1(`<expr>`, ","))
+                        ) <~ ")"
+               | ListLit("[" ~> sepBy(`<expr>`, ",") <~ "]")
+               | `<literal>`
+               )
+```
+```scala mdoc:invisible
+val _ = `<pat-naked>`: @unused
+val _ = `<type-atom>`: @unused
 ```
 
 Hopefully you can see that all three rules are similar to each other: they all have an `atomic`
 _inside_ the factored parentheses. The problem is that they use different bridge constructors and the
 `sepBy1` does not allow for easy factoring. That being said, we could deal with this by creating... a
-new _**bridge factory**_! Let's take a look at them:
+new ***disambiguator bridge***! Let's take a look at them:
 
-```scala
+```scala mdoc:invisible
+import parsley.genericbridges._
+```
+```scala mdoc
 object NestedPatOrPatTuple extends ParserBridge1[List[Pat], PatNaked] {
-    def apply(ps: List[Pat]): PatNaked = ps. match {
+    def apply(ps: List[Pat]): PatNaked = ps match {
         case List(p) => NestedPat(p)
         case ps => PatTuple(ps)
     }
@@ -785,81 +754,69 @@ object TupleLitOrParensVal extends ParserBridge1[List[Expr], Term] {
 }
 ```
 
-Compared with _**bridge constructors**_, _**bridge factories**_ are used to arbitrate between
+Compared with _**bridge constructors**_, _**disambiguator bridges**_ are used to arbitrate between
 several possible instantiations dependending on the data that is fed to them. These bridges each
 encapsulate both of the overlapping cases. If the list of results only has one element, then it
 indicates we should not be creating a tuple. With these new bridges replacing the old ones, we can
 adjust our parsers:
 
-```scala
-private lazy val `<pat-naked>`: Parsley[PatNaked] =
-    (`<var-id>` <|> atomic(`<pat-con>`) <|> (UnitCon <# "()") <|> (NilCon <# "[]") <|> `<literal>` <|> (Wild <# "_")
- <|> NestedPatOrPatTuple("(" *> sepBy1(`<pat>`, ",") <* ")")
- <|> PatList("[" *> sepBy(`<pat>`, ",") <* "]"))
+```scala mdoc:nest:silent
+lazy val `<pat-naked>`: Parsley[PatNaked] =
+    ( `<var-id>` | atomic(`<pat-con>`)
+    | (UnitCon from "()") | (NilCon from "[]") | `<literal>` | (Wild from "_")
+    | NestedPatOrPatTuple("(" ~> sepBy1(`<pat>`, ",") <~ ")")
+    | PatList("[" ~> sepBy(`<pat>`, ",") <~ "]")
+    )
 
-private lazy val `<type-atom>` = (`<type-con>` <|> `<var-id>` <|> (UnitTy <# "()")
-                              <|> ListTy("[" *> `<type>` <* "]")
-                              <|> ParenTyOrTupleTy("(" *> sepBy1(`<type>`, ",") <* ")"))
+lazy val `<type-atom>` = ( `<type-con>` | `<var-id>` | (UnitTy from "()")
+                         | ListTy("[" ~> `<type>` <~ "]")
+                         | ParenTyOrTupleTy("(" ~> sepBy1(`<type>`, ",") <~ ")")
+                         )
 
-private val `<term>` = (`<var-id>` <|> `<con-id>` <|> (UnitCon <# "()")
-                    <|> ("(" *> (TupleCon(count1(","))
-                             <|> TupleLitOrParensVal(sepBy1(`<expr>`, ","))) <* ")")
-                    <|> ListLit("[" *> sepBy(`<expr>`, ",") <* "]")
-                    <|> `<literal>`)
+val `<term>` = ( `<var-id>` | `<con-id>` | (UnitCon from "()")
+               | "(" ~> ( TupleCon(count1(","))
+                        | TupleLitOrParensVal(sepBy1(`<expr>`, ","))
+                        ) <~ ")"
+               | ListLit("[" ~> sepBy(`<expr>`, ",") <~ "]")
+               | `<literal>`
+               )
+```
+```scala mdoc:invisible
+val _ = `<pat-naked>`: @unused
+val _ = `<type-atom>`: @unused
 ```
 
-By making use of our special bridge factories, we've eliminated the pesky `atomic`s. I've put the
-parentheses back inside the bridge factory for the `<pat-naked>` and `<type-atom>` rules, because it
-cuts down on a set of parentheses, and, in my opinion, it looks a bit cleaner.
+By making use of our special disambiguators bridge, we've eliminated the pesky `atomic`s. I've put the
+parentheses back inside the bridge call for the `<pat-naked>` and `<type-atom>` rules, because, in my opinion, it looks a bit cleaner.
 
-#### Part 3: Numbers in `<literal>`
+#### Numbers in `<literal>`
 With the tools we've already developed so far, this one is easy. Let's remind ourselves of the rule
 first:
 
-```scala
+```scala mdoc:nest:silent
 /*
 val INTEGER = lexer.lexeme.numeric.natural.number
-val FLOAT = lexer.lexeme.numeric.positiveReal.number
+val FLOAT = lexer.lexeme.numeric.floating.number
 val INT_OR_FLOAT = lexer.lexeme.numeric.unsignedCombined.number
 */
-private val `<literal>` = atomic(HsDouble(FLOAT)) <|> HsInt(INTEGER) <|> HsString(STRING) <|> HsChar(CHAR)
+val `<literal>` = atomic(HsDouble(FLOAT)) | HsInt(INTEGER) | HsString(STRING) | HsChar(CHAR)
 ```
 
 The problem here is that floats and ints share a common leading prefix: the whole number part. When
-we defined the `lexer`, I mentioned that it supports a `naturalOrFloat` token. Now it's time to make
-use of it to remove this `atomic`. Our first thought might be to make a bridge factory that can
-accomodate either of them, and that would be a fine idea:
+we defined the `lexer`, I mentioned that it supports a `INT_OR_FLOAT` token. Now it's time to make
+use of it to remove this `atomic`. Our first thought might be to make a disambiguator bridge that can accommodate either of them, and that would be a fine idea:
 
-```scala
+```scala mdoc:nest:silent
 object HsIntOrDouble extends ParserBridge1[Either[BigInt, BigDecimal], Literal] {
-    def apply(x: Either[BigInt, BigDecimal]): Literal = x.fold(HsInt, HsDouble)
+    def apply(x: Either[BigInt, BigDecimal]): Literal = x.fold(HsInt(_), HsDouble(_))
 }
 
-private val `<literal>` = HsIntOrDouble(INT_OR_FLOAT) <|> HsString(STRING) <|> HsChar(CHAR)
+val `<literal>` = HsIntOrDouble(INT_OR_FLOAT) | HsString(STRING) | HsChar(CHAR)
 ```
 
-And this works fine! However, I do want to touch on another possible implementation of this, just to
-demonstrate that the functionality exists. We can make use of the `branch` combinator:
+And this works fine!
 
-```scala
-//def branch[A, B, C](p: =>Parsley[Either[A, B]],
-//                    l: =>Parsley[A => C],
-//                    r: =>Parsley[B => C]): Parsley[C]
-
-private val `<literal>` =
-    branch(INT_OR_FLOAT, pure(HsInt), pure(HsDouble)) <|> HsString(STRING) <|> HsChar(CHAR)
-```
-
-What this is saying is that if we have a `Left` result from `INT_OR_FLOAT` we should take the first
-branch `pure(HsInt)` and otherwise we take the second `pure(HsDouble)`. It turns out that Parsley
-can optimise this (since it has `pure` on both branches) so that it is exactly equivalent to the
-previous version we made using `.fold` in the bridge factory:
-
-```scala
-branch(p, pure(f), pure(g)) == p.map(_.fold(f, g))
-```
-
-#### Part 4: Loose ends
+#### Loose ends
 At this point, there are four `atomic`s left in the entire parser: one in `<type-con>`, one in
 `<pat-paren>`, one in `<pat-naked>`, and, finally, one in `<program>`. At this point it gets much
 harder to remove them without altering the grammar substantially. Let's see how much more we can do
@@ -868,13 +825,18 @@ with the `atomic` in `<type-con>`.
 
 The reason for this `atomic` is more obvious when we compare it with `<type-atom>`:
 
-```scala
-private lazy val `<type-atom>` = (`<type-con>` <|> `<var-id>` <|> (UnitTy <# "()")
-                              <|> ListTy("[" *> `<type>` <* "]")
-                              <|> ParenTyOrTupleTy("(" *> sepBy1(`<type>`, ",") <* ")"))
-private val `<type-con>` = (`<con-id>`
-                        <|> (ListConTy <# "[]")
-                        <|> atomic("(" *> (FunConTy <# "->" <|> TupleConTy(count1(","))) <* ")"))
+```scala mdoc:nest:silent
+val `<type-con>` = ( `<con-id>`
+                   | (ListConTy from "[]")
+                   | atomic("(" ~> ((FunConTy from "->") | TupleConTy(count1(","))) <~ ")")
+                   )
+lazy val `<type-atom>` = ( `<type-con>` | `<var-id>` | (UnitTy from "()")
+                         | ListTy("[" ~> `<type>` <~ "]")
+                         | ParenTyOrTupleTy("(" ~> sepBy1(`<type>`, ",") <~ ")")
+                         )
+```
+```scala mdoc:invisible
+val _ = `<type-atom>`: @unused
 ```
 
 The `atomic` in `<type-con>` is used to backtrack out of the parentheses, since `ParenTyOrTupleTy`
@@ -883,14 +845,17 @@ place in the parser, and we are looking at it! To fix this `atomic` we just need
 and stop following the grammar as rigidly as we have been. Let's inline `<type-con>` into `<type-atom>`
 to start with:
 
-```scala
-private lazy val `<type-atom>` =
-       (`<con-id>`
-    <|> (ListConTy <# "[]")
-    <|> atomic("(" *> (FunConTy <# "->" <|> TupleConTy(count1(","))) <* ")")
-    <|> `<var-id>` <|> (UnitTy <# "()")
-    <|> ListTy("[" *> `<type>` <* "]")
-    <|> ParenTyOrTupleTy("(" *> sepBy1(`<type>`, ",") <* ")"))
+```scala mdoc:nest:silent
+lazy val `<type-atom>` = ( `<con-id>`
+                         | (ListConTy from "[]")
+                         | atomic("(" ~> ((FunConTy from "->") | TupleConTy(count1(","))) <~ ")")
+                         | `<var-id>` | (UnitTy from "()")
+                         | ListTy("[" ~> `<type>` <~ "]")
+                         | ParenTyOrTupleTy("(" ~> sepBy1(`<type>`, ",") <~ ")")
+                         )
+```
+```scala mdoc:invisible
+val _ = `<type-atom>`: @unused
 ```
 
 Right, now that they have been put together, we can see the problem more clearly. Let's now
@@ -898,39 +863,54 @@ reorganise the parser so that the problematic parentheses appear next to each ot
 mentioning that, for parsers without backtracking, we can always reorder the branches without
 consequence; the restriction is that backtracking parsers cannot move ahead of their paired up branch.
 
-```scala
-private lazy val `<type-atom>` =
-       (`<con-id>` <|> `<var-id>`
-    <|> (UnitTy <# "()") <|> (ListConTy <# "[]")
-    <|> ListTy("[" *> `<type>` <* "]")
-    <|> atomic("(" *> (FunConTy <# "->" <|> TupleConTy(count1(","))) <* ")")
-    <|> ParenTyOrTupleTy("(" *> sepBy1(`<type>`, ",") <* ")"))
+```scala mdoc:nest:silent
+lazy val `<type-atom>` = ( `<con-id>`
+                         | (ListConTy from "[]")
+                         | `<var-id>` | (UnitTy from "()")
+                         | ListTy("[" ~> `<type>` <~ "]")
+                         | atomic("(" ~> ((FunConTy from "->") | TupleConTy(count1(","))) <~ ")")
+                         | ParenTyOrTupleTy("(" ~> sepBy1(`<type>`, ",") <~ ")")
+                         )
+```
+```scala mdoc:invisible
+val _ = `<type-atom>`: @unused
 ```
 
 This parser is a bit neater, and now we can apply our favourite tricks from part 1 to resolve this
 `atomic`:
 
-```scala
-private lazy val `<type-atom>` =
-       (`<con-id>` <|> `<var-id>`
-    <|> (UnitTy <# "()") <|> (ListConTy <# "[]")
-    <|> ListTy("[" *> `<type>` <* "]")
-    <|> ("(" *> (FunConTy <# "->"
-             <|> TupleConTy(count1(","))
-             <|> ParenTyOrTupleTy(sepBy1(`<type>`, ","))) <* ")"))
+```scala mdoc:nest:silent
+lazy val `<type-atom>` = ( `<con-id>`
+                         | (ListConTy from "[]")
+                         | `<var-id>` | (UnitTy from "()")
+                         | ListTy("[" ~> `<type>` <~ "]")
+                         | "(" ~> ( (FunConTy from "->")
+                                  | TupleConTy(count1(","))
+                                  | ParenTyOrTupleTy(sepBy1(`<type>`, ","))
+                                  ) <~ ")"
+                         )
+```
+```scala mdoc:invisible
+val _ = `<type-atom>`: @unused
 ```
 
 Nice! One down, three to go. Let's have a look at the two involving patterns together:
 
-```scala
-private lazy val `<pat-naked>`: Parsley[PatNaked] =
-        (`<var-id>` <|> atomic(`<pat-con>`) <|> (UnitCon <# "()") <|> (NilCon <# "[]") <|> `<literal>` <|> (Wild <# "_")
-     <|> NestedPatOrPatTuple("(" *> sepBy1(`<pat>`, ",") <* ")")
-     <|> PatList("[" *> sepBy(`<pat>`, ",") <* "]"))
-private lazy val `<pat-paren>` = atomic(`<pat-app>`) <|> `<pat-naked>`
-private lazy val `<pat-app>` = PatApp(`<pat-con>`, some(`<pat-naked>`))
-private lazy val `<pat-con>` = (("(" *> (ConsCon <# ":" <|> TupleCon(count1(","))) <* ")")
-                            <|> `<con-id>`)
+```scala mdoc:nest:silent
+lazy val `<pat-naked>`: Parsley[PatNaked] =
+    ( `<var-id>` | atomic(`<pat-con>`)
+    | (UnitCon from "()") | (NilCon from "[]") | `<literal>` | (Wild from "_")
+    | NestedPatOrPatTuple("(" ~> sepBy1(`<pat>`, ",") <~ ")")
+    | PatList("[" ~> sepBy(`<pat>`, ",") <~ "]")
+    )
+lazy val `<pat-paren>` = atomic(`<pat-app>`) | `<pat-naked>`
+lazy val `<pat-app>` = PatApp(`<pat-con>`, some(`<pat-naked>`))
+lazy val `<pat-con>` = ( "(" ~> ((ConsCon from ":") | TupleCon(count1(","))) <~ ")"
+                       | `<con-id>`
+                       )
+```
+```scala mdoc:invisible
+val _ = `<pat-paren>`: @unused
 ```
 
 I've omitted the `<pat>` rule here, since it's not relevant. Right, so the interaction of these rules
@@ -945,6 +925,13 @@ at the cost of increased code size; in this case, in fact, the backtracking is l
 character, which is relatively cheap, _and_ the size of the rule is small, so inlining it will not
 increase the code size significantly. It doesn't really matter either way what we do, so let's
 reinforce our factoring skills and duplicate the code to eliminate the `atomic`!
+
+@:callout(warning)
+Below this point has not been properly ported over to the new wiki yet, it's
+likely that it's fine, but might have errors!
+
+It uses the old "best style" for writing `parsley`.
+@:@
 
 ```scala
 private lazy val `<pat-naked>`: Parsley[PatNaked] =
@@ -1203,356 +1190,4 @@ In this (rather long) page, we've explored the implementation of an entire parse
 Haskell from _scratch_. We've also seen a few techniques for factoring out common branches of the
 parser and applied everything we've learnt so far to a real example. We are going to come back to
 this parser later in the series: we've got to add better error messages, and deal with Haskell's
-indentation-sensitive off-side rule! Here's the full source post-optimisation of the parser, lexer,
-and AST.
-
-@:format(html)
-<details>
-<summary>The final source code</summary>
-<p>
-@:@
-
-```scala
-import parsley.Parsley
-import scala.language.implicitConversions
-
-object genericbridges {
-    import parsley.implicits.zipped.{Zipped2, Zipped3}
-    trait ParserSingletonBridge[+A] {
-        def con: A
-        def <#(op: =>Parsley[_]): Parsley[A] = op #> con
-    }
-
-    trait ParserBridge0[R] extends ParserSingletonBridge[R] { this: R =>
-        final override def con: R = this
-    }
-
-    trait ParserBridge1[-A, +B] extends ParserSingletonBridge[A => B] {
-        def apply(x: A): B
-        def apply(x: =>Parsley[A]): Parsley[B] = x.map(this.con)
-        override final def con: A => B = this.apply(_)
-    }
-
-    trait ParserBridge2[-A, -B, +C] extends ParserSingletonBridge[(A, B) => C] {
-        def apply(x: A, y: B): C
-        def apply(x: =>Parsley[A], y: =>Parsley[B]): Parsley[C] = (x, y).zipped(this.con)
-        override final def con: (A, B) => C = this.apply(_, _)
-    }
-
-    trait ParserBridge3[-A, -B, -C, +D] extends ParserSingletonBridge[(A, B, C) => D] {
-        def apply(x: A, y: B, z: C): D
-        def apply(x: =>Parsley[A], y: =>Parsley[B], z: =>Parsley[C]): Parsley[D] = (x, y, z).zipped(this.con)
-        override final def con: (A, B, C) => D = this.apply(_, _, _)
-    }
-}
-
-object ast {
-    import genericbridges._
-    case class HaskellProgram(lines: List[ProgramUnit])
-    sealed trait ProgramUnit
-    case class Data(id: ConId, tys: List[VarId], cons: List[Con]) extends ProgramUnit
-    case class Con(id: ConId, tys: List[TyAtom])
-
-    case class Decl(id: VarId, ty: Type) extends ProgramUnit
-
-    case class Clause(id: VarId, pats: List[PatNaked], guard: Option[Expr], rhs: Expr) extends ProgramUnit
-    sealed trait Pat
-    case class PatCons(x: PatParen, xs: Pat) extends Pat
-    sealed trait PatParen extends Pat
-    case class PatApp(con: PatCon, args: List[PatNaked]) extends PatParen
-    sealed trait PatNaked extends PatParen
-    case object NilCon extends PatNaked with ParserBridge0[PatNaked]
-    case object Wild extends PatNaked with ParserBridge0[PatNaked]
-    case class NestedPat(pat: Pat) extends PatNaked
-    case class PatTuple(xs: List[Pat]) extends PatNaked
-    case class PatList(xs: List[Pat]) extends PatNaked
-    sealed trait PatCon extends PatNaked
-    case object ConsCon extends PatCon with ParserBridge0[PatCon]
-
-    sealed trait Type
-    case class FunTy(argTy: Type_, resTy: Type) extends Type
-    sealed trait Type_ extends Type
-    case class TyApp(tyF: Type_, tyX: TyAtom) extends Type_
-    sealed trait TyAtom extends Type_
-    case object UnitTy extends TyAtom with ParserBridge0[TyAtom]
-    case class ListTy(ty: Type) extends TyAtom
-    case class TupleTy(tys: List[Type]) extends TyAtom
-    // This is needed if we want to maximise the well-typedness of the parser
-    // For a parser as big as this one, it's definitely desirable: we can always
-    // weaken the types later if we want to!
-    case class ParenTy(ty: Type) extends TyAtom
-    case object ListConTy extends TyAtom with ParserBridge0[TyAtom]
-    case object FunConTy extends TyAtom with ParserBridge0[TyAtom]
-    case class TupleConTy(arity: Int) extends TyAtom
-
-    // We'll model this layer by layer, to maximise the flexiblity whilst maintaining
-    // The type safety: by using subtyping, we can avoid useless wrapper constructors
-    sealed trait Expr
-    case class WeakApp(f: Expr, arg: Expr1) extends Expr
-    sealed trait Expr1 extends Expr
-    case class Or(x: Expr2, y: Expr1) extends Expr1
-    sealed trait Expr2 extends Expr1
-    case class And(x: Expr3, y: Expr2) extends Expr2
-    sealed trait Expr3 extends Expr2
-    // We could certainly compress this by factoring out the op!
-    // Notice that these operators have Expr4 on both sides: this implies they are
-    // not left _or_ right associative! x < y < z is not legal in Haskell
-    case class Less(x: Expr4, y: Expr4) extends Expr3
-    case class LessEqual(x: Expr4, y: Expr4) extends Expr3
-    case class Greater(x: Expr4, y: Expr4) extends Expr3
-    case class GreaterEqual(x: Expr4, y: Expr4) extends Expr3
-    case class Equal(x: Expr4, y: Expr4) extends Expr3
-    case class NotEqual(x: Expr4, y: Expr4) extends Expr3
-    sealed trait Expr4 extends Expr3
-    case class Cons(x: Expr5, xs: Expr4) extends Expr4
-    case class Append(xs: Expr5, ys: Expr4) extends Expr4
-    sealed trait Expr5 extends Expr4
-    case class Add(x: Expr5, y: Expr6) extends Expr5
-    case class Sub(x: Expr5, y: Expr6) extends Expr5
-    sealed trait Expr6 extends Expr5
-    case class Negate(x: Expr6) extends Expr6
-    sealed trait Expr7 extends Expr6
-    case class Mul(x: Expr7, y: Expr8) extends Expr7
-    case class Div(x: Expr7, y: Expr8) extends Expr7
-    sealed trait Expr8 extends Expr7
-    case class Exp(x: Expr9, y: Expr8) extends Expr8
-    sealed trait Expr9 extends Expr8
-    case class Comp(f: Expr10, g: Expr9) extends Expr9
-    sealed trait Expr10 extends Expr9
-    case class Lam(args: List[Pat], body: Expr) extends Expr10
-    case class Let(binding: Clause, in: Expr) extends Expr10
-    case class If(cond: Expr, thenExpr: Expr, elseExpr: Expr) extends Expr10
-    case class Case(scrutinee: Expr, cases: List[Alt]) extends Expr10
-    case class Alt(pat: Pat, body: Expr)
-    sealed trait Expr10_ extends Expr10
-    case class StrongApp(f: Expr10_, arg: Term) extends Expr10_
-
-    sealed trait Term extends Expr10_
-    case class ConId(v: String) extends Term with PatCon with TyAtom
-    case class VarId(v: String) extends Term with PatNaked with TyAtom
-    case object UnitCon extends Term with PatNaked with ParserBridge0[Term with PatNaked]
-    case class TupleCon(arity: Int) extends Term with PatCon
-    case class ParensVal(x: Expr) extends Term
-    case class TupleLit(xs: List[Expr]) extends Term
-    case class ListLit(xs: List[Expr]) extends Term
-
-    trait Literal extends Term with PatNaked
-    case class HsInt(x: BigInt) extends Literal
-    case class HsString(s: String) extends Literal
-    case class HsChar(c: Int) extends Literal
-    case class HsDouble(x: BigDecimal) extends Literal
-
-    // Bridges
-    object WeakApp extends ParserBridge2[Expr, Expr1, Expr]
-    object Or extends ParserBridge2[Expr2, Expr1, Expr1]
-    object And extends ParserBridge2[Expr3, Expr2, Expr2]
-    object Less extends ParserBridge2[Expr4, Expr4, Expr3]
-    object LessEqual extends ParserBridge2[Expr4, Expr4, Expr3]
-    object Greater extends ParserBridge2[Expr4, Expr4, Expr3]
-    object GreaterEqual extends ParserBridge2[Expr4, Expr4, Expr3]
-    object Equal extends ParserBridge2[Expr4, Expr4, Expr3]
-    object NotEqual extends ParserBridge2[Expr4, Expr4, Expr3]
-    object Cons extends ParserBridge2[Expr5, Expr4, Expr4]
-    object Append extends ParserBridge2[Expr5, Expr4, Expr4]
-    object Add extends ParserBridge2[Expr5, Expr6, Expr5]
-    object Sub extends ParserBridge2[Expr5, Expr6, Expr5]
-    object Negate extends ParserBridge1[Expr6, Expr6]
-    object Mul extends ParserBridge2[Expr7, Expr8, Expr7]
-    object Div extends ParserBridge2[Expr7, Expr8, Expr7]
-    object Exp extends ParserBridge2[Expr9, Expr8, Expr8]
-    object Comp extends ParserBridge2[Expr10, Expr9, Expr9]
-
-    object FunTy extends ParserBridge2[Type_, Type, Type]
-
-    object Lam extends ParserBridge2[List[Pat], Expr, Lam]
-    object Let extends ParserBridge2[Clause, Expr, Let]
-    object If extends ParserBridge3[Expr, Expr, Expr, If]
-    object Case extends ParserBridge2[Expr, List[Alt], Case]
-    object Alt extends ParserBridge2[Pat, Expr, Alt]
-    object ConId extends ParserBridge1[String, ConId]
-    object VarId extends ParserBridge1[String, VarId]
-    object TupleCon extends ParserBridge1[Int, TupleCon]
-    object ListLit extends ParserBridge1[List[Expr], ListLit]
-    object HsString extends ParserBridge1[String, HsString]
-    object HsChar extends ParserBridge1[Int, HsChar]
-    object Data extends ParserBridge3[ConId, List[VarId], List[Con], Data]
-    object Con extends ParserBridge2[ConId, List[TyAtom], Con]
-    object Decl extends ParserBridge1[Type, VarId => Decl] {
-        def apply(ty: Type): VarId => Decl = Decl(_, ty)
-    }
-    object Clause extends ParserBridge3[List[PatNaked], Option[Expr], Expr, VarId => Clause] {
-        def apply(pats: List[PatNaked], guard: Option[Expr], rhs: Expr): VarId => Clause = Clause(_, pats, guard, rhs)
-    }
-    object PatCons extends ParserBridge2[PatParen, Pat, Pat]
-    object PatList extends ParserBridge1[List[Pat], PatList]
-    object TupleConTy extends ParserBridge1[Int, TupleConTy]
-    object ListTy extends ParserBridge1[Type, ListTy]
-
-    object NestedPatOrPatTuple extends ParserBridge1[List[Pat], PatNaked] {
-        def apply(ps: List[Pat]): PatNaked = ps match {
-            case List(p) => NestedPat(p)
-            case ps => PatTuple(ps)
-        }
-    }
-
-    object ParenTyOrTupleTy extends ParserBridge1[List[Type], TyAtom] {
-        def apply(tys: List[Type]): TyAtom = tys match {
-            case List(ty) => ParenTy(ty)
-            case tys => TupleTy(tys)
-        }
-    }
-
-    object TupleLitOrParensVal extends ParserBridge1[List[Expr], Term] {
-        def apply(xs: List[Expr]): Term = xs match {
-            case List(x) => ParensVal(x)
-            case xs => TupleLit(xs)
-        }
-    }
-
-    object HsIntOrDouble extends ParserBridge1[Either[BigInt, BigDecimal], Literal] {
-        def apply(x: Either[BigInt, BigDecimal]): Literal = x.fold(HsInt, HsDouble)
-    }
-
-    object PatAppIfNonEmpty extends ParserBridge2[PatCon, List[PatNaked], PatParen] {
-        def apply(con: PatCon, args: List[PatNaked]): PatParen = args match {
-            case Nil => con
-            case args => PatApp(con, args)
-        }
-    }
-}
-
-object lexer {
-    import parsley.token.Lexer
-    import parsley.token.descriptions.{LexicalDesc, NameDesc, SymbolDesc, SpaceDesc, numeric, text}
-    import parsley.token.predicate.{Unicode, Basic}
-    import parsley.character.newline
-    private val haskellDesc = LexicalDesc(
-        NameDesc.plain.copy(
-            identifierStart = Unicode(c => Character.isLetter(c) || c == '_'),
-            identifierLetter = Unicode(c => Character.isLetterOrDigit(c) || c == '_' || c == '\''),
-        ),
-        SymbolDesc.plain.copy(
-            hardKeywords = Set("if", "then", "else", "data", "where", "let", "in", "case", "of"),
-            hardOperators = Set("$", "||", "&&", "<", "<=", ">", ">=", "==", "/=", ":", "++", "+", "-", "*", "/", "^", "."),
-        ),
-        numeric.NumericDesc.plain.copy(
-            octalExponentDesc = numeric.ExponentDesc.NoExponents,
-            binaryExponentDesc = numeric.ExponentDesc.NoExponents,
-        ),
-        text.TextDesc.plain.copy(
-            escapeSequences = text.EscapeDesc.haskell,
-        ),
-        SpaceDesc.plain.copy(
-            commentStart = "{-",
-            commentEnd = "-}",
-            commentLine = "--",
-            nestedComments = true,
-            space = Basic(c => c == ' ' || c == '\t'),
-        )
-    )
-
-    private val lexer = new Lexer(haskellDesc)
-
-    val CON_ID = lexer.lexeme.names.identifier(Basic(_.isUpper))
-    val VAR_ID = lexer.lexeme.names.identifier(Basic(_.isLower))
-    val INT_OR_FLOAT = lexer.lexeme.numeric.unsignedCombined.number
-    // Strictly speaking, Haskell files are probably encoded as UTF-8, but this
-    // is not supported by Parsley _yet_
-    val STRING = lexer.lexeme.text.string.fullUtf16
-    val CHAR = lexer.lexeme.text.character.fullUtf16
-
-    val NEWLINE = lexer.lexeme(newline).void
-
-    def fully[A](p: Parsley[A]) = lexer.fully(p)
-
-    val implicits = lexer.lexeme.symbol.implicits
-}
-
-object parser {
-    import lexer._
-    import implicits.implicitSymbol
-    import ast._
-    import parsley.Parsley.atomic
-    import parsley.combinator.{sepBy, sepBy1, many, some, option, skipMany, skipSome, sepEndBy}
-    import parsley.expr.{precedence, InfixL, InfixR, Prefix, InfixN, SOps, Atoms, chain}
-    import parsley.errors.ErrorBuilder
-    import parsley.Result
-
-    private def count1(p: =>Parsley[_]): Parsley[Int] = p.foldLeft1(0)((n, _) => n + 1)
-
-    def parse[Err: ErrorBuilder](input: String): Result[Err, List[ProgramUnit]] = `<program>`.parse(input)
-
-    private val `<literal>` = HsIntOrDouble(INT_OR_FLOAT) <|> HsString(STRING) <|> HsChar(CHAR)
-    private val `<var-id>` = VarId(VAR_ID)
-    private val `<con-id>` = ConId(CON_ID)
-
-    private lazy val `<program>` = fully(sepEndBy(`<data>` <|> `<decl-or-clause>`, skipSome(NEWLINE)))
-
-    private lazy val `<data>` = Data("data" *> `<con-id>`, many(`<var-id>`), "=" *> `<constructors>`)
-    private lazy val `<constructors>` = sepBy1(`<constructor>`, "|")
-    private lazy val `<constructor>` = Con(`<con-id>`, many(`<type-atom>`))
-
-    private lazy val `<decl-or-clause>` = `<var-id>` <**> (`<declaration>` <|> `<partial-clause>`)
-    private lazy val `<declaration>` = Decl("::" *> `<type>`)
-    private lazy val `<clause>` = `<var-id>` <**> `<partial-clause>`
-    private lazy val `<partial-clause>` = Clause(many(`<pat-naked>`), option(`<guard>`), "=" *> `<expr>`)
-    private lazy val `<pat-naked>` = `<pat-con>` <|> `<pat-naked'>`
-    private lazy val `<pat-naked'>`: Parsley[PatNaked] =
-            (`<var-id>` <|> (UnitCon <# "()") <|> (NilCon <# "[]") <|> `<literal>` <|> (Wild <# "_")
-        <|> NestedPatOrPatTuple("(" *> sepBy1(`<pat>`, ",") <* ")")
-        <|> PatList("[" *> sepBy(`<pat>`, ",") <* "]"))
-    private lazy val `<pat>` = chain.right1(`<pat-paren>`, PatCons <# ":")
-    private lazy val `<pat-paren>` = `<pat-app>` <|> `<pat-naked'>`
-    private lazy val `<pat-app>` = PatAppIfNonEmpty(`<pat-con>`, many(`<pat-naked>`))
-    private lazy val `<pat-con>` = ((atomic("(" *> (ConsCon <# ":"
-                                                 <|> TupleCon(count1(",")))) <* ")")
-                                <|> `<con-id>`)
-
-    private lazy val `<guard>` = "|" *> `<expr>`
-
-    private lazy val `<type>`: Parsley[Type] = chain.right1(`<type-app>`, FunTy <# "->")
-    private lazy val `<type-app>` = `<type-atom>`.reduceLeft(TyApp)
-    private lazy val `<type-atom>` =
-           (`<con-id>` <|> `<var-id>`
-        <|> (UnitTy <# "()") <|> (ListConTy <# "[]")
-        <|> ListTy("[" *> `<type>` <* "]")
-        <|> ("(" *> (FunConTy <# "->"
-                <|> TupleConTy(count1(","))
-                <|> ParenTyOrTupleTy(sepBy1(`<type>`, ","))) <* ")"))
-
-    private lazy val `<expr>`: Parsley[Expr] =
-        precedence(SOps(InfixL)(WeakApp   <# "$") +:
-                   SOps(InfixR)(Or        <# "||") +:
-                   SOps(InfixR)(And       <# "&&") +:
-                   SOps(InfixN)(Less    <# "<",  LessEqual    <# "<=",
-                                Greater <# ">",  GreaterEqual <# ">=",
-                                Equal   <# "==", NotEqual     <# "/=") +:
-                   SOps(InfixR)(Cons      <# ":",  Append       <# "++") +:
-                   SOps(InfixL)(Add       <# "+",  Sub          <# "-") +:
-                   SOps(Prefix)(Negate    <# "-") +:
-                   SOps(InfixL)(Mul       <# "*",  Div          <# "/") +:
-                   SOps(InfixR)(Exp       <# "^") +:
-                   SOps(InfixR)(Comp      <# ".") +:
-                   `<expr-10>`)
-
-    private lazy val `<expr-10>` = Atoms(
-        Lam("\\" *> some(`<pat-naked>`), "->" *> `<expr>`),
-        Let("let" *> `<clause>`, "in" *> `<expr>`),
-        If("if" *> `<expr>`, "then" *> `<expr>`, "else" *> `<expr>`),
-        Case("case" *> `<expr>`, "of" *> "{" *> sepBy1(`<alt>`, (";" <|> NEWLINE) <* skipMany(NEWLINE)) <* "}"),
-        `<func-app>`)
-
-    private val `<alt>` = Alt(`<pat>`, "->" *> `<expr>`)
-    private lazy val `<func-app>` = `<term>`.reduceLeft(StrongApp)
-
-    private val `<term>` = (`<var-id>` <|> `<con-id>` <|> (UnitCon <# "()")
-                        <|> ("(" *> (TupleCon(count1(","))
-                                 <|> TupleLitOrParensVal(sepBy1(`<expr>`, ","))) <* ")")
-                        <|> ListLit("[" *> sepBy(`<expr>`, ",") <* "]")
-                        <|> `<literal>`)
-}
-```
-@:format(html)
-</p>
-</details>
-@:@
+indentation-sensitive off-side rule!
