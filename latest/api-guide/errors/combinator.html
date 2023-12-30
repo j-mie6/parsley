@@ -306,7 +306,7 @@
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="type-name">ErrorMethods</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">digit</span><span> = </span><span class="identifier">satisfy</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">isDigit</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;digit&quot;</span><span>)
-</span><span class="comment">// digit: parsley.Parsley[Char] = parsley.Parsley@773dd92b
+</span><span class="comment">// digit: parsley.Parsley[Char] = parsley.Parsley@5a10331
 </span><span class="identifier">digit</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;a&quot;</span><span>)
 </span><span class="comment">// res9: parsley.Result[String, Char] = Failure((line 1, column 1):
 //   unexpected &quot;a&quot;
@@ -324,7 +324,7 @@
         error message properly lines up with the point the input was at when it
         entered the combinator - otherwise, the label may be inaccurate. For example:</p>
         <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">twoDigits</span><span> = (</span><span class="identifier">digit</span><span> *&gt; </span><span class="identifier">digit</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;two digits&quot;</span><span>)
-</span><span class="comment">// twoDigits: parsley.Parsley[Char] = parsley.Parsley@62895382
+</span><span class="comment">// twoDigits: parsley.Parsley[Char] = parsley.Parsley@15077125
 </span><span class="identifier">twoDigits</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;a&quot;</span><span>)
 </span><span class="comment">// res10: parsley.Result[String, Char] = Failure((line 1, column 1):
 //   unexpected &quot;a&quot;
@@ -440,6 +440,14 @@
         parts of a parser should be repositioned. The <code>entrench</code> combinator
         protects errors from within its scope from being amended, and
         <code>dislodge</code> undoes that protection.</p>
+        <p>This can be useful if you want an error to be able to <em>dominate</em> another one, and then be amended
+        afterwards, without affecting the original error. This normally has the following pattern:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="identifier">amendThenDislodge</span><span>(</span><span class="number-literal">1</span><span>) {
+    </span><span class="identifier">entrench</span><span>(</span><span class="identifier">q</span><span>) | </span><span class="identifier">r</span><span>
+}</span></code></pre>
+        <p>In this example, we believe that <code>r</code> will produce errors deeper than <code>q</code>s, but after it discards
+        <code>q</code>s message should be reset to an earier point. On the other hand, <code>q</code> is protected from the initial
+        amendment, but then is free to be amended again after the <code>dislodge</code> has removed the protection.</p>
         
         <h3 id="the-markastoken-combinator" class="section"><a class="anchor-link left" href="#the-markastoken-combinator"><i class="icofont-laika link">&#xef71;</i></a>The <code>markAsToken</code> Combinator</h3>
         <p>The <code>markAsToken</code> combinator will assign the &quot;lexical&quot; property to any error messages that happen within its scope at a <em>deeper</em> position than the combinator
