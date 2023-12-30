@@ -228,6 +228,19 @@ parts of a parser should be repositioned. The `entrench` combinator
 protects errors from within its scope from being amended, and
 `dislodge` undoes that protection.
 
+This can be useful if you want an error to be able to *dominate* another one, and then be amended
+afterwards, without affecting the original error. This normally has the following pattern:
+
+```scala
+val p = amendThenDislodge(1) {
+    entrench(q) | r
+}
+```
+
+In this example, we believe that `r` will produce errors deeper than `q`s, but after it discards
+`q`s message should be reset to an earier point. On the other hand, `q` is protected from the initial
+amendment, but then is free to be amended again after the `dislodge` has removed the protection.
+
 ### The `markAsToken` Combinator
 The `markAsToken` combinator will assign the "lexical" property to any error messages that happen within its scope at a *deeper* position than the combinator
 began at. This is fed forward onto the `unexpectedToken` method of the `ErrorBuilder`: more about this in [lexical extraction][Token Extraction in `ErrorBuilder`].

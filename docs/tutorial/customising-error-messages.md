@@ -85,7 +85,7 @@ expressions.parse("5 d")
 
 Neat, so this time round `digit` is no longer a valid alternative: clearly the number has come to
 an end because we wrote a space. But the other possibilities from before are still valid. So, how
-can we start making improvements? There are seven combinators available to us for this purpose:
+can we start making improvements? There are seven core combinators available to us for this purpose:
 
 * `.label` or `?` is the most common combinator you'll be using. It influences the way an _expected_
   behaves for the parser it annotates. Importantly, if the parser it is annotating failed _and_
