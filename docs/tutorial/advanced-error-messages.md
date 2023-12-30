@@ -1,11 +1,6 @@
 # Advanced Error Messages
-
-@:callout(info)
-This page is still being updated for the wiki port, so some things may be a bit broken or look a little strange.
-@:@
-
-@:callout(warning)
-_This page is out-of-date, and describes the situation in `parsley-3.x.y` and not `parsley-4.0.0`. Much of the content remains the same, but some individual things may be incorrect._
+@:callout(error)
+*This page is **very** out-of-date, and describes the situation in `parsley-3.x.y` and not `parsley-@VERSION@`. The page needs an entire rewrite.*
 @:@
 
 Previously, we saw the most basic approach to improving error messages: `.label` and `.explain`.
@@ -27,23 +22,26 @@ fine grained error messages.
 
 ## Using `amend` and `entrench`
 I'm going to start by introducing this dynamic duo, as they can be very useful in the right
-circumstances. In fact, let's revisit the `identifier` parser we made when we did _Effective Lexing_:
+circumstances. In fact, let's revisit the `identifier` parser we made when we did [Effective Lexing]:
 
-```scala
-object lexer {
-    private val keywords = Set("while", "then", "else")
+```scala mdoc:invisible
+import parsley.Parsley, Parsley.atomic
+import parsley.character.letter
+import parsley.combinator.some
+import parsley.errors.combinator._
 
-    private def lexeme[A](p: Parsley[A]): Parsley[A] = p <* skipWhitespace
-    private def token[A](p: Parsley[A]): Parsley[A] = lexeme(atomic(p))
+def token[A](p: Parsley[A]) = atomic(p)
 
-    val identifier =
-        token {
-            some(alphaNum).map(_.mkString).filterOut {
-                case v if keywords(v) =>
-                    s"keyword $v may not be used as an identifier"
-            }
-        }.label("identifier")
-}
+```
+```scala mdoc:silent
+val keywords = Set("while", "then", "else")
+
+val identifier = token {
+    some(letter).map(_.mkString).filterOut {
+        case v if keywords(v) =>
+            s"keyword $v may not be used as an identifier"
+    }
+}.label("identifier")
 ```
 
 To recap, the idea behind this parser is that it first reads some alpha-numeric characters, then
@@ -52,14 +50,8 @@ The `atomic` is wrapped round that entire block so that, if we did read a keywor
 backtrack out in case the keyword was indeed valid (for another branch). After we are done we can
 read whitespace. This time, let's take a look at the error messages when it goes wrong:
 
-```
-lexer.identifier.parse("then")
-(line 1, column 5):
-  unexpected end of input
-  expected identifier
-  keyword then may not be used as an identifier
-  >then
-       ^
+```scala mdoc:to-string
+identifier.parse("then")
 ```
 
 Cool! But there is something bugging me about this message. It's pointing at column 5, but since we
