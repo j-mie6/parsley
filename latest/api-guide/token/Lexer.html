@@ -177,10 +177,10 @@
         objects: <code>lexeme</code> and <code>nonlexeme</code>. Broadly speaking, everything within <code>nonlexeme</code> can be
         found inside <code>lexeme</code>, but not the other way around. The name &quot;lexeme&quot; is not an amazing one
         terminology wise, but there is a historical precedent set by <code>parsec</code>.</p>
-        <p><span class="paragraph"> Non-lexeme things </span> 
+        <p><span class="paragraph"> Non-lexeme things </span>
         A non-lexeme thing does not care about whitespace: these are raw tokens. It is highly likely that
         you wouldn&#39;t want to use these in a regular parser, but they may be handy for <strong>custom error handling</strong>
-        or <strong>building composite tokens</strong>.</p>
+        or <a href="../errors/tokenextractors.html"><strong>building composite tokens</strong></a>.</p>
         <p><span class="paragraph"> Lexeme things </span>
         These do account for whitespace that occurs <em>after</em> a token, consuming everything up until the
         next token. This means there are some extra pieces of functionality available that don&#39;t make much
@@ -312,7 +312,7 @@
         and <code>345</code>. For <code>signed</code>, each of these may be preceded by a <code>+</code> sign, but this is not <em>required</em>; if <code>positiveSign</code> is set to <code>PlusSignPresence.Compulsory</code>, positive literals would always require a <code>+</code>; and if it is set to <code>PlusSignPrecense.Illegal</code>, the <code>+</code> prefix can never be used (but <code>-</code> is fine regardless). By default, <code>023</code> is legal, but this can be
         disabled by setting <code>leadingZerosAllowed</code> to <code>false</code>.</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">num</span><span> = </span><span class="identifier">lexer</span><span>.</span><span class="identifier">lexeme</span><span>.</span><span class="identifier">numeric</span><span>.</span><span class="identifier">signed</span><span>.</span><span class="identifier">number</span><span>
-</span><span class="comment">// num: parsley.Parsley[BigInt] = parsley.Parsley@703f0e2a
+</span><span class="comment">// num: parsley.Parsley[BigInt] = parsley.Parsley@5cd2d26a
 </span><span class="identifier">num</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;0&quot;</span><span>)
 </span><span class="comment">// res0: parsley.Result[String, BigInt] = Success(x = 0)
 </span><span class="identifier">num</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;0xff&quot;</span><span>)
@@ -329,9 +329,9 @@
         </span><span class="identifier">numericDesc</span><span> = </span><span class="type-name">NumericDesc</span><span>.</span><span class="identifier">plain</span><span>.</span><span class="identifier">copy</span><span>(
             </span><span class="identifier">literalBreakChar</span><span> = </span><span class="type-name">BreakCharDesc</span><span>.</span><span class="type-name">Supported</span><span>(</span><span class="char-literal">&#39;_&#39;</span><span>, </span><span class="identifier">allowedAfterNonDecimalPrefix</span><span> = </span><span class="boolean-literal">true</span><span>))
     ))
-</span><span class="comment">// lexerWithBreak: Lexer = parsley.token.Lexer@282edd3
+</span><span class="comment">// lexerWithBreak: Lexer = parsley.token.Lexer@64497692
 </span><span class="keyword">val</span><span> </span><span class="identifier">withBreak</span><span> = </span><span class="identifier">lexerWithBreak</span><span>.</span><span class="identifier">lexeme</span><span>.</span><span class="identifier">numeric</span><span>.</span><span class="identifier">signed</span><span>.</span><span class="identifier">number</span><span>
-</span><span class="comment">// withBreak: parsley.Parsley[BigInt] = parsley.Parsley@19f49ef9
+</span><span class="comment">// withBreak: parsley.Parsley[BigInt] = parsley.Parsley@2fa50823
 </span><span class="identifier">withBreak</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;1_000&quot;</span><span>)
 </span><span class="comment">// res4: parsley.Result[String, BigInt] = Success(x = 1000)
 </span><span class="identifier">withBreak</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;1_&quot;</span><span>)
@@ -352,7 +352,7 @@
         <code>2^0</code> in the previous example; for decimal it is set to the usual <code>10</code>, so that <code>2e3</code> is <code>2*10^3</code>, or <code>2000</code>. Notice that literals do not <em>require</em> a point, so long as they do have
         an exponent.</p>
         <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">real</span><span> = </span><span class="identifier">lexer</span><span>.</span><span class="identifier">lexeme</span><span>.</span><span class="identifier">numeric</span><span>.</span><span class="identifier">real</span><span>
-</span><span class="comment">// real: parsley.token.numeric.Real = parsley.token.numeric.LexemeReal@1a78f573
+</span><span class="comment">// real: parsley.token.numeric.Real = parsley.token.numeric.LexemeReal@6c5298a5
 </span><span class="identifier">real</span><span>.</span><span class="identifier">hexadecimalDouble</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;0x3.142&quot;</span><span>)
 </span><span class="comment">// res7: parsley.Result[String, Double] = Failure(
 // ...
@@ -433,7 +433,8 @@
         generated:</p>
         <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">aboveSpace</span><span> = </span><span class="identifier">predicate</span><span>.</span><span class="type-name">Unicode</span><span>(</span><span class="identifier">_</span><span> &gt;= </span><span class="number-literal">0x20</span><span>)
 </span><span class="comment">// aboveSpace: predicate.Unicode = Unicode(&lt;function1&gt;)
-</span><span class="keyword">def</span><span> </span><span class="declaration-name">stringParsers</span><span>(</span><span class="identifier">graphicChar</span><span>: </span><span class="type-name">CharPredicate</span><span> = </span><span class="identifier">aboveSpace</span><span>, </span><span class="identifier">escapeDesc</span><span>: </span><span class="type-name">EscapeDesc</span><span> = </span><span class="type-name">EscapeDesc</span><span>.</span><span class="identifier">plain</span><span>) =
+</span><span class="keyword">def</span><span> </span><span class="declaration-name">stringParsers</span><span>(</span><span class="identifier">graphicChar</span><span>: </span><span class="type-name">CharPredicate</span><span> = </span><span class="identifier">aboveSpace</span><span>,
+                  </span><span class="identifier">escapeDesc</span><span>: </span><span class="type-name">EscapeDesc</span><span> = </span><span class="type-name">EscapeDesc</span><span>.</span><span class="identifier">plain</span><span>) =
     </span><span class="keyword">new</span><span> </span><span class="type-name">Lexer</span><span>(</span><span class="type-name">LexicalDesc</span><span>.</span><span class="identifier">plain</span><span>.</span><span class="identifier">copy</span><span>(
         </span><span class="identifier">textDesc</span><span> = </span><span class="type-name">TextDesc</span><span>.</span><span class="identifier">plain</span><span>.</span><span class="identifier">copy</span><span>(
             </span><span class="identifier">escapeSequences</span><span> = </span><span class="identifier">escapeDesc</span><span>,
@@ -442,9 +443,9 @@
     )).</span><span class="identifier">nonlexeme</span><span>.</span><span class="identifier">text</span><span>.</span><span class="identifier">string</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">fullUnicode</span><span> = </span><span class="identifier">stringParsers</span><span>(</span><span class="identifier">aboveSpace</span><span>)
-</span><span class="comment">// fullUnicode: parsley.token.text.String = parsley.token.text.ConcreteString@24ba4fcf
+</span><span class="comment">// fullUnicode: parsley.token.text.String = parsley.token.text.ConcreteString@49a53da2
 </span><span class="keyword">val</span><span> </span><span class="identifier">latin1Limited</span><span> = </span><span class="identifier">stringParsers</span><span>(</span><span class="identifier">predicate</span><span>.</span><span class="type-name">Basic</span><span>(</span><span class="identifier">c</span><span> =&gt; </span><span class="identifier">c</span><span> &gt;= </span><span class="number-literal">0x20</span><span> &amp;&amp; </span><span class="identifier">c</span><span> &lt;= </span><span class="number-literal">0xcf</span><span>))
-</span><span class="comment">// latin1Limited: parsley.token.text.String = parsley.token.text.ConcreteString@34c8622a
+</span><span class="comment">// latin1Limited: parsley.token.text.String = parsley.token.text.ConcreteString@6adb6a88
 </span><span>
 </span><span class="identifier">fullUnicode</span><span>.</span><span class="identifier">latin1</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;</span><span class="escape-sequence">\&quot;</span><span class="string-literal">hello α</span><span class="escape-sequence">\&quot;</span><span class="string-literal">&quot;</span><span>)
 </span><span class="comment">// res13: parsley.Result[String, String] = Failure((line 1, column 2):
@@ -518,7 +519,7 @@
         terminated by another backslash (this can include newlines, even in otherwise
         single-line strings). As an example:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">withGaps</span><span> = </span><span class="identifier">stringParsers</span><span>(</span><span class="identifier">escapeDesc</span><span> = </span><span class="type-name">EscapeDesc</span><span>.</span><span class="identifier">plain</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">gapsSupported</span><span> = </span><span class="boolean-literal">true</span><span>))
-</span><span class="comment">// withGaps: parsley.token.text.String = parsley.token.text.ConcreteString@277fdc8f
+</span><span class="comment">// withGaps: parsley.token.text.String = parsley.token.text.ConcreteString@7ce4e59
 </span><span class="identifier">withGaps</span><span>.</span><span class="identifier">ascii</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;&quot;&quot;&quot;Hello \
 
       \World!&quot; &quot;&quot;&quot;</span><span>)

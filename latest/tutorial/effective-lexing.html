@@ -353,7 +353,8 @@
         }
     }
 
-    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">keyword</span><span>(</span><span class="identifier">k</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">token</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">k</span><span>) ~&gt; </span><span class="identifier">notFollowedBy</span><span>(</span><span class="identifier">letter</span><span>))
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">keyword</span><span>(</span><span class="identifier">k</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] =
+        </span><span class="identifier">token</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">k</span><span>) ~&gt; </span><span class="identifier">notFollowedBy</span><span>(</span><span class="identifier">letter</span><span>))
 
 
     </span><span class="keyword">object</span><span> </span><span class="identifier">implicits</span><span> {

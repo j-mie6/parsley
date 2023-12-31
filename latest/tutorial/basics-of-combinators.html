@@ -530,10 +530,10 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">debug</span><span>.</span><span class="identifier">_</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> | </span><span class="identifier">atomic</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>) | </span><span class="string-literal">&quot;dead&quot;</span><span>
-</span><span class="comment">// p: Parsley[String] = parsley.Parsley@171630
+</span><span class="comment">// p: Parsley[String] = parsley.Parsley@29074713
 </span><span class="keyword">val</span><span> </span><span class="identifier">q</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> | (</span><span class="identifier">atomic</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading def&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;backtrack!&quot;</span><span>) |
                    </span><span class="string-literal">&quot;dead&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading dead&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;branch&quot;</span><span>)
-</span><span class="comment">// q: Parsley[String] = parsley.Parsley@713f47
+</span><span class="comment">// q: Parsley[String] = parsley.Parsley@f1eadf6
 </span><span>
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;dead&quot;</span><span>)
 </span><span class="comment">// res37: parsley.Result[String, String] = Success(dead)
@@ -581,9 +581,9 @@
 // def notFollowedBy(p: Parsley[_]): Parsley[Unit]
 </span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">eof</span><span> = </span><span class="identifier">notFollowedBy</span><span>(</span><span class="identifier">item</span><span>)
-</span><span class="comment">// eof: Parsley[Unit] = parsley.Parsley@5a4d15f4
+</span><span class="comment">// eof: Parsley[Unit] = parsley.Parsley@194dcdc4
 </span><span class="keyword">val</span><span> </span><span class="identifier">abcOnly</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> &lt;~ </span><span class="identifier">eof</span><span>
-</span><span class="comment">// abcOnly: Parsley[String] = parsley.Parsley@760d23ef
+</span><span class="comment">// abcOnly: Parsley[String] = parsley.Parsley@4d0adccd
 </span><span>
 </span><span class="identifier">abcOnly</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>)
 </span><span class="comment">// res39: parsley.Result[String, String] = Success(abc)
@@ -594,7 +594,7 @@
 //       ^)
 </span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>) &lt;~ </span><span class="identifier">lookAhead</span><span>(</span><span class="string-literal">&quot;!!&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;!!&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;lookahead&quot;</span><span>)
-</span><span class="comment">// p: Parsley[String] = parsley.Parsley@77f4045e
+</span><span class="comment">// p: Parsley[String] = parsley.Parsley@5c5b2073
 </span><span>
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc!!&quot;</span><span>)
 </span><span class="comment">// &gt;abc&gt; (1, 1): abc!!•
@@ -934,7 +934,8 @@
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">and</span><span> = (</span><span class="identifier">y</span><span>: </span><span class="type-name">Boolean</span><span>) =&gt; (</span><span class="identifier">x</span><span>: </span><span class="type-name">Boolean</span><span>) =&gt; </span><span class="identifier">x</span><span> &amp;&amp; </span><span class="identifier">y</span><span>
 
-</span><span class="comment">// This is possible here, because false is the &quot;zero&quot; of ||, but more generally we&#39;d want the other definition
+</span><span class="comment">// This is possible here, because false is the &quot;zero&quot; of ||
+// but more generally we&#39;d want the other definition
 // val or = (x: Boolean, y: Option[Boolean]) =&gt; x || y.getOrElse(false)
 </span><span class="keyword">val</span><span> </span><span class="identifier">or</span><span> = (</span><span class="identifier">x</span><span>: </span><span class="type-name">Boolean</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">Boolean</span><span>]) =&gt; </span><span class="identifier">y</span><span>.</span><span class="identifier">foldLeft</span><span>(</span><span class="identifier">x</span><span>)(</span><span class="identifier">_</span><span> || </span><span class="identifier">_</span><span>)
 

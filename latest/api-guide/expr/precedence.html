@@ -210,7 +210,7 @@
         </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Mul</span><span>),
         </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Add</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Sub</span><span>)
     )
-</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@35eedb38
+</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@13be8975
 </span><span>
 </span><span class="identifier">expr</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;x+5*y&quot;</span><span>)
 </span><span class="comment">// res0: parsley.Result[String, Expr] = Success(Add(Var(x),Mul(Num(5),Var(y))))</span></code></pre>
@@ -257,7 +257,8 @@
 }
 
 </span><span class="keyword">object</span><span> </span><span class="type-name">GOps</span><span> {
-    </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>](</span><span class="identifier">fixity</span><span>: </span><span class="type-name">Fixity</span><span>)(</span><span class="identifier">ops</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="identifier">fixity</span><span>.</span><span class="type-name">Op</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>]]*)(</span><span class="keyword">implicit</span><span> </span><span class="identifier">wrap</span><span>: </span><span class="type-name">A</span><span> =&gt; </span><span class="type-name">B</span><span>): </span><span class="type-name">Ops</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>]
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>](</span><span class="identifier">fixity</span><span>: </span><span class="type-name">Fixity</span><span>)(</span><span class="identifier">ops</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="identifier">fixity</span><span>.</span><span class="type-name">Op</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>]]*)
+                   (</span><span class="keyword">implicit</span><span> </span><span class="identifier">wrap</span><span>: </span><span class="type-name">A</span><span> =&gt; </span><span class="type-name">B</span><span>): </span><span class="type-name">Ops</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>]
 }</span></code></pre>
         <p>The <code>SOps</code> object allows the input and output to the layer to vary so long as they are in a sub-type relation: this is the most common form of heterogeneous hierachy that leverages Scala&#39;s strengths. Otherwise, <code>GOps</code> handles any arbitrary relationship between the types, so long as there is a known implicit <code>A =&gt; B</code> conversion.</p>
         <p>Since the types between layers differ, a variadic argument list cannot be used to collect them together. Instead, the <code>Ops</code> are
@@ -289,7 +290,7 @@
         </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Mul</span><span>) :+
         </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span class="identifier">as</span><span> </span><span class="type-name">Add</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Sub</span><span>)
     }
-</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@4b507676
+</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@1943d081
 </span><span>
 </span><span class="identifier">expr</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;x+5*y&quot;</span><span>)
 </span><span class="comment">// res1: parsley.Result[String, Expr] = Success(Add(Var(x),Mul(Num(5),Var(y))))</span></code></pre>
