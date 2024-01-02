@@ -78,4 +78,4 @@ The conditional combinators are used for conditional execution
 of a parser. These include `ifP`, `guard`, `when`, and `whileP`.
 As may be expected, `ifP` models an *if-else-expression*, `whileP` models
 a *while-loop*, and `when` models an *if-statement*. They mostly
-find their utility when used in conjunction with [registers](registers.md).
+find their utility when used in conjunction with [registers](state.md).
