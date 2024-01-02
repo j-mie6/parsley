@@ -16,7 +16,7 @@
     { "path": "/api-guide/generic.html", "versions": ["latest"] },
     { "path": "/api-guide/index.html", "versions": ["latest"] },
     { "path": "/api-guide/position.html", "versions": ["latest"] },
-    { "path": "/api-guide/registers.html", "versions": ["latest"] },
+    { "path": "/api-guide/state.html", "versions": ["latest"] },
     { "path": "/api-guide/syntax.html", "versions": ["latest"] },
     { "path": "/api-guide/token/Lexer.html", "versions": ["latest"] },
     { "path": "/api-guide/token/descriptions.html", "versions": ["latest"] },

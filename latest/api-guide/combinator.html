@@ -6,7 +6,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="generator" content="Typelevel Laika + Helium Theme" />
-  <title>`parsley.combinator`</title>
+  <title>parsley.combinator</title>
   
   <meta name="author" content="parsley contributors"/>
   
@@ -96,7 +96,7 @@
     <li class="level2 nav-leaf"><a href="generic.html"><code>parsley.genericbridges</code></a></li>
     <li class="level2 nav-leaf"><a href="syntax.html"><code>parsley.implicits</code></a></li>
     <li class="level2 nav-leaf"><a href="position.html"><code>parsley.position</code></a></li>
-    <li class="level2 nav-leaf"><a href="registers.html"><code>parsley.registers</code></a></li>
+    <li class="level2 nav-leaf"><a href="state.html"><code>parsley.registers</code></a></li>
     <li class="level2 nav-header"><code>parsley.expr</code></li>
     <li class="level3 nav-leaf"><a href="expr/chain.html"><code>chain</code></a></li>
     <li class="level3 nav-leaf"><a href="expr/infix.html"><code>infix</code></a></li>
@@ -201,7 +201,7 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.{</span><span class="identifier">manyUntil</span><span>}
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">comment</span><span> = </span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;//&quot;</span><span>) ~&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>)
-</span><span class="comment">// comment: parsley.Parsley[List[Char]] = parsley.Parsley@6289b56a
+</span><span class="comment">// comment: parsley.Parsley[List[Char]] = parsley.Parsley@9cf6f4a
 </span><span class="identifier">comment</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;// this is a comment</span><span class="escape-sequence">\n</span><span class="string-literal">&quot;</span><span>)
 </span><span class="comment">// res6: parsley.Result[String, List[Char]] = Success(List( , t, h, i, s,  , i, s,  , a,  , c, o, m, m, e, n, t))</span></code></pre>
         
@@ -238,7 +238,7 @@
         of a parser. These include <code>ifP</code>, <code>guard</code>, <code>when</code>, and <code>whileP</code>.
         As may be expected, <code>ifP</code> models an <em>if-else-expression</em>, <code>whileP</code> models
         a <em>while-loop</em>, and <code>when</code> models an <em>if-statement</em>. They mostly
-        find their utility when used in conjunction with <a href="registers.html">registers</a>.</p>
+        find their utility when used in conjunction with <a href="state.html">registers</a>.</p>
 
         
 <hr class="footer-rule"/>

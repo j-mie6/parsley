@@ -6,7 +6,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="generator" content="Typelevel Laika + Helium Theme" />
-  <title>`combinator`</title>
+  <title>combinator</title>
   
   <meta name="author" content="parsley contributors"/>
   
@@ -96,7 +96,7 @@
     <li class="level2 nav-leaf"><a href="../generic.html"><code>parsley.genericbridges</code></a></li>
     <li class="level2 nav-leaf"><a href="../syntax.html"><code>parsley.implicits</code></a></li>
     <li class="level2 nav-leaf"><a href="../position.html"><code>parsley.position</code></a></li>
-    <li class="level2 nav-leaf"><a href="../registers.html"><code>parsley.registers</code></a></li>
+    <li class="level2 nav-leaf"><a href="../state.html"><code>parsley.registers</code></a></li>
     <li class="level2 nav-header"><code>parsley.expr</code></li>
     <li class="level3 nav-leaf"><a href="../expr/chain.html"><code>chain</code></a></li>
     <li class="level3 nav-leaf"><a href="../expr/infix.html"><code>infix</code></a></li>
@@ -306,7 +306,7 @@
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="type-name">ErrorMethods</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">digit</span><span> = </span><span class="identifier">satisfy</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">isDigit</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;digit&quot;</span><span>)
-</span><span class="comment">// digit: parsley.Parsley[Char] = parsley.Parsley@1868051f
+</span><span class="comment">// digit: parsley.Parsley[Char] = parsley.Parsley@49f7f27d
 </span><span class="identifier">digit</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;a&quot;</span><span>)
 </span><span class="comment">// res9: parsley.Result[String, Char] = Failure((line 1, column 1):
 //   unexpected &quot;a&quot;
@@ -324,7 +324,7 @@
         error message properly lines up with the point the input was at when it
         entered the combinator - otherwise, the label may be inaccurate. For example:</p>
         <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">twoDigits</span><span> = (</span><span class="identifier">digit</span><span> *&gt; </span><span class="identifier">digit</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;two digits&quot;</span><span>)
-</span><span class="comment">// twoDigits: parsley.Parsley[Char] = parsley.Parsley@2160d470
+</span><span class="comment">// twoDigits: parsley.Parsley[Char] = parsley.Parsley@3a636d40
 </span><span class="identifier">twoDigits</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;a&quot;</span><span>)
 </span><span class="comment">// res10: parsley.Result[String, Char] = Failure((line 1, column 1):
 //   unexpected &quot;a&quot;
