@@ -2,35 +2,38 @@
 <html lang="en">
   
   <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="generator" content="Typelevel Laika + Helium Theme" />
-  <title>Basics of Combinators</title>
-  
-  <meta name="author" content="parsley contributors"/>
-  
-  
-  <meta name="description" content="docs"/>
-  
-  
-  
-  <link rel="icon" sizes="32x32" type="image/svg+xml" href="../../icons/greenLeaf.svg"/>
-  
-  
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700">
-  
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Fira+Mono:500">
-  
-  <link rel="stylesheet" type="text/css" href="../../helium/site/icofont.min.css" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Typelevel Laika + Parsley Theme" />
+    
+    <title>Basics of Combinators</title>
+    
+    
+    <meta name="author" content="parsley contributors"/>
+    
+    
+    <meta name="description" content="How combinators work at a basic level."/>
+    
+    
+    
+    <link rel="icon" sizes="32x32" type="image/svg+xml" href="../../icons/greenLeaf.svg"/>
+    
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700">
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Fira+Mono:500">
+    
+    <link rel="stylesheet" type="text/css" href="../../helium/site/icofont.min.css" />
     <link rel="stylesheet" type="text/css" href="../../helium/site/laika-helium.css" />
     <link rel="stylesheet" type="text/css" href="../../css/parsley-style.css" />
-  <script src="../../helium/site/laika-helium.js"></script>
+    <script src="../../helium/site/laika-helium.js"></script>
     <script src="../../helium/site/laika-versions.js"></script>
-  <script>initVersions("../../", "/tutorial/basics-of-combinators.html", "latest", null);</script>
-  
-  <script> /* for avoiding page load transitions */ </script>
-</head>
+    <script>initVersions("../../", "/tutorial/basics-of-combinators.html", "latest", null);</script>
+    
+    <script> /* for avoiding page load transitions */ </script>
+  </head>
+
 
   <body>
 
@@ -102,9 +105,9 @@
     <li class="level3 nav-leaf"><a href="../api-guide/expr/infix.html"><code>infix</code></a></li>
     <li class="level3 nav-leaf"><a href="../api-guide/expr/precedence.html"><code>precedence</code></a></li>
     <li class="level2 nav-header"><code>parsley.token</code></li>
-    <li class="level3 nav-leaf"><a href="../api-guide/token/errors.html"><code>errors</code></a></li>
-    <li class="level3 nav-leaf"><a href="../api-guide/token/descriptions.html"><code>descriptions</code></a></li>
     <li class="level3 nav-leaf"><a href="../api-guide/token/Lexer.html"><code>Lexer</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/token/descriptions.html"><code>descriptions</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/token/errors.html"><code>errors</code></a></li>
     <li class="level2 nav-header"><code>parsley.errors</code></li>
     <li class="level3 nav-leaf"><a href="../api-guide/errors/combinator.html"><code>combinator</code></a></li>
     <li class="level3 nav-leaf"><a href="../api-guide/errors/patterns.html"><code>patterns</code></a></li>
@@ -530,10 +533,10 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">debug</span><span>.</span><span class="identifier">_</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> | </span><span class="identifier">atomic</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>) | </span><span class="string-literal">&quot;dead&quot;</span><span>
-</span><span class="comment">// p: Parsley[String] = parsley.Parsley@5419e313
+</span><span class="comment">// p: Parsley[String] = parsley.Parsley@af7ccb0
 </span><span class="keyword">val</span><span> </span><span class="identifier">q</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> | (</span><span class="identifier">atomic</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading def&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;backtrack!&quot;</span><span>) |
                    </span><span class="string-literal">&quot;dead&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading dead&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;branch&quot;</span><span>)
-</span><span class="comment">// q: Parsley[String] = parsley.Parsley@2e1e3919
+</span><span class="comment">// q: Parsley[String] = parsley.Parsley@1eff404a
 </span><span>
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;dead&quot;</span><span>)
 </span><span class="comment">// res37: parsley.Result[String, String] = Success(dead)
@@ -581,9 +584,9 @@
 // def notFollowedBy(p: Parsley[_]): Parsley[Unit]
 </span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">eof</span><span> = </span><span class="identifier">notFollowedBy</span><span>(</span><span class="identifier">item</span><span>)
-</span><span class="comment">// eof: Parsley[Unit] = parsley.Parsley@231d0e59
+</span><span class="comment">// eof: Parsley[Unit] = parsley.Parsley@45d2b0d3
 </span><span class="keyword">val</span><span> </span><span class="identifier">abcOnly</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> &lt;~ </span><span class="identifier">eof</span><span>
-</span><span class="comment">// abcOnly: Parsley[String] = parsley.Parsley@1c9bcc09
+</span><span class="comment">// abcOnly: Parsley[String] = parsley.Parsley@541f1bc9
 </span><span>
 </span><span class="identifier">abcOnly</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>)
 </span><span class="comment">// res39: parsley.Result[String, String] = Success(abc)
@@ -594,7 +597,7 @@
 //       ^)
 </span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>) &lt;~ </span><span class="identifier">lookAhead</span><span>(</span><span class="string-literal">&quot;!!&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;!!&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;lookahead&quot;</span><span>)
-</span><span class="comment">// p: Parsley[String] = parsley.Parsley@284e9e0b
+</span><span class="comment">// p: Parsley[String] = parsley.Parsley@72ae2018
 </span><span>
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc!!&quot;</span><span>)
 </span><span class="comment">// &gt;abc&gt; (1, 1): abc!!•

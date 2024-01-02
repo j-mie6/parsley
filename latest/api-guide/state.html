@@ -2,35 +2,38 @@
 <html lang="en">
   
   <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="generator" content="Typelevel Laika + Helium Theme" />
-  <title>parsley.registers</title>
-  
-  <meta name="author" content="parsley contributors"/>
-  
-  
-  <meta name="description" content="docs"/>
-  
-  
-  
-  <link rel="icon" sizes="32x32" type="image/svg+xml" href="../../icons/greenLeaf.svg"/>
-  
-  
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700">
-  
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Fira+Mono:500">
-  
-  <link rel="stylesheet" type="text/css" href="../../helium/site/icofont.min.css" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Typelevel Laika + Parsley Theme" />
+    
+    <title>Context-Sensitive Parsing (parsley.registers)</title>
+    
+    
+    <meta name="author" content="parsley contributors"/>
+    
+    
+    <meta name="description" content="This page describes how to thread custom state through a parser."/>
+    
+    
+    
+    <link rel="icon" sizes="32x32" type="image/svg+xml" href="../../icons/greenLeaf.svg"/>
+    
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700">
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Fira+Mono:500">
+    
+    <link rel="stylesheet" type="text/css" href="../../helium/site/icofont.min.css" />
     <link rel="stylesheet" type="text/css" href="../../helium/site/laika-helium.css" />
     <link rel="stylesheet" type="text/css" href="../../css/parsley-style.css" />
-  <script src="../../helium/site/laika-helium.js"></script>
+    <script src="../../helium/site/laika-helium.js"></script>
     <script src="../../helium/site/laika-versions.js"></script>
-  <script>initVersions("../../", "/api-guide/state.html", "latest", null);</script>
-  
-  <script> /* for avoiding page load transitions */ </script>
-</head>
+    <script>initVersions("../../", "/api-guide/state.html", "latest", null);</script>
+    
+    <script> /* for avoiding page load transitions */ </script>
+  </head>
+
 
   <body>
 
@@ -102,9 +105,9 @@
     <li class="level3 nav-leaf"><a href="expr/infix.html"><code>infix</code></a></li>
     <li class="level3 nav-leaf"><a href="expr/precedence.html"><code>precedence</code></a></li>
     <li class="level2 nav-header"><code>parsley.token</code></li>
-    <li class="level3 nav-leaf"><a href="token/errors.html"><code>errors</code></a></li>
-    <li class="level3 nav-leaf"><a href="token/descriptions.html"><code>descriptions</code></a></li>
     <li class="level3 nav-leaf"><a href="token/Lexer.html"><code>Lexer</code></a></li>
+    <li class="level3 nav-leaf"><a href="token/descriptions.html"><code>descriptions</code></a></li>
+    <li class="level3 nav-leaf"><a href="token/errors.html"><code>errors</code></a></li>
     <li class="level2 nav-header"><code>parsley.errors</code></li>
     <li class="level3 nav-leaf"><a href="errors/combinator.html"><code>combinator</code></a></li>
     <li class="level3 nav-leaf"><a href="errors/patterns.html"><code>patterns</code></a></li>
@@ -239,9 +242,9 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">charLift</span><span>, </span><span class="identifier">stringLift</span><span>}
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">openTag</span><span> = </span><span class="identifier">atomic</span><span>(</span><span class="char-literal">&#39;&lt;&#39;</span><span> &lt;~ </span><span class="identifier">notFollowedBy</span><span>(</span><span class="char-literal">&#39;/&#39;</span><span>))
-</span><span class="comment">// openTag: Parsley[Char] = parsley.Parsley@2ebf3095
+</span><span class="comment">// openTag: Parsley[Char] = parsley.Parsley@a007579
 </span><span class="keyword">val</span><span> </span><span class="identifier">tagName</span><span> = </span><span class="identifier">stringOfSome</span><span>(</span><span class="identifier">letter</span><span>)
-</span><span class="comment">// tagName: Parsley[String] = parsley.Parsley@29b829fb
+</span><span class="comment">// tagName: Parsley[String] = parsley.Parsley@64fb7f58
 </span><span>
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">content</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">optional</span><span>(</span><span class="identifier">tag</span><span>)
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">tag</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = (</span><span class="identifier">openTag</span><span> ~&gt; </span><span class="identifier">tagName</span><span> &lt;~ </span><span class="char-literal">&#39;&gt;&#39;</span><span>).</span><span class="identifier">fillReg</span><span> { </span><span class="identifier">name</span><span> =&gt;
@@ -324,7 +327,7 @@
         if the corresponding closing bracket cannot be parsed, it will use an
         unconditional <a href="errors/patterns.html#verified-errors"><em>Verified Error</em></a> to report a message based on the last opened bracket. The results are below:</p>
         <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="identifier">brackets</span><span>
-</span><span class="comment">// p: Parsley[Unit] = parsley.Parsley@5c9cc917
+</span><span class="comment">// p: Parsley[Unit] = parsley.Parsley@6aa45df1
 </span><span>
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;()()()&quot;</span><span>)
 </span><span class="comment">// res5: parsley.Result[String, Unit] = Success(())
@@ -403,7 +406,7 @@
     } ~&gt;
     </span><span class="identifier">i</span><span>.</span><span class="identifier">get</span><span> &lt;~ </span><span class="identifier">eof</span><span>
 }
-</span><span class="comment">// abcs: Parsley[Int] = parsley.Parsley@571c87e6
+</span><span class="comment">// abcs: Parsley[Int] = parsley.Parsley@2033827d
 </span><span>
 </span><span class="identifier">abcs</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;aabbcc&quot;</span><span>)
 </span><span class="comment">// res12: parsley.Result[String, Int] = Success(2)
