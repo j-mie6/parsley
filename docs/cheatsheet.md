@@ -1,11 +1,10 @@
 {%
 laika.title = Cheatsheet
 laika.versioned = true
+laika.site.metadata.description = "Cheatsheet of common combinators and uses."
 %}
 
 # Parser Combinator Cheatsheet
-@:todo(TODO: discuss `as`)
-
 Until you're more comfortable using parser combinators and have a sense for how to piece things
 together, the sheer choice can be daunting. This page is designed to help bridge this gap by
 bringing attention to some of the more common and useful combinators, as well as a few common idioms

@@ -1,5 +1,7 @@
 {%
 laika.title = "`parsley.implicits`"
+parsley.tabname = "Syntactic Extensions (parsley.implicits)"
+laika.site.metadata.description = "This page describes Parsley's syntactic extensions."
 %}
 # Synactic Extensions (`parsley.implicits`)
 The `parsley.implicits` package contains several modules that enable new "syntax"

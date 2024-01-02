@@ -1,5 +1,7 @@
 {%
 laika.title = "`precedence`"
+parsley.tabname = "Precedence Combinators"
+laika.site.metadata.description = "This page describes how to build precedence tables."
 %}
 
 # Precedence Combinators

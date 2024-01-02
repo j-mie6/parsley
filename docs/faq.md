@@ -1,6 +1,7 @@
 {%
 laika.title = FAQ
 laika.versioned = true
+laika.site.metadata.description = "This page covers frequently asked questions."
 %}
 
 # Frequently Asked Questions

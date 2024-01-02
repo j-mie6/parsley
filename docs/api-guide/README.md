@@ -1,4 +1,7 @@
-{% helium.site.pageNavigation.enabled = false %}
+{%
+helium.site.pageNavigation.enabled = false
+laika.site.metadata.description = "This page outlines the API guide."
+%}
 
 # Understanding the API
 

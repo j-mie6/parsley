@@ -1,3 +1,7 @@
+{%
+laika.site.metadata.description = "How combinators work at a basic level."
+%}
+
 ```scala mdoc:invisible
 import scala.annotation.unused
 ```

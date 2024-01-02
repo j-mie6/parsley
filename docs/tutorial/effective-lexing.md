@@ -1,3 +1,6 @@
+{%
+laika.site.metadata.description = "How to handle low-level tokenisation in a parser."
+%}
 # Effective Lexing
 
 @:callout(info)

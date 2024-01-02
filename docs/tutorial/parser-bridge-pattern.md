@@ -1,3 +1,7 @@
+{%
+laika.site.metadata.description = "How to abstract away result construction from parsing."
+%}
+
 ```scala mdoc:invisible
 import parsley.Parsley
 object lexer {

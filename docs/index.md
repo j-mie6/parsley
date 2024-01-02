@@ -1,6 +1,7 @@
 {%
 helium.site.pageNavigation.enabled = false
 laika.versioned = true
+laika.site.metadata.description = "The parsley wiki."
 %}
 # Home
 

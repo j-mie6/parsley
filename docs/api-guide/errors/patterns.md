@@ -1,5 +1,7 @@
 {%
 laika.title = "`patterns`"
+parsley.tabname = "Error Message Patterns (parsley.errors.patterns)"
+laika.site.metadata.description = "This page describes how to generate informative errors."
 %}
 
 # Error Message Patterns

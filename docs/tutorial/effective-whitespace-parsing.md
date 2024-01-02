@@ -1,3 +1,6 @@
+{%
+laika.site.metadata.description = "Conventions for how a parser should deal with whitespace."
+%}
 # Effective Whitespace Parsing
 
 @:callout(info)

@@ -1,5 +1,7 @@
 {%
 laika.title = "`parsley.position`"
+parsley.tabname = "Position Combinators (parsley.position)"
+laika.site.metadata.description = "This page describes how to get position information."
 %}
 # Position Combinators (`parsley.position`)
 

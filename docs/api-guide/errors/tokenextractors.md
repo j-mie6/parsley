@@ -1,5 +1,7 @@
 {%
 laika.title = "`tokenextractors`"
+parsley.tabname = "Token Extraction in ErrorBuilder (parsley.errors.tokenextractors)"
+laika.site.metadata.description = "This page describes how to customise the unexpected token of an error."
 %}
 
 # Token Extraction in `ErrorBuilder`

@@ -1,3 +1,6 @@
+{%
+laika.site.metadata.description = "How to employ more advanced techniques to make error messages context-dependent."
+%}
 # Advanced Error Messages
 Previously, we saw the most basic approach to improving error messages: `.label` and `.explain`.
 However, the other tools I listed in the post are valuable in their own right, but can be slightly

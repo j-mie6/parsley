@@ -1,3 +1,6 @@
+{%
+laika.site.metadata.description = "An in-depth look at optimising a parser for a sub-set of Haskell."
+%}
 # Interlude 1: Building a Parser for Haskell
 
 We've covered a lot of ground in the series so far! I think it's time to take a medium-length

@@ -1,3 +1,6 @@
+{%
+laika.site.metadata.description = "How to customise error messages to make them more informative."
+%}
 # Customising Error Messages
 Previously, in [Effective Lexing]
 we saw how we could extend our parsers to handle whitespace and lexing. In this wiki post we'll finally address

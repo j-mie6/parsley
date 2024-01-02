@@ -1,5 +1,7 @@
 {%
 laika.title = "`parsley.combinator`"
+parsley.tabname = "Additional Combinators (parsley.combinator)"
+laika.site.metadata.description = "This page describes additional helpful combinators."
 %}
 # Additional Combinators (`parsley.combinator`)
 While many combinators are implemented as methods directly on the `Parsley` type,

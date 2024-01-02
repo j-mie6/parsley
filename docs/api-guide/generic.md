@@ -1,5 +1,7 @@
 {%
 laika.title = "`parsley.genericbridges`"
+parsley.tabname = "Generic Bridges (parsley.genericbridges)"
+laika.site.metadata.description = "This page describes how to use generic bridges to factor code."
 %}
 
 ```scala mdoc:invisible
