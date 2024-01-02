@@ -176,15 +176,22 @@ object Icon {
 object Renderers {
     import laika.api.format.TagFormatter
     val backticksToCode: PartialFunction[(TagFormatter, Element), String] = {
-        // TODO: generalise to work with backticks within code
-        case (fmt, Text(content, opt)) if content.startsWith("`") && content.endsWith("`") =>
-            val tickless = content.init.tail
-            fmt.parents.lift(2) match {
-                // title of the page?
-                // FIXME: on the updated laika, this doesn't properly address the backticks problem, because of the new sanitisation
-                case Some(TemplateSpanSequence(TemplateString(cousin, _) +: _, _)) if cousin.endsWith("<title>") =>
-                    fmt.text(tickless)
-                case _ => fmt.withoutIndentation(_.textElement("code", Text(tickless).withOptions(opt)))
-            }
+        // this is somewhere, and needs to be code
+        case (fmt, Text(Ticked(tickless), opt)) => fmt.withoutIndentation(_.textElement("code", Text(tickless).withOptions(opt)))
+        // page title
+        case (isTitleText(fmt), TemplateString(Ticked(tickless), opt)) => fmt.text(tickless)
+    }
+
+    private object isTitleText {
+        def unapply(fmt: TagFormatter): Option[TagFormatter] = fmt.parents.headOption.collect {
+            case TemplateSpanSequence(TemplateString(cousin, _) +: _, _) if cousin.endsWith("<title>") => fmt
+        }
+    }
+
+    private object Ticked {
+        def unapply(str: String): Option[String] = {
+            if (str.startsWith("`") && str.endsWith("`")) Some(str.init.tail)
+            else None
+        }
     }
 }
