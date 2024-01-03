@@ -5,8 +5,8 @@
   --secondary-color: #8b2257;
   --text-color: #616365;
   --bg-color: #fbfefb;
-  --gradient-top: #f3f3f3;
-  --gradient-bottom: #ffffff;
+  --gradient-top: #c5bdb8;
+  --gradient-bottom: #dcd7d4;
   --component-color: var(--primary-color);
   --component-area-bg: var(--primary-light);
   --component-hover: var(--secondary-color);
@@ -43,6 +43,9 @@
   --content-width: 860px;
   --nav-width: 275px;
   --top-bar-height: 50px;
+  --landing-subtitle-font-size: 32px;
+  --teaser-title-font-size: 20px;
+  --teaser-body-font-size: 15px;
   color-scheme: light dark;
 }
 
