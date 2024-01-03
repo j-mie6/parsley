@@ -15,13 +15,14 @@ import sbt.{AutoPlugin, Def}
 import TypelevelVersioningPlugin.autoImport._
 import TypelevelSitePlugin.autoImport._
 import TypelevelSettingsPlugin.autoImport._
+import org.typelevel.sbt.gha.GitHubActionsPlugin.autoImport._
 import laika.sbt.LaikaPlugin.autoImport._
 
 object ParsleySitePlugin extends AutoPlugin {
     override def requires = TypelevelSitePlugin
 
     override def projectSettings: Seq[Def.Setting[_]] = Seq(
-        tlFatalWarnings := false, // turn off fatal warnings for mdoc
+        //tlFatalWarnings := false, // turn off fatal warnings for mdoc
         tlSiteKeepFiles := false, // FIXME: turn off when docs are stable
         laikaExtensions += laikaHtmlRenderer(Renderers.backticksToCode),
         laikaConfig :=  LaikaConfig.defaults.withConfigValue(
@@ -29,8 +30,11 @@ object ParsleySitePlugin extends AutoPlugin {
                             .addSourceLinks(scmInfo.value.map(scm =>
                                 SourceLinks(baseUri = s"${scm.browseUrl.toExternalForm}/tree/master/parsley/shared/src/main/scala/", suffix = "scala")).toSeq: _*)
             )
-            .withRawContent,  // enable usage of raw HTML,  // enable usage of raw HTML
-        tlSiteHelium := tlSiteHelium.value.site.layout(
+            .withRawContent,  // enable usage of raw HTML,
+        tlSiteHelium := {
+            val githubLink = GenericSiteSettings.githubLink.value
+            val apiLink = tlSiteApiUrl.value.map(url => TextLink.external(url.toString, "API"))
+            tlSiteHelium.value.site.layout(
                 topBarHeight = LengthUnit.px(50),
                 //contentWidth = LengthUnit.px(1075), //px(860)
             )
@@ -47,9 +51,41 @@ object ParsleySitePlugin extends AutoPlugin {
                 ),
             )
             .site.resetDefaults(topNavigation = true)
+            .site.landingPage(
+                logo = Some(Image(
+                    target = InternalTarget(Path.Root / "icons" / "greenLeaf.svg"),
+                    width = Some(LengthUnit.percent(40)),
+                    height = Some(LengthUnit.percent(40)),
+                    alt = Some("A Leafy Logo"),
+                )),
+                title = Some("Parsley"),
+                subtitle = Some("A fast and modern parser combinator library for Scala"),
+                latestReleases = Seq(
+                    ReleaseInfo("Latest Stable Release", "4.4.0"),
+                ),
+                license = Some(licenses.value.head._1),
+                documentationLinks = Seq(
+                    TextLink.internal(Path.Root / "home.md", "Overview"),
+                    TextLink.internal(Path.Root / "cheatsheet.md", "Cheatsheet"),
+                    TextLink.internal(Path.Root / "api-guide" / "README.md", "API Guide"),
+                    TextLink.internal(Path.Root / "tutorial" / "README.md", "Parser Combinator Tutorial"),
+                    TextLink.internal(Path.Root / "faq.md", "Frequently Asked Questions"),
+                ),
+                projectLinks = githubLink.zip(apiLink).map {
+                    case (git, api) => LinkGroup.create(git, api)
+                }.toSeq,
+                teasers = Seq(
+                    Teaser("Modern", "Parsley employs modern design developed over five years of research, supporting many parser combinator design pattterns out of the box."),
+                    Teaser("Stack-Safe", "Parsley promises to not stack-overflow during the runtime of the parser, preventing vulnerabilities."),
+                    Teaser("Great Errors", "Parsley has good out-of-the-box error messages, with a lot of support for improving the content of error messages and their formatting."),
+                    Teaser("Easily Debuggable", "Parsley parsers are easy to debug thanks to special combinators and debuggers."),
+                    Teaser("Cross-Compatible", "Supports Scala 2.12, 2.13, and 3.0; as well as support for Scala Native and Scala-JS."),
+                    Teaser("Cats Friendly", "Intregration available for Typelevel's Cats Ecosystem, providing instances for relevant typeclasses."),
+                )
+            )
             .site.topNavigationBar(
-                homeLink = IconLink.internal(Path.Root / "index.md", Icon.leaf),
-                navLinks = tlSiteApiUrl.value.map(url => TextLink.external(url.toString, "API")).toList ++ GenericSiteSettings.githubLink.value.toList
+                homeLink = IconLink.internal(Path.Root / "home.md", Icon.leaf),
+                navLinks = apiLink.toList ++ githubLink.toList
             )
             .site.favIcons(Icon.greenLeaf)
             .site.pageNavigation(
@@ -65,10 +101,14 @@ object ParsleySitePlugin extends AutoPlugin {
                 description = Some("The Wiki can be downloaded as a PDF: formatting is not guaranteed to be consistent with the website."),
                 includeEPUB = false,
             )
-            .site.versions(Versions
-              .forCurrentVersion(Version(s"${tlBaseVersion.value}.x", "latest").withLabel("stable").setCanonical)
-                //renderUnversioned = false // Use this when backporting fixes to older docs
-            )
+            .site.versions {
+                def version(v: String, label: String)(path: String = v) =
+                    Version(s"$v.x", path).withLabel(label).withFallbackLink(s"api-guide")
+                Versions
+                  .forCurrentVersion(version(tlBaseVersion.value, "stable")("latest").setCanonical)
+                  // Set this to false when backporting fixes to older docs
+                  .withRenderUnversioned(true || !githubIsWorkflowBuild.value)
+            }
             .site.themeColors(
                 primary = ForestGreen.darker,
                 secondary = DarkPink,
@@ -76,7 +116,7 @@ object ParsleySitePlugin extends AutoPlugin {
                 primaryLight = ForestGreen.lighter,
                 text = CharcoalLightGrey,
                 background = MintCream,
-                bgGradient = (OffWhite, Color.hex("ffffff")),
+                bgGradient = (Color.hex("c5bdb8"), Color.hex("dcd7d4")),
             )
             .site.messageColors(
                 info = DarkPink,
@@ -104,7 +144,8 @@ object ParsleySitePlugin extends AutoPlugin {
                 error = AntiMintRed.dark,
                 errorLight = CharcoalGrey,
             )
-            .site.darkMode.syntaxHighlightingColors(syntaxHighlightingBase, syntaxHighlightingWheel),
+            .site.darkMode.syntaxHighlightingColors(syntaxHighlightingBase, syntaxHighlightingWheel)
+        },
     )
 }
 

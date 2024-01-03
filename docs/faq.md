@@ -6,10 +6,6 @@ laika.site.metadata.description = "This page covers frequently asked questions."
 
 # Frequently Asked Questions
 
-@:callout(info)
-This page is still being updated for the wiki port, so some things may be a bit broken or look a little strange.
-@:@
-
 ### What is the deal with "lazy" vs "strict" positions?
 In `parsley-4.x.y` and up, combinators are no longer totally lazy and adopt the
 idea of lazy and strict arguments. In general, all combinators have strict
@@ -67,8 +63,8 @@ itself:
 
 ```scala
 lazy val bad = bad ~> ...
-lazy val badExpr = Add.lift(badExpr, '+' ~> badExpr) <|> number
-lazy val goodExpr = atomic((number <~ '+', goodExpr).zipped(Add)) <|> number
+lazy val badExpr = Add.lift(badExpr, '+' ~> badExpr) | number
+lazy val goodExpr = atomic((number <~ '+', goodExpr).zipped(Add)) | number
 ```
 
 The first two parsers are both examples of left-recursive parsers, which are
@@ -77,8 +73,8 @@ recursive call in a strict position, and can be fixed with `unary_~` or by
 rearranging the `'+'` parser as above:
 
 ```scala
-lazy val goodExpr = atomic((number, '+' ~> goodExpr).zipped(Add)) <|> number
-lazy val goodExpr = atomic((number <~ '+', ~goodExpr).zipped(Add)) <|> number
+lazy val goodExpr = atomic((number, '+' ~> goodExpr).zipped(Add)) | number
+lazy val goodExpr = atomic((number <~ '+', ~goodExpr).zipped(Add)) | number
 ```
 
 ### My parser seems to infinite loop and the `debug` combinator shows it spinning forever
@@ -87,7 +83,7 @@ the bad recursion inside an _unguarded_ lazy position:
 
 ```scala
 import parsley.Parsley.LazyParsley
-lazy val badExpr = Add.lift(~badExpr, '+' ~> badExpr) <|> number
+lazy val badExpr = Add.lift(~badExpr, '+' ~> badExpr) | number
 ```
 
 Perhaps you tried to fix the above bad parser using `unary_~` even though its

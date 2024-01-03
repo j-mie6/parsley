@@ -96,8 +96,8 @@ The quickest way to change the result of a parser is by using `.map` or the `#>`
 the above quick documentation). This is really useful for changing the result of a *single* parser,
 but provides no way of combining multiple.
 
-```scala
-import parsley.Parsley, Parsley._
+```scala mdoc:silent
+import parsley.Parsley
 import parsley.combinator.some
 import parsley.character.digit
 
@@ -120,8 +120,8 @@ digit before we read zero or more digits. In this case, we want the first digit 
 list of remaining digits. This task is quite common, so the `<::>` combinator is designed specially
 for it:
 
-```scala
-import parsley.Parsley, Parsley._
+```scala mdoc:reset:silent
+import parsley.Parsley
 import parsley.combinator.many
 import parsley.character.{digit, oneOf, char}
 
@@ -132,14 +132,14 @@ val nonzero = oneOf('1' to '9')
 // <::> adds the leading non-zero char onto the other digits
 val digits: Parsley[List[Char]] = nonzero <::> many(digit)
 // Using #> here to handle the plain ol' zero case
-val int: Parsley[Int] = char('0') #> 0 <|> digits.map(_.mkString.toInt)
+val int: Parsley[Int] = char('0') #> 0 | digits.map(_.mkString.toInt)
 val num: Parsley[Num] = int.map(Num)
 ```
 
 But more generally, we could reach for the `lift` functions:
 
-```scala
-import parsley.Parsley, Parsley._
+```scala mdoc:reset:silent
+import parsley.Parsley
 import parsley.combinator.many
 import parsley.character.{digit, oneOf, char}
 import parsley.lift.lift2
@@ -150,7 +150,7 @@ val nonzero = oneOf('1' to '9')
 
 val digits: Parsley[List[Char]] = lift2[Char, List[Char], List[Char]](_ :: _, nonzero, many(digit))
 // Using #> here to handle the plain ol' zero case
-val int: Parsley[Int] = char('0') #> 0 <|> digits.map(_.mkString.toInt)
+val int: Parsley[Int] = char('0') #> 0 | digits.map(_.mkString.toInt)
 val num: Parsley[Num] = int.map(Num)
 ```
 
@@ -160,7 +160,7 @@ Scala doesn't infer the types of arguments, only return values, so on its own `_
 type. As such, the fix is to let other type-instantations help give the argument types (as above) or
 to specify the types in the function manually:
 
-```scala
+```scala mdoc:silent
 lift2((c: Char, cs: List[Char]) => c :: cs, nonzero, many(digit))
 ```
 
@@ -168,7 +168,7 @@ Notice that this didn't seem to be a problem with `map`. This is because the fun
 after the receiver of the method: it gets given the right argument type straight away. Parsley has a syntax
 for leveraging this property:
 
-```scala
+```scala mdoc:silent
 import parsley.implicits.zipped.Zipped2
 
 (nonzero, many(digit)).zipped(_ :: _)
@@ -182,7 +182,7 @@ may be needed to use `LazyParsley.unary_~` to restore laziness to those argument
 Use this form of lifting when type-inference fails you. Otherwise, for clarity, use a regular `liftN`, or the
 syntactic sugar for it:
 
-```scala
+```scala mdoc:silent
 import parsley.implicits.lift.{Lift2, Lift1}
 
 val charCons = (c: Char, cs: List[Char]) => c :: cs
