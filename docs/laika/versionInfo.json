@@ -1,0 +1,36 @@
+{
+  "versions": [
+    { "displayValue": "4.4.x", "pathSegment": "4.4", "fallbackLink": "/api-guide", "label": "stable", "canonical": true }
+  ],
+  "linkTargets": [
+    { "path": "/api-guide/Parsley.html", "versions": ["4.4"] },
+    { "path": "/api-guide/character.html", "versions": ["4.4"] },
+    { "path": "/api-guide/combinator.html", "versions": ["4.4"] },
+    { "path": "/api-guide/errors/ErrorBuilder.html", "versions": ["4.4"] },
+    { "path": "/api-guide/errors/combinator.html", "versions": ["4.4"] },
+    { "path": "/api-guide/errors/patterns.html", "versions": ["4.4"] },
+    { "path": "/api-guide/errors/tokenextractors.html", "versions": ["4.4"] },
+    { "path": "/api-guide/expr/chain.html", "versions": ["4.4"] },
+    { "path": "/api-guide/expr/infix.html", "versions": ["4.4"] },
+    { "path": "/api-guide/expr/precedence.html", "versions": ["4.4"] },
+    { "path": "/api-guide/generic.html", "versions": ["4.4"] },
+    { "path": "/api-guide/index.html", "versions": ["4.4"] },
+    { "path": "/api-guide/position.html", "versions": ["4.4"] },
+    { "path": "/api-guide/state.html", "versions": ["4.4"] },
+    { "path": "/api-guide/syntax.html", "versions": ["4.4"] },
+    { "path": "/api-guide/token/Lexer.html", "versions": ["4.4"] },
+    { "path": "/api-guide/token/descriptions.html", "versions": ["4.4"] },
+    { "path": "/api-guide/token/errors.html", "versions": ["4.4"] },
+    { "path": "/cheatsheet.html", "versions": ["4.4"] },
+    { "path": "/faq.html", "versions": ["4.4"] },
+    { "path": "/tutorial/advanced-error-messages.html", "versions": ["4.4"] },
+    { "path": "/tutorial/basics-of-combinators.html", "versions": ["4.4"] },
+    { "path": "/tutorial/building-expression-parsers.html", "versions": ["4.4"] },
+    { "path": "/tutorial/customising-error-messages.html", "versions": ["4.4"] },
+    { "path": "/tutorial/effective-lexing.html", "versions": ["4.4"] },
+    { "path": "/tutorial/effective-whitespace-parsing.html", "versions": ["4.4"] },
+    { "path": "/tutorial/index.html", "versions": ["4.4"] },
+    { "path": "/tutorial/interlude-1-haskell.html", "versions": ["4.4"] },
+    { "path": "/tutorial/parser-bridge-pattern.html", "versions": ["4.4"] }
+  ]
+}

@@ -1,7 +1,16 @@
 val sbtTypelevelVersion = "0.6.4"
+val circeVersion = "0.14.1"
 
 resolvers ++= Opts.resolver.sonatypeOssSnapshots
 resolvers ++= Opts.resolver.sonatypeOssReleases
+
+scalacOptions ++= Seq("-unchecked", "-feature","-deprecation")
+
+libraryDependencies ++= Seq(
+  "io.circe" %% "circe-core",
+  "io.circe" %% "circe-generic",
+  "io.circe" %% "circe-parser"
+).map(_ % circeVersion)
 
 libraryDependencySchemes ++= Seq(
   "org.scala-native" % "sbt-scala-native" % VersionScheme.Always,

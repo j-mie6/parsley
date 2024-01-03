@@ -17,6 +17,7 @@ import TypelevelSitePlugin.autoImport._
 import TypelevelSettingsPlugin.autoImport._
 import org.typelevel.sbt.gha.GitHubActionsPlugin.autoImport._
 import laika.sbt.LaikaPlugin.autoImport._
+import mdoc.MdocPlugin.autoImport._
 
 object ParsleySitePlugin extends AutoPlugin {
     override def requires = TypelevelSitePlugin
@@ -24,7 +25,10 @@ object ParsleySitePlugin extends AutoPlugin {
     override def projectSettings: Seq[Def.Setting[_]] = Seq(
         //tlFatalWarnings := false, // turn off fatal warnings for mdoc
         tlSiteKeepFiles := false, // FIXME: turn off when docs are stable
-        laikaExtensions += laikaHtmlRenderer(Renderers.backticksToCode),
+        laikaExtensions ++= Seq(
+            Extensions.backticksToCode,
+            Extensions.noVersionedIndex,
+        ),
         laikaConfig :=  LaikaConfig.defaults.withConfigValue(
             LinkConfig.empty.addApiLinks(tlSiteApiUrl.value.map(url => ApiLinks(baseUri = url.toExternalForm)).toSeq: _*)
                             .addSourceLinks(scmInfo.value.map(scm =>
@@ -32,9 +36,50 @@ object ParsleySitePlugin extends AutoPlugin {
             )
             .withRawContent,  // enable usage of raw HTML,
         tlSiteHelium := {
+            val notBackport = true || !githubIsWorkflowBuild.value
             val githubLink = GenericSiteSettings.githubLink.value
             val apiLink = tlSiteApiUrl.value.map(url => TextLink.external(url.toString, "API"))
-            tlSiteHelium.value.site.layout(
+            val redirections = redirects.theme(tlBaseVersion.value)
+
+            implicit class AddLanding(helium: Helium) {
+                def addLandingPage =
+                    if (notBackport) helium.site.landingPage(
+                        logo = Some(Image(
+                            target = InternalTarget(Path.Root / "icons" / "greenLeaf.svg"),
+                            width = Some(LengthUnit.percent(40)),
+                            height = Some(LengthUnit.percent(40)),
+                            alt = Some("A Leafy Logo"),
+                        )),
+                        title = Some("Parsley"),
+                        subtitle = Some("A fast and modern parser combinator library for Scala"),
+                        latestReleases = Seq(
+                            ReleaseInfo("Latest Stable Release", mdocVariables.value("VERSION")),
+                        ),
+                        license = Some(licenses.value.head._1),
+                        documentationLinks = Seq(
+                            TextLink.internal(Path.Root / "home.md", "Overview"),
+                            TextLink.internal(Path.Root / "cheatsheet.md", "Cheatsheet"),
+                            TextLink.internal(Path.Root / "api-guide" / "README.md", "API Guide"),
+                            TextLink.internal(Path.Root / "tutorial" / "README.md", "Parser Combinator Tutorial"),
+                            TextLink.internal(Path.Root / "faq.md", "Frequently Asked Questions"),
+                        ),
+                        projectLinks = githubLink.zip(apiLink).map {
+                            case (git, api) => LinkGroup.create(git, api)
+                        }.toSeq,
+                        teasers = Seq(
+                            Teaser("Modern", "Parsley employs modern design developed over five years of research, supporting many parser combinator design pattterns out of the box."),
+                            Teaser("Stack-Safe", "Parsley promises to not stack-overflow during the runtime of the parser, preventing vulnerabilities."),
+                            Teaser("Great Errors", "Parsley has good out-of-the-box error messages, with a lot of support for improving the content of error messages and their formatting."),
+                            Teaser("Easily Debuggable", "Parsley parsers are easy to debug thanks to special combinators and debuggers."),
+                            Teaser("Cross-Compatible", "Supports Scala 2.12, 2.13, and 3.0; as well as support for Scala Native and Scala-JS."),
+                            Teaser("Cats Friendly", "Intregration available for Typelevel's Cats Ecosystem, providing instances for relevant typeclasses."),
+                        )
+                    )
+                    else helium
+            }
+
+            tlSiteHelium.value.extendWith(redirections)
+            .site.layout(
                 topBarHeight = LengthUnit.px(50),
                 //contentWidth = LengthUnit.px(1075), //px(860)
             )
@@ -51,40 +96,9 @@ object ParsleySitePlugin extends AutoPlugin {
                 ),
             )
             .site.resetDefaults(topNavigation = true)
-            .site.landingPage(
-                logo = Some(Image(
-                    target = InternalTarget(Path.Root / "icons" / "greenLeaf.svg"),
-                    width = Some(LengthUnit.percent(40)),
-                    height = Some(LengthUnit.percent(40)),
-                    alt = Some("A Leafy Logo"),
-                )),
-                title = Some("Parsley"),
-                subtitle = Some("A fast and modern parser combinator library for Scala"),
-                latestReleases = Seq(
-                    ReleaseInfo("Latest Stable Release", "4.4.0"),
-                ),
-                license = Some(licenses.value.head._1),
-                documentationLinks = Seq(
-                    TextLink.internal(Path.Root / "home.md", "Overview"),
-                    TextLink.internal(Path.Root / "cheatsheet.md", "Cheatsheet"),
-                    TextLink.internal(Path.Root / "api-guide" / "README.md", "API Guide"),
-                    TextLink.internal(Path.Root / "tutorial" / "README.md", "Parser Combinator Tutorial"),
-                    TextLink.internal(Path.Root / "faq.md", "Frequently Asked Questions"),
-                ),
-                projectLinks = githubLink.zip(apiLink).map {
-                    case (git, api) => LinkGroup.create(git, api)
-                }.toSeq,
-                teasers = Seq(
-                    Teaser("Modern", "Parsley employs modern design developed over five years of research, supporting many parser combinator design pattterns out of the box."),
-                    Teaser("Stack-Safe", "Parsley promises to not stack-overflow during the runtime of the parser, preventing vulnerabilities."),
-                    Teaser("Great Errors", "Parsley has good out-of-the-box error messages, with a lot of support for improving the content of error messages and their formatting."),
-                    Teaser("Easily Debuggable", "Parsley parsers are easy to debug thanks to special combinators and debuggers."),
-                    Teaser("Cross-Compatible", "Supports Scala 2.12, 2.13, and 3.0; as well as support for Scala Native and Scala-JS."),
-                    Teaser("Cats Friendly", "Intregration available for Typelevel's Cats Ecosystem, providing instances for relevant typeclasses."),
-                )
-            )
+            .addLandingPage
             .site.topNavigationBar(
-                homeLink = IconLink.internal(Path.Root / "home.md", Icon.leaf),
+                homeLink = IconLink.internal(Path.Root / "README", Icon.leaf),
                 navLinks = apiLink.toList ++ githubLink.toList
             )
             .site.favIcons(Icon.greenLeaf)
@@ -105,9 +119,8 @@ object ParsleySitePlugin extends AutoPlugin {
                 def version(v: String, label: String)(path: String = v) =
                     Version(s"$v.x", path).withLabel(label).withFallbackLink(s"api-guide")
                 Versions
-                  .forCurrentVersion(version(tlBaseVersion.value, "stable")("latest").setCanonical)
-                  // Set this to false when backporting fixes to older docs
-                  .withRenderUnversioned(true || !githubIsWorkflowBuild.value)
+                  .forCurrentVersion(version(tlBaseVersion.value, "stable")().setCanonical)
+                  .withRenderUnversioned(notBackport)
             }
             .site.themeColors(
                 primary = ForestGreen.darker,
@@ -147,6 +160,96 @@ object ParsleySitePlugin extends AutoPlugin {
             .site.darkMode.syntaxHighlightingColors(syntaxHighlightingBase, syntaxHighlightingWheel)
         },
     )
+}
+
+object redirects {
+    import laika.theme.{Theme, ThemeProvider, ThemeBuilder}
+    import laika.io.model.InputTree
+    import cats.effect.kernel.{Async, Resource}
+    import scala.language.higherKinds
+    import io.circe._
+    import io.circe.parser._
+    import io.circe.generic.semiauto._
+
+    case class Versioned(path: Path, versions: Set[String])
+    implicit val versionedDecoder: Decoder[Versioned] = deriveDecoder[Versioned]
+    implicit val pathDecoder: Decoder[Path] = Decoder[String].map(Path.parse)
+
+    val versionedPages: Seq[Versioned] = {
+        import scala.io.Source
+        for {
+            json <- parse(Source.fromFile("docs/laika/versionInfo.json").mkString).toSeq
+            linkTargets <- json.asObject.flatMap(_("linkTargets")).flatMap(_.asArray).toSeq
+            linkTarget <- linkTargets
+            versioned <- linkTarget.as[Versioned].toSeq
+        } yield versioned
+    }
+
+    // TODO: this is still rather brittle! is there a better way?
+    private val unversionedPages = List("home", "downloads")
+    // map index pages to their .html equivalents
+    private val unversioned = unversionedPages.map { page =>
+        Path.Root / page / "index.html" -> Path.Root / s"$page.html"
+    }
+
+    private def redirects(latest: String) = {
+        // TODO: this can be made less brittle, surely can be derived from the above configuration?
+        val versions = List("latest", "4.4.x", "4.4")
+        val versionMappings = List(
+            "latest" -> latest,
+            "4.4.x" -> "4.4",
+        )
+
+        val versioned = (
+            // according to the mappings above, redirect relevant versioned pages
+            versionMappings.flatMap {
+                case (fromV, toV) => versionedPages.collect {
+                    case Versioned(page, versions) if versions.contains(toV) => page.asIndex.fromVersion(fromV) -> page.fromVersion(toV)
+                }
+            }
+            // map all pages index.html to the latest versioned
+            ++ versionedPages.collect {
+                case Versioned(page, versions) if versions.contains(latest) =>
+                    page.asIndex -> page.fromVersion(latest)
+            }
+            // map x/index.html pages to their x.html equivalents where applicable
+            ++ versionedPages.flatMap {
+                case Versioned(page, versions) if page.name != "index.html" =>
+                    for (version <- versions) yield page.asIndex.fromVersion(version) -> page.fromVersion(version)
+                case _ => Nil
+            }
+            // all supported versions plainly map to their api-guides (which may further redirect)
+            ++ versions.map(v => Path.Root / v / "index.html" -> Path.Root / v / "api-guide" / "index.html")
+        )
+
+        versioned ++ unversioned
+    }
+
+    def theme(latest: String) = new ThemeProvider {
+      def build[F[_]: Async]: Resource[F, Theme[F]] =
+        ThemeBuilder[F]("Parsley Redirects")
+          .addInputs(
+            // add redirect htmls to the virtual file tree
+            // for simplicity, we treat these as unversioned pages
+            // such that they are completely managed by the primary branch
+            redirects(latest).foldLeft(InputTree[F]) { case (tree, (from, to)) =>
+              tree.addString(html(to), from)
+            }
+          )
+          .build
+    }
+
+    private def html(to: Path) =
+      s"""|<!DOCTYPE html>
+          |<meta charset="utf-8">
+          |<meta http-equiv="refresh" content="0; URL=$to">
+          |<link rel="canonical" href="$to">
+          |""".stripMargin
+
+    private implicit class PathUtils(val path: Path) extends AnyVal {
+        def fromVersion(version: String): Path =  Path.Root / version / path.relative
+        def asIndex: Path = if (path.name == "index.html") path else path.withoutSuffix / "index.html"
+    }
 }
 
 case class ColorTints(base: Color, light: Color, lighter: Color, dark: Color, darker: Color)
@@ -214,15 +317,31 @@ object Icon {
     val greenLeaf = Favicon.internal(Path.Root / "icons" / "greenLeaf.svg", "32x32")
 }
 
-object Renderers {
+object Extensions {
     import laika.api.format.TagFormatter
-    val backticksToCode: PartialFunction[(TagFormatter, Element), String] = {
+    import laika.api.bundle.{PathTranslator, ExtensionBundle, PathAttributes}
+
+    val backticksToCode: ExtensionBundle = laikaHtmlRenderer {
         // this is somewhere, and needs to be code
         case (fmt, Text(Ticked(tickless), opt)) => fmt.withoutIndentation(_.textElement("code", Text(tickless).withOptions(opt)))
         // page title
         case (isTitleText(fmt), TemplateString(Ticked(tickless), opt)) => fmt.text(tickless)
     }
 
+    val noVersionedIndex: ExtensionBundle = new ExtensionBundle {
+        val description: String = "intercepts versioning paths for index.html"
+        override def extendPathTranslator = {
+            case context => createTranslator(context.baseTranslator)
+        }
+    }
+
+    private def createTranslator(delegate: PathTranslator): PathTranslator = new PathTranslator {
+        override def translate(input: Path): Path = if (input.name == "index.html") input else delegate.translate(input)
+        override def translate(input: RelativePath): RelativePath = if (input.name == "index.html") input else delegate.translate(input)
+        override def getAttributes(path: Path): Option[PathAttributes] = delegate.getAttributes(path)
+        override def forReferencePath(path: Path): PathTranslator = createTranslator(delegate.forReferencePath(path))
+
+    }
     private object isTitleText {
         def unapply(fmt: TagFormatter): Option[TagFormatter] = fmt.parents.headOption.collect {
             case TemplateSpanSequence(TemplateString(cousin, _) +: _, _) if cousin.endsWith("<title>") => fmt

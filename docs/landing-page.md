@@ -1,3 +1,6 @@
+{%
+laika.site.metadata.description = "The parsley wiki."
+%}
 # Getting Started
 Parsley can be added to your project by one of the following configuration commands.
 
