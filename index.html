@@ -10,7 +10,7 @@
       <meta name="author" content="parsley contributors"/>
     
     
-      <meta name="description" content="docs"/>
+      <meta name="description" content="The parsley wiki."/>
     
     
       <link rel="icon" sizes="32x32" type="image/svg+xml" href="icons/greenLeaf.svg"/>
@@ -55,13 +55,13 @@
               
                 <li><a class="text-link" href="home.html">Overview</a></li>
               
-                <li><a class="text-link" href="latest/cheatsheet.html">Cheatsheet</a></li>
+                <li><a class="text-link" href="4.4/cheatsheet.html">Cheatsheet</a></li>
               
-                <li><a class="text-link" href="latest/api-guide/">API Guide</a></li>
+                <li><a class="text-link" href="4.4/api-guide/">API Guide</a></li>
               
-                <li><a class="text-link" href="latest/tutorial/">Parser Combinator Tutorial</a></li>
+                <li><a class="text-link" href="4.4/tutorial/">Parser Combinator Tutorial</a></li>
               
-                <li><a class="text-link" href="latest/faq.html">Frequently Asked Questions</a></li>
+                <li><a class="text-link" href="4.4/faq.html">Frequently Asked Questions</a></li>
               
             </ul>
           </div>
@@ -135,7 +135,7 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">charLift</span><span>, </span><span class="identifier">stringLift</span><span>}
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">hello</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = (</span><span class="char-literal">&#39;h&#39;</span><span> ~&gt; (</span><span class="string-literal">&quot;ello&quot;</span><span> | </span><span class="string-literal">&quot;i&quot;</span><span>) ~&gt; </span><span class="string-literal">&quot; world!&quot;</span><span>).</span><span class="identifier">void</span><span>
-</span><span class="comment">// hello: Parsley[Unit] = parsley.Parsley@6576ceeb
+</span><span class="comment">// hello: Parsley[Unit] = parsley.Parsley@50ddb65b
 </span><span class="identifier">hello</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;hello world!&quot;</span><span>)
 </span><span class="comment">// res0: parsley.Result[String, Unit] = Success(())
 </span><span class="identifier">hello</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;hi world!&quot;</span><span>)
@@ -150,7 +150,7 @@
     definitions of simple numbers:</p>
     <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">digit</span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">natural</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Int</span><span>] = </span><span class="identifier">digit</span><span>.</span><span class="identifier">foldLeft1</span><span>(</span><span class="number-literal">0</span><span>)((</span><span class="identifier">n</span><span>, </span><span class="identifier">d</span><span>) =&gt; </span><span class="identifier">n</span><span> * </span><span class="number-literal">10</span><span> + </span><span class="identifier">d</span><span>.</span><span class="identifier">asDigit</span><span>)
-</span><span class="comment">// natural: Parsley[Int] = parsley.Parsley@e591d15
+</span><span class="comment">// natural: Parsley[Int] = parsley.Parsley@22869d74
 </span><span class="identifier">natural</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;0&quot;</span><span>)
 </span><span class="comment">// res3: parsley.Result[String, Int] = Success(0)
 </span><span class="identifier">natural</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;123&quot;</span><span>)
