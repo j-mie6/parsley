@@ -239,16 +239,16 @@ object redirects {
           .build
     }
 
-    private def html(to: String): String =
+    private def html(to: Path, isCI: Boolean): String =
         s"""|<!DOCTYPE html>
             |<meta charset="utf-8">
-            |<meta http-equiv="refresh" content="0; URL=$to">
+            |<meta http-equiv="refresh" content="0; URL=${inParsley(to, isCI)}">
             |<link rel="canonical" href="$to">
             |""".stripMargin
 
     // thanks to the j-mie6.github.io/parsley hosting, when deploying to CI we actually need to
     // add a `/parsley` correction to the generated links...
-    private def html(to: Path, isCI: Boolean): String = html(if (isCI) s"/parsley$to" else to.toString)
+    private def inParsley(to: Path, isCI: Boolean): String = if (isCI) s"/parsley$to" else to.toString
 
     private implicit class PathUtils(val path: Path) extends AnyVal {
         def fromVersion(version: String): Path =  Path.Root / version / path.relative
