@@ -36,7 +36,7 @@ object ParsleySitePlugin extends AutoPlugin {
             )
             .withRawContent,  // enable usage of raw HTML,
         tlSiteHelium := {
-            val notBackport = true || !githubIsWorkflowBuild.value
+            val notBackport = false || !githubIsWorkflowBuild.value
             val githubLink = GenericSiteSettings.githubLink.value
             val apiLink = tlSiteApiUrl.value.map(url => TextLink.external(url.toString, "API"))
             val redirections = redirects.theme(tlBaseVersion.value, githubIsWorkflowBuild.value)
@@ -54,6 +54,7 @@ object ParsleySitePlugin extends AutoPlugin {
                         subtitle = Some("A fast and modern parser combinator library for Scala"),
                         latestReleases = Seq(
                             ReleaseInfo("Latest Stable Release", mdocVariables.value("VERSION")),
+                            ReleaseInfo("Latest Dev Snapshot", mdocVariables.value("PRERELEASE_VERSION")),
                         ),
                         license = Some(licenses.value.head._1),
                         documentationLinks = Seq(
@@ -120,6 +121,7 @@ object ParsleySitePlugin extends AutoPlugin {
                     Version(s"$v.x", path).withLabel(label).withFallbackLink(s"api-guide")
                 Versions
                   .forCurrentVersion(version(tlBaseVersion.value, "stable")().setCanonical)
+                  .withNewerVersions(version("4.5", "dev")())
                   .withRenderUnversioned(notBackport)
             }
             .site.themeColors(
@@ -194,10 +196,12 @@ object redirects {
 
     private def redirects(latest: String) = {
         // TODO: this can be made less brittle, surely can be derived from the above configuration?
-        val versions = List("latest", "4.4.x", "4.4")
+        val versions = List("latest", "stable", "4.4.x", "4.4", "4.5.x", "4.5")
         val versionMappings = List(
             "latest" -> latest,
+            "stable" -> "4.4",
             "4.4.x" -> "4.4",
+            "4.5.x" -> "4.5",
         )
 
         val versioned = (

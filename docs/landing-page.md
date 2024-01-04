@@ -17,6 +17,9 @@ libraryDependencies += "com.github.j-mie6" %% "parsley" % "@VERSION@"
 ivy"com.github.j-mie6::parsley:@VERSION@"
 ```
 
+Alternatively, the most up-to-date development pre-release is `@PRERELEASE_VERSION@` and the
+most bleeding-edge snapshot is `@SNAPSHOT_VERSION@`.
+
 ## Examples
 Parsley can leverage string and character literals in Scala by implicit conversions, keeping the
 description of the parser uncluttered:

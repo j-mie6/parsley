@@ -122,15 +122,15 @@ jobs:
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' doc
 
       - name: Make target directories
-        if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/master')
+        if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/backport/4.4')
         run: mkdir -p parsley/native/target parsley/jvm/target parsley/js/target project/target
 
       - name: Compress target directories
-        if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/master')
+        if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/backport/4.4')
         run: tar cf targets.tar parsley/native/target parsley/jvm/target parsley/js/target project/target
 
       - name: Upload target directories
-        if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/master')
+        if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/backport/4.4')
         uses: actions/upload-artifact@v3
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-${{ matrix.scala }}-${{ matrix.project }}
@@ -139,7 +139,7 @@ jobs:
   publish:
     name: Publish Artifacts
     needs: [build]
-    if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/master')
+    if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/backport/4.4')
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -365,7 +365,7 @@ jobs:
 
   coverage:
     name: Run Test Coverage and Upload
-    if: github.ref == 'refs/heads/master' || (github.event_name == 'pull_request' && github.base_ref == 'master')
+    if: github.ref == 'refs/heads/backport/4.4' || (github.event_name == 'pull_request' && github.base_ref == 'backport/4.4')
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -455,7 +455,7 @@ jobs:
         run: sbt docs/tlSite
 
       - name: Publish site
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/wiki-improvements'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/backport/4.4'
         uses: peaceiris/actions-gh-pages@v3.9.3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

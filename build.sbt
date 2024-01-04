@@ -8,7 +8,7 @@ val Java8 = JavaSpec.temurin("8")
 val JavaLTS = JavaSpec.temurin("11")
 val JavaLatest = JavaSpec.temurin("17")
 
-val mainBranch = "master"
+val mainBranch = "backport/4.4"
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
@@ -38,7 +38,7 @@ inThisBuild(List(
   githubWorkflowAddedJobs += testCoverageJob(githubWorkflowGeneratedCacheSteps.value.toList),
   //githubWorkflowConcurrency := None,
   // Website Configuration
-  tlSitePublishBranch := Some(/*mainBranch*/"wiki-improvements"),
+  tlSitePublishBranch := Some(mainBranch),
 ))
 
 lazy val root = tlCrossRootProject.aggregate(parsley)
