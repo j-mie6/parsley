@@ -23,8 +23,8 @@ object ParsleySitePlugin extends AutoPlugin {
     override def requires = TypelevelSitePlugin
 
     override def projectSettings: Seq[Def.Setting[_]] = Seq(
-        //tlFatalWarnings := false, // turn off fatal warnings for mdoc
-        tlSiteKeepFiles := false, // FIXME: turn off when docs are stable
+        tlFatalWarnings := true, // off fatal warnings for mdoc
+        tlSiteKeepFiles := true,
         laikaExtensions ++= Seq(
             Extensions.backticksToCode,
             Extensions.noVersionedIndex,
