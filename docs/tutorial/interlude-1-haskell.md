@@ -1,4 +1,5 @@
 {%
+laika.versioned = true
 laika.site.metadata.description = "An in-depth look at optimising a parser for a sub-set of Haskell."
 %}
 # Interlude 1: Building a Parser for Haskell

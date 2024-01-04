@@ -1,4 +1,5 @@
 {%
+laika.versioned = true
 laika.title = "`parsley.Parsley`"
 parsley.tabname = "Parsley"
 laika.site.metadata.description = "This page describes the main API of Parsley."

@@ -1,4 +1,5 @@
 {%
+laika.versioned = true
 laika.title = "`chain`"
 parsley.tabname = "Chain Combinators"
 laika.site.metadata.description = "This page describes how to chain together values and operators."

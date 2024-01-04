@@ -1,4 +1,5 @@
 {%
+laika.versioned = true
 laika.title = "`parsley.debug`"
 parsley.tabname = "Basic Debug Combinators (parsley.debug)"
 laika.site.metadata.description = "This page describes the built-in basic debugging combinators."

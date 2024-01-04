@@ -1,4 +1,5 @@
 {%
+laika.versioned = true
 laika.site.metadata.description = "How to handle left-recursion and precedence in a parser."
 %}
 # Building Expression Parsers

@@ -1,4 +1,5 @@
 {%
+laika.versioned = true
 laika.site.metadata.description = "How combinators work at a basic level."
 %}
 

@@ -27,7 +27,7 @@ object ParsleySitePlugin extends AutoPlugin {
         tlSiteKeepFiles := true,
         laikaExtensions ++= Seq(
             Extensions.backticksToCode,
-            Extensions.noVersionedIndex,
+            //Extensions.noVersionedIndex, // FIXME: evil extension breaks version selection, dunno why yet
         ),
         laikaConfig :=  LaikaConfig.defaults.withConfigValue(
             LinkConfig.empty.addApiLinks(tlSiteApiUrl.value.map(url => ApiLinks(baseUri = url.toExternalForm)).toSeq: _*)
@@ -343,8 +343,8 @@ object Extensions {
         override def translate(input: RelativePath): RelativePath = if (input.name == "index.html") input else delegate.translate(input)
         override def getAttributes(path: Path): Option[PathAttributes] = delegate.getAttributes(path)
         override def forReferencePath(path: Path): PathTranslator = createTranslator(delegate.forReferencePath(path))
-
     }
+
     private object isTitleText {
         def unapply(fmt: TagFormatter): Option[TagFormatter] = fmt.parents.headOption.collect {
             case TemplateSpanSequence(TemplateString(cousin, _) +: _, _) if cousin.endsWith("<title>") => fmt

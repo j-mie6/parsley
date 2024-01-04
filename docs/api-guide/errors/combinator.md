@@ -1,4 +1,5 @@
 {%
+laika.versioned = true
 laika.title = "`combinator`"
 parsley.tabname = "Error Message Combinators (parsley.errors.combinator)"
 laika.site.metadata.description = "This page describes how to generate informative errors."

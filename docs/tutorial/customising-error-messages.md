@@ -1,4 +1,5 @@
 {%
+laika.versioned = true
 laika.site.metadata.description = "How to customise error messages to make them more informative."
 %}
 # Customising Error Messages

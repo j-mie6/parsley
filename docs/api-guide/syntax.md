@@ -1,4 +1,5 @@
 {%
+laika.versioned = true
 laika.title = "`parsley.implicits`"
 parsley.tabname = "Syntactic Extensions (parsley.implicits)"
 laika.site.metadata.description = "This page describes Parsley's syntactic extensions."

@@ -1,4 +1,5 @@
 {%
+laika.versioned = true
 laika.title = "`parsley.character`"
 parsley.tabname = "Parsing Characters (parsley.character)"
 laika.site.metadata.description = "This page describes how to read characters."

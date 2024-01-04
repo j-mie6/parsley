@@ -1,4 +1,5 @@
 {%
+laika.versioned = true
 laika.site.metadata.description = "How to employ more advanced techniques to make error messages context-dependent."
 %}
 # Advanced Error Messages

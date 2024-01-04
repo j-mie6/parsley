@@ -1,4 +1,5 @@
 {%
+laika.versioned = true
 laika.site.metadata.description = "How to abstract away result construction from parsing."
 %}
 

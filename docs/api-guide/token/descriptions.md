@@ -1,4 +1,5 @@
 {%
+laika.versioned = true
 laika.title = "`descriptions`"
 parsley.tabname = "Configuring the Lexer (parsley.token.descriptions)"
 laika.site.metadata.description = "This page describes how to configure a custom language."

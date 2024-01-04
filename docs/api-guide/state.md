@@ -1,4 +1,5 @@
 {%
+laika.versioned = true
 laika.title = "`parsley.registers`"
 parsley.tabname = "Context-Sensitive Parsing (parsley.registers)"
 laika.site.metadata.description = "This page describes how to thread custom state through a parser."

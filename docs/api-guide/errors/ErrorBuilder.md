@@ -1,4 +1,5 @@
 {%
+laika.versioned = true
 laika.title = "`ErrorBuilder`"
 parsley.tabname = "Constructing Custom Errors (parsley.errors.ErrorBuilder)"
 laika.site.metadata.description = "This page describes how to customise the error type."

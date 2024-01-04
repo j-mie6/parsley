@@ -1,4 +1,5 @@
 {%
+laika.versioned = true
 laika.title = "`parsley.combinator`"
 parsley.tabname = "Additional Combinators (parsley.combinator)"
 laika.site.metadata.description = "This page describes additional helpful combinators."
