@@ -1,7 +1,43 @@
+{%
+laika.site.metadata.description = "How to abstract away result construction from parsing."
+%}
+
+```scala mdoc:invisible
+import parsley.Parsley
+object lexer {
+    import parsley.token.{Lexer, predicate}
+    import parsley.token.descriptions.{LexicalDesc, NameDesc, SymbolDesc}
+
+    private val desc = LexicalDesc.plain.copy(
+        nameDesc = NameDesc.plain.copy(
+            // Unicode is also possible instead of Basic
+            identifierStart = predicate.Basic(_.isLetter),
+            identifierLetter = predicate.Basic(_.isLetter),
+        ),
+        symbolDesc = SymbolDesc.plain.copy(
+            hardKeywords = Set("negate", "let", "in"),
+            hardOperators = Set("*", "+", "-"),
+        ),
+    )
+
+    private val lexer = new Lexer(desc)
+
+    val identifier = lexer.lexeme.names.identifier
+    val number = lexer.lexeme.numeric.natural.decimal
+
+    def fully[A](p: Parsley[A]) = lexer.fully(p)
+    val implicits = lexer.lexeme.symbol.implicits
+}
+```
+
 # The Parser Bridge Pattern
 
 @:callout(info)
-This page is still being updated for the wiki port, so some things may be a bit broken or look a little strange.
+The first part of this page helps to motivate the *Parser Bridge* pattern, and
+the second part shows how to implement it from scratch. This is useful to know,
+but the API Guide [Generic Bridges](../api-guide/generic.md) page can get you
+started with the technique faster. The latter parts of this page can be helpful
+when the generic bridges no longer suffice.
 @:@
 
 By this point, we've seen how to effectively build expression parsers, lexers, and how to handle
@@ -40,7 +76,7 @@ in x * y
 
 Now let's see how this changes the parser:
 
-```scala
+```scala mdoc
 import parsley.Parsley
 
 object ast {
@@ -62,27 +98,27 @@ object expressions {
     import parsley.combinator.sepEndBy1
     import parsley.implicits.lift.Lift2
 
-    import lexer.implicits.implicitToken
+    import lexer.implicits.implicitSymbol
     import lexer.{number, fully, identifier}
     import ast._
 
-    private lazy val atom: Parsley[Expr] =
-        "(" *> expr <* ")" <|> number.map(Num) <|> identifier.map(Var)
-    private lazy val expr = precedence[Expr](atom)(
-        Ops(Prefix)("negate" #> Neg),
-        Ops(InfixL)("*" #> Mul),
-        Ops(InfixL)("+" #> Add, "-" #> Sub))
+    lazy val atom: Parsley[Expr] =
+        "(" ~> expr <~ ")" | number.map(Num) | identifier.map(Var)
+    lazy val expr = precedence[Expr](atom)(
+        Ops(Prefix)("negate" as Neg),
+        Ops(InfixL)("*" as Mul),
+        Ops(InfixL)("+" as Add, "-" as Sub))
 
-    private lazy val binding = Binding.lift(identifier, "=" *> letExpr)
-    private lazy val bindings = sepEndBy1(binding, ";")
-    private lazy val letExpr: Parsley[LetExpr] =
-      Let.lift("let" *> bindings, "in" *> expr) <|> expr
+    lazy val binding = Binding.lift(identifier, "=" ~> letExpr)
+    lazy val bindings = sepEndBy1(binding, ";")
+    lazy val letExpr: Parsley[LetExpr] =
+      Let.lift("let" ~> bindings, "in" ~> expr) | expr
 
     val parser = fully(letExpr)
 }
 ```
 
-So far, so good. I've added a couple of now nodes to the ast, and three extra parser
+So far, so good. I've added a couple of now nodes to the AST, and three extra parser
 definitions. The only new thing here is the helpful `sepEndBy1` combinator, which is
 particularly good (along with its cousins, `sepBy1` and `endBy1`) at dealing with things like
 commas and semi-colons. However, if I now said that we need to encode position information into
@@ -95,7 +131,7 @@ arguments will not appear in the pattern match, but _are_ required to build an i
 we're going to add an extra argument to each constructor containing the position information
 like so:
 
-```scala
+```scala mdoc:nest
 object ast {
     sealed trait LetExpr
     case class Let(bindings: List[Binding], x: Expr)(val pos: (Int, Int)) extends LetExpr
@@ -118,7 +154,7 @@ this affects our parsers. Let's just take a look at a single parser and see what
 will do:
 
 ```scala
-val binding: Parsley[Binding] = Binding.lift(identifier, "=" *> letExpr)
+val binding: Parsley[Binding] = Binding.lift(identifier, "=" ~> letExpr)
 ```
 
 This no longer compiles for _several_ reasons. The first is that `Binding.lift` doesn't work
@@ -133,18 +169,19 @@ get that position information in and get it "working" again. The combinators for
 position information are:
 
 ```scala
+import parsley.position._
 val line: Parsley[Int]
 val col: Parsley[Int]
-val pos: Parsley[(Int, Int)] = line <~> col
+val pos: Parsley[(Int, Int)] = line.zip(col)
 ```
 
 So in this case, `pos` is what we are after, our first instinct might be to just add it as an
-extra parameter to the lift: `Binding.lift(identifier, "=" *> letExpr, pos)`, but `Binding` is
+extra parameter to the lift: `Binding.lift(identifier, "=" ~> letExpr, pos)`, but `Binding` is
 curried, and lift takes an uncurried function. Instead, we can use `<*>` to apply a parser
 returning a function to its next argument:
 
 ```scala
-val binding: Parsley[Binding] = Binding.lift(identifier, "=" *> letExpr) <*> pos
+val binding: Parsley[Binding] = Binding.lift(identifier, "=" ~> letExpr) <*> pos
 ```
 
 Again, assuming that `Binding.lift` compiles with this snippet, this would compile fine.
@@ -161,9 +198,18 @@ val binding: Parsley[Binding] = pos <**> Binding.lift(identifier, "=" *> letExpr
 Now, to get it properly compiling again, we'll need to lean on the `zipped` notation instead, to
 help Scala's type inference figure out what we want.
 
-```scala
+```scala mdoc:invisible
+import ast.{Binding, LetExpr}
+import parsley.Parsley.empty
+import parsley.position._
+import lexer.identifier
+import lexer.implicits._
+val letExpr: Parsley[LetExpr] = empty
+```
+```scala mdoc:silent
 import parsley.implicits.zipped.Zipped2
-val binding: Parsley[Binding] = pos <**> (identifier, "=" *> letExpr).zipped(Binding(_, _) _)
+val binding: Parsley[Binding] =
+    pos <**> (identifier, "=" ~> letExpr).zipped(Binding(_, _) _)
 ```
 
 This _finally_ compiles and works as intended. The `Binding(_, _) _` is desugared as follows:
@@ -198,7 +244,7 @@ This is roughly the intent of the _Parser Bridge_ pattern, which is defined as:
 
 In practice though, this can be used for more general decoupling of the AST from the parser, which
 we will also see examples of (especially in the Haskell interlude!). We'll start exploring this
-pattern -- and the associated terminology -- with the let binding, `Num` and `Var` cases to get a
+pattern, and the associated terminology, with the let binding, `Num` and `Var` cases to get a
 feel for it, before figuring out how to adapt it for the operators.
 
 The general idea behind the pattern is to leverage Scala's syntactic sugar for `apply` methods.
@@ -209,9 +255,36 @@ we are going to follow suit, but tailor our `apply` method to work on parsers in
 These `apply` methods are referred to as **_bridge constructors_**. Let's get working within the
 `ast` object:
 
-```scala
+```scala mdoc:reset:invisible
+import parsley.Parsley
+object lexer {
+    import parsley.token.{Lexer, predicate}
+    import parsley.token.descriptions.{LexicalDesc, NameDesc, SymbolDesc}
+
+    private val desc = LexicalDesc.plain.copy(
+        nameDesc = NameDesc.plain.copy(
+            // Unicode is also possible instead of Basic
+            identifierStart = predicate.Basic(_.isLetter),
+            identifierLetter = predicate.Basic(_.isLetter),
+        ),
+        symbolDesc = SymbolDesc.plain.copy(
+            hardKeywords = Set("negate", "let", "in"),
+            hardOperators = Set("*", "+", "-"),
+        ),
+    )
+
+    private val lexer = new Lexer(desc)
+
+    val identifier = lexer.lexeme.names.identifier
+    val number = lexer.lexeme.numeric.natural.decimal
+
+    def fully[A](p: Parsley[A]) = lexer.fully(p)
+    val implicits = lexer.lexeme.symbol.implicits
+}
+```
+```scala mdoc
 object ast {
-    import parsley.Parsley.pos
+    import parsley.position.pos
     import parsley.implicits.zipped.Zipped2
 
     sealed trait LetExpr
@@ -264,26 +337,26 @@ whether or not a position is required for a given node is not _at all_ visible t
 uses its bridge: the bridge is the only place where this needs to be handled. The main parser
 itself now looks like this:
 
-```scala
+```scala mdoc
 object expressions {
     import parsley.expr.{precedence, Ops, InfixL, Prefix}
     import parsley.combinator.sepEndBy1
 
-    import lexer.implicits.implicitToken
+    import lexer.implicits.implicitSymbol
     import lexer.{number, fully, identifier}
     import ast._
 
     private lazy val atom: Parsley[Expr] =
-        "(" *> expr <* ")" <|> Num(number) <|> Var(identifier)
+        "(" ~> expr <~ ")" | Num(number) | Var(identifier)
     private lazy val expr = precedence[Expr](atom)(
-        Ops(Prefix)("negate" #> Neg),
-        Ops(InfixL)("*" #> Mul),
-        Ops(InfixL)("+" #> Add, "-" #> Sub))
+        Ops(Prefix)("negate" as Neg),
+        Ops(InfixL)("*" as Mul),
+        Ops(InfixL)("+" as Add, "-" as Sub))
 
-    private lazy val binding = Binding(identifier, "=" *> letExpr)
+    private lazy val binding = Binding(identifier, "=" ~> letExpr)
     private lazy val bindings = sepEndBy1(binding, ";")
     private lazy val letExpr: Parsley[LetExpr] =
-      Let("let" *> bindings, "in" *> expr) <|> expr
+      Let("let" ~> bindings, "in" ~> expr) | expr
 
     val parser = fully(letExpr)
 }
@@ -317,7 +390,7 @@ object Var {
 ```
 
 As the number of AST nodes increase, it becomes more tedious to continue to define bridge
-constructors and functions by hand. This can be improved by so-called _**generic bridge traits**_.
+constructors and functions by hand. This can be improved by so-called ***generic bridge traits***.
 This idea leverages the common structure between each of the bridge constructors and tries to build
 a recipe for eliminating the boilerplate. This leverages another classic OOP design pattern, called
 the _Template Method_ pattern:
@@ -371,11 +444,15 @@ That doesn't mean they are all identical, indeed, the types vary, as do the arit
 constructors themselves. But there is enough structure here to extract some shiny new bridge
 template traits:
 
-```scala
+```scala mdoc:invisible
+import parsley.implicits.zipped.Zipped2
+import parsley.position.pos
+```
+```scala mdoc
 trait ParserBridgePos1[-A, +B] {
     // this is called the "hook": it's the hole in the template that must be implemented
     def apply(x: A)(pos: (Int, Int)): B
-    // this is the template method, in this case its the template for the bridge constructor
+    // this is the template method, in this case the template for the bridge constructor
     def apply(x: Parsley[A]): Parsley[B] = pos <**> x.map(this.apply(_) _)
 }
 
@@ -388,10 +465,10 @@ trait ParserBridgePos2[-A, -B, +C] {
 
 These are the two generic bridge traits that provide the implementations of our bridge constructors.
 Obviously, there are many many more possible such traits. At the very least, it is also useful to
-have "plain" versions that do not interact with positions at all also (these are provided by Parsley
+have "plain" versions that do not interact with positions at all also (these are provided by `parsley`
 within `parsley.genericbridges`):
 
-```scala
+```scala mdoc
 trait ParserBridge1[-A, +B] {
     def apply(x: A): B
     def apply(x: Parsley[A]): Parsley[B] = x.map(this.apply(_))
@@ -410,7 +487,7 @@ AST nodes will simply extend one of the generic bridge traits as appropriate:
 ```scala
 object Let extends ParserBridgePos2[List[Binding], Expr, LetExpr]
 object Binding extends ParserBridgePos2[String, LetExpr, Binding]
-object Num extends ParserBridgePos1[Int, Num]
+object Num extends ParserBridgePos1[BigInt, Num]
 object Var extends ParserBridgePos1[String, Var]
 ```
 
@@ -428,8 +505,8 @@ are a couple of different ways we can implement a bridge constructor for the ope
 1) Treat them just the same as `Num`, `Var`, `Let`, and `Binding` and create a bridge constructor
    that looks like `Neg("negate")`, `Mul("*")`, etc. This is the easiest, and they'll differ because
    of the type they return (they need to be parsers that return functions).
-2) Build a special operator `<#` that can transform the bridges for these operators into just
-   looking like they do now. It would look like: `Neg <# "negate"`, `Mul <# "*"`, etc. This is
+2) Build a special combinator `from` (or `<#`) that can transform the bridges for these operators into just
+   looking like they do now. It would look like: `Neg from "negate"`, `Mul from "*"`, etc. This is
    slightly more effort to do, however I think it is more faithful to how these operators
    usually behave. The _Parser Bridge_ pattern treats arguments to the builder as arguments to the
    data-type, but the argument to `Neg` isn't the `()` returned by `"negate": Parsley[Unit]`, so
@@ -443,7 +520,7 @@ case class Mul(x: Expr, y: Expr)(val pos: (Int, Int)) extends Expr
 
 object Mul {
     def apply(op: Parsley[Unit]): Parsley[(Expr, Expr) => Mul] =
-        pos.map[(Expr, Expr) => Mul](p => Mul(_, _)(p)) <* op
+        pos.map[(Expr, Expr) => Mul](p => Mul(_, _)(p)) <~ op
 }
 
 // or, alternatively, we can explicitly provide a new hook for our generic bridge trait:
@@ -459,28 +536,31 @@ style. Interestingly, here we can also see an example of where the `apply` hook 
 overriden explicitly to adapt our existing bridge behaviour to a type that is **not** consistent
 with the AST nodes type itself: this can be useful!
 
-Let's see how style (2) compares. To accomplish this, we can think of the new `<#` combinator as
+Let's see how style (2) compares. To accomplish this, we can think of the new `from` combinator as
 being another template method provided by our generic bridge traits:
 
 ```scala
 trait ParserBridgePos1[-A, +B] {
     def apply(x: A)(pos: (Int, Int)): B
     def apply(x: Parsley[A]): Parsley[B] = pos <**> x.map(this.apply(_) _)
-    def <#(op: Parsley[_]): Parsley[A => B] = pos.map[A => B](p => this.apply(_)(p)) <* op
+    def from(op: Parsley[_]): Parsley[A => B] =
+        pos.map[A => B](p => this.apply(_)(p)) <~ op
+    final def <#(op: Parsley[_]): Parsley[A => B] = this from op
 }
 
 trait ParserBridgePos2[-A, -B, +C] {
     def apply(x: A, y: B)(pos: (Int, Int)): C
     def apply(x: Parsley[A], y: Parsley[B]): Parsley[C] =
         pos <**> (x, y).zipped(this.apply(_, _) _)
-    def <#(op: Parsley[_]): Parsley[(A, B) => C] =
+    def from(op: Parsley[_]): Parsley[(A, B) => C] =
         pos.map[(A, B) => C](p => this.apply(_, _)(p)) <* op
+    final def <#(op: Parsley[_]): Parsley[(A, B) => C] = this from op
 }
 ```
 
 Now, by mixing in one of the generic bridge traits, we get two ways of using bridge constructors:
 the first, `apply`, allows for fully-saturated application of a constructor to its parser arguments;
-and the second, `<#`, allows for fully-unsaturated application of a constructor to its arguments,
+and the second, `from`, allows for fully-unsaturated application of a constructor to its arguments,
 whilst still handling the position tracking. You can imagine that partially-saturated bridge
 constructors can also be templated in a similar way, perhaps to fit some unconventional use-cases.
 In this case, here are the definitions of the companion objects for `Add`, `Sub` and `Neg` now:
@@ -495,7 +575,7 @@ object Sub extends ParserBridgePos2[Expr, Expr, Sub]
 object Neg extends ParserBridgePos1[Expr, Neg]
 ```
 
-To make it clear, this automatically gives us the option to use `Add(p, q)` _or_ `Add <# "+"`, and
+To make it clear, this automatically gives us the option to use `Add(p, q)` _or_ `Add from "+"`, and
 its the latter that we'll want to use inside the `precedence` combinator:
 
 ```scala
@@ -503,21 +583,21 @@ object expressions {
     import parsley.expr.{precedence, Ops, InfixL, Prefix}
     import parsley.combinator.sepEndBy1
 
-    import lexer.implicits.implicitToken
+    import lexer.implicits.implicitSymbol
     import lexer.{number, fully, identifier}
     import ast._
 
     private lazy val atom: Parsley[Expr] =
-        "(" *> expr <* ")" <|> Num(number) <|> Var(identifier)
+        "(" ~> expr <~ ")" | Num(number) | Var(identifier)
     private lazy val expr = precedence[Expr](atom)(
-        Ops(Prefix)(Neg <# "negate"),
+        Ops(Prefix)(Neg from "negate"),
         Ops(InfixL)(Mul("*")),
-        Ops(InfixL)(Add <# "+", Sub <# "-"))
+        Ops(InfixL)(Add from "+", Sub from "-"))
 
-    private lazy val binding = Binding(identifier, "=" *> letExpr)
+    private lazy val binding = Binding(identifier, "=" ~> letExpr)
     private lazy val bindings = sepEndBy1(binding, ";")
     private lazy val letExpr: Parsley[LetExpr] =
-      Let("let" *> bindings, "in" *> expr) <|> expr
+      Let("let" ~> bindings, "in" ~> expr) | expr
 
     val parser = fully(letExpr)
 }
@@ -527,19 +607,21 @@ object expressions {
 In the refined definition of our generic bridge traits we supported the _Singleton Bridge_
 parsing design pattern by allowing the companion object itself to "appear" like a parser itself.
 However, if we peer in closely we can even spot some common structure between the two different
-`<#` implementations from above:
+`from` implementations from above:
 
 ```scala
 trait ParserBridgePos1[-A, +B] {
     def apply(x: A)(pos: (Int, Int)): B
-    def <#(op: Parsley[_]): Parsley[A => B] =
+    def from(op: Parsley[_]): Parsley[A => B] =
         pos.map[A => B](p => this.apply(_)(p)) <* op
+    final def <#(op: Parsley[_]): Parsley[A => B] = this from op
 }
 
 trait ParserBridgePos2[-A, -B, +C] {
     def apply(x: A, y: B)(pos: (Int, Int)): C
-    def <#(op: Parsley[_]): Parsley[(A, B) => C] =
+    def from(op: Parsley[_]): Parsley[(A, B) => C] =
         pos.map[(A, B) => C](p => this.apply(_, _)(p)) <* op
+    final def <#(op: Parsley[_]): Parsley[(A, B) => C] = this from op
 }
 ```
 
@@ -547,27 +629,16 @@ They are _almost_ identical, except for the arity of the `apply` method found wi
 It's possible to abstract one more layer and introduce another couple of traits to help factor
 the common code:
 
-```scala
-trait ParserSingletonBridge[+A] {
-    def con: A
-    def <#(op: Parsley[_]): Parsley[A] = op #> con
-}
-
+```scala mdoc:invisible:reset
+import parsley.Parsley
+import parsley.implicits.zipped.Zipped2
+import parsley.position.pos
+```
+```scala mdoc
 trait ParserSingletonBridgePos[+A] {
     def con(pos: (Int, Int)): A
-    def <#(op: Parsley[_]): Parsley[A] = pos.map(this.con(_)) <* op
-}
-
-trait ParserBridge1[-A, +B] extends ParserSingletonBridge[A => B] {
-    def apply(x: A): B
-    def apply(x: Parsley[A]): Parsley[B] = x.map(con)
-    override final def con: A => B = this.apply(_)
-}
-
-trait ParserBridge2[-A, -B, +C] extends ParserSingletonBridge[(A, B) => C] {
-    def apply(x: A, y: B): C
-    def apply(x: Parsley[A], y: Parsley[B]): Parsley[C] = (x, y).zipped(con)
-    override final def con: (A, B) => C = this.apply(_, _)
+    def from(op: Parsley[_]): Parsley[A] = pos.map(this.con(_)) <* op
+    final def <#(op: Parsley[_]): Parsley[A] = this from op
 }
 
 trait ParserBridgePos1[-A, +B] extends ParserSingletonBridgePos[A => B] {
@@ -584,8 +655,7 @@ trait ParserBridgePos2[-A, -B, +C] extends ParserSingletonBridgePos[(A, B) => C]
 }
 ```
 
-This provides a _modest_ improvement over the original versions, but there isn't nearly as much
-benefit over the original generic bridge traits.
+This provides a _modest_ improvement over the original versions.
 
 ## The Final Parser
 
@@ -600,9 +670,7 @@ file:
 <p>
 @:@
 
-```scala
-import parsley.Parsley
-
+```scala mdoc
 object lexer {
     import parsley.token.{Lexer, predicate}
     import parsley.token.descriptions.{LexicalDesc, NameDesc, SymbolDesc}
@@ -610,10 +678,10 @@ object lexer {
     private val desc = LexicalDesc.plain.copy(
         nameDesc = NameDesc.plain.copy(
             identifierStart = predicate.Basic(_.isLetter),
-            identifierLetter = predicate.Basic(_.isLetterOrDigit),
+            identifierLetter = predicate.Basic(_.isLetter),
         ),
         symbolDesc = SymbolDesc.plain.copy(
-            hardKeywords = Set("negate"),
+            hardKeywords = Set("negate", "let", "in"),
             hardOperators = Set("*", "+", "-"),
         ),
     )
@@ -628,8 +696,6 @@ object lexer {
 }
 
 object ast {
-    import parsley.implicits.zipped.Zipped2
-
     sealed trait LetExpr
     case class Let(bindings: List[Binding], x: Expr)(val pos: (Int, Int)) extends LetExpr
     case class Binding(v: String, x: LetExpr)(val pos: (Int, Int))
@@ -642,34 +708,13 @@ object ast {
     case class Num(x: BigInt)(val pos: (Int, Int)) extends Expr
     case class Var(x: String)(val pos: (Int, Int)) extends Expr
 
-    // Generic Bridge Traits
-    trait ParserSingletonBridgePos[+A] {
-        def con(pos: (Int, Int)): A
-        def <#(op: Parsley[_]): Parsley[A] = pos.map(this.con(_)) <* op
-    }
-
-    trait ParserBridgePos1[-A, +B] extends ParserSingletonBridgePos[A => B] {
-        def apply(x: A)(pos: (Int, Int)): B
-        def apply(x: Parsley[A]): Parsley[B] = pos <**> x.map(this.apply(_) _)
-        override final def con(pos: (Int, Int)): A => B = this.apply(_)(pos)
-    }
-
-    trait ParserBridgePos2[-A, -B, +C] extends ParserSingletonBridgePos[(A, B) => C] {
-        def apply(x: A, y: B)(pos: (Int, Int)): C
-        def apply(x: Parsley[A], y: =>Parsley[B]): Parsley[C] =
-            pos <**> (x, y).zipped(this.apply(_, _) _)
-        override final def con(pos: (Int, Int)): (A, B) => C = this.apply(_, _)(pos)
-    }
-
     object Let extends ParserBridgePos2[List[Binding], Expr, LetExpr]
     object Binding extends ParserBridgePos2[String, LetExpr, Binding]
     object Add extends ParserBridgePos2[Expr, Expr, Add]
-    object Mul extends ParserBridgePos1[Unit, (Expr, Expr) => Mul] {
-        def apply(x: Unit)(pos: (Int, Int)): (Expr, Expr) => Mul = Mul(_, _)(pos)
-    }
+    object Mul extends ParserBridgePos2[Expr, Expr, Mul]
     object Sub extends ParserBridgePos2[Expr, Expr, Sub]
     object Neg extends ParserBridgePos1[Expr, Neg]
-    object Num extends ParserBridgePos1[Int, Num]
+    object Num extends ParserBridgePos1[BigInt, Num]
     object Var extends ParserBridgePos1[String, Var]
 }
 
@@ -677,21 +722,21 @@ object expressions {
     import parsley.expr.{precedence, Ops, InfixL, Prefix}
     import parsley.combinator.sepEndBy1
 
-    import lexer.implicits.implicitToken
+    import lexer.implicits.implicitSymbol
     import lexer.{number, fully, identifier}
     import ast._
 
     private lazy val atom: Parsley[Expr] =
-        "(" *> expr <* ")" <|> Num(number) <|> Var(identifier)
+        "(" ~> expr <~ ")" | Num(number) | Var(identifier)
     private lazy val expr = precedence[Expr](atom)(
-        Ops(Prefix)(Neg <# "negate"),
-        Ops(InfixL)(Mul("*")),
-        Ops(InfixL)(Add <# "+", Sub <# "-"))
+        Ops(Prefix)(Neg from "negate"),
+        Ops(InfixL)(Mul from "*"),
+        Ops(InfixL)(Add from "+", Sub from "-"))
 
-    private lazy val binding = Binding(identifier, "=" *> letExpr)
+    private lazy val binding = Binding(identifier, "=" ~> letExpr)
     private lazy val bindings = sepEndBy1(binding, ";")
     private lazy val letExpr: Parsley[LetExpr] =
-      Let("let" *> bindings, "in" *> expr) <|> expr
+      Let("let" ~> bindings, "in" ~> expr) | expr
 
     val parser = fully(letExpr)
 }

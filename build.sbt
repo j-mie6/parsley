@@ -1,9 +1,9 @@
 import _root_.parsley.build.mima
 
 val projectName = "parsley"
-val Scala213 = "2.13.11"
+val Scala213 = "2.13.12"
 val Scala212 = "2.12.18"
-val Scala3 = "3.3.0"
+val Scala3 = "3.3.1"
 val Java8 = JavaSpec.temurin("8")
 val JavaLTS = JavaSpec.temurin("11")
 val JavaLatest = JavaSpec.temurin("17")
@@ -20,11 +20,7 @@ inThisBuild(List(
   organization := "com.github.j-mie6",
   organizationName := "Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>",
   startYear := Some(2020), // true start is 2018, but license is from 2020
-  homepage := Some(url("https://github.com/j-mie6/parsley")),
   licenses := List("BSD-3-Clause" -> url("https://opensource.org/licenses/BSD-3-Clause")),
-  developers := List(
-    tlGitHubDev("j-mie6", "Jamie Willis")
-  ),
   versionScheme := Some("early-semver"),
   crossScalaVersions := Seq(Scala213, Scala212, Scala3),
   scalaVersion := Scala213,
@@ -38,7 +34,6 @@ inThisBuild(List(
   //githubWorkflowConcurrency := None,
   // Website Configuration
   tlSitePublishBranch := Some(/*mainBranch*/"wiki-improvements"),
-  tlSiteApiUrl := Some(url("https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest/")),
 ))
 
 lazy val root = tlCrossRootProject.aggregate(parsley, parsleyDebug)
@@ -87,6 +82,13 @@ lazy val docs = project
   .in(file("site"))
   .dependsOn(parsley.jvm)
   .enablePlugins(ParsleySitePlugin)
+  .settings(
+    tlSiteApiModule := Some((parsley.jvm / projectID).value),
+    libraryDependencies ++= Seq(
+        "org.typelevel" %% "cats-core" % "2.10.0",
+        "com.github.j-mie6" %% "parsley-cats" % "1.2.0"
+    ),
+  )
 
 lazy val parsleyDebug = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .withoutSuffixFor(JVMPlatform)
