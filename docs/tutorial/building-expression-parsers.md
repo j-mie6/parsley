@@ -1,7 +1,15 @@
+{%
+laika.site.metadata.description = "How to handle left-recursion and precedence in a parser."
+%}
 # Building Expression Parsers
 
+```scala mdoc:invisible
+import scala.annotation.unused
+```
+
 @:callout(info)
-This page is still being updated for the wiki port, so some things may be a bit broken or look a little strange.
+This page builds from the ground up on expression parsing. For a less
+discussion-based explanation see [precedence](../api-guide/expr/precedence.md), as well as [chain combinators](../api-guide/expr/chain.md) and [heterogeneous chain combinators](../api-guide/expr/infix.md) for more specific use-cases.
 @:@
 
 Expression parsing is a ubiquitous problem in parsing. It concerns the correct reading of
@@ -23,11 +31,11 @@ only contains `<atom>`. The `<expr>` on the left of the `'+'` denotes that addit
 more tightly to the left, which is what we expect.
 
 ## The Problem with Left-Recursion
-For a first attempt, let's directly translate this grammar into Parsley (for now, we'll
+For a first atomic, let's directly translate this grammar into Parsley (for now, we'll
 parse into an `Int`: behold, the magic of combinators!):
 
-```scala
-import parsley.Parsley, Parsley.attempt
+```scala mdoc:silent
+import parsley.Parsley, Parsley.atomic
 import parsley.character.digit
 import parsley.implicits.character.charLift
 import parsley.implicits.zipped.Zipped2
@@ -36,26 +44,24 @@ import parsley.implicits.zipped.Zipped2
 val number = digit.foldLeft1[Int](0)((n, d) => n * 10 + d.asDigit)
 
 lazy val expr: Parsley[Int] =
-  attempt((expr <* '+', term).zipped(_ + _)) <|>
-  (expr <* '-', term).zipped(_ - _) <|>
+  atomic((expr <* '+', term).zipped(_ + _)) |
+  (expr <* '-', term).zipped(_ - _) |
   term
-lazy val term: Parsley[Int] =
-  (term <* '*', atom).zipped(_ * _) <|> atom
-lazy val atom = '(' *> expr <* ')' <|> number
+lazy val term: Parsley[Int] = (term <* '*', atom).zipped(_ * _) | atom
+lazy val atom: Parsley[Int] = '(' *> expr <* ')' | number
 ```
 
-This parser has a few glaring issues: for a start, the `attempt` is causing excessive backtracking!
+This parser has a few glaring issues: for a start, the `atomic` is causing excessive backtracking!
 While there are ways to improve this, the real problem here is
 the _left-recursion_. Imagine you are evaluating this parser, first you look at `expr`, and then
 your first task is to evaluate `expr`! In fact, due to the strictness of Parsley's combinators, this example breaks before the parser runs: on Scala 2, it will `StackOverflowError` at runtime when constructing the parser, and on Scala 3, it
 will report an infinitely recursive definition for `expr` and `term`. The solution is to turn to the `chain` combinators, but before we do that, let's
-eliminate the attempts and refactor it a little to make the transition less jarring:
+eliminate the atomics and refactor it a little to make the transition less jarring:
 
-```scala
-import parsley.Parsley, Parsley.attempt
+```scala mdoc:nest:silent
+import parsley.Parsley, Parsley.atomic
 import parsley.character.digit
 import parsley.implicits.character.charLift
-import parsley.implicits.zipped.Zipped2
 
 // Standard number parser
 val number = digit.foldLeft1[Int](0)((n, d) => n * 10 + d.asDigit)
@@ -65,12 +71,11 @@ val sub = (y: Int) => (x: Int) => x - y
 val mul = (y: Int) => (x: Int) => x * y
 
 lazy val expr: Parsley[Int] =
-  attempt(expr <**> ('+' #> add <*> term)) <|>
-  expr <**> ('-' #> sub <*> term) <|>
+  atomic(expr <**> ('+'.as(add) <*> term)) |
+  expr <**> ('-'.as(sub) <*> term) |
   term
-lazy val term: Parsley[Int] =
-  term <**> ('*' #> mul <*> atom) <|> atom
-lazy val atom = '(' *> expr <* ')' <|> number
+lazy val term: Parsley[Int] = term <**> ('*'.as(mul) <*> atom) | atom
+lazy val atom: Parsley[Int] = '(' ~> expr <~ ')' | number
 ```
 
 The first step is to perform the translation from the previous post, where we make the operator
@@ -78,19 +83,22 @@ result a function and apply that (flipped) to the right hand side (with `<*>`) a
 (with `<**>`). Now, in this form, hopefully you can notice we've exposed the leading `expr` so that
 its on its own: now we can factor a bit more:
 
-```scala
+```scala mdoc:nest:silent
 lazy val expr: Parsley[Int] =
-  expr <**> (('+' #> add <*> term) <|> ('-' #> sub <*> term)) <|>
+  expr <**> (('+'.as(add) <*> term) | ('-'.as(sub) <*> term)) |
   term
 ```
 
 Now we've eliminated the "backtracking" (if only we could make it that far!), but we can right factor
-the `<|>` too to obtain the simplest form for the parser:
+the `|` too to obtain the simplest form for the parser:
 
-```scala
+```scala mdoc:nest:silent
 lazy val expr: Parsley[Int] =
-  expr <**> (('+' #> add <|> '-' #> sub) <*> term) <|>
+  expr <**> (('+'.as(add) | '-'.as(sub)) <*> term) |
   term
+```
+```scala mdoc:invisible
+lazy val _ = expr: @unused
 ```
 
 Now, at this point, I could demonstrate how to left-factor this grammar and produce something that
@@ -104,8 +112,8 @@ for a long time. For parser combinator libraries it is necessary to _left-factor
 Thankfully, the left-factoring algorithm can be itself encoded nicely as a combinator: this is
 embodied by the `chain`-family. Here is the same example as before, but fixed using `chain.left1`:
 
-```scala
-import parsley.Parsley, Parsley._
+```scala mdoc:silent:nest
+import parsley.Parsley
 import parsley.character.digit
 import parsley.implicits.character.charLift
 import parsley.expr.chain
@@ -117,9 +125,9 @@ val add = (x: Int, y: Int) => x + y
 val sub = (x: Int, y: Int) => x - y
 
 // chain.left1[A](p: Parsley[A], op: Parsley[(A, A) => A]): Parsley[A]
-lazy val expr: Parsley[Int] = chain.left1(term, '+' #> add <|> '-' #> sub)
-lazy val term               = chain.left1[Int](atom, '*' #> (_ * _))
-lazy val atom               = '(' *> expr <* ')' <|> number
+lazy val expr: Parsley[Int] = chain.left1(term, '+'.as(add) | '-'.as(sub))
+lazy val term               = chain.left1[Int](atom, '*' as (_ * _))
+lazy val atom               = '(' ~> expr <~ ')' | number
 ```
 
 The structure of the parser is roughly the same, however now you'll notice that `expr` and `term`
@@ -135,10 +143,10 @@ To make the relationship very clear between what we had before and what we have 
 the transformation from recursive to `chains` follows these shape:
 
 ```scala
-self <**> (op <*> next) <|> next        == chain.left1(next, op)  // flipped op
-self <**> op <*> next <|> next          == chain.left1(next, op)  // normal op
-next <**> (op <*> self </> identity)    == chain.right1(next, op) // no backtracking, op flipped
-attempt(next <**> op <*> self) <|> next == chain.right1(next, op) // backtracking, normal op
+self <**> (op <*> next) | next        == chain.left1(next, op)  // flipped op
+self <**> op <*> next | next          == chain.left1(next, op)  // normal op
+next <**> (op <*> self </> identity)  == chain.right1(next, op) // no backtracking, flipped
+atomic(next <**> op <*> self) | next  == chain.right1(next, op) // backtracking, normal op
 ```
 
 In this parser, the nesting of the chains dictates the precedence order (again, terms are found _inside_
@@ -157,7 +165,7 @@ ability to work with parsers as values and develop combinators with them is the 
 the approach. That being said, most combinator libraries provide this sort of functionality out of the box
 and Parsley is no exception. Let's see the same parser one last time and see what's changed:
 
-```scala
+```scala mdoc:nest:silent
 import parsley.Parsley
 import parsley.character.digit
 import parsley.implicits.character.charLift
@@ -165,9 +173,9 @@ import parsley.expr.{precedence, Ops, InfixL}
 
 val number = digit.foldLeft1[Int](0)((n, d) => n * 10 + d.asDigit)
 
-lazy val expr: Parsley[Int] = precedence[Int]('(' *> expr <* ')', number)(
-    Ops(InfixL)('*' #> (_ * _)),
-    Ops(InfixL)('+' #> (_ + _), '-' #> (_ - _)))
+lazy val expr: Parsley[Int] = precedence[Int]('(' ~> expr <~ ')', number)(
+    Ops(InfixL)('*' as (_ * _)),
+    Ops(InfixL)('+' as (_ + _), '-' as (_ - _)))
 ```
 
 This is a _lot_ smaller! The way `precedence` works is that it is first provided with the
@@ -179,11 +187,11 @@ In essence, there is no practical difference between the two implementations.
 
 The precedence table can actually also be reversed so that it works the other way round:
 
-```scala
+```scala mdoc:nest
 lazy val expr: Parsley[Int] = precedence[Int](
-    Ops[Int](InfixL)('+' #> (_ + _), '-' #> (_ - _)),
-    Ops[Int](InfixL)('*' #> (_ * _)))(
-    '(' *> expr <* ')', number)
+    Ops[Int](InfixL)('+' as (_ + _), '-' as (_ - _)),
+    Ops[Int](InfixL)('*' as (_ * _)))(
+    '(' ~> expr <~ ')', number)
 ```
 
 But due to the ordering that type inference happens, this form is a bit more cumbersome.
@@ -207,7 +215,7 @@ can be easily achieved in Scala using subtyping.
 
 For example, we can make an AST for our expressions like so:
 
-```scala
+```scala mdoc
 sealed trait Expr
 case class Add(x: Expr, y: Term) extends Expr
 case class Sub(x: Expr, y: Term) extends Expr
@@ -227,27 +235,18 @@ _not_ type-check!
 
 Let's see what happens if we try and use our existing `precedence` knowledge with `Ops`:
 
-```scala
+```scala mdoc:nest:fail
 val mul = (x: Expr, y: Expr) => Mul(x, y)
 val add = (x: Expr, y: Expr) => Add(x, y)
 val sub = (x: Expr, y: Expr) => Sub(x, y)
 
-lazy val atom: Parsley[Atom] = number.map(Number) <|> '(' *> expr.map(Parens) <* ')'
+lazy val atom: Parsley[Atom] = number.map(Number) | '(' ~> expr.map(Parens) <~ ')'
 lazy val expr = precedence[Expr](atom)(
-  Ops(InfixL)('*' #> mul),
-  Ops(InfixL)('+' #> add, '-' #> sub))
+  Ops(InfixL)('*' as mul),
+  Ops(InfixL)('+' as add, '-' as sub))
 ```
 
-```
-type mismatch;
-    found   : Expr
-    required: Term
-type mismatch;
-    found   : Expr
-    required: Atom
-```
-
-That's just with the `mul` function! The problem is that, though all `Term`s are `Expr`s (and ditto
+The problem is that, though all `Term`s are `Expr`s (and ditto
 for `Atom`), we are forced to create operators of the shape `(Expr, Expr) => Expr` to fit into the
 precedence table, but we can't guarantee that those `Expr`s we are passing into the function are
 actually `Term`s (even though we know intuitively that they will be). In other words,
@@ -265,23 +264,20 @@ Unfortunately, we can't just provide `SOps` as variadic arguments to the combina
 have different types to each other (that is the point, after all). Instead we use a heterogenous
 list of precedence levels called, well, `Levels`.
 
-```scala
-trait Levels[-A, +B]
-case class Atoms[A](atoms: Parsley[A]*) extends Levels[A, A]
+```scala mdoc
+trait Levels[+A]
+case class Atoms[+A](atoms: Parsley[A]*) extends Levels[A]
 // and
-case class Level[-A, B, C](
-    nextLevels: Levels[A, B]
-    ops: Ops[B, C])
-  extends Levels[A, C]
+case class Level[A, B](
+    nextLevels: Levels[A],
+    ops: Ops[A, B])
+  extends Levels[B]
 ```
 
-Basically, the type parameters to `Levels[A, B]` are saying that we _consume_ atoms of type `A`, to
-_produce_ a tree of a final type `B`. (In Scala, using `-` indicates we consume the type and `+`
-means we produce it). There are two choices of constructor in the list: `Atoms` is the end of the
-list, it says that it consumes `A`s and immediately produces them again. The equivalent to `::`,
-`Level[A, B, C]` is a bit more complex: it says that, if you give it a precedence table that
-consumes `A`s to produce `B`s, then it can use its own operators that work on `B` to produce values
-of type `C`. As a result, the larger table turns `A`s into `C`s.
+Basically, the type parameter to `Levels` is saying that we *produce* values of
+type `A` from the outer-most level in the structure. There are two choices of constructor in the list: `Atoms` is the end of the
+list, it produces `A`s. The equivalent to `::`,
+`Level[A, B]` is a bit more complex: it says that, if you give it a precedence table that produces `A`s, then it can use its own operators that work on `A` to produce values of type `B`. As a result, the larger table produces `B`s.
 
 Now, to make life nicer for us, the `Levels` list supports the common-place Scala collections
 operators of `+:` and `:+`, which can be used in place of `Level`. Just like other Scala
@@ -296,7 +292,7 @@ opsN +: .. +: ops2 +: ops1 +: Atoms(atom1, atom2, .., atomN)
 
 The first form is the tightest first approach, and the second is the weakest first approach. So, what does our parser look like if we use `Levels` and `SOps`?
 
-```scala
+```scala mdoc:reset:silent
 import parsley.Parsley
 import parsley.character.digit
 import parsley.implicits.character.charLift
@@ -315,10 +311,11 @@ sealed trait Atom extends Term
 case class Number(x: Int) extends Atom
 case class Parens(x: Expr) extends Atom
 
-lazy val expr: Parsley[Expr] = precedence(
-  Atoms(number.map(Number), '(' *> expr.map(Parens) <* ')') :+
-  SOps(InfixL)('*' #> Mul) :+
-  SOps(InfixL)('+' #> Add, '-' #> Sub))
+lazy val expr: Parsley[Expr] = precedence {
+  Atoms(number.map(Number), '(' ~> expr.map(Parens) <~ ')') :+
+  SOps(InfixL)('*' as Mul) :+
+  SOps(InfixL)('+' as Add, '-' as Sub)
+}
 ```
 
 Not so bad! We've constructed the `Levels` list using `:+`, so this is strongest-first.
@@ -341,7 +338,7 @@ So far we've seen how to generalise our expression parsers to work with heteroge
 on subtyping. However, there may be cases where the subtyping is undesirable, or otherwise not
 possible (for example, if you want layers from `Int` to `Expr`) but we still want these strongly typed guarantees about the shape of the tree. In this case we would change the data-type as follows:
 
-```scala
+```scala mdoc:nest
 sealed trait Expr
 case class Add(x: Expr, y: Term) extends Expr
 case class Sub(x: Expr, y: Term) extends Expr
@@ -366,7 +363,7 @@ implicit conversions called `A =:= A` and `A <:< B` for type equality and subtyp
 `GOps` can implement the behaviour of `Ops` and `SOps` via these conversions). So, what does this
 look like in practice?
 
-```scala
+```scala mdoc:silent
 import parsley.Parsley
 import parsley.character.digit
 import parsley.implicits.character.charLift
@@ -374,23 +371,11 @@ import parsley.expr.{precedence, GOps, InfixL, Atoms}
 
 val number = digit.foldLeft1[Int](0)((n, d) => n * 10 + d.asDigit)
 
-sealed trait Expr
-case class Add(x: Expr, y: Term) extends Expr
-case class Sub(x: Expr, y: Term) extends Expr
-case class OfTerm(t: Term) extends Expr
-
-sealed trait Term
-case class Mul(x: Term, y: Atom) extends Term
-case class OfAtom(x: Atom) extends Term
-
-sealed trait Atom
-case class Number(x: Int) extends Atom
-case class Parens(x: Expr) extends Atom
-
-lazy val expr: Parsley[Expr] = precedence(
-  Atoms(number.map(Number), '(' *> expr.map(Parens) <* ')') :+
-  GOps[Atom, Term](InfixL)('*' #> Mul)(OfAtom) :+
-  GOps[Term, Expr](InfixL)('+' #> Add, '-' #> Sub)(OfTerm))
+lazy val expr: Parsley[Expr] = precedence {
+  Atoms(number.map(Number), '(' ~> expr.map(Parens) <~ ')') :+
+  GOps[Atom, Term](InfixL)('*' as Mul)(OfAtom) :+
+  GOps[Term, Expr](InfixL)('+' as Add, '-' as Sub)(OfTerm)
+}
 ```
 
 Not so different from the original using `SOps`, but if you can allow subtyping in your AST, you
@@ -454,7 +439,7 @@ This might seem confusing at first: why, for instance, do the unary operators no
 Well, let's first understand why `(B, A) => B` is appropriate for left-associative things but not
 right ones.
 
-```scala
+```scala mdoc:reset
 sealed trait Expr
 case class LOp(x: Expr, y: Int) extends Expr
 case class ROp(x: Int, y: Expr) extends Expr
@@ -466,12 +451,12 @@ Notice that `LOp(LOp(Number(6), 5), 4)` is ok, because the right hand argument t
 so we wrap it up in the `Number` constructor. So, for `LOp`, if we take `A = Int` and `B = Expr`,
 it has the shape `(B, A) => B`. On the other hand, `ROp(ROp(Number(6), 5), 4)` is not ok, because
 `ROp(...)` is not an `Int`! This justifies the `(A, B) => B` type: like-expressions can appear on the
-right, but not the left. The level for this would be `GOp[Int, Expr](InfixL)('@' #> LOp)(Number)` or
-`GOp[Int, Expr](InfixR)('@' #> ROp)(Number)` (notice that switching them round wouldn't type-check!)
+right, but not the left. The level for this would be `GOp[Int, Expr](InfixL)('@'.as(LOp))(Number)` or
+`GOp[Int, Expr](InfixR)('@'.as(ROp))(Number)` (notice that switching them round wouldn't type-check!)
 
 For `Prefix` and `Postfix` it's a similar story:
 
-```scala
+```scala mdoc
 sealed trait BoolExpr
 case class Not(x: BoolExpr) extends BoolExpr
 case class Literal(b: Boolean) extends BoolExpr

@@ -1,0 +1,25 @@
+.paragraph {
+    color: var(--secondary-color);
+    font-weight: bold;
+    padding-top: 1em;
+    display:inline-block;
+    margin-right: 1em;
+}
+
+/* This renders pure code  */
+.nav-header code {
+    color: var(--secondary-color);
+    text-transform: none;
+    font-size: 1em;
+}
+
+/* We don't want rigid code blocks, they can break if they need to! */
+code {
+    white-space: pre-wrap; /*break-spaces?*/
+    overflow-wrap: break-word; /*this allows long contiguous text to be broken*/
+}
+
+/* Make code inside links look like links :) */
+a code {
+    color: inherit;
+}
