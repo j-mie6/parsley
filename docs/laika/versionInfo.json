@@ -6,6 +6,7 @@
     { "path": "/api-guide/Parsley.html", "versions": ["4.4"] },
     { "path": "/api-guide/character.html", "versions": ["4.4"] },
     { "path": "/api-guide/combinator.html", "versions": ["4.4"] },
+    { "path": "/api-guide/debug.html", "versions": ["4.4"] },
     { "path": "/api-guide/errors/ErrorBuilder.html", "versions": ["4.4"] },
     { "path": "/api-guide/errors/combinator.html", "versions": ["4.4"] },
     { "path": "/api-guide/errors/patterns.html", "versions": ["4.4"] },
