@@ -100,6 +100,7 @@
     <li class="level2 active nav-leaf"><a href="#"><code>parsley.implicits</code></a></li>
     <li class="level2 nav-leaf"><a href="position.html"><code>parsley.position</code></a></li>
     <li class="level2 nav-leaf"><a href="state.html"><code>parsley.registers</code></a></li>
+    <li class="level2 nav-leaf"><a href="debug.html"><code>parsley.debug</code></a></li>
     <li class="level2 nav-header"><code>parsley.expr</code></li>
     <li class="level3 nav-leaf"><a href="expr/chain.html"><code>chain</code></a></li>
     <li class="level3 nav-leaf"><a href="expr/infix.html"><code>infix</code></a></li>
@@ -167,7 +168,7 @@
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">_</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="char-literal">&#39;a&#39;</span><span> ~&gt; </span><span class="string-literal">&quot;bc&quot;</span><span>
-</span><span class="comment">// p: parsley.Parsley[String] = parsley.Parsley@543712fe
+</span><span class="comment">// p: parsley.Parsley[String] = parsley.Parsley@6ceca8c8
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>)
 </span><span class="comment">// res0: parsley.Result[String, String] = Success(bc)
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;axy&quot;</span><span>)
