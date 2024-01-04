@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+  
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Typelevel Laika + Parsley Theme" />
+    
+    <title>Syntactic Extensions (parsley.implicits)</title>
+    
+    
+    <meta name="author" content="parsley contributors"/>
+    
+    
+    <meta name="description" content="This page describes Parsley's syntactic extensions."/>
+    
+    
+    
+    <link rel="icon" sizes="32x32" type="image/svg+xml" href="../../icons/greenLeaf.svg"/>
+    
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700">
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Fira+Mono:500">
+    
+    <link rel="stylesheet" type="text/css" href="../../helium/site/icofont.min.css" />
+    <link rel="stylesheet" type="text/css" href="../../helium/site/laika-helium.css" />
+    <link rel="stylesheet" type="text/css" href="../../css/parsley-style.css" />
+    <script src="../../helium/site/laika-helium.js"></script>
+    <script src="../../helium/site/laika-versions.js"></script>
+    <script>initVersions("../../", "/api-guide/syntax.html", "4.5", null);</script>
+    
+    <script> /* for avoiding page load transitions */ </script>
+  </head>
+
+
+  <body>
+
+    <header id="top-bar" class="light-default dark-default">
+
+  <div class="row">
+    <a id="nav-icon">
+      <i class="icofont-laika navigationMenu" title="Navigation">&#xefa2;</i>
+    </a>
+    
+    <div class="menu-container version-menu">
+      <a class="text-link menu-toggle" href="#">Version 4.5.x</a>
+      <nav class="menu-content">
+        <ul class="nav-list">
+        </ul>
+      </nav>
+    </div>
+  </div>
+
+  <a class="icon-link svg-link" href="../../"><span class="leaf" title="Home"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 128 128" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M101.39,86.21c-14.25-5.91-22.34-4.3-28.47-2.5c-6.5,1.91-12.31,8.58-12.31,8.58s-1.93-0.58-5.04-0.51 c-1.49,0.04-2.67,0.28-3.54,0.54c2.64-5.99,4.51-12.08,7.57-18.76c1.95-0.81,4.63-1.86,6.35-2.23c2.96-0.64,6.45-0.84,6.45-0.84 c0.82,0.64,2,1.39,3.69,2.23c9.56,4.78,21.5,2.16,27.35-0.16c8.13-3.23,20.21-12.95,20.21-13.69s-5.5-3.38-13.32-5.71 c-7.82-2.33-18.27-2.44-26.21,0.95c-7.28,3.11-10.67,8.58-12.54,11.86c0,0-2.9,0.46-5,0.82c-1.56,0.27-2.96,0.64-4.07,0.99 c0.22-0.4,0.45-0.81,0.68-1.21C67.77,58.61,72.83,52.5,77,48.2c5.87,0.55,17.89,0.35,27.62-8.46 c15.64-14.15,18.46-35.92,18.07-36.35S97.35,3.34,84.54,14.91c-12.19,11.01-11.97,25.4-11.4,30.69c-3.97,3.71-8.81,9.17-14.2,17.12 c-0.04-2.12-0.29-4.73-0.29-4.73s7.19-6.73,7.72-17.18c0.42-8.24-0.46-15.89-5-24.14c-3.56-6.43-6.53-8.03-7.06-7.93 c-0.93,0.19-5.33,7.06-8.03,13.63c-2.13,5.17-4.26,18.38-0.45,26.52s8.22,9.68,8.22,9.68s0.54,2.37,0.48,5.55 c-0.02,1.36-0.13,4.51-0.18,5.98c-3.57,6.32-5.96,12.07-8.23,17.22c-0.34-0.99-0.73-1.96-1.11-2.65c-1.16-2.11-1.59-2.85-1.59-2.85 s2.57-15.99-1.8-29.17C36.45,37,27.57,31.08,19.33,27.59C11.09,24.1,6.54,24.11,5.8,24.95c-1.08,1.23,1.37,4.33,1.59,11.31 c0.17,5.71,1.16,25.05,6.87,34.98s13.63,12.37,16.17,13.21c2.54,0.85,8.03,0.95,8.03,0.95s2.33,2.01,3.17,4.86 c0.39,1.31,0.78,2.92,1.09,4.27c-1.95,3.71-4.17,7-7.21,9.86c-5.01,4.71-13.09,7.94-13.09,7.94s-6.47-0.15-6.91,0.15 c-0.44,0.29-1.73,3.53,0.69,7.51c2,3.29,5.05,4.12,6.08,4.26c1.03,0.15,2.94-4.27,3.68-4.86c0.74-0.59,9.43-3.93,15.6-10.74 c2.83-3.13,5.02-6.16,6.81-9.17c1.65-1.01,4.07-2.17,6.72-2.31c2.64-0.15,4.94,1.12,4.94,1.12s2.22,9.16,12.15,13 c12.5,4.83,25.83,0.61,31.64-1.4c5.81-2,19.83-8.42,19.94-10.22C123.86,97.87,115.66,92.13,101.39,86.21z"/>
+  </g>
+</svg></span></a>
+
+  <div class="row links">
+    
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/">API</a>
+    
+    <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M49.995,1c-27.609,-0 -49.995,22.386 -49.995,50.002c-0,22.09 14.325,40.83 34.194,47.444c2.501,0.458 3.413,-1.086 3.413,-2.412c0,-1.185 -0.043,-4.331 -0.067,-8.503c-13.908,3.021 -16.843,-6.704 -16.843,-6.704c-2.274,-5.773 -5.552,-7.311 -5.552,-7.311c-4.54,-3.103 0.344,-3.042 0.344,-3.042c5.018,0.356 7.658,5.154 7.658,5.154c4.46,7.64 11.704,5.433 14.552,4.156c0.454,-3.232 1.744,-5.436 3.174,-6.685c-11.102,-1.262 -22.775,-5.553 -22.775,-24.713c-0,-5.457 1.949,-9.92 5.147,-13.416c-0.516,-1.265 -2.231,-6.348 0.488,-13.233c0,0 4.199,-1.344 13.751,5.126c3.988,-1.108 8.266,-1.663 12.518,-1.682c4.245,0.019 8.523,0.574 12.517,1.682c9.546,-6.47 13.736,-5.126 13.736,-5.126c2.728,6.885 1.013,11.968 0.497,13.233c3.204,3.496 5.141,7.959 5.141,13.416c0,19.209 -11.691,23.436 -22.83,24.673c1.795,1.544 3.394,4.595 3.394,9.26c0,6.682 -0.061,12.076 -0.061,13.715c0,1.338 0.899,2.894 3.438,2.406c19.853,-6.627 34.166,-25.354 34.166,-47.438c-0,-27.616 -22.389,-50.002 -50.005,-50.002"/>
+  </g>
+</svg></span></a>
+    
+  </div>  
+
+</header>
+    
+    <nav id="sidebar">
+
+  <div class="row">
+    
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/">API</a>
+    
+    <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M49.995,1c-27.609,-0 -49.995,22.386 -49.995,50.002c-0,22.09 14.325,40.83 34.194,47.444c2.501,0.458 3.413,-1.086 3.413,-2.412c0,-1.185 -0.043,-4.331 -0.067,-8.503c-13.908,3.021 -16.843,-6.704 -16.843,-6.704c-2.274,-5.773 -5.552,-7.311 -5.552,-7.311c-4.54,-3.103 0.344,-3.042 0.344,-3.042c5.018,0.356 7.658,5.154 7.658,5.154c4.46,7.64 11.704,5.433 14.552,4.156c0.454,-3.232 1.744,-5.436 3.174,-6.685c-11.102,-1.262 -22.775,-5.553 -22.775,-24.713c-0,-5.457 1.949,-9.92 5.147,-13.416c-0.516,-1.265 -2.231,-6.348 0.488,-13.233c0,0 4.199,-1.344 13.751,5.126c3.988,-1.108 8.266,-1.663 12.518,-1.682c4.245,0.019 8.523,0.574 12.517,1.682c9.546,-6.47 13.736,-5.126 13.736,-5.126c2.728,6.885 1.013,11.968 0.497,13.233c3.204,3.496 5.141,7.959 5.141,13.416c0,19.209 -11.691,23.436 -22.83,24.673c1.795,1.544 3.394,4.595 3.394,9.26c0,6.682 -0.061,12.076 -0.061,13.715c0,1.338 0.899,2.894 3.438,2.406c19.853,-6.627 34.166,-25.354 34.166,-47.438c-0,-27.616 -22.389,-50.002 -50.005,-50.002"/>
+  </g>
+</svg></span></a>
+    
+  </div>
+
+  <ul class="nav-list">
+    <li class="level1 nav-leaf"><a href="../../downloads.html">Documentation Downloads</a></li>
+    <li class="level1 nav-leaf"><a href="../../home.html">Home</a></li>
+    <li class="level1 nav-leaf"><a href="../faq.html">FAQ</a></li>
+    <li class="level1 nav-leaf"><a href="../cheatsheet.html">Cheatsheet</a></li>
+    <li class="level1 nav-node"><a href="index.html">Understanding the API</a></li>
+    <li class="level2 nav-leaf"><a href="Parsley.html"><code>parsley.Parsley</code></a></li>
+    <li class="level2 nav-leaf"><a href="character.html"><code>parsley.character</code></a></li>
+    <li class="level2 nav-leaf"><a href="combinator.html"><code>parsley.combinator</code></a></li>
+    <li class="level2 nav-leaf"><a href="generic.html"><code>parsley.genericbridges</code></a></li>
+    <li class="level2 active nav-leaf"><a href="#"><code>parsley.implicits</code></a></li>
+    <li class="level2 nav-leaf"><a href="position.html"><code>parsley.position</code></a></li>
+    <li class="level2 nav-leaf"><a href="state.html"><code>parsley.registers</code></a></li>
+    <li class="level2 nav-leaf"><a href="debug.html"><code>parsley.debug</code></a></li>
+    <li class="level2 nav-header"><code>parsley.expr</code></li>
+    <li class="level3 nav-leaf"><a href="expr/chain.html"><code>chain</code></a></li>
+    <li class="level3 nav-leaf"><a href="expr/infix.html"><code>infix</code></a></li>
+    <li class="level3 nav-leaf"><a href="expr/precedence.html"><code>precedence</code></a></li>
+    <li class="level2 nav-header"><code>parsley.token</code></li>
+    <li class="level3 nav-leaf"><a href="token/Lexer.html"><code>Lexer</code></a></li>
+    <li class="level3 nav-leaf"><a href="token/descriptions.html"><code>descriptions</code></a></li>
+    <li class="level3 nav-leaf"><a href="token/errors.html"><code>errors</code></a></li>
+    <li class="level2 nav-header"><code>parsley.errors</code></li>
+    <li class="level3 nav-leaf"><a href="errors/combinator.html"><code>combinator</code></a></li>
+    <li class="level3 nav-leaf"><a href="errors/patterns.html"><code>patterns</code></a></li>
+    <li class="level3 nav-leaf"><a href="errors/ErrorBuilder.html"><code>ErrorBuilder</code></a></li>
+    <li class="level3 nav-leaf"><a href="errors/tokenextractors.html"><code>tokenextractors</code></a></li>
+    <li class="level1 nav-node"><a href="../tutorial/">Parser Combinator Tutorial</a></li>
+    <li class="level2 nav-leaf"><a href="../tutorial/basics-of-combinators.html">Basics of Combinators</a></li>
+    <li class="level2 nav-leaf"><a href="../tutorial/building-expression-parsers.html">Building Expression Parsers</a></li>
+    <li class="level2 nav-leaf"><a href="../tutorial/effective-whitespace-parsing.html">Effective Whitespace Parsing</a></li>
+    <li class="level2 nav-leaf"><a href="../tutorial/effective-lexing.html">Effective Lexing</a></li>
+    <li class="level2 nav-leaf"><a href="../tutorial/parser-bridge-pattern.html">The Parser Bridge Pattern</a></li>
+    <li class="level2 nav-leaf"><a href="../tutorial/interlude-1-haskell.html">Interlude 1: Building a Parser for Haskell</a></li>
+    <li class="level2 nav-leaf"><a href="../tutorial/customising-error-messages.html">Customising Error Messages</a></li>
+    <li class="level2 nav-leaf"><a href="../tutorial/advanced-error-messages.html">Advanced Error Messages</a></li>
+    <li class="level1 nav-header">Related Projects</li>
+    <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/parsley-cats">parsley-cats</a></li>
+    <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/gigaparsec">gigaparsec (Haskell)</a></li>
+  </ul>
+
+</nav>
+
+    <div id="container">
+
+      
+<nav id="page-nav">
+  <p class="header"><a href="#"><code>parsley.implicits</code></a></p>
+
+  <ul class="nav-list">
+    <li class="level1 nav-leaf"><a href="#implicit-conversions">Implicit Conversions</a></li>
+    <li class="level1 nav-leaf"><a href="#improved-sequencing">Improved Sequencing</a></li>
+  </ul>
+
+  <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/master/docs/api-guide/syntax.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
+</nav>
+
+
+      <main class="content">
+
+        <h1 id="synactic-extensions-parsley-implicits" class="title">Synactic Extensions (<code>parsley.implicits</code>)</h1>
+        <p>The <code>parsley.implicits</code> package contains several modules that enable new &quot;syntax&quot;
+        on parsers or other values. There are currently four such modules:</p>
+        <ul>
+          <li><code>parsley.implicits.character</code>: contains conversions that allow for character
+          and string literals to serve as parsers.</li>
+          <li><code>parsley.implicits.combinator</code>: contains an implicit function that allows any
+          parser to drop its result when required by the type of another combinator.</li>
+          <li><code>parsley.implicits.lift</code>: enables the <code>lift</code> method on functions to allow them
+          to work on parsers.</li>
+          <li><code>parsley.implicits.zipped</code>: enables the <code>zipped</code> method on tuples of parsers to
+          sequence and combine their results with a single function.</li>
+        </ul>
+        
+        <h2 id="implicit-conversions" class="section"><a class="anchor-link left" href="#implicit-conversions"><i class="icofont-laika link">&#xef71;</i></a>Implicit Conversions</h2>
+        <p>The <code>charLift</code> and <code>stringLift</code> conversions in <code>parsley.implicits.character</code>
+        allow for Scala character and string literals to work directly as parsers for
+        those specific literals. For example:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">_</span><span>
+
+</span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="char-literal">&#39;a&#39;</span><span> ~&gt; </span><span class="string-literal">&quot;bc&quot;</span><span>
+</span><span class="comment">// p: parsley.Parsley[String] = parsley.Parsley@1e88e85f
+</span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>)
+</span><span class="comment">// res0: parsley.Result[String, String] = Success(bc)
+</span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;axy&quot;</span><span>)
+</span><span class="comment">// res1: parsley.Result[String, String] = Failure((line 1, column 2):
+//   unexpected &quot;xy&quot;
+//   expected &quot;bc&quot;
+//   &gt;axy
+//     ^^)</span></code></pre>
+        <p>In the above, <code>&#39;a&#39;: Parsley[Char]</code>, and <code>&quot;bc&quot;: Parsley[String]</code>.</p>
+        <div class="callout error">
+          <i class="icofont-laika error">&#xeedd;</i>
+          <p>If you see an error like this, when you otherwise have the implicit imported:</p>
+          <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;cb&quot;</span><span> &lt;~ </span><span class="char-literal">&#39;a&#39;</span><span>
+</span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;cba&quot;</span><span>)
+</span><span class="comment">// error: value &lt;~ is not a member of String
+// val p = &quot;cb&quot; &lt;~ &#39;a&#39;
+//         ^^^^^^^</span></code></pre>
+          <p>Then this likely means that you have <em>another</em> conversion in scope and the
+          ambiguity is not resolved. If the arguments reversed, this will become more
+          evident:</p>
+          <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="char-literal">&#39;a&#39;</span><span> ~&gt; </span><span class="string-literal">&quot;bc&quot;</span><span>
+</span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>)
+</span><span class="comment">// error: type mismatch;
+//  found   : String(&quot;bc&quot;)
+//  required: parsley.Parsley[?]
+// Note that implicit conversions are not applicable because they are ambiguous:
+//  both method stringLift in object character of type (str: String): parsley.Parsley[String]
+//  and method implicitSymbol in class ImplicitSymbol of type (s: String): parsley.Parsley[Unit]
+//  are possible conversion functions from String(&quot;bc&quot;) to parsley.Parsley[?]
+// val p = &#39;a&#39; ~&gt; &quot;bc&quot;
+//                ^^^^</span></code></pre>
+          <p>In this case, a <code>lexer.lexeme.symbol.implicits</code> is imported and is clashing.</p>
+        </div>
+        
+        <h2 id="improved-sequencing" class="section"><a class="anchor-link left" href="#improved-sequencing"><i class="icofont-laika link">&#xef71;</i></a>Improved Sequencing</h2>
+        <p>Both the <code>lift</code> and <code>zipped</code> modules within <code>parsley.implicits</code> enable new
+        ways of sequencing parsers in an idiomatic way. The <code>lift</code> syntax is perhaps
+        more natural, where the function to apply appears to the left of the arguments:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">char</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">lift</span><span>.</span><span class="identifier">_</span><span>
+
+</span><span class="keyword">val</span><span> </span><span class="identifier">add</span><span> = (</span><span class="identifier">x</span><span>: </span><span class="type-name">Int</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Int</span><span>) =&gt; </span><span class="identifier">x</span><span> + </span><span class="identifier">y</span><span>
+</span><span class="comment">// add: (Int, Int) =&gt; Int = &lt;function2&gt;
+</span><span class="identifier">add</span><span>.</span><span class="identifier">lift</span><span>(</span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;a&#39;</span><span>).</span><span class="identifier">as</span><span>(</span><span class="number-literal">5</span><span>), </span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;b&#39;</span><span>).</span><span class="identifier">as</span><span>(</span><span class="number-literal">6</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;ab&quot;</span><span>)
+</span><span class="comment">// res4: parsley.Result[String, Int] = Success(11)</span></code></pre>
+        <p>However, while <code>lift</code> works well when the function has its type fully elaborated,
+        it does not infer well:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span>(</span><span class="identifier">_</span><span> + </span><span class="identifier">_</span><span>).</span><span class="identifier">lift</span><span>(</span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;a&#39;</span><span>).</span><span class="identifier">as</span><span>(</span><span class="number-literal">5</span><span>), </span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;b&#39;</span><span>).</span><span class="identifier">as</span><span>(</span><span class="number-literal">6</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;ab&quot;</span><span>)
+</span><span class="comment">// error: missing parameter type for expanded function ((&lt;x$2: error&gt;, x$3) =&gt; x$2.$plus(x$3))
+// (_ + _).lift(char(&#39;a&#39;).as(5), char(&#39;b&#39;).as(6)).parse(&quot;ab&quot;)
+//  ^
+// error: missing parameter type for expanded function ((&lt;x$2: error&gt;, &lt;x$3: error&gt;) =&gt; x$2.$plus(x$3))
+// (_ + _).lift(char(&#39;a&#39;).as(5), char(&#39;b&#39;).as(6)).parse(&quot;ab&quot;)
+//      ^</span></code></pre>
+        <p>This is where <code>zipped</code> comes in: by placing the function to the right of its
+        arguments, it can infer the type of the function based on the arguments. This
+        may appear slightly less natural, however:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">zipped</span><span>.</span><span class="identifier">_</span><span>
+(</span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;a&#39;</span><span>).</span><span class="identifier">as</span><span>(</span><span class="number-literal">5</span><span>), </span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;b&#39;</span><span>).</span><span class="identifier">as</span><span>(</span><span class="number-literal">6</span><span>)).</span><span class="identifier">zipped</span><span>(</span><span class="identifier">_</span><span> + </span><span class="identifier">_</span><span>).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;ab&quot;</span><span>)
+</span><span class="comment">// res6: parsley.Result[String, Int] = Success(11)</span></code></pre>
+        <p>Both <code>lift</code> and <code>zipped</code> work for up to 22-argument functions.</p>
+
+        
+<hr class="footer-rule"/>
+<footer>
+  Parsley is distributed under the <a href="https://opensource.org/licenses/BSD-3-Clause">BSD-3-Clause</a> license.
+</footer>
+
+
+      </main>
+
+    </div>
+
+  </body>
+
+</html>

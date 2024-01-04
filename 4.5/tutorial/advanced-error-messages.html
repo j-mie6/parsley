@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+  
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Typelevel Laika + Parsley Theme" />
+    
+    <title>Advanced Error Messages</title>
+    
+    
+    <meta name="author" content="parsley contributors"/>
+    
+    
+    <meta name="description" content="How to employ more advanced techniques to make error messages context-dependent."/>
+    
+    
+    
+    <link rel="icon" sizes="32x32" type="image/svg+xml" href="../../icons/greenLeaf.svg"/>
+    
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700">
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Fira+Mono:500">
+    
+    <link rel="stylesheet" type="text/css" href="../../helium/site/icofont.min.css" />
+    <link rel="stylesheet" type="text/css" href="../../helium/site/laika-helium.css" />
+    <link rel="stylesheet" type="text/css" href="../../css/parsley-style.css" />
+    <script src="../../helium/site/laika-helium.js"></script>
+    <script src="../../helium/site/laika-versions.js"></script>
+    <script>initVersions("../../", "/tutorial/advanced-error-messages.html", "4.5", null);</script>
+    
+    <script> /* for avoiding page load transitions */ </script>
+  </head>
+
+
+  <body>
+
+    <header id="top-bar" class="light-default dark-default">
+
+  <div class="row">
+    <a id="nav-icon">
+      <i class="icofont-laika navigationMenu" title="Navigation">&#xefa2;</i>
+    </a>
+    
+    <div class="menu-container version-menu">
+      <a class="text-link menu-toggle" href="#">Version 4.5.x</a>
+      <nav class="menu-content">
+        <ul class="nav-list">
+        </ul>
+      </nav>
+    </div>
+  </div>
+
+  <a class="icon-link svg-link" href="../../"><span class="leaf" title="Home"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 128 128" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M101.39,86.21c-14.25-5.91-22.34-4.3-28.47-2.5c-6.5,1.91-12.31,8.58-12.31,8.58s-1.93-0.58-5.04-0.51 c-1.49,0.04-2.67,0.28-3.54,0.54c2.64-5.99,4.51-12.08,7.57-18.76c1.95-0.81,4.63-1.86,6.35-2.23c2.96-0.64,6.45-0.84,6.45-0.84 c0.82,0.64,2,1.39,3.69,2.23c9.56,4.78,21.5,2.16,27.35-0.16c8.13-3.23,20.21-12.95,20.21-13.69s-5.5-3.38-13.32-5.71 c-7.82-2.33-18.27-2.44-26.21,0.95c-7.28,3.11-10.67,8.58-12.54,11.86c0,0-2.9,0.46-5,0.82c-1.56,0.27-2.96,0.64-4.07,0.99 c0.22-0.4,0.45-0.81,0.68-1.21C67.77,58.61,72.83,52.5,77,48.2c5.87,0.55,17.89,0.35,27.62-8.46 c15.64-14.15,18.46-35.92,18.07-36.35S97.35,3.34,84.54,14.91c-12.19,11.01-11.97,25.4-11.4,30.69c-3.97,3.71-8.81,9.17-14.2,17.12 c-0.04-2.12-0.29-4.73-0.29-4.73s7.19-6.73,7.72-17.18c0.42-8.24-0.46-15.89-5-24.14c-3.56-6.43-6.53-8.03-7.06-7.93 c-0.93,0.19-5.33,7.06-8.03,13.63c-2.13,5.17-4.26,18.38-0.45,26.52s8.22,9.68,8.22,9.68s0.54,2.37,0.48,5.55 c-0.02,1.36-0.13,4.51-0.18,5.98c-3.57,6.32-5.96,12.07-8.23,17.22c-0.34-0.99-0.73-1.96-1.11-2.65c-1.16-2.11-1.59-2.85-1.59-2.85 s2.57-15.99-1.8-29.17C36.45,37,27.57,31.08,19.33,27.59C11.09,24.1,6.54,24.11,5.8,24.95c-1.08,1.23,1.37,4.33,1.59,11.31 c0.17,5.71,1.16,25.05,6.87,34.98s13.63,12.37,16.17,13.21c2.54,0.85,8.03,0.95,8.03,0.95s2.33,2.01,3.17,4.86 c0.39,1.31,0.78,2.92,1.09,4.27c-1.95,3.71-4.17,7-7.21,9.86c-5.01,4.71-13.09,7.94-13.09,7.94s-6.47-0.15-6.91,0.15 c-0.44,0.29-1.73,3.53,0.69,7.51c2,3.29,5.05,4.12,6.08,4.26c1.03,0.15,2.94-4.27,3.68-4.86c0.74-0.59,9.43-3.93,15.6-10.74 c2.83-3.13,5.02-6.16,6.81-9.17c1.65-1.01,4.07-2.17,6.72-2.31c2.64-0.15,4.94,1.12,4.94,1.12s2.22,9.16,12.15,13 c12.5,4.83,25.83,0.61,31.64-1.4c5.81-2,19.83-8.42,19.94-10.22C123.86,97.87,115.66,92.13,101.39,86.21z"/>
+  </g>
+</svg></span></a>
+
+  <div class="row links">
+    
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/">API</a>
+    
+    <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M49.995,1c-27.609,-0 -49.995,22.386 -49.995,50.002c-0,22.09 14.325,40.83 34.194,47.444c2.501,0.458 3.413,-1.086 3.413,-2.412c0,-1.185 -0.043,-4.331 -0.067,-8.503c-13.908,3.021 -16.843,-6.704 -16.843,-6.704c-2.274,-5.773 -5.552,-7.311 -5.552,-7.311c-4.54,-3.103 0.344,-3.042 0.344,-3.042c5.018,0.356 7.658,5.154 7.658,5.154c4.46,7.64 11.704,5.433 14.552,4.156c0.454,-3.232 1.744,-5.436 3.174,-6.685c-11.102,-1.262 -22.775,-5.553 -22.775,-24.713c-0,-5.457 1.949,-9.92 5.147,-13.416c-0.516,-1.265 -2.231,-6.348 0.488,-13.233c0,0 4.199,-1.344 13.751,5.126c3.988,-1.108 8.266,-1.663 12.518,-1.682c4.245,0.019 8.523,0.574 12.517,1.682c9.546,-6.47 13.736,-5.126 13.736,-5.126c2.728,6.885 1.013,11.968 0.497,13.233c3.204,3.496 5.141,7.959 5.141,13.416c0,19.209 -11.691,23.436 -22.83,24.673c1.795,1.544 3.394,4.595 3.394,9.26c0,6.682 -0.061,12.076 -0.061,13.715c0,1.338 0.899,2.894 3.438,2.406c19.853,-6.627 34.166,-25.354 34.166,-47.438c-0,-27.616 -22.389,-50.002 -50.005,-50.002"/>
+  </g>
+</svg></span></a>
+    
+  </div>  
+
+</header>
+    
+    <nav id="sidebar">
+
+  <div class="row">
+    
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/">API</a>
+    
+    <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M49.995,1c-27.609,-0 -49.995,22.386 -49.995,50.002c-0,22.09 14.325,40.83 34.194,47.444c2.501,0.458 3.413,-1.086 3.413,-2.412c0,-1.185 -0.043,-4.331 -0.067,-8.503c-13.908,3.021 -16.843,-6.704 -16.843,-6.704c-2.274,-5.773 -5.552,-7.311 -5.552,-7.311c-4.54,-3.103 0.344,-3.042 0.344,-3.042c5.018,0.356 7.658,5.154 7.658,5.154c4.46,7.64 11.704,5.433 14.552,4.156c0.454,-3.232 1.744,-5.436 3.174,-6.685c-11.102,-1.262 -22.775,-5.553 -22.775,-24.713c-0,-5.457 1.949,-9.92 5.147,-13.416c-0.516,-1.265 -2.231,-6.348 0.488,-13.233c0,0 4.199,-1.344 13.751,5.126c3.988,-1.108 8.266,-1.663 12.518,-1.682c4.245,0.019 8.523,0.574 12.517,1.682c9.546,-6.47 13.736,-5.126 13.736,-5.126c2.728,6.885 1.013,11.968 0.497,13.233c3.204,3.496 5.141,7.959 5.141,13.416c0,19.209 -11.691,23.436 -22.83,24.673c1.795,1.544 3.394,4.595 3.394,9.26c0,6.682 -0.061,12.076 -0.061,13.715c0,1.338 0.899,2.894 3.438,2.406c19.853,-6.627 34.166,-25.354 34.166,-47.438c-0,-27.616 -22.389,-50.002 -50.005,-50.002"/>
+  </g>
+</svg></span></a>
+    
+  </div>
+
+  <ul class="nav-list">
+    <li class="level1 nav-leaf"><a href="../../downloads.html">Documentation Downloads</a></li>
+    <li class="level1 nav-leaf"><a href="../../home.html">Home</a></li>
+    <li class="level1 nav-leaf"><a href="../faq.html">FAQ</a></li>
+    <li class="level1 nav-leaf"><a href="../cheatsheet.html">Cheatsheet</a></li>
+    <li class="level1 nav-node"><a href="../api-guide/">Understanding the API</a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/Parsley.html"><code>parsley.Parsley</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/character.html"><code>parsley.character</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/combinator.html"><code>parsley.combinator</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/generic.html"><code>parsley.genericbridges</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/syntax.html"><code>parsley.implicits</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/position.html"><code>parsley.position</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/state.html"><code>parsley.registers</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/debug.html"><code>parsley.debug</code></a></li>
+    <li class="level2 nav-header"><code>parsley.expr</code></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/expr/chain.html"><code>chain</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/expr/infix.html"><code>infix</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/expr/precedence.html"><code>precedence</code></a></li>
+    <li class="level2 nav-header"><code>parsley.token</code></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/token/Lexer.html"><code>Lexer</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/token/descriptions.html"><code>descriptions</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/token/errors.html"><code>errors</code></a></li>
+    <li class="level2 nav-header"><code>parsley.errors</code></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/errors/combinator.html"><code>combinator</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/errors/patterns.html"><code>patterns</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/errors/ErrorBuilder.html"><code>ErrorBuilder</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/errors/tokenextractors.html"><code>tokenextractors</code></a></li>
+    <li class="level1 nav-node"><a href="index.html">Parser Combinator Tutorial</a></li>
+    <li class="level2 nav-leaf"><a href="basics-of-combinators.html">Basics of Combinators</a></li>
+    <li class="level2 nav-leaf"><a href="building-expression-parsers.html">Building Expression Parsers</a></li>
+    <li class="level2 nav-leaf"><a href="effective-whitespace-parsing.html">Effective Whitespace Parsing</a></li>
+    <li class="level2 nav-leaf"><a href="effective-lexing.html">Effective Lexing</a></li>
+    <li class="level2 nav-leaf"><a href="parser-bridge-pattern.html">The Parser Bridge Pattern</a></li>
+    <li class="level2 nav-leaf"><a href="interlude-1-haskell.html">Interlude 1: Building a Parser for Haskell</a></li>
+    <li class="level2 nav-leaf"><a href="customising-error-messages.html">Customising Error Messages</a></li>
+    <li class="level2 active nav-leaf"><a href="#">Advanced Error Messages</a></li>
+    <li class="level1 nav-header">Related Projects</li>
+    <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/parsley-cats">parsley-cats</a></li>
+    <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/gigaparsec">gigaparsec (Haskell)</a></li>
+  </ul>
+
+</nav>
+
+    <div id="container">
+
+      
+<nav id="page-nav">
+  <p class="header"><a href="#">Advanced Error Messages</a></p>
+
+  <ul class="nav-list">
+    <li class="level1 nav-node"><a href="#a-statement-language"><span class="section-number">1 </span>A Statement Language</a></li>
+    <li class="level2 nav-leaf"><a href="#a-stateful-evaluator"><span class="section-number">1.1 </span>A Stateful Evaluator</a></li>
+    <li class="level2 nav-leaf"><a href="#a-parser"><span class="section-number">1.2 </span>A Parser</a></li>
+    <li class="level2 nav-leaf"><a href="#motivation"><span class="section-number">1.3 </span>Motivation</a></li>
+    <li class="level1 nav-leaf"><a href="#verified-errors"><span class="section-number">2 </span><em>Verified Errors</em></a></li>
+    <li class="level1 nav-leaf"><a href="#preventative-errors"><span class="section-number">3 </span><em>Preventative Errors</em></a></li>
+    <li class="level1 nav-leaf"><a href="#conclusion"><span class="section-number">4 </span>Conclusion</a></li>
+  </ul>
+
+  <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/master/docs/tutorial/advanced-error-messages.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
+</nav>
+
+
+      <main class="content">
+
+        <h1 id="advanced-error-messages" class="title">Advanced Error Messages</h1>
+        <p>Previously, we saw the most basic approach to improving error messages: <code>.label</code> and <code>.explain</code>.
+        However, the other tools I listed in the post are valuable in their own right, but can be slightly
+        less common. However, most of the time, their use is abstracted by other higher-level combinators,
+        which will be the focus of this page. The API Guide page on <a href="../api-guide/errors/combinator.html#error-message-combinators">Error Message Combinators</a> covers the
+        core combinators more thoroughly.</p>
+        
+        <h2 id="a-statement-language" class="section"><a class="anchor-link left" href="#a-statement-language"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1 </span>A Statement Language</h2>
+        <p>In this section, we&#39;ll set the stage for the discussion of the error messages. We&#39;ll start by
+        defining an evaluator for a langauge (as opposed to an AST), and then write a parser that generates
+        partially evaluated expressions and collapse it to form an interpreter. The language
+        supports conditionals, assignment, arithmetic, and boolean expressions; variables must be integers.</p>
+        
+        <h3 id="a-stateful-evaluator" class="section"><a class="anchor-link left" href="#a-stateful-evaluator"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1.1 </span>A Stateful Evaluator</h3>
+        <p>The language will be evaluated by producing a value of type <code>Eval[Unit]</code>, a monad that threads a
+        variable environment through the program, handling any out-of-scope variables. Just for fun, I&#39;ll
+        use the <code>cats</code> functional programming library to do this, as it makes it very easy to express.
+        The environment will be carried around in a <code>StateT</code> state monad, and errors contains within an
+        <code>Either[String, _]</code> type. Don&#39;t worry if you don&#39;t understand how it works; our main focus is
+        obviously the <strong>parser</strong>:</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">object</span><span> </span><span class="identifier">eval</span><span> {
+    </span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">data</span><span>.</span><span class="type-name">StateT</span><span>
+    </span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="type-name">Monad</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Error</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="type-name">Either</span><span>[</span><span class="type-name">String</span><span>, </span><span class="type-name">A</span><span>]
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Eval</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="type-name">StateT</span><span>[</span><span class="type-name">Error</span><span>, </span><span class="type-name">Map</span><span>[</span><span class="type-name">String</span><span>, </span><span class="type-name">Int</span><span>], </span><span class="type-name">A</span><span>]
+
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">number</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Int</span><span>): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>] = </span><span class="type-name">Monad</span><span>[</span><span class="type-name">Eval</span><span>].</span><span class="identifier">pure</span><span>(</span><span class="identifier">x</span><span>)
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">bool</span><span>(</span><span class="identifier">b</span><span>: </span><span class="type-name">Boolean</span><span>): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>] = </span><span class="type-name">Monad</span><span>[</span><span class="type-name">Eval</span><span>].</span><span class="identifier">pure</span><span>(</span><span class="identifier">b</span><span>)
+
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">negate</span><span>(</span><span class="identifier">mx</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>]): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>] = </span><span class="identifier">mx</span><span>.</span><span class="identifier">map</span><span>(</span><span class="number-literal">0</span><span> - </span><span class="identifier">_</span><span>)
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">add</span><span>(</span><span class="identifier">mx</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>], </span><span class="identifier">my</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>]): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>] = (</span><span class="identifier">mx</span><span>, </span><span class="identifier">my</span><span>).</span><span class="identifier">mapN</span><span>(</span><span class="identifier">_</span><span> + </span><span class="identifier">_</span><span>)
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">sub</span><span>(</span><span class="identifier">mx</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>], </span><span class="identifier">my</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>]): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>] = (</span><span class="identifier">mx</span><span>, </span><span class="identifier">my</span><span>).</span><span class="identifier">mapN</span><span>(</span><span class="identifier">_</span><span> - </span><span class="identifier">_</span><span>)
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">mul</span><span>(</span><span class="identifier">mx</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>], </span><span class="identifier">my</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>]): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>] = (</span><span class="identifier">mx</span><span>, </span><span class="identifier">my</span><span>).</span><span class="identifier">mapN</span><span>(</span><span class="identifier">_</span><span> * </span><span class="identifier">_</span><span>)
+
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">less</span><span>(</span><span class="identifier">mx</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>], </span><span class="identifier">my</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>]): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>] = (</span><span class="identifier">mx</span><span>, </span><span class="identifier">my</span><span>).</span><span class="identifier">mapN</span><span>(</span><span class="identifier">_</span><span> &lt; </span><span class="identifier">_</span><span>)
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">equal</span><span>(</span><span class="identifier">mx</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>], </span><span class="identifier">my</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>]): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>] = (</span><span class="identifier">mx</span><span>, </span><span class="identifier">my</span><span>).</span><span class="identifier">mapN</span><span>(</span><span class="identifier">_</span><span> == </span><span class="identifier">_</span><span>)
+
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">and</span><span>(</span><span class="identifier">mx</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>], </span><span class="identifier">my</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>]): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>] = </span><span class="identifier">cond</span><span>(</span><span class="identifier">mx</span><span>, </span><span class="identifier">my</span><span>, </span><span class="identifier">bool</span><span>(</span><span class="boolean-literal">false</span><span>))
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">or</span><span>(</span><span class="identifier">mx</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>], </span><span class="identifier">my</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>]): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>] = </span><span class="identifier">cond</span><span>(</span><span class="identifier">mx</span><span>, </span><span class="identifier">bool</span><span>(</span><span class="boolean-literal">true</span><span>), </span><span class="identifier">my</span><span>)
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">not</span><span>(</span><span class="identifier">mx</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>]): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>] = </span><span class="identifier">mx</span><span>.</span><span class="identifier">map</span><span>(!</span><span class="identifier">_</span><span>)
+
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">ask</span><span>(</span><span class="identifier">v</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>] =
+        </span><span class="type-name">StateT</span><span>.</span><span class="identifier">inspectF</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">get</span><span>(</span><span class="identifier">v</span><span>).</span><span class="identifier">toRight</span><span>(</span><span class="string-literal">s&quot;variable </span><span class="substitution">$v</span><span class="string-literal"> out of scope&quot;</span><span>))
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">store</span><span>(</span><span class="identifier">v</span><span>: </span><span class="type-name">String</span><span>, </span><span class="identifier">mx</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>]): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Unit</span><span>] =
+        </span><span class="identifier">mx</span><span>.</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">x</span><span> =&gt; </span><span class="type-name">StateT</span><span>.</span><span class="identifier">modify</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">updated</span><span>(</span><span class="identifier">v</span><span>, </span><span class="identifier">x</span><span>)))
+
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">cond</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">b</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>], </span><span class="identifier">t</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">A</span><span>], </span><span class="identifier">e</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">A</span><span>] =
+        </span><span class="type-name">Monad</span><span>[</span><span class="type-name">Eval</span><span>].</span><span class="identifier">ifM</span><span>(</span><span class="identifier">b</span><span>)(</span><span class="identifier">t</span><span>, </span><span class="identifier">e</span><span>)
+}</span></code></pre>
+        <p>The <code>ask</code> and <code>store</code> operations above allow for interaction with the environment, and the other
+        operations are just &quot;lifting&quot; the relevant operations into our monad. Just so you can see how this
+        might be stitched together, here are some example programs:</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">eval</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="identifier">store</span><span>(</span><span class="string-literal">&quot;x&quot;</span><span>, </span><span class="identifier">add</span><span>(</span><span class="identifier">number</span><span>(</span><span class="number-literal">5</span><span>), </span><span class="identifier">ask</span><span>(</span><span class="string-literal">&quot;v&quot;</span><span>))).</span><span class="identifier">runS</span><span>(</span><span class="type-name">Map</span><span>(</span><span class="string-literal">&quot;v&quot;</span><span> -&gt; </span><span class="number-literal">3</span><span>))
+</span><span class="comment">// res0: Error[Map[String, Int]] = Right(Map(v -&gt; 3, x -&gt; 8))
+</span><span class="identifier">store</span><span>(</span><span class="string-literal">&quot;x&quot;</span><span>, </span><span class="identifier">add</span><span>(</span><span class="identifier">number</span><span>(</span><span class="number-literal">5</span><span>), </span><span class="identifier">ask</span><span>(</span><span class="string-literal">&quot;v&quot;</span><span>))).</span><span class="identifier">runS</span><span>(</span><span class="type-name">Map</span><span>.</span><span class="identifier">empty</span><span>)
+</span><span class="comment">// res1: Error[Map[String, Int]] = Left(variable v out of scope)
+</span><span>
+</span><span class="type-name">List</span><span>(
+    </span><span class="identifier">store</span><span>(</span><span class="string-literal">&quot;v&quot;</span><span>, </span><span class="identifier">number</span><span>(</span><span class="number-literal">3</span><span>)),                </span><span class="comment">// v = 3;
+</span><span>    </span><span class="identifier">store</span><span>(</span><span class="string-literal">&quot;x&quot;</span><span>, </span><span class="identifier">add</span><span>(</span><span class="identifier">number</span><span>(</span><span class="number-literal">5</span><span>), </span><span class="identifier">ask</span><span>(</span><span class="string-literal">&quot;v&quot;</span><span>))), </span><span class="comment">// x = 5 + v;
+</span><span>    </span><span class="identifier">cond</span><span>(</span><span class="identifier">less</span><span>(</span><span class="identifier">ask</span><span>(</span><span class="string-literal">&quot;x&quot;</span><span>), </span><span class="identifier">ask</span><span>(</span><span class="string-literal">&quot;v&quot;</span><span>)),        </span><span class="comment">// if x &lt; v {
+</span><span>        </span><span class="identifier">store</span><span>(</span><span class="string-literal">&quot;v&quot;</span><span>, </span><span class="identifier">ask</span><span>(</span><span class="string-literal">&quot;x&quot;</span><span>)),             </span><span class="comment">//   v = x } else {
+</span><span>        </span><span class="identifier">store</span><span>(</span><span class="string-literal">&quot;v&quot;</span><span>, </span><span class="identifier">number</span><span>(</span><span class="number-literal">6</span><span>))),           </span><span class="comment">//   v = 6 };
+</span><span>).</span><span class="identifier">sequence</span><span>.</span><span class="identifier">runS</span><span>(</span><span class="type-name">Map</span><span>.</span><span class="identifier">empty</span><span>)
+</span><span class="comment">// res2: Either[String, Map[String, Int]] = Right(Map(v -&gt; 6, x -&gt; 8))</span></code></pre>
+        <p>If we start off with an initial variable assignment of <code>{v = 3}</code>, then the <code>Eval</code> value representing
+        <code>x = 5 + v</code> will finish with a final environment of <code>{v = 3, x = 8}</code>. If we don&#39;t provide an initial
+        value to <code>v</code>, the evaluation errors with an &quot;out of scope&quot; error. The <code>sequence</code> method can be used
+        to compose multiple statements in the langauge.</p>
+        
+        <h3 id="a-parser" class="section"><a class="anchor-link left" href="#a-parser"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1.2 </span>A Parser</h3>
+        <p>We&#39;ll be using the same <code>lexer</code> as we&#39;ve been accustomed to recently (with some extra
+        keywords and operators), so let&#39;s see what the parser is like:</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>.</span><span class="identifier">atomic</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">lexer</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">implicitSymbol</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">lexer</span><span>.{</span><span class="identifier">number</span><span>, </span><span class="identifier">identifier</span><span>, </span><span class="identifier">fully</span><span>}
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">sepEndBy</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">zipped</span><span>.{</span><span class="type-name">Zipped2</span><span>, </span><span class="type-name">Zipped3</span><span>}
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">expr</span><span>.{</span><span class="type-name">Prefix</span><span>, </span><span class="type-name">InfixR</span><span>, </span><span class="type-name">InfixL</span><span>, </span><span class="identifier">precedence</span><span>, </span><span class="type-name">Ops</span><span>}
+
+</span><span class="keyword">def</span><span> </span><span class="declaration-name">infixN</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>])(</span><span class="identifier">op</span><span>: </span><span class="type-name">Parsley</span><span>[(</span><span class="type-name">A</span><span>, </span><span class="type-name">A</span><span>) =&gt; </span><span class="type-name">B</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">B</span><span>] =
+    (</span><span class="identifier">p</span><span>, </span><span class="identifier">op</span><span>, </span><span class="identifier">p</span><span>).</span><span class="identifier">zipped</span><span>((</span><span class="identifier">x</span><span>, </span><span class="identifier">f</span><span>, </span><span class="identifier">y</span><span>) =&gt; </span><span class="identifier">f</span><span>(</span><span class="identifier">x</span><span>, </span><span class="identifier">y</span><span>))
+
+</span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">atom</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>]] =
+    </span><span class="string-literal">&quot;(&quot;</span><span> ~&gt; </span><span class="identifier">expr</span><span> &lt;~ </span><span class="string-literal">&quot;)&quot;</span><span> | </span><span class="identifier">number</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">eval</span><span>.</span><span class="identifier">number</span><span>) | </span><span class="identifier">identifier</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">ask</span><span>)
+</span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span> = </span><span class="identifier">precedence</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>]](</span><span class="identifier">atom</span><span>)(
+    </span><span class="type-name">Ops</span><span>(</span><span class="type-name">Prefix</span><span>)(</span><span class="string-literal">&quot;negate&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="identifier">negate</span><span>),
+    </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="identifier">mul</span><span>),
+    </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="identifier">add</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="identifier">sub</span><span>))
+
+</span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">blit</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>]] = </span><span class="string-literal">&quot;true&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="identifier">bool</span><span>(</span><span class="boolean-literal">true</span><span>)) | </span><span class="string-literal">&quot;false&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="identifier">bool</span><span>(</span><span class="boolean-literal">false</span><span>))
+</span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">comp</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>]] = </span><span class="identifier">infixN</span><span>(</span><span class="identifier">expr</span><span>)(</span><span class="string-literal">&quot;&lt;&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="identifier">less</span><span>) | </span><span class="string-literal">&quot;==&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="identifier">equal</span><span>))
+</span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">btom</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>]] = </span><span class="identifier">atomic</span><span>(</span><span class="string-literal">&quot;(&quot;</span><span> ~&gt; </span><span class="identifier">pred</span><span>) &lt;~ </span><span class="string-literal">&quot;)&quot;</span><span> | </span><span class="identifier">blit</span><span> | </span><span class="identifier">comp</span><span>
+</span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">pred</span><span> = </span><span class="identifier">precedence</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>]](</span><span class="identifier">btom</span><span>)(
+    </span><span class="type-name">Ops</span><span>(</span><span class="type-name">Prefix</span><span>)(</span><span class="string-literal">&quot;not&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="identifier">not</span><span>),
+    </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixR</span><span>)(</span><span class="string-literal">&quot;&amp;&amp;&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="identifier">and</span><span>),
+    </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixR</span><span>)(</span><span class="string-literal">&quot;||&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="identifier">or</span><span>))
+
+</span><span class="keyword">def</span><span> </span><span class="declaration-name">braces</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]) = </span><span class="string-literal">&quot;{&quot;</span><span> ~&gt; </span><span class="identifier">p</span><span> &lt;~ </span><span class="string-literal">&quot;}&quot;</span><span>
+
+</span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">asgnStmt</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Unit</span><span>]] = (</span><span class="identifier">identifier</span><span>, </span><span class="string-literal">&quot;=&quot;</span><span> ~&gt; </span><span class="identifier">expr</span><span>).</span><span class="identifier">zipped</span><span>(</span><span class="identifier">store</span><span>)
+</span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">ifStmt</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Unit</span><span>]] =
+    (</span><span class="string-literal">&quot;if&quot;</span><span> ~&gt; </span><span class="identifier">pred</span><span>, </span><span class="identifier">braces</span><span>(</span><span class="identifier">stmts</span><span>), </span><span class="string-literal">&quot;else&quot;</span><span> ~&gt; </span><span class="identifier">braces</span><span>(</span><span class="identifier">stmts</span><span>)).</span><span class="identifier">zipped</span><span>(</span><span class="identifier">cond</span><span>[</span><span class="type-name">Unit</span><span>])
+</span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">stmt</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Unit</span><span>]] = </span><span class="identifier">asgnStmt</span><span> | </span><span class="identifier">ifStmt</span><span>
+</span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">stmts</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Unit</span><span>]] = </span><span class="identifier">sepEndBy</span><span>(</span><span class="identifier">stmt</span><span>, </span><span class="string-literal">&quot;;&quot;</span><span>).</span><span class="identifier">map</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">sequence</span><span>.</span><span class="identifier">void</span><span>)
+
+</span><span class="keyword">val</span><span> </span><span class="identifier">parser</span><span> = </span><span class="identifier">fully</span><span>(</span><span class="identifier">stmts</span><span>)</span></code></pre>
+        <p>I&#39;m not going to say too much about this, since all of the ideas have been covered in previous pages
+        (and the Haskell example!). The evaluator and the parser can be stitched together to form an interpreter:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">interpret</span><span>(</span><span class="identifier">input</span><span>: </span><span class="type-name">String</span><span>)(</span><span class="identifier">ctx</span><span>: </span><span class="type-name">Map</span><span>[</span><span class="type-name">String</span><span>, </span><span class="type-name">Int</span><span>]) = {
+    </span><span class="identifier">parser</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="identifier">input</span><span>).</span><span class="identifier">toEither</span><span>.</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">runS</span><span>(</span><span class="identifier">ctx</span><span>))
+}</span></code></pre>
+        <p>Let&#39;s run an example through it and get used to the syntax:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">interpret</span><span>(
+    </span><span class="string-literal">&quot;&quot;&quot;x = 7;
+      |if x &lt; v &amp;&amp; 5 &lt; v {
+      |  y = 1;
+      |}
+      |else {
+      |  y = 0;
+      |};
+      |x = 0;
+    &quot;&quot;&quot;</span><span>.</span><span class="identifier">stripMargin</span><span>)(</span><span class="type-name">Map</span><span>(</span><span class="string-literal">&quot;v&quot;</span><span> -&gt; </span><span class="number-literal">8</span><span>))
+</span><span class="comment">// res3: Either[String, Map[String, Int]] = Right(Map(v -&gt; 8, x -&gt; 0, y -&gt; 1))</span></code></pre>
+        <p>The <code>|</code>s here are being used by Scala&#39;s <code>stripMargin</code> method to remove the leading whitespace on our
+        multi-line strings. We can see that the syntax of this language makes use of semi-colons for
+        delimiting, and <code>if</code> statements require a semi-colon after the <code>else</code>. In addition, no parentheses
+        are required for the <code>if</code>, but braces are mandated. This syntax is a little unorthodox, which is
+        great for us because it&#39;ll give us a lot of opportunities to test out our new tools! I&#39;ve neglected
+        to add any <code>.label</code>s or <code>.explain</code>s here, but obviously there are plenty of opportunities.</p>
+        
+        <h3 id="motivation" class="section"><a class="anchor-link left" href="#motivation"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1.3 </span>Motivation</h3>
+        <p>Let&#39;s start by seeing what happens if we accidentally write a <code>;</code> before an <code>else</code>:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">interpret</span><span>(</span><span class="string-literal">&quot;if true {}; else {};&quot;</span><span>)(</span><span class="type-name">Map</span><span>.</span><span class="identifier">empty</span><span>)
+</span><span class="comment">// res4: Either[String, Map[String, Int]] = Left((line 1, column 11):
+//   unexpected &quot;;&quot;
+//   expected else
+//   &gt;if true {}; else {};
+//              ^)</span></code></pre>
+        <p>This is what we&#39;d expect, since at this point we&#39;d expect an <code>else</code>. We could detail this issue for
+        the user with an <code>.explain</code>, and explain that semi-colons are not something that work in this
+        position:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">ifStmt</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Unit</span><span>]] =
+    ( </span><span class="string-literal">&quot;if&quot;</span><span> ~&gt; </span><span class="identifier">pred</span><span>
+    , </span><span class="identifier">braces</span><span>(</span><span class="identifier">stmts</span><span>)
+    , </span><span class="string-literal">&quot;else&quot;</span><span>.</span><span class="identifier">explain</span><span>(</span><span class="string-literal">&quot;semi-colons cannot be written after ifs&quot;</span><span>) ~&gt; </span><span class="identifier">braces</span><span>(</span><span class="identifier">stmts</span><span>)
+    ).</span><span class="identifier">zipped</span><span>(</span><span class="identifier">cond</span><span>[</span><span class="type-name">Unit</span><span>])</span></code></pre>
+        <p>What effect will this have?</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">interpret</span><span>(</span><span class="string-literal">&quot;if true {}; else {};&quot;</span><span>)(</span><span class="type-name">Map</span><span>.</span><span class="identifier">empty</span><span>)
+</span><span class="comment">// res5: Either[String, Map[String, Int]] = Left((line 1, column 11):
+//   unexpected &quot;;&quot;
+//   expected else
+//   semi-colons cannot be written after ifs
+//   &gt;if true {}; else {};
+//              ^)</span></code></pre>
+        <p>Ok, this is better! But what if I wrote something else there instead?</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">interpret</span><span>(</span><span class="string-literal">&quot;if true {}a else {};&quot;</span><span>)(</span><span class="type-name">Map</span><span>.</span><span class="identifier">empty</span><span>)
+</span><span class="comment">// res6: Either[String, Map[String, Int]] = Left((line 1, column 11):
+//   unexpected &quot;a&quot;
+//   expected else
+//   semi-colons cannot be written after ifs
+//   &gt;if true {}a else {};
+//              ^)</span></code></pre>
+        <p>Ah, right, not so good anymore. We could go back and make the <code>explain</code> a bit more general, of course,
+        but that means we&#39;ve lost out on the helpful prompt to the user about our language&#39;s syntax. So, what
+        can we do here? This is where the <em>Verified Errors</em> pattern comes into play.</p>
+        
+        <h2 id="verified-errors" class="section"><a class="anchor-link left" href="#verified-errors"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2 </span><em>Verified Errors</em></h2>
+        <p>The problem with using <code>explain</code> to write about a specific instance of a problem is that there is
+        no guarantee that the problem actually occurred. This is what we observed above, where an <code>a</code> was
+        misreported as a semi-colon! The <em>Verified Errors</em> pattern tells us the following:</p>
+        <blockquote>Parse bad input to verify that contextual obligations are met before raising an error.</blockquote>
+        <p>Basically, if we want to report an error about a spurious semi-colon, we better check that it is
+        <em>actually</em> there first! There are a <a href="../api-guide/errors/patterns.html#verified-errors">few properties</a>
+        we&#39;d expect of these errors and there are a
+        few ways of formulating them. One way is using <code>amend</code>, <code>hide</code>,
+        <code>empty</code>, and so on, but most of the time this pattern follows a regular enough structure that it
+        has been encoded into a family of combinators in <code>parsley.errors.patterns.VerifiedErrors</code>:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">char</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">patterns</span><span>.</span><span class="type-name">VerifiedErrors</span><span>
+
+</span><span class="keyword">val</span><span> </span><span class="identifier">_semiCheck</span><span> =
+    </span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;;&#39;</span><span>).</span><span class="identifier">verifiedUnexpected</span><span>(</span><span class="string-literal">&quot;semi-colons cannot be written between `if` and `else`&quot;</span><span>)
+
+</span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">ifStmt</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Unit</span><span>]] =
+    ( </span><span class="string-literal">&quot;if&quot;</span><span> ~&gt; </span><span class="identifier">pred</span><span>
+    , </span><span class="identifier">braces</span><span>(</span><span class="identifier">stmts</span><span>)
+    , (</span><span class="string-literal">&quot;else&quot;</span><span> | </span><span class="identifier">_semiCheck</span><span>) ~&gt; </span><span class="identifier">braces</span><span>(</span><span class="identifier">stmts</span><span>)
+    ).</span><span class="identifier">zipped</span><span>(</span><span class="identifier">cond</span><span>[</span><span class="type-name">Unit</span><span>])</span></code></pre>
+        <p>Here, if we can&#39;t read an <code>else</code>, we immediately try to parse <code>_semiCheck</code>, which reads a semi-colon
+        (and is careful to hide it from the errors, otherwise we might see <code>expected else or &quot;;&quot;</code>). If it succeeds,
+        then we fail generate a reason for the failure. If it didn&#39;t successfully parse, nothing happens, because
+        the <em>contextual obligation</em> for the error was not met. A parser like <code>_semiCheck</code> is known as an &quot;error widget&quot;:
+        prefix them with <code>_</code> to make them more immediately identifiable.</p>
+        <p>With this we have:</p>
+        <pre><code class="nohighlight"><span class="identifier">interpret</span><span>(</span><span class="string-literal">&quot;if true {}; else {};&quot;</span><span>)(</span><span class="type-name">Map</span><span>.</span><span class="identifier">empty</span><span>)
+</span><span class="comment">// res7: Either[String, Map[String, Int]] = Left((line 1, column 11):
+//   unexpected &quot;;&quot;
+//   expected else
+//   semi-colons cannot be written between `if` and `else`
+//   &gt;if true {}; else {};
+//              ^)
+</span><span>
+</span><span class="identifier">interpret</span><span>(</span><span class="string-literal">&quot;if true {}a else {};&quot;</span><span>)(</span><span class="type-name">Map</span><span>.</span><span class="identifier">empty</span><span>)
+</span><span class="comment">// res8: Either[String, Map[String, Int]] = Left((line 1, column 11):
+//   unexpected &quot;a&quot;
+//   expected else
+//   &gt;if true {}a else {};
+//              ^)</span></code></pre>
+        <p>This is exactly what we wanted! So, where else can we apply this technique? Let&#39;s see what happens
+        if we miss out a closing brace:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">interpret</span><span>(</span><span class="string-literal">&quot;if true {} else {&quot;</span><span>)(</span><span class="type-name">Map</span><span>.</span><span class="identifier">empty</span><span>)
+</span><span class="comment">// res9: Either[String, Map[String, Int]] = Left((line 1, column 18):
+//   unexpected end of input
+//   expected &quot;}&quot;, identifier, or if
+//   &gt;if true {} else {
+//                     ^)</span></code></pre>
+        <p>We could, again, give the user a helping hand here, and point out that they have an unclosed
+        <em>something</em> that they need to close. Again, we could start by using the <code>.explain</code> combinator
+        directly, on the <code>}</code>. Let&#39;s see what effect this will have:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">braces</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]) = </span><span class="string-literal">&quot;{&quot;</span><span> ~&gt; </span><span class="identifier">p</span><span> &lt;~ </span><span class="string-literal">&quot;}&quot;</span><span>.</span><span class="identifier">explain</span><span>(</span><span class="string-literal">&quot;unclosed `if` or `else`&quot;</span><span>)</span></code></pre>
+        <p>This will give us the more helpful error:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">interpret</span><span>(</span><span class="string-literal">&quot;if true {} else {&quot;</span><span>)(</span><span class="type-name">Map</span><span>.</span><span class="identifier">empty</span><span>)
+</span><span class="comment">// res10: Either[String, Map[String, Int]] = Left((line 1, column 18):
+//   unexpected end of input
+//   expected &quot;}&quot;, identifier, or if
+//   unclosed `if` or `else`
+//   &gt;if true {} else {
+//                     ^)</span></code></pre>
+        <p>This time, adding extra input won&#39;t cause a problem, so is this fine? Well, what about this input:</p>
+        <pre><code class="nohighlight"><span class="identifier">interpret</span><span>(
+    </span><span class="string-literal">&quot;&quot;&quot;if true {}
+      |else {
+      | x = 7a
+      |}&quot;&quot;&quot;</span><span>.</span><span class="identifier">stripMargin</span><span>)(</span><span class="type-name">Map</span><span>.</span><span class="identifier">empty</span><span>)
+</span><span class="comment">// res11: Either[String, Map[String, Int]] = Left((line 3, column 7):
+//   unexpected &quot;a&quot;
+//   expected &quot;;&quot;, &quot;}&quot;, *, +, -, or digit
+//   unclosed `if` or `else`
+//   &gt;else {
+//   &gt; x = 7a
+//          ^
+//   &gt;})</span></code></pre>
+        <p>Argh! The <code>else</code> <em>is</em> closed this time, but since <code>}</code> is a valid continuation character we&#39;ve
+        triggered our <code>explain</code> message. Again, we can fix this by using a verified error (on <code>eof</code>)</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">eof</span><span>
+</span><span class="keyword">val</span><span> </span><span class="identifier">_eofCheck</span><span> = </span><span class="identifier">eof</span><span>.</span><span class="identifier">verifiedUnexpected</span><span>(</span><span class="string-literal">&quot;unclosed `if` or `else`&quot;</span><span>)
+</span><span class="keyword">def</span><span> </span><span class="declaration-name">braces</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]) = </span><span class="string-literal">&quot;{&quot;</span><span> ~&gt; </span><span class="identifier">p</span><span> &lt;~ (</span><span class="string-literal">&quot;}&quot;</span><span> | </span><span class="identifier">_eofCheck</span><span>)</span></code></pre>
+        <p>This time we&#39;ve latched onto whether or not there is any input left at all. This will work fine!</p>
+        <pre><code class="nohighlight"><span class="identifier">interpret</span><span>(
+    </span><span class="string-literal">&quot;&quot;&quot;if true {}
+      |else {
+      | x = 7a
+      |}&quot;&quot;&quot;</span><span>.</span><span class="identifier">stripMargin</span><span>)(</span><span class="type-name">Map</span><span>.</span><span class="identifier">empty</span><span>)
+</span><span class="comment">// res12: Either[String, Map[String, Int]] = Left((line 3, column 7):
+//   unexpected &quot;a&quot;
+//   expected &quot;}&quot;
+//   &gt;else {
+//   &gt; x = 7a
+//          ^
+//   &gt;})
+</span><span>
+</span><span class="identifier">interpret</span><span>(
+    </span><span class="string-literal">&quot;&quot;&quot;if true {}
+      |else {
+      | x = 7
+      |&quot;&quot;&quot;</span><span>.</span><span class="identifier">stripMargin</span><span>)(</span><span class="type-name">Map</span><span>.</span><span class="identifier">empty</span><span>)
+</span><span class="comment">// res13: Either[String, Map[String, Int]] = Left((line 4, column 1):
+//   unexpected end of input
+//   expected &quot;;&quot;, &quot;}&quot;, *, +, or -
+//   unclosed `if` or `else`
+//   &gt; x = 7
+//   &gt;
+//    ^)</span></code></pre>
+        <p>Perfect 🙂. What now? Well, another area where the user might trip up is thinking that you can
+        assign booleans to variables! Let&#39;s see what the errors are:</p>
+        <pre><code class="nohighlight"><span class="identifier">interpret</span><span>(</span><span class="string-literal">&quot;x = true&quot;</span><span>)(</span><span class="type-name">Map</span><span>.</span><span class="identifier">empty</span><span>)
+</span><span class="comment">// res14: Either[String, Map[String, Int]] = Left((line 1, column 5):
+//   unexpected keyword true
+//   expected &quot;(&quot;, identifier, negate, or number
+//   &gt;x = true
+//        ^^^^)
+</span><span>
+</span><span class="identifier">interpret</span><span>(</span><span class="string-literal">&quot;x = 10 &lt; 9&quot;</span><span>)(</span><span class="type-name">Map</span><span>.</span><span class="identifier">empty</span><span>)
+</span><span class="comment">// res15: Either[String, Map[String, Int]] = Left((line 1, column 8):
+//   unexpected &quot;&lt;&quot;
+//   expected &quot;;&quot;, *, +, -, or end of input
+//   &gt;x = 10 &lt; 9
+//           ^)
+</span><span>
+</span><span class="identifier">interpret</span><span>(</span><span class="string-literal">&quot;x = not true&quot;</span><span>)(</span><span class="type-name">Map</span><span>.</span><span class="identifier">empty</span><span>)
+</span><span class="comment">// res16: Either[String, Map[String, Int]] = Left((line 1, column 5):
+//   unexpected keyword not
+//   expected &quot;(&quot;, identifier, negate, or number
+//   &gt;x = not true
+//        ^^^)</span></code></pre>
+        <p>Now, there is a cheap way of dealing with this and an expensive one. Let&#39;s start cheap and see what
+        needs to be done and how effective it is. The first thing we can recognise is that we can special
+        case <code>not</code>, <code>true</code>, and <code>false</code> using the same strategy as before. We can choose to attach a new
+        widget to the <code>expr</code> inside the <code>asgn</code>, let&#39;s start by defining the widget (using some more
+        generalised machinery):</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">choice</span><span>
+</span><span class="keyword">val</span><span> </span><span class="identifier">_boolCheck</span><span> = </span><span class="identifier">choice</span><span>(
+        </span><span class="identifier">lexer</span><span>.</span><span class="identifier">nonLexemeSymbol</span><span>(</span><span class="string-literal">&quot;true&quot;</span><span>),
+        </span><span class="identifier">lexer</span><span>.</span><span class="identifier">nonLexemeSymbol</span><span>(</span><span class="string-literal">&quot;false&quot;</span><span>),
+        </span><span class="identifier">lexer</span><span>.</span><span class="identifier">nonLexemeSymbol</span><span>(</span><span class="string-literal">&quot;not&quot;</span><span>),
+    ).</span><span class="identifier">verifiedUnexpected</span><span>(</span><span class="string-literal">&quot;booleans cannot be assigned to variables&quot;</span><span>)</span></code></pre>
+        <p>The <code>lexer.nonLexemeSymbol</code> combinator here is allowing for the parsing of keywords <em>without</em>
+        reading trailing whitespace, which would make our error messages wider. Now, we can add this to the <code>asgn</code>:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">asgnStmt</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Unit</span><span>]] =
+    (</span><span class="identifier">identifier</span><span>, </span><span class="string-literal">&quot;=&quot;</span><span> ~&gt; (</span><span class="identifier">expr</span><span> | </span><span class="identifier">_boolCheck</span><span>)).</span><span class="identifier">zipped</span><span>(</span><span class="identifier">store</span><span>)</span></code></pre>
+        <p>And now for the errors:</p>
+        <pre><code class="nohighlight"><span class="identifier">interpret</span><span>(</span><span class="string-literal">&quot;x = true&quot;</span><span>)(</span><span class="type-name">Map</span><span>.</span><span class="identifier">empty</span><span>)
+</span><span class="comment">// res17: Either[String, Map[String, Int]] = Left((line 1, column 5):
+//   unexpected keyword true
+//   expected &quot;(&quot;, identifier, negate, or number
+//   booleans cannot be assigned to variables
+//   &gt;x = true
+//        ^^^^)
+</span><span>
+</span><span class="identifier">interpret</span><span>(</span><span class="string-literal">&quot;x = 10 &lt; 9&quot;</span><span>)(</span><span class="type-name">Map</span><span>.</span><span class="identifier">empty</span><span>)
+</span><span class="comment">// res18: Either[String, Map[String, Int]] = Left((line 1, column 8):
+//   unexpected &quot;&lt;&quot;
+//   expected &quot;;&quot;, *, +, -, or end of input
+//   &gt;x = 10 &lt; 9
+//           ^)
+</span><span>
+</span><span class="identifier">interpret</span><span>(</span><span class="string-literal">&quot;x = not true&quot;</span><span>)(</span><span class="type-name">Map</span><span>.</span><span class="identifier">empty</span><span>)
+</span><span class="comment">// res19: Either[String, Map[String, Int]] = Left((line 1, column 5):
+//   unexpected keyword not
+//   expected &quot;(&quot;, identifier, negate, or number
+//   booleans cannot be assigned to variables
+//   &gt;x = not true
+//        ^^^)</span></code></pre>
+        <p>So, we&#39;ve cracked the <em>leading</em> edge
+        of the booleans, but we are still no closer to managing to deal with <code>&lt;</code>, <code>==</code>. These
+        are significantly trickier to handle with our current approach, because they occur <em>after</em> some input
+        has already been read. We would need to insert them as alternatives at every point where they could be
+        &quot;valid&quot; predictions. This is far from ideal. Note that we don&#39;t really need to worry about <code>&amp;&amp;</code> and
+        <code>||</code>, since we are going to have to have already found one of <code>&lt;</code>, <code>==</code>, <code>not</code>, <code>true</code>, or <code>false</code>
+        before we reach it <em>anyway</em>. Instead, we need to look towards a different technique, the <em>Preventative
+        Error</em>.</p>
+        
+        <h2 id="preventative-errors" class="section"><a class="anchor-link left" href="#preventative-errors"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">3 </span><em>Preventative Errors</em></h2>
+        <p>The problem with <em>verified errors</em> is that they have to follow the valid alternatives of a parse,
+        which may be disparate and scattered. Not to mention that moving the widget to a shared parser may
+        actually invalidate its context anyway! Instead, a <em>preventative error</em> allows us to proactively
+        rule out bad input. This means trying to parse it <em>before</em> trying the &quot;working&quot; alternatives.
+        Compared with <em>verified errors</em>, which are a last resort, <em>preventative errors</em> are by nature more
+        costly. Again, there are a <a href="../api-guide/errors/patterns.html#preventative-errors">few properties</a>
+        we&#39;d expect of these errors and there are a
+        few ways of formulating them and <code>parsley.errors.patterns.PreventativeErrors</code> contains a family
+        of combinators for the most common formulation:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">patterns</span><span>.</span><span class="type-name">PreventativeErrors</span><span>
+
+</span><span class="keyword">val</span><span> </span><span class="identifier">_noCompCheck</span><span> =
+    </span><span class="identifier">choice</span><span>(</span><span class="identifier">lexer</span><span>.</span><span class="identifier">nonLexemeSymbol</span><span>(</span><span class="string-literal">&quot;&lt;&quot;</span><span>), </span><span class="identifier">lexer</span><span>.</span><span class="identifier">nonLexemeSymbol</span><span>(</span><span class="string-literal">&quot;==&quot;</span><span>)).</span><span class="identifier">preventativeExplain</span><span>(
+        </span><span class="identifier">reason</span><span> = </span><span class="string-literal">&quot;booleans cannot be assigned to variables&quot;</span><span>,
+        </span><span class="identifier">labels</span><span> = </span><span class="string-literal">&quot;end of arithmetic expression&quot;</span><span>
+    )</span></code></pre>
+        <p>The idea here is to try and parse one of <code>&lt;</code> or <code>==</code> and fail immediately if this is possible,
+        otherwise, the combinator succeeds, and we can start parsing something else. Because raising the
+        error happens more eagerly, it is important to provide error labels to describe what valid things
+        can come next since these parsers won&#39;t actually get executed and contribute themselves! It should
+        be placed at a point where it is suspected the <code>&lt;</code> and <code>==</code> could be read, namely after an expression
+        in the <code>asgn</code>. So, let&#39;s see what the effect of the error will be:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">asgnStmt</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Unit</span><span>]] =
+    (</span><span class="identifier">identifier</span><span>, </span><span class="string-literal">&quot;=&quot;</span><span> ~&gt; ((</span><span class="identifier">expr</span><span> &lt;~ </span><span class="identifier">_noCompCheck</span><span>) | </span><span class="identifier">_boolCheck</span><span>)).</span><span class="identifier">zipped</span><span>(</span><span class="identifier">store</span><span>)</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">interpret</span><span>(</span><span class="string-literal">&quot;x = 10 &lt; 9&quot;</span><span>)(</span><span class="type-name">Map</span><span>.</span><span class="identifier">empty</span><span>)
+</span><span class="comment">// res20: Either[String, Map[String, Int]] = Left((line 1, column 8):
+//   unexpected &quot;&lt;&quot;
+//   expected end of arithmetic expression
+//   booleans cannot be assigned to variables
+//   &gt;x = 10 &lt; 9
+//           ^)</span></code></pre>
+        <p>This looks pretty good! However, it&#39;s now looking a little messier, and could do with some
+        abstraction:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">_noBool</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = (</span><span class="identifier">p</span><span> &lt;~ </span><span class="identifier">_noCompCheck</span><span>) | </span><span class="identifier">_boolCheck</span><span>
+
+</span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">asgnStmt</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Unit</span><span>]] = (</span><span class="identifier">identifier</span><span>, </span><span class="string-literal">&quot;=&quot;</span><span> ~&gt; </span><span class="identifier">_noBool</span><span>(</span><span class="identifier">expr</span><span>)).</span><span class="identifier">zipped</span><span>(</span><span class="identifier">store</span><span>)</span></code></pre>
+        <p>This is a bit tidier! When I said that there was a cheap way and an expensive way of implementing
+        these improved errors earlier, the expensive way would have been using a preventative error from the
+        outset, trying to parse an <em>entire</em> boolean expression up-front. This may be much more expensive than
+        the reasonably small &lt;7 character checks we&#39;ve been doing. However, it is instructive to see what
+        this might have looked like, now just by changing <code>_noBool</code>:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="type-name">VanillaGen</span><span>
+
+</span><span class="keyword">val</span><span> </span><span class="identifier">_noBoolCheck</span><span> = </span><span class="identifier">pred</span><span>.</span><span class="identifier">void</span><span>.</span><span class="identifier">preventWith</span><span>(
+    </span><span class="identifier">err</span><span> = </span><span class="keyword">new</span><span> </span><span class="type-name">VanillaGen</span><span>[</span><span class="type-name">Unit</span><span>] {
+        </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">reason</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Unit</span><span>) = </span><span class="type-name">Some</span><span>(</span><span class="string-literal">&quot;booleans cannot be assigned to variables&quot;</span><span>)
+        </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">unexpected</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Unit</span><span>) = </span><span class="type-name">VanillaGen</span><span>.</span><span class="type-name">NamedItem</span><span>(</span><span class="string-literal">&quot;boolean expression&quot;</span><span>)
+    },
+    </span><span class="identifier">labels</span><span> = </span><span class="string-literal">&quot;arithmetic expression&quot;</span><span>
+)
+
+
+</span><span class="keyword">def</span><span> </span><span class="declaration-name">_noBool</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">_noBoolCheck</span><span> ~&gt; </span><span class="identifier">p</span></code></pre>
+        <p>This version makes use of the <code>VanillaGen</code>, which can allow for a bit more fine-grained configuration,
+        including changing the unexpected message within the error. By parsing a full <code>pred</code>, we are certain
+        to rule out all problematic inputs immediately, but this could be much more costly - there is a
+        trade-off to be had! The errors are all as follows:</p>
+        <pre><code class="nohighlight"><span class="identifier">interpret</span><span>(</span><span class="string-literal">&quot;x = true&quot;</span><span>)(</span><span class="type-name">Map</span><span>.</span><span class="identifier">empty</span><span>)
+</span><span class="comment">// res21: Either[String, Map[String, Int]] = Left((line 1, column 5):
+//   unexpected boolean expression
+//   expected arithmetic expression
+//   booleans cannot be assigned to variables
+//   &gt;x = true
+//        ^^^^)
+</span><span>
+</span><span class="identifier">interpret</span><span>(</span><span class="string-literal">&quot;x = 10 &lt; 9&quot;</span><span>)(</span><span class="type-name">Map</span><span>.</span><span class="identifier">empty</span><span>)
+</span><span class="comment">// res22: Either[String, Map[String, Int]] = Left((line 1, column 5):
+//   unexpected boolean expression
+//   expected arithmetic expression
+//   booleans cannot be assigned to variables
+//   &gt;x = 10 &lt; 9
+//        ^^^^^^)
+</span><span>
+</span><span class="identifier">interpret</span><span>(</span><span class="string-literal">&quot;x = not true&quot;</span><span>)(</span><span class="type-name">Map</span><span>.</span><span class="identifier">empty</span><span>)
+</span><span class="comment">// res23: Either[String, Map[String, Int]] = Left((line 1, column 5):
+//   unexpected boolean expression
+//   expected arithmetic expression
+//   booleans cannot be assigned to variables
+//   &gt;x = not true
+//        ^^^^^^^^)</span></code></pre>
+        <p>The flip side is that these errors are just about as good as it gets for this particular problem:
+        notice that the error caret covers the <em>entire</em> bad expression, and reports it under a concise
+        naming. It can also catch errors with bracketed expressions, which may be missed by the previous
+        implementations (though it is still possible to catch these with some work).</p>
+        
+        <h2 id="conclusion" class="section"><a class="anchor-link left" href="#conclusion"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">4 </span>Conclusion</h2>
+        <p>The main point of this page is to demonstrate how much of an important technique &quot;parsing bad inputs&quot;
+        can be to generating informative and precise error messages. Of course, there are other formulations
+        of these patterns, and they can address some of the shortcomings of the above implementations.
+        In future, I may add a discussion of <em>how</em> these patterns are implemented in practice, to show how
+        more bespoke ones can be useful.</p>
+
+        
+<hr class="footer-rule"/>
+<footer>
+  Parsley is distributed under the <a href="https://opensource.org/licenses/BSD-3-Clause">BSD-3-Clause</a> license.
+</footer>
+
+
+      </main>
+
+    </div>
+
+  </body>
+
+</html>

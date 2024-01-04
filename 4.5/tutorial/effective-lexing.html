@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+  
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Typelevel Laika + Parsley Theme" />
+    
+    <title>Effective Lexing</title>
+    
+    
+    <meta name="author" content="parsley contributors"/>
+    
+    
+    <meta name="description" content="How to handle low-level tokenisation in a parser."/>
+    
+    
+    
+    <link rel="icon" sizes="32x32" type="image/svg+xml" href="../../icons/greenLeaf.svg"/>
+    
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700">
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Fira+Mono:500">
+    
+    <link rel="stylesheet" type="text/css" href="../../helium/site/icofont.min.css" />
+    <link rel="stylesheet" type="text/css" href="../../helium/site/laika-helium.css" />
+    <link rel="stylesheet" type="text/css" href="../../css/parsley-style.css" />
+    <script src="../../helium/site/laika-helium.js"></script>
+    <script src="../../helium/site/laika-versions.js"></script>
+    <script>initVersions("../../", "/tutorial/effective-lexing.html", "4.5", null);</script>
+    
+    <script> /* for avoiding page load transitions */ </script>
+  </head>
+
+
+  <body>
+
+    <header id="top-bar" class="light-default dark-default">
+
+  <div class="row">
+    <a id="nav-icon">
+      <i class="icofont-laika navigationMenu" title="Navigation">&#xefa2;</i>
+    </a>
+    
+    <div class="menu-container version-menu">
+      <a class="text-link menu-toggle" href="#">Version 4.5.x</a>
+      <nav class="menu-content">
+        <ul class="nav-list">
+        </ul>
+      </nav>
+    </div>
+  </div>
+
+  <a class="icon-link svg-link" href="../../"><span class="leaf" title="Home"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 128 128" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M101.39,86.21c-14.25-5.91-22.34-4.3-28.47-2.5c-6.5,1.91-12.31,8.58-12.31,8.58s-1.93-0.58-5.04-0.51 c-1.49,0.04-2.67,0.28-3.54,0.54c2.64-5.99,4.51-12.08,7.57-18.76c1.95-0.81,4.63-1.86,6.35-2.23c2.96-0.64,6.45-0.84,6.45-0.84 c0.82,0.64,2,1.39,3.69,2.23c9.56,4.78,21.5,2.16,27.35-0.16c8.13-3.23,20.21-12.95,20.21-13.69s-5.5-3.38-13.32-5.71 c-7.82-2.33-18.27-2.44-26.21,0.95c-7.28,3.11-10.67,8.58-12.54,11.86c0,0-2.9,0.46-5,0.82c-1.56,0.27-2.96,0.64-4.07,0.99 c0.22-0.4,0.45-0.81,0.68-1.21C67.77,58.61,72.83,52.5,77,48.2c5.87,0.55,17.89,0.35,27.62-8.46 c15.64-14.15,18.46-35.92,18.07-36.35S97.35,3.34,84.54,14.91c-12.19,11.01-11.97,25.4-11.4,30.69c-3.97,3.71-8.81,9.17-14.2,17.12 c-0.04-2.12-0.29-4.73-0.29-4.73s7.19-6.73,7.72-17.18c0.42-8.24-0.46-15.89-5-24.14c-3.56-6.43-6.53-8.03-7.06-7.93 c-0.93,0.19-5.33,7.06-8.03,13.63c-2.13,5.17-4.26,18.38-0.45,26.52s8.22,9.68,8.22,9.68s0.54,2.37,0.48,5.55 c-0.02,1.36-0.13,4.51-0.18,5.98c-3.57,6.32-5.96,12.07-8.23,17.22c-0.34-0.99-0.73-1.96-1.11-2.65c-1.16-2.11-1.59-2.85-1.59-2.85 s2.57-15.99-1.8-29.17C36.45,37,27.57,31.08,19.33,27.59C11.09,24.1,6.54,24.11,5.8,24.95c-1.08,1.23,1.37,4.33,1.59,11.31 c0.17,5.71,1.16,25.05,6.87,34.98s13.63,12.37,16.17,13.21c2.54,0.85,8.03,0.95,8.03,0.95s2.33,2.01,3.17,4.86 c0.39,1.31,0.78,2.92,1.09,4.27c-1.95,3.71-4.17,7-7.21,9.86c-5.01,4.71-13.09,7.94-13.09,7.94s-6.47-0.15-6.91,0.15 c-0.44,0.29-1.73,3.53,0.69,7.51c2,3.29,5.05,4.12,6.08,4.26c1.03,0.15,2.94-4.27,3.68-4.86c0.74-0.59,9.43-3.93,15.6-10.74 c2.83-3.13,5.02-6.16,6.81-9.17c1.65-1.01,4.07-2.17,6.72-2.31c2.64-0.15,4.94,1.12,4.94,1.12s2.22,9.16,12.15,13 c12.5,4.83,25.83,0.61,31.64-1.4c5.81-2,19.83-8.42,19.94-10.22C123.86,97.87,115.66,92.13,101.39,86.21z"/>
+  </g>
+</svg></span></a>
+
+  <div class="row links">
+    
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/">API</a>
+    
+    <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M49.995,1c-27.609,-0 -49.995,22.386 -49.995,50.002c-0,22.09 14.325,40.83 34.194,47.444c2.501,0.458 3.413,-1.086 3.413,-2.412c0,-1.185 -0.043,-4.331 -0.067,-8.503c-13.908,3.021 -16.843,-6.704 -16.843,-6.704c-2.274,-5.773 -5.552,-7.311 -5.552,-7.311c-4.54,-3.103 0.344,-3.042 0.344,-3.042c5.018,0.356 7.658,5.154 7.658,5.154c4.46,7.64 11.704,5.433 14.552,4.156c0.454,-3.232 1.744,-5.436 3.174,-6.685c-11.102,-1.262 -22.775,-5.553 -22.775,-24.713c-0,-5.457 1.949,-9.92 5.147,-13.416c-0.516,-1.265 -2.231,-6.348 0.488,-13.233c0,0 4.199,-1.344 13.751,5.126c3.988,-1.108 8.266,-1.663 12.518,-1.682c4.245,0.019 8.523,0.574 12.517,1.682c9.546,-6.47 13.736,-5.126 13.736,-5.126c2.728,6.885 1.013,11.968 0.497,13.233c3.204,3.496 5.141,7.959 5.141,13.416c0,19.209 -11.691,23.436 -22.83,24.673c1.795,1.544 3.394,4.595 3.394,9.26c0,6.682 -0.061,12.076 -0.061,13.715c0,1.338 0.899,2.894 3.438,2.406c19.853,-6.627 34.166,-25.354 34.166,-47.438c-0,-27.616 -22.389,-50.002 -50.005,-50.002"/>
+  </g>
+</svg></span></a>
+    
+  </div>  
+
+</header>
+    
+    <nav id="sidebar">
+
+  <div class="row">
+    
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/">API</a>
+    
+    <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M49.995,1c-27.609,-0 -49.995,22.386 -49.995,50.002c-0,22.09 14.325,40.83 34.194,47.444c2.501,0.458 3.413,-1.086 3.413,-2.412c0,-1.185 -0.043,-4.331 -0.067,-8.503c-13.908,3.021 -16.843,-6.704 -16.843,-6.704c-2.274,-5.773 -5.552,-7.311 -5.552,-7.311c-4.54,-3.103 0.344,-3.042 0.344,-3.042c5.018,0.356 7.658,5.154 7.658,5.154c4.46,7.64 11.704,5.433 14.552,4.156c0.454,-3.232 1.744,-5.436 3.174,-6.685c-11.102,-1.262 -22.775,-5.553 -22.775,-24.713c-0,-5.457 1.949,-9.92 5.147,-13.416c-0.516,-1.265 -2.231,-6.348 0.488,-13.233c0,0 4.199,-1.344 13.751,5.126c3.988,-1.108 8.266,-1.663 12.518,-1.682c4.245,0.019 8.523,0.574 12.517,1.682c9.546,-6.47 13.736,-5.126 13.736,-5.126c2.728,6.885 1.013,11.968 0.497,13.233c3.204,3.496 5.141,7.959 5.141,13.416c0,19.209 -11.691,23.436 -22.83,24.673c1.795,1.544 3.394,4.595 3.394,9.26c0,6.682 -0.061,12.076 -0.061,13.715c0,1.338 0.899,2.894 3.438,2.406c19.853,-6.627 34.166,-25.354 34.166,-47.438c-0,-27.616 -22.389,-50.002 -50.005,-50.002"/>
+  </g>
+</svg></span></a>
+    
+  </div>
+
+  <ul class="nav-list">
+    <li class="level1 nav-leaf"><a href="../../downloads.html">Documentation Downloads</a></li>
+    <li class="level1 nav-leaf"><a href="../../home.html">Home</a></li>
+    <li class="level1 nav-leaf"><a href="../faq.html">FAQ</a></li>
+    <li class="level1 nav-leaf"><a href="../cheatsheet.html">Cheatsheet</a></li>
+    <li class="level1 nav-node"><a href="../api-guide/">Understanding the API</a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/Parsley.html"><code>parsley.Parsley</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/character.html"><code>parsley.character</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/combinator.html"><code>parsley.combinator</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/generic.html"><code>parsley.genericbridges</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/syntax.html"><code>parsley.implicits</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/position.html"><code>parsley.position</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/state.html"><code>parsley.registers</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/debug.html"><code>parsley.debug</code></a></li>
+    <li class="level2 nav-header"><code>parsley.expr</code></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/expr/chain.html"><code>chain</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/expr/infix.html"><code>infix</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/expr/precedence.html"><code>precedence</code></a></li>
+    <li class="level2 nav-header"><code>parsley.token</code></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/token/Lexer.html"><code>Lexer</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/token/descriptions.html"><code>descriptions</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/token/errors.html"><code>errors</code></a></li>
+    <li class="level2 nav-header"><code>parsley.errors</code></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/errors/combinator.html"><code>combinator</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/errors/patterns.html"><code>patterns</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/errors/ErrorBuilder.html"><code>ErrorBuilder</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/errors/tokenextractors.html"><code>tokenextractors</code></a></li>
+    <li class="level1 nav-node"><a href="index.html">Parser Combinator Tutorial</a></li>
+    <li class="level2 nav-leaf"><a href="basics-of-combinators.html">Basics of Combinators</a></li>
+    <li class="level2 nav-leaf"><a href="building-expression-parsers.html">Building Expression Parsers</a></li>
+    <li class="level2 nav-leaf"><a href="effective-whitespace-parsing.html">Effective Whitespace Parsing</a></li>
+    <li class="level2 active nav-leaf"><a href="#">Effective Lexing</a></li>
+    <li class="level2 nav-leaf"><a href="parser-bridge-pattern.html">The Parser Bridge Pattern</a></li>
+    <li class="level2 nav-leaf"><a href="interlude-1-haskell.html">Interlude 1: Building a Parser for Haskell</a></li>
+    <li class="level2 nav-leaf"><a href="customising-error-messages.html">Customising Error Messages</a></li>
+    <li class="level2 nav-leaf"><a href="advanced-error-messages.html">Advanced Error Messages</a></li>
+    <li class="level1 nav-header">Related Projects</li>
+    <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/parsley-cats">parsley-cats</a></li>
+    <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/gigaparsec">gigaparsec (Haskell)</a></li>
+  </ul>
+
+</nav>
+
+    <div id="container">
+
+      
+<nav id="page-nav">
+  <p class="header"><a href="#">Effective Lexing</a></p>
+
+  <ul class="nav-list">
+    <li class="level1 nav-leaf"><a href="#keywords-identifiers-and-operators"><span class="section-number">1 </span>Keywords, Identifiers and Operators</a></li>
+    <li class="level1 nav-leaf"><a href="#using-token-descriptions-lexicaldesc-and-token-lexer"><span class="section-number">2 </span>Using <code>token.descriptions.LexicalDesc</code> and <code>token.Lexer</code></a></li>
+  </ul>
+
+  <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/master/docs/tutorial/effective-lexing.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
+</nav>
+
+
+      <main class="content">
+
+        <h1 id="effective-lexing" class="title">Effective Lexing</h1>
+        <div class="callout info">
+          <i class="icofont-laika info">&#xef4e;</i>
+          <p>Note that the start of this page describes the underlying fundamentals behind
+          lexing with parser combinators, but this is abstracted by the functionality
+          at the end.</p>
+        </div>
+        <p>In the previous post, we saw the basic principles behind handling whitespace in a transparent manner.
+        To remind ourselves of what we ended up lets pick up where we left off:</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>, </span><span class="type-name">Parsley</span><span>.</span><span class="identifier">atomic</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">digit</span><span>, </span><span class="identifier">whitespace</span><span>, </span><span class="identifier">string</span><span>, </span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>}
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.{</span><span class="identifier">manyUntil</span><span>, </span><span class="identifier">skipMany</span><span>, </span><span class="identifier">eof</span><span>}
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">expr</span><span>.{</span><span class="identifier">precedence</span><span>, </span><span class="type-name">Ops</span><span>, </span><span class="type-name">InfixL</span><span>}
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="type-name">ErrorMethods</span><span>
+
+</span><span class="keyword">object</span><span> </span><span class="identifier">lexer</span><span> {
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">symbol</span><span>(</span><span class="identifier">str</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">atomic</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">str</span><span>))
+
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">lineComment</span><span> = </span><span class="identifier">symbol</span><span>(</span><span class="string-literal">&quot;//&quot;</span><span>) ~&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>)
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">multiComment</span><span> = </span><span class="identifier">symbol</span><span>(</span><span class="string-literal">&quot;/*&quot;</span><span>) ~&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">symbol</span><span>(</span><span class="string-literal">&quot;*/&quot;</span><span>))
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">comment</span><span> = </span><span class="identifier">lineComment</span><span> | </span><span class="identifier">multiComment</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">skipWhitespace</span><span> = </span><span class="identifier">skipMany</span><span>(</span><span class="identifier">whitespace</span><span> | </span><span class="identifier">comment</span><span>).</span><span class="identifier">hide</span><span>
+
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">lexeme</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">p</span><span> &lt;~ </span><span class="identifier">skipWhitespace</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">token</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">atomic</span><span>(</span><span class="identifier">p</span><span>))
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">fully</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">skipWhitespace</span><span> ~&gt; </span><span class="identifier">p</span><span> &lt;~ </span><span class="identifier">eof</span><span>
+
+    </span><span class="keyword">val</span><span> </span><span class="identifier">number</span><span> = </span><span class="identifier">token</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">foldLeft1</span><span>[</span><span class="type-name">BigInt</span><span>](</span><span class="number-literal">0</span><span>)((</span><span class="identifier">n</span><span>, </span><span class="identifier">d</span><span>) =&gt; </span><span class="identifier">n</span><span> * </span><span class="number-literal">10</span><span> + </span><span class="identifier">d</span><span>.</span><span class="identifier">asDigit</span><span>))
+
+    </span><span class="keyword">object</span><span> </span><span class="identifier">implicits</span><span> {
+        </span><span class="keyword">implicit</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">implicitSymbol</span><span>(</span><span class="identifier">s</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">symbol</span><span>(</span><span class="identifier">s</span><span>))
+    }
+}
+
+</span><span class="keyword">object</span><span> </span><span class="identifier">expressions</span><span> {
+    </span><span class="keyword">import</span><span> </span><span class="identifier">lexer</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">implicitSymbol</span><span>
+    </span><span class="keyword">import</span><span> </span><span class="identifier">lexer</span><span>.{</span><span class="identifier">number</span><span>, </span><span class="identifier">fully</span><span>}
+
+    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">atom</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">BigInt</span><span>] = </span><span class="string-literal">&quot;(&quot;</span><span> ~&gt; </span><span class="identifier">expr</span><span> &lt;~ </span><span class="string-literal">&quot;)&quot;</span><span> | </span><span class="identifier">number</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span> = </span><span class="identifier">precedence</span><span>[</span><span class="type-name">BigInt</span><span>](</span><span class="identifier">atom</span><span>)(
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="identifier">as</span><span> (</span><span class="identifier">_</span><span> * </span><span class="identifier">_</span><span>)),
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> </span><span class="identifier">as</span><span> (</span><span class="identifier">_</span><span> + </span><span class="identifier">_</span><span>), </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="identifier">as</span><span> (</span><span class="identifier">_</span><span> - </span><span class="identifier">_</span><span>)))
+
+    </span><span class="keyword">val</span><span> </span><span class="identifier">parser</span><span> = </span><span class="identifier">fully</span><span>(</span><span class="identifier">expr</span><span>)
+}</span></code></pre>
+        <p>So far, we&#39;ve broken the parser into two distinct chunks: the lexer and the main parser. Within
+        the lexer we need to be careful and <em>explicit</em> about where we handle whitespace and where we
+        don&#39;t; within the parser we can assume that all the whitespace has been correctly dealt with and
+        can focus on the main content. To help motivate the changes we are going to make to the lexer
+        object later on in the post, I want to first extend our &quot;language&quot; to add in variables into the
+        language and a <code>negate</code> operator. In the process I&#39;m going to swap the integer result for an
+        abstract syntax tree.</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">expr</span><span>.{</span><span class="identifier">precedence</span><span>, </span><span class="type-name">Ops</span><span>, </span><span class="type-name">InfixL</span><span>, </span><span class="type-name">Prefix</span><span>}
+</span><span class="keyword">object</span><span> </span><span class="identifier">expressions</span><span> {
+    </span><span class="keyword">import</span><span> </span><span class="identifier">lexer</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">implicitSymbol</span><span>
+    </span><span class="keyword">import</span><span> </span><span class="identifier">lexer</span><span>.{</span><span class="identifier">number</span><span>, </span><span class="identifier">fully</span><span>, </span><span class="identifier">identifier</span><span>}
+    </span><span class="comment">// for now, assume that `identifier` is just 1 or more alphabetical characters
+</span><span>
+    </span><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">Expr</span><span>
+    </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Add</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Expr</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Expr</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Expr</span><span>
+    </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Mul</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Expr</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Expr</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Expr</span><span>
+    </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Sub</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Expr</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Expr</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Expr</span><span>
+    </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Neg</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Expr</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Expr</span><span>
+    </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Num</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">BigInt</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Expr</span><span>
+    </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Var</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">String</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Expr</span><span>
+
+    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">atom</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Expr</span><span>] =
+        </span><span class="string-literal">&quot;(&quot;</span><span> ~&gt; </span><span class="identifier">expr</span><span> &lt;~ </span><span class="string-literal">&quot;)&quot;</span><span> | </span><span class="identifier">number</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Num</span><span>) | </span><span class="identifier">identifier</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Var</span><span>)
+    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span> = </span><span class="identifier">precedence</span><span>[</span><span class="type-name">Expr</span><span>](</span><span class="identifier">atom</span><span>)(
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">Prefix</span><span>)(</span><span class="string-literal">&quot;negate&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Neg</span><span>),
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Mul</span><span>),
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Add</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Sub</span><span>))
+
+    </span><span class="keyword">val</span><span> </span><span class="identifier">parser</span><span> = </span><span class="identifier">fully</span><span>(</span><span class="identifier">expr</span><span>)
+}</span></code></pre>
+        <p>Now, we can assume that, since <code>identifier</code> comes from the lexer, this parser handles all the whitespace correctly. The question is, does it work?</p>
+        <pre><code class="nohighlight"><span class="identifier">expressions</span><span>.</span><span class="identifier">parser</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;x + y&quot;</span><span>)
+</span><span class="comment">// res1: parsley.Result[String, expressions.Expr] = Success(Add(Var(x),Var(y)))
+</span><span>
+</span><span class="identifier">expressions</span><span>.</span><span class="identifier">parser</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;negate + z&quot;</span><span>)
+</span><span class="comment">// res2: parsley.Result[String, expressions.Expr] = Failure((line 1, column 8):
+//   unexpected &quot;+&quot;
+//   expected &quot;(&quot;, &quot;negate&quot;, digit, or letter
+//   &gt;negate + z
+//           ^)
+</span><span>
+</span><span class="identifier">expressions</span><span>.</span><span class="identifier">parser</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;negate x + z&quot;</span><span>)
+</span><span class="comment">// res3: parsley.Result[String, expressions.Expr] = Success(Add(Neg(Var(x)),Var(z)))
+</span><span>
+</span><span class="identifier">expressions</span><span>.</span><span class="identifier">parser</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;negatex + z&quot;</span><span>)
+</span><span class="comment">// res4: parsley.Result[String, expressions.Expr] = Success(Add(Neg(Var(x)),Var(z)))</span></code></pre>
+        <p>So, looking at these examples, the first one seems to work fine. The second one also works
+        fine, but given that we&#39;ve said that identifiers are just alpha-numeric characters, you might
+        assume it was legal (indeed, it really <em>shouldn&#39;t</em> be legal in most languages that don&#39;t have
+        &quot;soft&quot; keywords). The third example again works as intended, but the fourth is suspicious:
+        <code>negatex</code> is clearly an identifier but was parsed as <code>negate x</code>! This now gives us a set up for
+        refining our lexer for the rest of the page. We won&#39;t be touching the <code>expressions</code> object
+        again, so take a long hard look at it.</p>
+        
+        <h2 id="keywords-identifiers-and-operators" class="section"><a class="anchor-link left" href="#keywords-identifiers-and-operators"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1 </span>Keywords, Identifiers and Operators</h2>
+        <p>The crux of the problem we unearthed in the last section is that the implicit used to handle
+        strings has no awareness of keywords (or indeed operators) and identifiers that work for <em>any</em>
+        alpha-numeric sequence are an accident waiting to happen. Let&#39;s start by creating a couple of
+        sets to represent the valid keywords and operators in the language:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">keywords</span><span> = </span><span class="type-name">Set</span><span>(</span><span class="string-literal">&quot;negate&quot;</span><span>)
+</span><span class="keyword">val</span><span> </span><span class="identifier">operators</span><span> = </span><span class="type-name">Set</span><span>(</span><span class="string-literal">&quot;*&quot;</span><span>, </span><span class="string-literal">&quot;+&quot;</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span>)</span></code></pre>
+        <p>Now we can use these to define some more specialist combinators for dealing with these lexemes:</p>
+        <ul>
+          <li>We want to ensure that identifiers are not valid keywords.</li>
+          <li>We want to ensure reading a keyword does not have a valid identifier &quot;letter&quot; after it.</li>
+          <li>We want to ensure that a specific operator does not end up being the prefix of another,
+          parsable, operator. This satisfies the &quot;maximal-munch&quot; style of parsing.</li>
+        </ul>
+        <p>We&#39;ll start with <code>identifier</code>: to check that an identifier we&#39;ve just read is not itself a
+        valid keyword we can use the <code>filter</code> family of combinators. In particular, <code>filterOut</code>
+        provides an error message that explains why the parser has failed. Here is our new and improved
+        identifier:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="type-name">ErrorMethods</span><span> </span><span class="comment">//for filterOut
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">letter</span><span>, </span><span class="identifier">stringOfSome</span><span>}
+
+</span><span class="comment">// `stringOfSome(letter)` is loosely equivalent to `some(letter).map(_.mkString)`
+</span><span class="keyword">val</span><span> </span><span class="identifier">identifier</span><span> = </span><span class="identifier">token</span><span>(</span><span class="identifier">stringOfSome</span><span>(</span><span class="identifier">letter</span><span>).</span><span class="identifier">filterOut</span><span> {
+    </span><span class="keyword">case</span><span> </span><span class="identifier">v</span><span> </span><span class="keyword">if</span><span> </span><span class="identifier">keywords</span><span>(</span><span class="identifier">v</span><span>) =&gt; </span><span class="string-literal">s&quot;keyword </span><span class="substitution">$v</span><span class="string-literal"> may not be used as an identifier&quot;</span><span>
+})</span></code></pre>
+        <p>The <code>filterOut</code> combinator takes a <code>PartialFunction</code> from the parser&#39;s result to <code>String</code>. If
+        the partial function is defined for its input, that produces the error message that the parser
+        fails with. Notice that I&#39;ve been very careful to make sure the filter happens <em>inside</em> the
+        scope of the <code>token</code> combinator. If we do read an identifier and then rule it out because its
+        a keyword, we want the ability to backtrack. Filtering after the input has been irrevocably consumed will mean this parser fails more strongly than it should.</p>
+        <p>Next we&#39;ll tackle the keywords, using the handy <code>notFollowedBy</code> combinator that was briefly
+        referenced in the very first post:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>.</span><span class="identifier">notFollowedBy</span><span>
+</span><span class="keyword">def</span><span> </span><span class="declaration-name">keyword</span><span>(</span><span class="identifier">k</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">token</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">k</span><span>) ~&gt; </span><span class="identifier">notFollowedBy</span><span>(</span><span class="identifier">letter</span><span>))</span></code></pre>
+        <p>Again, notice that I&#39;ve been very careful to perform the negative-lookahead within the scope of
+        the <code>token</code> so that we can backtrack if necessary (indeed, it&#39;s likely that a valid
+        alternative was an identifier!). Additionally, we also need to ensure that whitespace isn&#39;t
+        read <em>before</em> we try and check for the <code>letterOrDigit</code>, otherwise <code>negate x</code> would <em>also</em> fail, so that&#39;s
+        another reason to keep it within <code>token</code>.</p>
+        <p>Finally, let&#39;s look at how operator is dealt with. It&#39;s a bit trickier, and in this case is
+        meaningless, because all of our operators are single character and don&#39;t form valid prefixes of
+        each other. But it will be useful to discuss anyway:</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">strings</span><span>
+
+</span><span class="keyword">def</span><span> </span><span class="declaration-name">operator</span><span>(</span><span class="identifier">op</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = {
+    </span><span class="keyword">val</span><span> </span><span class="identifier">biggerOps</span><span> = </span><span class="identifier">operators</span><span>.</span><span class="identifier">collect</span><span> {
+        </span><span class="keyword">case</span><span> </span><span class="identifier">biggerOp</span><span> </span><span class="keyword">if</span><span> </span><span class="identifier">biggerOp</span><span>.</span><span class="identifier">startsWith</span><span>(</span><span class="identifier">op</span><span>)
+                      &amp;&amp; </span><span class="identifier">biggerOp</span><span> &gt; </span><span class="identifier">op</span><span> =&gt; </span><span class="identifier">biggerOp</span><span>.</span><span class="identifier">substring</span><span>(</span><span class="identifier">op</span><span>.</span><span class="identifier">length</span><span>)
+    }.</span><span class="identifier">toList</span><span>
+    </span><span class="identifier">biggerOps</span><span> </span><span class="keyword">match</span><span> {
+        </span><span class="keyword">case</span><span> </span><span class="type-name">Nil</span><span> =&gt; </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">symbol</span><span>(</span><span class="identifier">op</span><span>)).</span><span class="identifier">void</span><span>
+        </span><span class="comment">// strings requires one non-varargs argument
+</span><span>        </span><span class="keyword">case</span><span> </span><span class="identifier">biggerOp</span><span> :: </span><span class="identifier">biggerOps</span><span> =&gt;
+            </span><span class="identifier">token</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">op</span><span>) ~&gt; </span><span class="identifier">notFollowedBy</span><span>(</span><span class="identifier">strings</span><span>(</span><span class="identifier">biggerOp</span><span>, </span><span class="identifier">biggerOps</span><span>: </span><span class="identifier">_</span><span>*)))
+    }
+}</span></code></pre>
+        <p>Let&#39;s unpack what&#39;s going on here: first we read the op as normal, then we ensure that it&#39;s
+        not followed by the <em>rest</em> of any operators for which it forms a valid prefix. This is using the
+        regular <code>collect</code> method on Scala <code>Set</code>. As an example, if we have the operator set
+        <code>Set(&quot;*&quot;, &quot;*+&quot;, &quot;*-&quot;, &quot;++&quot;)</code> and we call <code>operator(&quot;*&quot;)</code>, we would be checking
+        <code>notFollowedBy(strings(&quot;+&quot;, &quot;-&quot;))</code>, since <code>*+</code> and <code>*-</code> are both prefixed by <code>*</code>. This is,
+        again, a great example of how powerful access to regular Scala code in our parsers is! This
+        would be quite tricky to define in a parser generator!</p>
+        <p>So, the question is, what do we do with our new found combinators? We could just expose them to
+        the rest of the parser as they are, but that leaves room for error if we forget, or miss out,
+        any of the replacements. And, in addition, we lose the nice string literal syntax we&#39;ve made
+        good use of until this point. So, a better solution would be to change our definition of
+        <code>implicitSymbol</code>:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="identifier">implicits</span><span> {
+    </span><span class="keyword">implicit</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">implicitSymbol</span><span>(</span><span class="identifier">s</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = {
+        </span><span class="keyword">if</span><span> (</span><span class="identifier">keywords</span><span>(</span><span class="identifier">s</span><span>))       </span><span class="identifier">keyword</span><span>(</span><span class="identifier">s</span><span>)
+        </span><span class="keyword">else</span><span> </span><span class="keyword">if</span><span> (</span><span class="identifier">operators</span><span>(</span><span class="identifier">s</span><span>)) </span><span class="identifier">operator</span><span>(</span><span class="identifier">s</span><span>)
+        </span><span class="keyword">else</span><span>                   </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">symbol</span><span>(</span><span class="identifier">s</span><span>)).</span><span class="identifier">void</span><span>
+    }
+}</span></code></pre>
+        <p>Now, when we use a string literal in our original parser, it will first check to see if that is
+        a valid keyword or an operator and, if so, it can use our specialised combinators: neat! With this done, let&#39;s see what the new lexer looks like and
+        relook at the problematic example:</p>
+        <pre><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="identifier">lexer</span><span> {
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">keywords</span><span> = </span><span class="type-name">Set</span><span>(</span><span class="string-literal">&quot;negate&quot;</span><span>)
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">operators</span><span> = </span><span class="type-name">Set</span><span>(</span><span class="string-literal">&quot;*&quot;</span><span>, </span><span class="string-literal">&quot;+&quot;</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span>)
+
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">symbol</span><span>(</span><span class="identifier">str</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">atomic</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">str</span><span>))
+
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">lineComment</span><span> = </span><span class="identifier">symbol</span><span>(</span><span class="string-literal">&quot;//&quot;</span><span>) ~&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>)
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">multiComment</span><span> = </span><span class="identifier">symbol</span><span>(</span><span class="string-literal">&quot;/*&quot;</span><span>) ~&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">symbol</span><span>(</span><span class="string-literal">&quot;*/&quot;</span><span>))
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">comment</span><span> = </span><span class="identifier">lineComment</span><span> | </span><span class="identifier">multiComment</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">skipWhitespace</span><span> = </span><span class="identifier">skipMany</span><span>(</span><span class="identifier">whitespace</span><span> | </span><span class="identifier">comment</span><span>).</span><span class="identifier">hide</span><span>
+
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">lexeme</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">p</span><span> &lt;~ </span><span class="identifier">skipWhitespace</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">token</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">atomic</span><span>(</span><span class="identifier">p</span><span>))
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">fully</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">skipWhitespace</span><span> ~&gt; </span><span class="identifier">p</span><span> &lt;~ </span><span class="identifier">eof</span><span>
+
+    </span><span class="keyword">val</span><span> </span><span class="identifier">number</span><span> = </span><span class="identifier">token</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">foldLeft1</span><span>[</span><span class="type-name">BigInt</span><span>](</span><span class="number-literal">0</span><span>)((</span><span class="identifier">n</span><span>, </span><span class="identifier">d</span><span>) =&gt; </span><span class="identifier">n</span><span> * </span><span class="number-literal">10</span><span> + </span><span class="identifier">d</span><span>.</span><span class="identifier">asDigit</span><span>))
+    </span><span class="keyword">val</span><span> </span><span class="identifier">identifier</span><span> = </span><span class="identifier">token</span><span>(</span><span class="identifier">stringOfSome</span><span>(</span><span class="identifier">letter</span><span>).</span><span class="identifier">filterOut</span><span> {
+        </span><span class="keyword">case</span><span> </span><span class="identifier">v</span><span> </span><span class="keyword">if</span><span> </span><span class="identifier">keywords</span><span>(</span><span class="identifier">v</span><span>) =&gt; </span><span class="string-literal">s&quot;keyword </span><span class="substitution">$v</span><span class="string-literal"> may not be used as an identifier&quot;</span><span>
+    })
+
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">operator</span><span>(</span><span class="identifier">op</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = {
+        </span><span class="keyword">val</span><span> </span><span class="identifier">biggerOps</span><span> = </span><span class="identifier">operators</span><span>.</span><span class="identifier">collect</span><span> {
+            </span><span class="keyword">case</span><span> </span><span class="identifier">biggerOp</span><span> </span><span class="keyword">if</span><span> </span><span class="identifier">biggerOp</span><span>.</span><span class="identifier">startsWith</span><span>(</span><span class="identifier">op</span><span>)
+                        &amp;&amp; </span><span class="identifier">biggerOp</span><span> &gt; </span><span class="identifier">op</span><span> =&gt; </span><span class="identifier">biggerOp</span><span>.</span><span class="identifier">substring</span><span>(</span><span class="identifier">op</span><span>.</span><span class="identifier">length</span><span>)
+        }.</span><span class="identifier">toList</span><span>
+        </span><span class="identifier">biggerOps</span><span> </span><span class="keyword">match</span><span> {
+            </span><span class="keyword">case</span><span> </span><span class="type-name">Nil</span><span> =&gt; </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">symbol</span><span>(</span><span class="identifier">op</span><span>)).</span><span class="identifier">void</span><span>
+            </span><span class="comment">// strings requires one non-varargs argument
+</span><span>            </span><span class="keyword">case</span><span> </span><span class="identifier">biggerOp</span><span> :: </span><span class="identifier">biggerOps</span><span> =&gt;
+                </span><span class="identifier">token</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">op</span><span>) ~&gt; </span><span class="identifier">notFollowedBy</span><span>(</span><span class="identifier">strings</span><span>(</span><span class="identifier">biggerOp</span><span>, </span><span class="identifier">biggerOps</span><span>: </span><span class="identifier">_</span><span>*)))
+        }
+    }
+
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">keyword</span><span>(</span><span class="identifier">k</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] =
+        </span><span class="identifier">token</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">k</span><span>) ~&gt; </span><span class="identifier">notFollowedBy</span><span>(</span><span class="identifier">letter</span><span>))
+
+
+    </span><span class="keyword">object</span><span> </span><span class="identifier">implicits</span><span> {
+        </span><span class="keyword">implicit</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">implicitSymbol</span><span>(</span><span class="identifier">s</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = {
+            </span><span class="keyword">if</span><span> (</span><span class="identifier">keywords</span><span>(</span><span class="identifier">s</span><span>))       </span><span class="identifier">keyword</span><span>(</span><span class="identifier">s</span><span>)
+            </span><span class="keyword">else</span><span> </span><span class="keyword">if</span><span> (</span><span class="identifier">operators</span><span>(</span><span class="identifier">s</span><span>)) </span><span class="identifier">operator</span><span>(</span><span class="identifier">s</span><span>)
+            </span><span class="keyword">else</span><span>                   </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">symbol</span><span>(</span><span class="identifier">s</span><span>)).</span><span class="identifier">void</span><span>
+        }
+    }
+}</span></code></pre>
+        <p>And the original failing example:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">expressions</span><span>.</span><span class="identifier">parser</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;negatex + z&quot;</span><span>)
+</span><span class="comment">// res8: parsley.Result[String, expressions.Expr] = Success(Add(Var(negatex),Var(z)))</span></code></pre>
+        <p>Exactly as desired!</p>
+        
+        <h2 id="using-token-descriptions-lexicaldesc-and-token-lexer" class="section"><a class="anchor-link left" href="#using-token-descriptions-lexicaldesc-and-token-lexer"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2 </span>Using <code>token.descriptions.LexicalDesc</code> and <code>token.Lexer</code></h2>
+        <p>Whilst everything we have done above is nice and instructive, in practice all this work is
+        already done for us with <code>token.Lexer</code>. By providing a suitable <code>token.descriptions.LexicalDesc</code>,
+        we can get a whole bunch of combinators for dealing with tokens for free. There is a lot of
+        functionality found inside the <code>Lexer</code>, and most of it is highly configurable with the <code>LexicalDesc</code>
+        and its sub-components. Let&#39;s make use of this new found power and change up our <code>lexer</code> object one
+        last time:</p>
+        <pre><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="identifier">lexer</span><span> {
+    </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">token</span><span>.{</span><span class="type-name">Lexer</span><span>, </span><span class="identifier">predicate</span><span>}
+    </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">token</span><span>.</span><span class="identifier">descriptions</span><span>.{</span><span class="type-name">LexicalDesc</span><span>, </span><span class="type-name">NameDesc</span><span>, </span><span class="type-name">SymbolDesc</span><span>}
+
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">desc</span><span> = </span><span class="type-name">LexicalDesc</span><span>.</span><span class="identifier">plain</span><span>.</span><span class="identifier">copy</span><span>(
+        </span><span class="identifier">nameDesc</span><span> = </span><span class="type-name">NameDesc</span><span>.</span><span class="identifier">plain</span><span>.</span><span class="identifier">copy</span><span>(
+            </span><span class="comment">// Unicode is also possible instead of Basic
+</span><span>            </span><span class="identifier">identifierStart</span><span> = </span><span class="identifier">predicate</span><span>.</span><span class="type-name">Basic</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">isLetter</span><span>),
+            </span><span class="identifier">identifierLetter</span><span> = </span><span class="identifier">predicate</span><span>.</span><span class="type-name">Basic</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">isLetter</span><span>),
+        ),
+        </span><span class="identifier">symbolDesc</span><span> = </span><span class="type-name">SymbolDesc</span><span>.</span><span class="identifier">plain</span><span>.</span><span class="identifier">copy</span><span>(
+            </span><span class="identifier">hardKeywords</span><span> = </span><span class="type-name">Set</span><span>(</span><span class="string-literal">&quot;negate&quot;</span><span>),
+            </span><span class="identifier">hardOperators</span><span> = </span><span class="type-name">Set</span><span>(</span><span class="string-literal">&quot;*&quot;</span><span>, </span><span class="string-literal">&quot;+&quot;</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span>),
+        ),
+    )
+
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">lexer</span><span> = </span><span class="keyword">new</span><span> </span><span class="type-name">Lexer</span><span>(</span><span class="identifier">desc</span><span>)
+
+    </span><span class="keyword">val</span><span> </span><span class="identifier">identifier</span><span> = </span><span class="identifier">lexer</span><span>.</span><span class="identifier">lexeme</span><span>.</span><span class="identifier">names</span><span>.</span><span class="identifier">identifier</span><span>
+    </span><span class="keyword">val</span><span> </span><span class="identifier">number</span><span> = </span><span class="identifier">lexer</span><span>.</span><span class="identifier">lexeme</span><span>.</span><span class="identifier">numeric</span><span>.</span><span class="identifier">natural</span><span>.</span><span class="identifier">decimal</span><span>
+
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">fully</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]) = </span><span class="identifier">lexer</span><span>.</span><span class="identifier">fully</span><span>(</span><span class="identifier">p</span><span>)
+    </span><span class="keyword">val</span><span> </span><span class="identifier">implicits</span><span> = </span><span class="identifier">lexer</span><span>.</span><span class="identifier">lexeme</span><span>.</span><span class="identifier">symbol</span><span>.</span><span class="identifier">implicits</span><span>
+}</span></code></pre>
+        <p>The <code>implicitSymbol</code> function we developed before, along with <code>operator</code> and
+        <code>keyword</code> are all implemented by <code>lexer.lexeme.symbol</code>. The <code>names.identifier</code> parser
+        accounts for the keyword problem for us. The basic <code>numeric.natural.decimal</code> parser
+        meets our needs without any additional configuration: it also returns <code>BigInt</code>, which
+        is arbitrary precision. By using <code>token.lexeme</code>, this will already handle the
+        whitespace and atomicity of the token for us. This is just the tip of the iceberg
+        when it comes to the lexer functionality within Parsley. It is well worth having a
+        play around with this functionality and getting used to it!</p>
+        <p>A more detailed description of this functionality can be found in the <a href="../api-guide/token/Lexer.html">API Guide</a>.</p>
+
+        
+<hr class="footer-rule"/>
+<footer>
+  Parsley is distributed under the <a href="https://opensource.org/licenses/BSD-3-Clause">BSD-3-Clause</a> license.
+</footer>
+
+
+      </main>
+
+    </div>
+
+  </body>
+
+</html>
