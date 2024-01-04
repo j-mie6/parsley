@@ -239,6 +239,7 @@ object redirects {
           .build
     }
 
+    // FIXME: the inParsley hack is gross, really we should use an appropriate number of ../s
     private def html(to: Path, isCI: Boolean): String =
         s"""|<!DOCTYPE html>
             |<meta charset="utf-8">
