@@ -41,44 +41,6 @@ object ParsleySitePlugin extends AutoPlugin {
             val apiLink = tlSiteApiUrl.value.map(url => TextLink.external(url.toString, "API"))
             val redirections = redirects.theme(tlBaseVersion.value, githubIsWorkflowBuild.value)
 
-            implicit class AddLanding(helium: Helium) {
-                def addLandingPage =
-                    if (notBackport) helium.site.landingPage(
-                        logo = Some(Image(
-                            target = InternalTarget(Path.Root / "icons" / "greenLeaf.svg"),
-                            width = Some(LengthUnit.percent(40)),
-                            height = Some(LengthUnit.percent(40)),
-                            alt = Some("A Leafy Logo"),
-                        )),
-                        title = Some("Parsley"),
-                        subtitle = Some("A fast and modern parser combinator library for Scala"),
-                        latestReleases = Seq(
-                            ReleaseInfo("Latest Stable Release", mdocVariables.value("VERSION")),
-                            ReleaseInfo("Latest Dev Snapshot", mdocVariables.value("PRERELEASE_VERSION")),
-                        ),
-                        license = Some(licenses.value.head._1),
-                        documentationLinks = Seq(
-                            TextLink.internal(Path.Root / "home.md", "Overview"),
-                            TextLink.internal(Path.Root / "cheatsheet.md", "Cheatsheet"),
-                            TextLink.internal(Path.Root / "api-guide" / "README.md", "API Guide"),
-                            TextLink.internal(Path.Root / "tutorial" / "README.md", "Parser Combinator Tutorial"),
-                            TextLink.internal(Path.Root / "faq.md", "Frequently Asked Questions"),
-                        ),
-                        projectLinks = githubLink.zip(apiLink).map {
-                            case (git, api) => LinkGroup.create(git, api)
-                        }.toSeq,
-                        teasers = Seq(
-                            Teaser("Modern", "Parsley employs modern design developed over five years of research, supporting many parser combinator design pattterns out of the box."),
-                            Teaser("Stack-Safe", "Parsley promises to not stack-overflow during the runtime of the parser, preventing vulnerabilities."),
-                            Teaser("Great Errors", "Parsley has good out-of-the-box error messages, with a lot of support for improving the content of error messages and their formatting."),
-                            Teaser("Easily Debuggable", "Parsley parsers are easy to debug thanks to special combinators and debuggers."),
-                            Teaser("Cross-Compatible", "Supports Scala 2.12, 2.13, and 3.0; as well as support for Scala Native and Scala-JS."),
-                            Teaser("Cats Friendly", "Intregration available for Typelevel's Cats Ecosystem, providing instances for relevant typeclasses."),
-                        )
-                    )
-                    else helium
-            }
-
             tlSiteHelium.value.extendWith(redirections)
             .site.layout(
                 topBarHeight = LengthUnit.px(50),
@@ -97,7 +59,39 @@ object ParsleySitePlugin extends AutoPlugin {
                 ),
             )
             .site.resetDefaults(topNavigation = true)
-            .addLandingPage
+            .site.landingPage(
+                logo = Some(Image(
+                    target = InternalTarget(Path.Root / "icons" / "greenLeaf.svg"),
+                    width = Some(LengthUnit.percent(40)),
+                    height = Some(LengthUnit.percent(40)),
+                    alt = Some("A Leafy Logo"),
+                )),
+                title = Some("Parsley"),
+                subtitle = Some("A fast and modern parser combinator library for Scala"),
+                latestReleases = Seq(
+                    ReleaseInfo("Latest Stable Release", mdocVariables.value("VERSION")),
+                    ReleaseInfo("Latest Dev Snapshot", mdocVariables.value("PRERELEASE_VERSION")),
+                ),
+                license = Some(licenses.value.head._1),
+                documentationLinks = Seq(
+                    TextLink.internal(Path.Root / "home.md", "Overview"),
+                    TextLink.internal(Path.Root / "cheatsheet.md", "Cheatsheet"),
+                    TextLink.internal(Path.Root / "api-guide" / "README.md", "API Guide"),
+                    TextLink.internal(Path.Root / "tutorial" / "README.md", "Parser Combinator Tutorial"),
+                    TextLink.internal(Path.Root / "faq.md", "Frequently Asked Questions"),
+                ),
+                projectLinks = githubLink.zip(apiLink).map {
+                    case (git, api) => LinkGroup.create(git, api)
+                }.toSeq,
+                teasers = Seq(
+                    Teaser("Modern", "Parsley employs modern design developed over five years of research, supporting many parser combinator design pattterns out of the box."),
+                    Teaser("Stack-Safe", "Parsley promises to not stack-overflow during the runtime of the parser, preventing vulnerabilities."),
+                    Teaser("Great Errors", "Parsley has good out-of-the-box error messages, with a lot of support for improving the content of error messages and their formatting."),
+                    Teaser("Easily Debuggable", "Parsley parsers are easy to debug thanks to special combinators and debuggers."),
+                    Teaser("Cross-Compatible", "Supports Scala 2.12, 2.13, and 3.0; as well as support for Scala Native and Scala-JS."),
+                    Teaser("Cats Friendly", "Intregration available for Typelevel's Cats Ecosystem, providing instances for relevant typeclasses."),
+                )
+            )
             .site.topNavigationBar(
                 homeLink = IconLink.internal(Path.Root / "README", Icon.leaf),
                 navLinks = apiLink.toList ++ githubLink.toList
