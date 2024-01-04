@@ -16,7 +16,7 @@ val releaseFlags = Seq("-Xdisable-assertions", "-opt:l:method,inline", "-opt-inl
 val noReleaseFlagsScala3 = true // maybe some day this can be turned off...
 
 inThisBuild(List(
-  tlBaseVersion := "4.4",
+  tlBaseVersion := "4.5",
   organization := "com.github.j-mie6",
   organizationName := "Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>",
   startYear := Some(2020), // true start is 2018, but license is from 2020
@@ -33,7 +33,7 @@ inThisBuild(List(
   githubWorkflowAddedJobs += testCoverageJob(githubWorkflowGeneratedCacheSteps.value.toList),
   //githubWorkflowConcurrency := None,
   // Website Configuration
-  tlSitePublishBranch := Some(/*mainBranch*/"wiki-improvements"),
+  tlSitePublishBranch := Some(mainBranch),
 ))
 
 lazy val root = tlCrossRootProject.aggregate(parsley, parsleyDebug)

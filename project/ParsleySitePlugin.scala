@@ -54,6 +54,7 @@ object ParsleySitePlugin extends AutoPlugin {
                         subtitle = Some("A fast and modern parser combinator library for Scala"),
                         latestReleases = Seq(
                             ReleaseInfo("Latest Stable Release", mdocVariables.value("VERSION")),
+                            ReleaseInfo("Latest Dev Snapshot", mdocVariables.value("PRERELEASE_VERSION")),
                         ),
                         license = Some(licenses.value.head._1),
                         documentationLinks = Seq(
@@ -119,7 +120,8 @@ object ParsleySitePlugin extends AutoPlugin {
                 def version(v: String, label: String)(path: String = v) =
                     Version(s"$v.x", path).withLabel(label).withFallbackLink(s"api-guide")
                 Versions
-                  .forCurrentVersion(version(tlBaseVersion.value, "stable")().setCanonical)
+                  .forCurrentVersion(version(tlBaseVersion.value, "dev")())
+                  .withOlderVersions(version("4.4", "stable")().setCanonical)
                   .withRenderUnversioned(notBackport)
             }
             .site.themeColors(
@@ -194,10 +196,12 @@ object redirects {
 
     private def redirects(latest: String) = {
         // TODO: this can be made less brittle, surely can be derived from the above configuration?
-        val versions = List("latest", "4.4.x", "4.4")
+        val versions = List("latest", "stable", "4.4.x", "4.4", "4.5.x", "4.5")
         val versionMappings = List(
             "latest" -> latest,
+            "stable" -> "4.4",
             "4.4.x" -> "4.4",
+            "4.5.x" -> "4.5",
         )
 
         val versioned = (
