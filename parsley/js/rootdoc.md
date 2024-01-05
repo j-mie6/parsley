@@ -27,8 +27,6 @@ is defined as being an object which mocks a package):
     to the combinators. These are sub-categorised into the following sub modules:
      - [[parsley.syntax.character$ `parsley.syntax.character`]] contains implicits to allow you
        to use character and string literals as parsers.
-     - [[parsley.syntax.combinator$ `parsley.syntax.combinator`]] contains implicits related to
-       combinators, such as the ability to make any parser into a `Parsley[Unit]` automatically.
      - [[parsley.syntax.lift$ `parsley.syntax.lift`]] enables postfix application of the lift
        combinator onto a function (or value).
      - [[parsley.syntax.zipped$ `parsley.syntax.zipped`]] enables boths a reversed form of
