@@ -21,7 +21,7 @@ class TotalAttachmentSpec extends ParsleyTest {
         private val rng: Random = new Random
 
         private val unaryModifiers: Array[Parsley[Unit] => Parsley[Unit]] = Array(
-            Parsley.attempt,
+            Parsley.atomic,
             Parsley.lookAhead,
             _.map(identity[Unit]),
             _.flatMap(Parsley.pure),

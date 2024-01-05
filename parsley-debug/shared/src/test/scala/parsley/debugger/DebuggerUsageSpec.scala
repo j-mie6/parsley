@@ -8,8 +8,7 @@ package parsley.debugger
 // scalastyle:off underscore.import
 import DebuggerUsageSpec.Arithmetic
 import org.typelevel.scalaccompat.annotation.unused
-import parsley.Parsley
-import parsley.Parsley._
+import parsley.Parsley, Parsley._
 import parsley.ParsleyTest
 import parsley.character._
 import parsley.combinator._
