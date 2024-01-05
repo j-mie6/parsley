@@ -97,7 +97,7 @@ object ast {
 object expressions {
     import parsley.expr.{precedence, Ops, InfixL, Prefix}
     import parsley.combinator.sepEndBy1
-    import parsley.implicits.lift.Lift2
+    import parsley.syntax.lift.Lift2
 
     import lexer.implicits.implicitSymbol
     import lexer.{number, fully, identifier}
@@ -208,7 +208,7 @@ import lexer.implicits._
 val letExpr: Parsley[LetExpr] = empty
 ```
 ```scala mdoc:silent
-import parsley.implicits.zipped.Zipped2
+import parsley.syntax.zipped.Zipped2
 val binding: Parsley[Binding] =
     pos <**> (identifier, "=" ~> letExpr).zipped(Binding(_, _) _)
 ```
@@ -286,7 +286,7 @@ object lexer {
 ```scala mdoc
 object ast {
     import parsley.position.pos
-    import parsley.implicits.zipped.Zipped2
+    import parsley.syntax.zipped.Zipped2
 
     sealed trait LetExpr
     case class Let(bindings: List[Binding], x: Expr)(val pos: (Int, Int)) extends LetExpr
@@ -446,7 +446,7 @@ constructors themselves. But there is enough structure here to extract some shin
 template traits:
 
 ```scala mdoc:invisible
-import parsley.implicits.zipped.Zipped2
+import parsley.syntax.zipped.Zipped2
 import parsley.position.pos
 ```
 ```scala mdoc
@@ -632,7 +632,7 @@ the common code:
 
 ```scala mdoc:invisible:reset
 import parsley.Parsley
-import parsley.implicits.zipped.Zipped2
+import parsley.syntax.zipped.Zipped2
 import parsley.position.pos
 ```
 ```scala mdoc

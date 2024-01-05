@@ -14,8 +14,6 @@ is defined as being an object which mocks a package):
     strings, as well as combinators to match specific sub-sets of characters.
   - [[parsley.debug$ `parsley.debug`]] contains debugging combinators, helpful for identifying faults
     in parsers.
-  - [[parsley.extension$ `parsley.extension`]] contains syntactic sugar combinators exposed as
-    implicit classes.
   - [[parsley.expr$ `parsley.expr`]] contains the following sub modules:
     - [[parsley.expr.chain$ `parsley.expr.chain`]] contains combinators used in expression parsing
     - [[parsley.expr.precedence$ `parsley.expr.precedence`]] is a builder for expression parsers built
@@ -25,18 +23,19 @@ is defined as being an object which mocks a package):
     - [[parsley.expr.mixed$ `parsley.expr.mixed`]] contains combinators that can be used for
       expression parsing, but where different fixities may be mixed on the same level: this is rare
       in practice.
-  - [[parsley.implicits `parsley.implicits`]] contains several implicits to add syntactic sugar
+  - [[parsley.syntax `parsley.syntax`]] contains several implicits to add syntactic sugar
     to the combinators. These are sub-categorised into the following sub modules:
-     - [[parsley.implicits.character$ `parsley.implicits.character`]] contains implicits to allow you
+     - [[parsley.syntax.character$ `parsley.syntax.character`]] contains implicits to allow you
        to use character and string literals as parsers.
-     - [[parsley.implicits.combinator$ `parsley.implicits.combinator`]] contains implicits related to
+     - [[parsley.syntax.combinator$ `parsley.syntax.combinator`]] contains implicits related to
        combinators, such as the ability to make any parser into a `Parsley[Unit]` automatically.
-     - [[parsley.implicits.lift$ `parsley.implicits.lift`]] enables postfix application of the lift
+     - [[parsley.syntax.lift$ `parsley.syntax.lift`]] enables postfix application of the lift
        combinator onto a function (or value).
-     - [[parsley.implicits.zipped$ `parsley.implicits.zipped`]] enables boths a reversed form of
+     - [[parsley.syntax.zipped$ `parsley.syntax.zipped`]] enables boths a reversed form of
        lift where the function appears on the right and is applied on a tuple (useful when type
        inference has failed) as well as a `.zipped` method for building tuples out of several
        combinators.
+     - [[parsley.syntax.extension$ `parsley.syntax.extension`]] contains syntactic sugar combinators exposed as implicit classes.
   - [[parsley.errors `parsley.errors`]] contains modules to deal with error messages, their refinement
     and generation.
      - [[parsley.errors.combinator$ `parsley.errors.combinator`]] provides combinators that can be

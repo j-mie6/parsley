@@ -5,7 +5,7 @@
  */
 package parsley
 
-import parsley.implicits.zipped.Zipped3
+import parsley.syntax.zipped.Zipped3
 
 import parsley.internal.deepembedding.singletons
 

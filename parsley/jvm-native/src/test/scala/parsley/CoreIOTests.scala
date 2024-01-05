@@ -7,7 +7,7 @@ package parsley
 
 import parsley.combinator.manyUntil
 import parsley.character.item
-import parsley.implicits.character.stringLift
+import parsley.syntax.character.stringLift
 import parsley.io._
 
 import java.io.File

@@ -8,7 +8,7 @@ package parsley
 import Predef.{ArrowAssoc => _, _}
 
 import parsley.character.{string, strings, stringOfMany, stringOfSome}
-import parsley.implicits.character.stringLift
+import parsley.syntax.character.stringLift
 import parsley.Parsley.{pos => _, _}
 import parsley.position.pos
 

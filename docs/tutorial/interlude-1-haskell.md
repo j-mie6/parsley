@@ -1147,7 +1147,7 @@ Now, to make this work nicely, I'm going to make use of the `<+>` combinator: pr
 this, we can define the factored `<program>`:
 
 ```scala mdoc:nest:silent
-import parsley.implicits.zipped.Zipped3
+import parsley.syntax.zipped.Zipped3
 
 val `<declaration>` = "::" ~> `<type>`
 

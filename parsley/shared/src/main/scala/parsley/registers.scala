@@ -11,7 +11,7 @@ import parsley.Parsley.{empty, fresh, pure}
 import parsley.XAssert._
 import parsley.combinator.{when, whileP}
 import parsley.exceptions.UnfilledRegisterException
-import parsley.implicits.zipped.Zipped2
+import parsley.syntax.zipped.Zipped2
 
 import parsley.internal.deepembedding.{frontend, singletons}
 

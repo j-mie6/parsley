@@ -9,7 +9,7 @@ import parsley.Parsley, Parsley.{atomic, empty, pure, unit}
 import parsley.character.{bit, digit, hexDigit, octDigit, oneOf}
 import parsley.combinator, combinator.optional
 import parsley.errors.combinator.{amendThenDislodge, entrench}
-import parsley.implicits.character.charLift
+import parsley.syntax.character.charLift
 import parsley.lift.lift2
 import parsley.registers.Reg
 import parsley.token.descriptions.numeric.{BreakCharDesc, ExponentDesc, NumericDesc}

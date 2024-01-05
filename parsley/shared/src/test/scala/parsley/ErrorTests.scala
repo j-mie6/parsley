@@ -7,7 +7,7 @@ package parsley
 
 import parsley.combinator.{optional, many}
 import parsley.Parsley._
-import parsley.implicits.character.{charLift, stringLift}
+import parsley.syntax.character.{charLift, stringLift}
 import parsley.character.{item, digit}
 import parsley.errors.combinator.{fail => pfail, unexpected, amend, partialAmend, entrench, dislodge, amendThenDislodge, /*partialAmendThenDislodge,*/ ErrorMethods}
 import parsley.errors.patterns._

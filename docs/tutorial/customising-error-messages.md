@@ -416,7 +416,7 @@ cook up a string literal parser, supporting some (limited) escape sequences.
 
 ```scala mdoc:reset:silent
 import parsley.Parsley
-import parsley.implicits.character.charLift
+import parsley.syntax.character.charLift
 import parsley.combinator.choice
 import parsley.character._
 import parsley.errors.combinator._

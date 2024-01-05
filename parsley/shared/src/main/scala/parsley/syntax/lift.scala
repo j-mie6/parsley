@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package parsley.implicits
+package parsley.syntax
 
 import parsley.Parsley, Parsley.pure
 import parsley.lift._
@@ -27,7 +27,7 @@ import parsley.lift._
   * val res2 = Failure(..)
   * }}}
   *
-  * @since 3.0.0
+  * @since 4.5.0
   * @note a limitation of this syntax is that it requires the function's type to be fully known.
   *       For a version of this syntax that behaves better with type inference, see [[zipped `zipped`]].
   *
@@ -44,7 +44,6 @@ import parsley.lift._
   *     of the given parsers fails then the whole combinator fails.
   * @define return a parser that applies this function to the results of all the given parsers.
   */
-@deprecated("This will be removed in 5.x, use parsley.syntax.lift instead", "4.5.0")
 object lift {
     // $COVERAGE-OFF$
     // scalastyle:off parameter.number ensure.single.space.after.token

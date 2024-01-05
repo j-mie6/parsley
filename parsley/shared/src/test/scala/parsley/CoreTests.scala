@@ -11,9 +11,9 @@ import parsley.Parsley.{empty => pempty, _}
 import parsley.combinator.{many, ifP}
 import parsley.lift._
 import parsley.character.{char, satisfy, digit, item, string}
-import parsley.implicits.character.{charLift, stringLift}
-import parsley.implicits.lift.Lift1
-import parsley.implicits.zipped.Zipped2
+import parsley.syntax.character.{charLift, stringLift}
+import parsley.syntax.lift.Lift1
+import parsley.syntax.zipped.Zipped2
 import parsley.registers._
 import parsley.errors.combinator.{fail => pfail}
 

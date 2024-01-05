@@ -176,7 +176,7 @@ Notice that the above error makes no sense. This is why `amend` is a precision
 tool: it should ideally be used in conjunction with other combinators. For instance:
 
 ```scala mdoc:silent
-import parsley.implicits.character.charLift
+import parsley.syntax.character.charLift
 import parsley.combinator.choice
 import parsley.character.{noneOf, stringOfMany}
 

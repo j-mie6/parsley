@@ -9,7 +9,7 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 
 import parsley.Parsley.{atomic, empty, fresh, notFollowedBy, pure, select, unit}
-import parsley.implicits.zipped.{Zipped2, Zipped3}
+import parsley.syntax.zipped.{Zipped2, Zipped3}
 import parsley.registers.{RegisterMaker, RegisterMethods}
 
 import parsley.internal.deepembedding.frontend

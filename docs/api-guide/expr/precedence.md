@@ -52,7 +52,7 @@ are assumed:
 ```scala mdoc:silent
 import parsley.Parsley
 import parsley.character.{letter, digit, stringOfSome}
-import parsley.implicits.character.stringLift
+import parsley.syntax.character.stringLift
 
 val int: Parsley[Int] = digit.foldLeft1(0)((n, d) => n * 10 + d.asDigit)
 val ident: Parsley[String] = stringOfSome(letter)

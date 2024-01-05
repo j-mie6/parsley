@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package parsley.implicits
+package parsley.syntax
 
 import parsley.Parsley
 import parsley.character.{char, string}
@@ -15,9 +15,8 @@ import parsley.character.{char, string}
   * that can implicitly convert Scala's string and character literals so that
   * they represent parsers. These will not be whitespace sensitive.
   *
-  * @since 3.0.0
+  * @since 4.5.0
   */
-@deprecated("This will be removed in 5.x, use parsley.syntax.character instead", "4.5.0")
 object character {
     // $COVERAGE-OFF$
     /** Converts a string literal into a parser that reads that string.

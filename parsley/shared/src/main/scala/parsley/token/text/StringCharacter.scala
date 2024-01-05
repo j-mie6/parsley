@@ -8,7 +8,7 @@ package parsley.token.text
 import parsley.Parsley, Parsley.empty
 import parsley.character.{char, satisfyMap}
 import parsley.combinator.skipSome
-import parsley.implicits.character.charLift
+import parsley.syntax.character.charLift
 import parsley.token.descriptions.text.EscapeDesc
 import parsley.token.errors.ErrorConfig
 import parsley.token.predicate.{Basic, CharPredicate, NotRequired, Unicode}

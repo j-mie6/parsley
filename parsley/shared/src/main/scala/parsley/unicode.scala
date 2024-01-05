@@ -371,7 +371,7 @@ object unicode {
       *
       * @example {{{
       * scala> import parsley.unicode.{letter, letterOrDigit, stringOfMany}
-      * scala> import parsley.implicits.zipped.Zipped2
+      * scala> import parsley.syntax.zipped.Zipped2
       * scala> val ident = (letter, stringOfMany(letterOrDigit)).zipped((c, s) => s"&#36;{Character.toString(c)}&#36;s")
       * scala> ident.parse("abdc9d")
       * val res0 = Success("abdc9d")
@@ -402,7 +402,7 @@ object unicode {
       *
       * @example {{{
       * scala> import parsley.unicode.{letter, stringOfMany}
-      * scala> import parsley.implicits.zipped.Zipped2
+      * scala> import parsley.syntax.zipped.Zipped2
       * scala> val ident = (letter, stringOfMany(Character.isLetterOrDigit(_))).zipped((c, s) => s"&#36;{Character.toString(c)}&#36;s")
       * scala> ident.parse("abdc9d")
       * val res0 = Success("abdc9d")

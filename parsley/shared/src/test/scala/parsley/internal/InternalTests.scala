@@ -10,7 +10,7 @@ import parsley.Parsley, Parsley._
 import parsley.character.{char, satisfy, digit, string, stringOfSome}
 import parsley.combinator.{atomicChoice, choice, some, optional}
 import parsley.expr._
-import parsley.implicits.character.charLift
+import parsley.syntax.character.charLift
 import parsley.errors.combinator.ErrorMethods
 import parsley.registers.Reg
 

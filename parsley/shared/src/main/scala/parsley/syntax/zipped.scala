@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package parsley.implicits
+package parsley.syntax
 
 import parsley.Parsley
 import parsley.lift._
@@ -31,7 +31,7 @@ import parsley.lift._
   *
   * @note these methods are '''not''' lazy like the `lift` syntax or `liftN` functions! Use the [[parsley.Parsley.LazyParsley.unary_~ prefix `~`]] combinator
   *       to make arguments lazy where necessary.
-  * @since 3.0.0
+  * @since 4.5.0
   *
   * @define constructor This constructor should not be called manually, it is designed to be used via Scala's implicit resolution.
   * @define classdesc This class enables the `zipped` syntax on tuples of
@@ -56,7 +56,6 @@ import parsley.lift._
   *     The pair formed from all of the results is returned by the parser. If any of these parsers
   *     fail, the whole combinator fails.
   */
-@deprecated("This will be removed in 5.x, use parsley.syntax.zipped instead", "4.5.0")
 object zipped {
     // $COVERAGE-OFF$
     // scalastyle:off parameter.number ensure.single.space.after.token

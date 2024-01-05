@@ -11,6 +11,7 @@ import parsley.Parsley
   *
   * @since 3.0.0
   */
+@deprecated("This will be removed in 5.x", "4.5.0")
 object combinator {
     // $COVERAGE-OFF$
     /** Drops the result of a parser when required by another combinator.
@@ -24,6 +25,7 @@ object combinator {
       * @note this doesn't seem to play nicely with Intellij
       * @see [[parsley.Parsley.void `void`]]
       */
+    @deprecated("This will be removed in 5.x", "4.5.0")
     @inline implicit def voidImplicitly[P](p: P)(implicit con: P => Parsley[_]): Parsley[Unit] = con(p).void
     // $COVERAGE-ON$
 }

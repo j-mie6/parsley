@@ -38,8 +38,8 @@ parse into an `Int`: behold, the magic of combinators!):
 ```scala mdoc:silent
 import parsley.Parsley, Parsley.atomic
 import parsley.character.digit
-import parsley.implicits.character.charLift
-import parsley.implicits.zipped.Zipped2
+import parsley.syntax.character.charLift
+import parsley.syntax.zipped.Zipped2
 
 // Standard number parser
 val number = digit.foldLeft1[Int](0)((n, d) => n * 10 + d.asDigit)
@@ -62,7 +62,7 @@ eliminate the atomics and refactor it a little to make the transition less jarri
 ```scala mdoc:nest:silent
 import parsley.Parsley, Parsley.atomic
 import parsley.character.digit
-import parsley.implicits.character.charLift
+import parsley.syntax.character.charLift
 
 // Standard number parser
 val number = digit.foldLeft1[Int](0)((n, d) => n * 10 + d.asDigit)
@@ -116,7 +116,7 @@ embodied by the `chain`-family. Here is the same example as before, but fixed us
 ```scala mdoc:silent:nest
 import parsley.Parsley
 import parsley.character.digit
-import parsley.implicits.character.charLift
+import parsley.syntax.character.charLift
 import parsley.expr.chain
 
 // Standard number parser
@@ -169,7 +169,7 @@ and Parsley is no exception. Let's see the same parser one last time and see wha
 ```scala mdoc:nest:silent
 import parsley.Parsley
 import parsley.character.digit
-import parsley.implicits.character.charLift
+import parsley.syntax.character.charLift
 import parsley.expr.{precedence, Ops, InfixL}
 
 val number = digit.foldLeft1[Int](0)((n, d) => n * 10 + d.asDigit)
@@ -296,7 +296,7 @@ The first form is the tightest first approach, and the second is the weakest fir
 ```scala mdoc:reset:silent
 import parsley.Parsley
 import parsley.character.digit
-import parsley.implicits.character.charLift
+import parsley.syntax.character.charLift
 import parsley.expr.{precedence, SOps, InfixL, Atoms}
 
 val number = digit.foldLeft1[Int](0)((n, d) => n * 10 + d.asDigit)
@@ -367,7 +367,7 @@ look like in practice?
 ```scala mdoc:silent
 import parsley.Parsley
 import parsley.character.digit
-import parsley.implicits.character.charLift
+import parsley.syntax.character.charLift
 import parsley.expr.{precedence, GOps, InfixL, Atoms}
 
 val number = digit.foldLeft1[Int](0)((n, d) => n * 10 + d.asDigit)

@@ -11,7 +11,7 @@ import parsley.combinator.{exactly => repeat, eof => _, _}
 import parsley.character.item
 import parsley.Parsley._
 import parsley.registers.{forYieldP, forYieldP_, Reg}
-import parsley.implicits.character.{charLift, stringLift}
+import parsley.syntax.character.{charLift, stringLift}
 
 class CombinatorTests extends ParsleyTest {
     "choice" should "fail if given the empty list" in {

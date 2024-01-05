@@ -115,7 +115,7 @@ context-sensitive parsing of XML tags can be done:
 import parsley.Parsley.{atomic, notFollowedBy}
 import parsley.character.{stringOfSome, letter}
 import parsley.combinator.optional
-import parsley.implicits.character.{charLift, stringLift}
+import parsley.syntax.character.{charLift, stringLift}
 
 val openTag = atomic('<' <~ notFollowedBy('/'))
 val tagName = stringOfSome(letter)

@@ -9,7 +9,7 @@ import Predef.{ArrowAssoc => _, _}
 
 import token.{descriptions => desc}
 import parsley.character.digit
-import parsley.implicits.character.{charLift, stringLift}
+import parsley.syntax.character.{charLift, stringLift}
 import parsley.expr.{chain, infix, mixed}
 import parsley.expr.{precedence, Ops, GOps, SOps, InfixL, InfixR, Prefix, Postfix, InfixN, Atoms}
 import parsley.position._

@@ -3,19 +3,20 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package parsley
+package parsley.syntax
 
-import Parsley.{notFollowedBy}
-import combinator.{ifP, many, option, some}
+import parsley.Parsley, Parsley.notFollowedBy
+import parsley.combinator.{ifP, many, option, some}
 
 /**
   * These implicit classes can be used to extend the core combinator set of Parsley.
   *
   * This may mean that importing them enables combinators that can be used on ''non-`Parsley`'' types,
-  * or might enable some syntactic sugar that is not part of the core combinator "style".
+  * or might enable some syntactic sugar that is not part of the core combinator "style".#
+  *
+  * @since 4.5.0
   */
 // $COVERAGE-OFF$
-@deprecated("This will be removed in 5.x, use parsley.syntax.extension instead", "4.5.0")
 object extension {
     /** This class exposes the `<#>` combinator on functions.
       *
@@ -25,7 +26,6 @@ object extension {
       *
       * @constructor This constructor should not be called manually, it is designed to be used via Scala's implicit resolution.
       * @param f the function that is used for the map.
-      * @version 4.0.0
       */
     implicit final class HaskellStyleMap[-A, +B](private [parsley] val f: A => B) extends AnyVal {
         /** This combinator maps this function over the given parser `p` to alter its result.
@@ -46,7 +46,6 @@ object extension {
       * @param conQ a conversion that allows values convertible to parsers to be used.
       * @tparam P the type of left base value that this class is used on (the conversion to `Parsley`) is summoned automatically.
       * @tparam Q the type of right base value that this class is used on (the conversion to `Parsley`) is summoned automatically.
-      * @version 4.0.0
       */
     implicit final class LazyChooseParsley[P, Q, +A](pq: =>(P, Q))(implicit conP: P => Parsley[A], conQ: Q => Parsley[A]) {
         private lazy val (p, q) = pq

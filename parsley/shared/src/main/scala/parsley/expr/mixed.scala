@@ -7,7 +7,7 @@ package parsley.expr
 
 import parsley.Parsley, Parsley._
 import parsley.XAnnotation.{implicitNotFound212, implicitNotFound213}
-import parsley.implicits.zipped.Zipped2
+import parsley.syntax.zipped.Zipped2
 import parsley.lift.lift4
 
 /** This module contains specialist combinators for mixing unary and binary operators
