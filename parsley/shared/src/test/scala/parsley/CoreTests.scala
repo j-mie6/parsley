@@ -385,7 +385,7 @@ class CoreTests extends ParsleyTest {
     }
 
     "failures through call boundary" should "ensure that stateful instructions are restored correctly" in {
-        import parsley.combinator.{whileP, some, eof}
+        import parsley.combinator.{whileP, some}
         val n = registers.Reg.make[Int]
         lazy val p: Parsley[Unit] = whileP(ifP(n.gets(_ % 2 == 0), some('a'), some('b')) *> n.modify(_ - 1) *> n.gets(_ != 0))
         val q = atomic(n.put(4) *> p <* eof) | n.put(2) *> p <* eof

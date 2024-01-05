@@ -9,7 +9,7 @@ import org.scalatest.Assertions
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-import parsley.combinator.eof
+import parsley.Parsley.eof
 import parsley.errors.{ErrorBuilder, tokenextractors}
 import org.scalatest.Inside
 import org.scalactic.source.Position

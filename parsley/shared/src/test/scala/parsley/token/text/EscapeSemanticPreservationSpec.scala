@@ -9,7 +9,7 @@ import org.scalatest.propspec.AnyPropSpec
 import org.scalatest.matchers._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
-import parsley.combinator.eof
+import parsley.Parsley.eof
 import parsley.token.descriptions.text._
 import parsley.token.errors.ErrorConfig
 import org.scalacheck.Gen

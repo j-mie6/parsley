@@ -8,8 +8,8 @@ package parsley.token
 import Predef.{ArrowAssoc => _, _}
 
 import parsley._
+import parsley.Parsley.eof
 import parsley.character.string
-import parsley.combinator.eof
 
 import token.{descriptions => desc}
 import token.predicate.implicits.Basic._

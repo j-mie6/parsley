@@ -5,7 +5,7 @@
  */
 package parsley
 
-import parsley.combinator.{eof, optional, many}
+import parsley.combinator.{optional, many}
 import parsley.Parsley._
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.character.{item, digit}
