@@ -247,9 +247,9 @@ a valid keyword or an operator and, if so, it can use our specialised combinator
 relook at the problematic example:
 
 ```scala mdoc:invisible:reset
-import parsley.Parsley, Parsley.{atomic, notFollowedBy}
+import parsley.Parsley, Parsley.{atomic, notFollowedBy, eof}
 import parsley.character.{digit, letter, whitespace, string, item, endOfLine, strings, stringOfSome}
-import parsley.combinator.{manyUntil, skipMany, eof}
+import parsley.combinator.{manyUntil, skipMany}
 import parsley.expr.{precedence, Ops, InfixL, Prefix}
 import parsley.errors.combinator.ErrorMethods
 ```

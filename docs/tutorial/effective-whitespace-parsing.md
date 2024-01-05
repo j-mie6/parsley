@@ -111,9 +111,9 @@ to limit the scope of these implicits, so we can be clear about which we mean wh
 what I mean, let's restructure the code a little for the parser and ensure we don't run into any issues.
 
 ```scala mdoc:reset
-import parsley.Parsley, Parsley.atomic
+import parsley.Parsley, Parsley.{atomic, eof}
 import parsley.character.{digit, whitespace, string, item, endOfLine}
-import parsley.combinator.{manyUntil, skipMany, eof}
+import parsley.combinator.{manyUntil, skipMany}
 import parsley.expr.{precedence, Ops, InfixL}
 import parsley.errors.combinator.ErrorMethods //for hide
 
