@@ -7,7 +7,7 @@ package parsley.internal.deepembedding.frontend
 
 import parsley.debug.{Breakpoint, Profiler}
 import parsley.errors.ErrorBuilder
-import parsley.registers.Reg
+import parsley.state.Ref
 import parsley.token.descriptions.SpaceDesc
 import parsley.token.descriptions.numeric.PlusSignPresence
 import parsley.token.errors.{ErrorConfig, LabelConfig, SpecialisedFilterConfig}
@@ -45,7 +45,7 @@ private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle
     def visit(self: Line.type, context: T): U[Int]
     def visit(self: Col.type, context: T): U[Int]
     def visit(self: Offset.type, context: T): U[Int]
-    def visit[S](self: Get[S], context: T)(reg: Reg[S]): U[S]
+    def visit[S](self: Get[S], context: T)(ref: Ref[S]): U[S]
     def visit(self: WhiteSpace, context: T)(ws: Char => Boolean, desc: SpaceDesc, errorConfig: ErrorConfig): U[Unit]
     def visit(self: SkipComments, context: T)(desc: SpaceDesc, errorConfig: ErrorConfig): U[Unit]
     def visit(self: Comment, context: T)(desc: SpaceDesc, errorConfig: ErrorConfig): U[Unit]
@@ -60,7 +60,7 @@ private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle
     def visit[A](self: StringTok[A], context: T)(s: String, x: A, exp: LabelConfig): U[A]
     def visit(self: Eof.type, context: T): U[Unit]
     def visit(self: UniSatisfy, context: T)(f: Int => Boolean, exp: LabelConfig): U[Int]
-    def visit[S](self: Modify[S], context: T)(reg: Reg[S], f: S => S): U[Unit]
+    def visit[S](self: Modify[S], context: T)(ref: Ref[S], f: S => S): U[Unit]
     def visit(self: Empty, context: T)(width: Int): U[Nothing]
     def visit(self: Fail, context: T)(width: CaretWidth, msgs: Seq[String]): U[Nothing]
     def visit(self: Unexpected, context: T)(msg: String, width: CaretWidth): U[Nothing]
@@ -80,10 +80,10 @@ private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle
     def visit[A](self: Attempt[A], context: T)(p: LazyParsley[A]): U[A]
     def visit[A](self: Look[A], context: T)(p: LazyParsley[A]): U[A]
     def visit[A](self: NotFollowedBy[A], context: T)(p: LazyParsley[A]): U[Unit]
-    def visit[S](self: Put[S], context: T)(reg: Reg[S], p: LazyParsley[S]): U[Unit]
-    def visit[S, A](self: NewReg[S, A], context: T)(reg: Reg[S], init: LazyParsley[S], body: =>LazyParsley[A]): U[A]
+    def visit[S](self: Put[S], context: T)(ref: Ref[S], p: LazyParsley[S]): U[Unit]
+    def visit[S, A](self: NewReg[S, A], context: T)(ref: Ref[S], init: LazyParsley[S], body: =>LazyParsley[A]): U[A]
     def visit(self: Span, context: T)(p: LazyParsley[_]): U[String]
-    def visit[A](self: Debug[A], context: T)(p: LazyParsley[A], name: String, ascii: Boolean, break: Breakpoint, watchedRegs: Seq[(Reg[_], String)]): U[A]
+    def visit[A](self: Debug[A], context: T)(p: LazyParsley[A], name: String, ascii: Boolean, break: Breakpoint, watchedRefs: Seq[(Ref[_], String)]): U[A]
     def visit[A](self: DebugError[A], context: T)(p: LazyParsley[A], name: String, ascii: Boolean, errBuilder: ErrorBuilder[_]): U[A]
     def visit[A](self: Profile[A], context: T)(p: LazyParsley[A], name: String, profiler: Profiler): U[A]
 
@@ -99,7 +99,7 @@ private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle
     // Intrinsic parser visitors.
     def visit[A, B, C](self: Lift2[A, B, C], context: T)(f: (A, B) => C, p: LazyParsley[A], q: =>LazyParsley[B]): U[C]
     def visit[A, B, C, D](self: Lift3[A, B, C, D], context: T)(f: (A, B, C) => D, p: LazyParsley[A], q: =>LazyParsley[B], r: =>LazyParsley[C]): U[D]
-    def visit[S, A](self: Local[S, A], context: T)(reg: Reg[S], p: LazyParsley[S], q: =>LazyParsley[A]): U[A]
+    def visit[S, A](self: Local[S, A], context: T)(ref: Ref[S], p: LazyParsley[S], q: =>LazyParsley[A]): U[A]
 
     // Sequence parser visitors.
     def visit[A, B](self: A <*> B, context: T)(pf: LazyParsley[A => B], px: =>LazyParsley[A]): U[B]
@@ -180,7 +180,7 @@ private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
     override def visit(self: Line.type, context: T): U[Int] = visitSingleton(self, context)
     override def visit(self: Col.type, context: T): U[Int] = visitSingleton(self, context)
     override def visit(self: Offset.type, context: T): U[Int] = visitSingleton(self, context)
-    override def visit[S](self: Get[S], context: T)(reg: Reg[S]): U[S] = visitSingleton(self, context)
+    override def visit[S](self: Get[S], context: T)(ref: Ref[S]): U[S] = visitSingleton(self, context)
     override def visit(self: WhiteSpace, context: T)(ws: Char => Boolean, desc: SpaceDesc, errorConfig: ErrorConfig): U[Unit] = visitSingleton(self, context)
     override def visit(self: SkipComments, context: T)(desc: SpaceDesc, errorConfig: ErrorConfig): U[Unit] = visitSingleton(self, context)
     override def visit(self: Comment, context: T)(desc: SpaceDesc, errorConfig: ErrorConfig): U[Unit] = visitSingleton(self, context)
@@ -195,7 +195,7 @@ private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
     override def visit[A](self: StringTok[A], context: T)(s: String, x: A, exp: LabelConfig): U[A] = visitSingleton(self, context)
     override def visit(self: Eof.type, context: T): U[Unit] = visitSingleton(self, context)
     override def visit(self: UniSatisfy, context: T)(f: Int => Boolean, exp: LabelConfig): U[Int] = visitSingleton(self, context)
-    override def visit[S](self: Modify[S], context: T)(reg: Reg[S], f: S => S): U[Unit] = visitSingleton(self, context)
+    override def visit[S](self: Modify[S], context: T)(ref: Ref[S], f: S => S): U[Unit] = visitSingleton(self, context)
     override def visit(self: Empty, context: T)(width: Int): U[Nothing] = visitSingleton(self, context)
     override def visit(self: Fail, context: T)(width: CaretWidth, msgs: Seq[String]): U[Nothing] = visitSingleton(self, context)
     override def visit(self: Unexpected, context: T)(msg: String, width: CaretWidth): U[Nothing] = visitSingleton(self, context)
@@ -223,13 +223,13 @@ private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
     override def visit[A](self: Attempt[A], context: T)(p: LazyParsley[A]): U[A] = visitUnary(self, context)(p)
     override def visit[A](self: Look[A], context: T)(p: LazyParsley[A]): U[A] = visitUnary(self, context)(p)
     override def visit[A](self: NotFollowedBy[A], context: T)(p: LazyParsley[A]): U[Unit] = visitUnary(self, context)(p)
-    override def visit[S](self: Put[S], context: T)(reg: Reg[S], p: LazyParsley[S]): U[Unit] = visitUnary(self, context)(p)
-    override def visit[S, A](self: NewReg[S, A], context: T)(reg: Reg[S], init: LazyParsley[S], body: =>LazyParsley[A]): U[A] = {
+    override def visit[S](self: Put[S], context: T)(ref: Ref[S], p: LazyParsley[S]): U[Unit] = visitUnary(self, context)(p)
+    override def visit[S, A](self: NewReg[S, A], context: T)(ref: Ref[S], init: LazyParsley[S], body: =>LazyParsley[A]): U[A] = {
         visitBinary(self, context)(init, body)
     }
     override def visit(self: Span, context: T)(p: LazyParsley[_]): U[String] = visitUnary[Any, String](self, context)(p)
     override def visit[A](self: Debug[A], context: T)
-                         (p: LazyParsley[A], name: String, ascii: Boolean, break: Breakpoint, watchedRegs: Seq[(Reg[_], String)]): U[A] = {
+                         (p: LazyParsley[A], name: String, ascii: Boolean, break: Breakpoint, watchedRefs: Seq[(Ref[_], String)]): U[A] = {
         visitUnary(self, context)(p)
     }
     override def visit[A](self: DebugError[A], context: T)(p: LazyParsley[A], name: String, ascii: Boolean, errBuilder: ErrorBuilder[_]): U[A] = {
@@ -259,7 +259,7 @@ private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
                                                                         p: LazyParsley[A],
                                                                         q: =>LazyParsley[B],
                                                                         r: =>LazyParsley[C]): U[D] = visitTernary(self, context)(p, q, r)
-    override def visit[S, A](self: Local[S, A], context: T)(reg: Reg[S], p: LazyParsley[S], q: =>LazyParsley[A]): U[A] = visitBinary(self, context)(p, q)
+    override def visit[S, A](self: Local[S, A], context: T)(ref: Ref[S], p: LazyParsley[S], q: =>LazyParsley[A]): U[A] = visitBinary(self, context)(p, q)
 
     // Sequence overrides.
     override def visit[A, B](self: A <*> B, context: T)(pf: LazyParsley[A => B], px: =>LazyParsley[A]): U[B] = visitBinary(self, context)(pf, px)

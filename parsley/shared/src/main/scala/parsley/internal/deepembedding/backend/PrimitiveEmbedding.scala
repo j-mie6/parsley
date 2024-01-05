@@ -7,7 +7,7 @@ package parsley.internal.deepembedding.backend
 
 import parsley.debug.{Breakpoint, EntryBreak, ExitBreak, FullBreak, Profiler}
 import parsley.errors.ErrorBuilder
-import parsley.registers.Reg
+import parsley.state.Ref
 
 import parsley.internal.deepembedding.ContOps, ContOps.{ContAdapter, result, suspend}
 import parsley.internal.deepembedding.singletons._
@@ -75,7 +75,7 @@ private [deepembedding] final class Opaque[A](p: StrictParsley[A]) extends Stric
     // $COVERAGE-ON$
 }
 
-private [deepembedding] final class Put[S](reg: Reg[S], val p: StrictParsley[S]) extends Unary[S, Unit] {
+private [deepembedding] final class Put[S](reg: Ref[S], val p: StrictParsley[S]) extends Unary[S, Unit] {
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         suspend(p.codeGen[M, R](producesResults = true)) |> {
             instrs += new instructions.Put(reg.addr)
@@ -87,7 +87,7 @@ private [deepembedding] final class Put[S](reg: Reg[S], val p: StrictParsley[S])
     // $COVERAGE-ON$
 }
 
-private [deepembedding] final class NewReg[S, A](reg: Reg[S], init: StrictParsley[S], body: StrictParsley[A]) extends StrictParsley[A] {
+private [deepembedding] final class NewReg[S, A](reg: Ref[S], init: StrictParsley[S], body: StrictParsley[A]) extends StrictParsley[A] {
     def inlinable: Boolean = false
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler = state.getLabelForPutAndFail(reg)
@@ -124,10 +124,10 @@ private [deepembedding] final class Span(p: StrictParsley[_]) extends StrictPars
 }
 
 // $COVERAGE-OFF$
-private [deepembedding] final class Debug[A](val p: StrictParsley[A], name: String, ascii: Boolean, break: Breakpoint, watchedRegs: scala.Seq[(Reg[_], String)])
+private [deepembedding] final class Debug[A](val p: StrictParsley[A], name: String, ascii: Boolean, break: Breakpoint, watchedRefs: scala.Seq[(Ref[_], String)])
     extends Unary[A, A] {
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
-        val watchedAddrs = watchedRegs.map {
+        val watchedAddrs = watchedRefs.map {
             case (r, name) => (r.addr, name)
         }
         val handler = state.freshLabel()

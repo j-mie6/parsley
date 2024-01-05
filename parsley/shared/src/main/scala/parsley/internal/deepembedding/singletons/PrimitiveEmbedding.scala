@@ -5,7 +5,7 @@
  */
 package parsley.internal.deepembedding.singletons
 
-import parsley.registers.Reg
+import parsley.state.Ref
 import parsley.token.errors.LabelConfig
 
 import parsley.internal.deepembedding.backend.StrictParsley.InstrBuffer
@@ -67,16 +67,16 @@ private [parsley] object Offset extends Singleton[Int] {
 
 // This should really have UsesRegister, however, if it doesn't, this has the nice effect of catching
 // registers that have never been filled in some way!
-private [parsley] final class Get[S](reg: Reg[S]) extends Singleton[S] {
+private [parsley] final class Get[S](ref: Ref[S]) extends Singleton[S] {
     // $COVERAGE-OFF$
-    override def pretty: String = s"get($reg)"
+    override def pretty: String = s"get($ref)"
     // $COVERAGE-ON$
-    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = if (producesResults) instrs += new instructions.Get(reg.addr)
+    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = if (producesResults) instrs += new instructions.Get(ref.addr)
 
     // $COVERAGE-OFF$
-    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[S] = visitor.visit(this, context)(reg)
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[S] = visitor.visit(this, context)(ref)
 
-    override private[parsley] def prettyName = "Reg.get"
+    override private[parsley] def prettyName = "Ref.get"
     // $COVERAGE-ON$
 }
 

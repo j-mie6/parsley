@@ -8,7 +8,7 @@ package parsley.token
 import parsley.Parsley, Parsley.{unit, eof}
 import parsley.combinator.{sepBy, sepBy1, skipMany}
 import parsley.errors.combinator.{markAsToken, ErrorMethods}
-import parsley.registers.Reg
+import parsley.state.Ref
 import parsley.token.names.{ConcreteNames, LexemeNames}
 import parsley.token.numeric.{LexemeCombined, LexemeInteger, LexemeReal,
                               SignedCombined, SignedInteger, SignedReal,
@@ -779,7 +779,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
       */
     object space {
         private [Lexer] lazy val space = desc.spaceDesc.space.toNative
-        private lazy val wsImpl = Reg.make[Parsley[Unit]]
+        private lazy val wsImpl = Ref.make[Parsley[Unit]]
 
         /** This parser initialises the whitespace used by the lexer when
           * `spaceDesc.whiteSpaceIsContextDependent` is set to `true`.
@@ -798,7 +798,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
                     "Whitespace cannot be initialised unless `spaceDesc.whitespaceIsContextDependent` is true"
                 )
             }
-            wsImpl.put(configuredWhiteSpace)
+            wsImpl.set(configuredWhiteSpace)
         }
 
         /** This combinator changes how whitespace is parsed by lexemes for the duration of
@@ -824,7 +824,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
                     "Whitespace cannot be altered unless `spaceDesc.whitespaceIsContextDependent` is true"
                 )
             }
-            wsImpl.rollback(wsImpl.local(whiteSpace(newSpace))(within))
+            wsImpl.rollback(wsImpl.setDuring(whiteSpace(newSpace))(within))
         }
 
         /** This parser skips '''zero''' or more (insignificant) whitespace characters as well as comments.

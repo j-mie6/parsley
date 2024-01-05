@@ -10,7 +10,7 @@ import Predef.{ArrowAssoc => _, _}
 import parsley.combinator.{exactly => repeat, eof => _, _}
 import parsley.character.item
 import parsley.Parsley._
-import parsley.registers.{forYieldP, forYieldP_, Reg}
+import parsley.state.{forYieldP, forYieldP_, Ref}
 import parsley.syntax.character.{charLift, stringLift}
 
 class CombinatorTests extends ParsleyTest {
@@ -185,12 +185,12 @@ class CombinatorTests extends ParsleyTest {
     }
 
     "forYieldP" should "be able to parse context-sensitive grammars" in {
-        val r1 = Reg.make[Int]
+        val r1 = Ref.make[Int]
         def matching[A](p: Parsley[A]) = forYieldP[Int, A](r1.get, pure(_ != 0), pure(_ - 1)) {
             p
         }
-        val abc = r1.put(0) *>
-                  many('a' *> r1.modify(_ + 1)) *>
+        val abc = r1.set(0) *>
+                  many('a' *> r1.update(_ + 1)) *>
                   matching('b') *>
                   matching('c')
         abc.parse("aaabbbccc") should be (Success(List('c', 'c', 'c')))
@@ -198,12 +198,12 @@ class CombinatorTests extends ParsleyTest {
     }
 
     "forYieldP_" should "be able to parse context-sensitive grammars" in {
-        val r1 = Reg.make[Int]
+        val r1 = Ref.make[Int]
         def matching[A](p: Parsley[A]) = forYieldP_[Int, A](r1.get, pure(_ != 0), pure(_ - 1)) { _ =>
             p
         }
-        val abc = r1.put(0) *>
-                  many('a' *> r1.modify(_ + 1)) *>
+        val abc = r1.set(0) *>
+                  many('a' *> r1.update(_ + 1)) *>
                   matching('b') *>
                   matching('c')
         abc.parse("aaabbbccc") should be (Success(List('c', 'c', 'c')))

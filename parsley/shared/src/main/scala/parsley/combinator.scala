@@ -10,7 +10,7 @@ import scala.collection.mutable
 
 import parsley.Parsley.{atomic, empty, fresh, notFollowedBy, pure, select, unit}
 import parsley.syntax.zipped.{Zipped2, Zipped3}
-import parsley.registers.{RegisterMaker, RegisterMethods}
+import parsley.state.{RefMaker, StateCombinators}
 
 import parsley.internal.deepembedding.frontend
 
@@ -1174,9 +1174,9 @@ object combinator {
       * @group range
       * @since 4.4.0
       */
-    def count(min: Int, max: Int)(p: Parsley[_]): Parsley[Int] = min.makeReg { i =>
+    def count(min: Int, max: Int)(p: Parsley[_]): Parsley[Int] = min.makeRef { i =>
         skipExactly(min, p) ~>
-        skipMany(ensure(i.gets(_ < max), p) ~> i.modify(_ + 1)) ~>
+        skipMany(ensure(i.gets(_ < max), p) ~> i.update(_ + 1)) ~>
         i.get
     }
 }

@@ -1,7 +1,7 @@
 {%
 laika.versioned = true
-laika.title = "`parsley.registers`"
-parsley.tabname = "Context-Sensitive Parsing (parsley.registers)"
+laika.title = "`parsley.state`"
+parsley.tabname = "Context-Sensitive Parsing (parsley.state)"
 laika.site.metadata.description = "This page describes how to thread custom state through a parser."
 %}
 
@@ -9,91 +9,91 @@ laika.site.metadata.description = "This page describes how to thread custom stat
 import parsley.Parsley
 ```
 
-# Context-Sensitive Parsing (`parsley.registers`)
+# Context-Sensitive Parsing (`parsley.state`)
 Normally, context-sensitive parsing can be done with monadic `flatMap`. However,
 in `parsley`, `flatMap` is a very expensive operation and is best avoided.
-Instead, `parsley` supports a form of arbitrary state threading called *registers*. These can be used to perform context-sensitive parsing in a
+Instead, `parsley` supports a form of arbitrary state threading called *references*. These can be used to perform context-sensitive parsing in a
 more performant way at a cost to expressive power.
 
 @:callout(info)
-*The Scaladoc for this page can be found at [`parsley.registers`](@:api(parsley.registers$)).*
+*The Scaladoc for this page can be found at [`parsley.state`](@:api(parsley.state$)).*
 @:@
 
-## Registers
-A register is a single piece of mutable state threaded through a parser.
+## References
+A reference is a single piece of mutable state threaded through a parser.
 They can be made in three different ways:
 
-1.  Importing `parsley.registers.RegisterMaker` allows the use of the `makeReg`
+1.  Importing `parsley.state.RefMaker` allows the use of the `makeRef`
     method on any type `A`:
 
     ```scala
-    def makeReg[B](body: Reg[A] => Parsley[B]): Parsley[B]
+    def makeRef[B](body: Ref[A] => Parsley[B]): Parsley[B]
     ```
 
-    This will construct a new register filled with the receiver value, and this can be used within the scope of the given continuation. Everytime this is
+    This will construct a new reference filled with the receiver value, and this can be used within the scope of the given continuation. Everytime this is
     executed, it will be uniquely scoped (when the parser is recursive).
-2.  Similarly, importing `parsley.registers.RegisterMethods` allows the use of
-    the `fillReg` combinator on `Parsley[A]`, which has the same signature as
-    `makeReg`.
+2.  Similarly, importing `parsley.state.StateCombinators` allows the use of
+    the `fillRef` combinator on `Parsley[A]`, which has the same signature as
+    `makeRef`.
 
-    It behaves similarly to `makeReg`, but sources its result from a parser.
-    Loosely: `p.fillReg(body)` is the same as `p.flatMap(_.makeReg(body))`,
+    It behaves similarly to `makeRef`, but sources its result from a parser.
+    Loosely: `p.fillRef(body)` is the same as `p.flatMap(_.makeRef(body))`,
     but is much more efficient.
-3.  The `Reg.make[A]: Reg[A]` method allows for the creation of a register
+3.  The `Ref.make[A]: Ref[A]` method allows for the creation of a reference
     *outside* of the parsing context. This is not recommended, as it will
     not guarantee uniqueness of scoping. The state will **not** be initialised.
 
     @:callout(warning)
-    Using the same globally constructed register in two places is undefined
+    Using the same globally constructed reference in two places is undefined
     behaviour and should *not* be done.
     @:@
 
-Registers themselves have two core operations, with several more built on top:
+References themselves have two core operations, with several more built on top:
 
 ```scala
-class Reg[A] {
+class Ref[A] {
     def get: Parsley[A]
-    def put(p: Parsley[A]): Parsley[Unit]
+    def set(p: Parsley[A]): Parsley[Unit]
 }
 ```
 
-The `get` method will read the register at parse-time and return the value
-contained within. The `put` method takes the result of a parser and stores
-that into the register. As examples:
+The `get` method will read the reference at parse-time and return the value
+contained within. The `set` method takes the result of a parser and stores
+that into the reference. As examples:
 
 ```scala mdoc:to-string
 import parsley.character.item
-import parsley.registers._
+import parsley.state._
 
-List.empty[Char].makeReg { r1 =>
-    item.fillReg { r2 =>
-        r1.put(r2.get <::> (r2.get <::> r1.get))
+List.empty[Char].makeRef { r1 =>
+    item.fillRef { r2 =>
+        r1.set(r2.get <::> (r2.get <::> r1.get))
     } *> r1.get
 }.parse("a")
 ```
 
-The above example fills a register `r1`, with the empty list, then fills
-a second register `r2` with the result of parsing any character. The value
+The above example fills a reference `r1`, with the empty list, then fills
+a second reference `r2` with the result of parsing any character. The value
 in `r1` is updated with the list obtained by prepending the parsed character onto
 the empty list stored in `r1` twice. After `r2` goes out of scope, the current
 value of `r1` is returned.
 
 ### Persistence
-In the above example, the register `r2` is only used for `get`, but is used
+In the above example, the reference `r2` is only used for `get`, but is used
 multiple times. Normally, using the value of a parser more than once requires
-a `flatMap`; this is not the case in `parsley` when using registers. To make
-this application more ergonomic, `parsley.registers.RegisterMethods` also
+a `flatMap`; this is not the case in `parsley` when using references. To make
+this application more ergonomic, `parsley.state.StateCombinators` also
 exposes the `persist` combinator:
 
 ```scala mdoc:to-string
-List.empty[Char].makeReg { r1 =>
+List.empty[Char].makeRef { r1 =>
     item.persist { c =>
-        r1.put(c <::> (c <::> r1.get))
+        r1.set(c <::> (c <::> r1.get))
     } *> r1.get
 }.parse("a")
 ```
 
-Persist can be thought of as a composition of `fillReg` and `get`, or
+Persist can be thought of as a composition of `fillRef` and `get`, or
 alternatively as a composition of `flatMap` and `pure`.
 
 #### Using Persistence
@@ -101,10 +101,10 @@ One use of `persist` is to otherwise reduce the scope of an expensive `flatMap`:
 the `flatMap` combinator is expensive because it has to process the body of the
 function in full everytime it is executed, if the size of the body is reduced,
 that will keep the parser faster. Currently, there is no primitive functionality
-for parsing with respect to values inside registers, like so:
+for parsing with respect to values inside references, like so:
 
 ```scala mdoc:silent
-def string(r: Reg[String]): Parsley[String] = r.get.flatMap(parsley.character.string(_))
+def string(r: Ref[String]): Parsley[String] = r.get.flatMap(parsley.character.string(_))
 ```
 
 The scope of the `flatMap` in that combinator is small, however, so is likely
@@ -121,7 +121,7 @@ val openTag = atomic('<' <~ notFollowedBy('/'))
 val tagName = stringOfSome(letter)
 
 lazy val content: Parsley[Unit] = optional(tag)
-lazy val tag: Parsley[Unit] = (openTag ~> tagName <~ '>').fillReg { name =>
+lazy val tag: Parsley[Unit] = (openTag ~> tagName <~ '>').fillRef { name =>
     content <~ ("</" ~> string(name) <~ ">")
 }
 
@@ -137,8 +137,8 @@ a value over time. Examples include whitespace-sensitivity or tracking matching
 brackets.
 
 #### Matching Brackets
-The `local` combinator can be used to reset state after a specific context is
-executed. It can be built primitively out of `get`, `put`, and `persist`. The
+The `setDuring` and `updateDuring` combinators can be used to reset state after a specific context is
+executed. They can be built primitively out of `get`, `set`, and `persist`. The
 following parser reports the position of the last unclosed bracket that is
 well-interleaved with the other kinds of brackets.
 
@@ -166,14 +166,14 @@ object Brackets {
     }
 }
 
-def brackets = Brackets.empty.makeReg { bs =>
+def brackets = Brackets.empty.makeRef { bs =>
     def open(c: Char): Parsley[Unit] =
-        char(c) ~> bs.modify(pos.map[Brackets => Brackets](p => _.enter(c, p)))
+        char(c) ~> bs.update(pos.map[Brackets => Brackets](p => _.enter(c, p)))
     def close(c: Char): Parsley[Unit] =
         char(c).void | bs.get.verifiedUnexpected(_.missingClose)
 
     // ensure it is reset
-    def scope[A](p: Parsley[A]): Parsley[A] = bs.local(identity[Brackets])(p)
+    def scope[A](p: Parsley[A]): Parsley[A] = bs.updateDuring(identity[Brackets])(p)
 
     lazy val matching: Parsley[Unit] = scope {
         skipMany {
@@ -187,9 +187,9 @@ def brackets = Brackets.empty.makeReg { bs =>
 ```
 
 The above parser is designed to report where the last unclosed bracket
-was. It creates a register `bs` that stores a `Brackets`, which tracks
+was. It creates a reference `bs` that stores a `Brackets`, which tracks
 the last open character and its position. Then, whenever a bracket is
-entered, `matching` will save the existing information using the `local`
+entered, `matching` will save the existing information using the `updateDuring`
 combinator: giving it the `identity` function will mean it will simply restore
 the existing state after it returns. Whenever an open bracket is parsed, it
 will write its position into the state (lagging by one character), and then
@@ -225,19 +225,19 @@ lazy val tailRec: Parsley[Unit] = 'a' ~> tailRec | unit
 The above is tail recursive, for instance. Combinators like `skipMany`
 are implemented tail recursively, with additional optimisations to make
 them more efficient: implementing new combinators in terms of `skipMany`
-with registers to carry state is likely to be efficient. For example:
+with references to carry state is likely to be efficient. For example:
 
 ```scala mdoc:silent
 def setOf[A](p: Parsley[A]): Parsley[Set[A]] = {
-    Set.empty[A].makeReg { set =>
-        skipMany(set.modify(p.map[Set[A] => Set[A]](x => _ + x))) ~> set.get
+    Set.empty[A].makeRef { set =>
+        skipMany(set.update(p.map[Set[A] => Set[A]](x => _ + x))) ~> set.get
     }
 }
 ```
 
-In the above code, a set is carried around in a register, and a new element
-is added into this set every iteration. When the loop completes (successfully), the set in the register is returned. A more efficient implementation, however,
-would use `persist` and a mutable set (along with `impure` and `fresh`): this, of course, still uses a register.
+In the above code, a set is carried around in a reference, and a new element
+is added into this set every iteration. When the loop completes (successfully), the set in the reference is returned. A more efficient implementation, however,
+would use `persist` and a mutable set (along with `impure` and `fresh`): this, of course, still uses a reference.
 
 #### Whitespace-Sensitive Languages
 Another application of long-term state is to track indentation levels in
@@ -251,13 +251,13 @@ matching brackets worked.
 For some applications, a more structured strategy for tracking state can be
 useful. The `forP` combinators allow for looping where the a stateful variable
 is used to control the control flow. For instance, the classic context-sensitive
-grammar of `a^n b^n c^n` can be matched effectively using a register and a `forP`:
+grammar of `a^n b^n c^n` can be matched effectively using a reference and a `forP`:
 
 ```scala mdoc:to-string
 import parsley.Parsley.pure
-import parsley.registers.forP
-val abcs = 0.makeReg { i =>
-    skipMany('a' ~> i.modify(_ + 1)) ~>
+import parsley.state.forP
+val abcs = 0.makeRef { i =>
+    skipMany('a' ~> i.update(_ + 1)) ~>
     forP[Int](i.get, pure(_ > 0), pure(_ - 1)) {
         'b'
     } ~>
@@ -273,4 +273,4 @@ abcs.parse("aaaabbbbbbcccc")
 ```
 
 First, as many `a`s as possible are read and each one will increment the counter
-`i`. Then, run the equivalent of a C-style: `for (int j = i, j > 0, j -= 1)` reading `b` and `c`. Internally, `forP` will use a register to track its state.
+`i`. Then, run the equivalent of a C-style: `for (int j = i, j > 0, j -= 1)` reading `b` and `c`. Internally, `forP` will use a reference to track its state.

@@ -162,10 +162,10 @@ Using parser combinators though, context-sensitive grammars can be encoded compa
 naturally! In most other combinator libraries, the `flatMap` (or `>>=`) combinator is used to
 deal with context-sensitivity. However, in the Parsley family, the power that `flatMap`
 provides comes at a heavy cost to performance. Instead, we reach for stateful parsers called
-"registers", evoking images of register machines vs stack machines: as we know, register
+"references", evoking images of register machines vs stack machines: as we know, register
 machines are turing powerful, and can most certainly do the job, no matter the parsing task.
 
-This page provides a more concrete and gentle introduction to using registers specifically
+This page provides a more concrete and gentle introduction to using references specifically
 demonstrating how to use them to implement combinators for managing indentation-sensitive
 workloads in a clean and effective way.
 
