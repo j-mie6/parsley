@@ -6,7 +6,7 @@
 package parsley.syntax
 
 import parsley.Parsley, Parsley.notFollowedBy
-import parsley.combinator.{ifP, many, option, some}
+import parsley.combinator.{ifS, many, option, some}
 
 /**
   * These implicit classes can be used to extend the core combinator set of Parsley.
@@ -56,7 +56,7 @@ object extension {
           * @note Scala applies methods ending in `:` right-associatively, and the pair is on the right-hand side of the operator.
           * @see [[combinator.ifP `ifP`]]
           */
-        def ?:(b: Parsley[Boolean]): Parsley[A] = ifP(b, conP(p), conQ(q))
+        def ?:(b: Parsley[Boolean]): Parsley[A] = ifS(b, conP(p), conQ(q))
     }
 
     /** This class enables "operator-style" alternative combinators on parsers.

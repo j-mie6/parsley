@@ -10,7 +10,7 @@ import scala.util.Random
 import org.typelevel.scalaccompat.annotation.unused
 import parsley.Parsley
 import parsley.ParsleyTest
-import parsley.combinator.ifP
+import parsley.combinator.ifS
 import parsley.debugger.combinator.attachDebugger
 import parsley.expr.chain
 import parsley.internal.deepembedding.frontend.debugger.Debugged
@@ -31,7 +31,7 @@ class TotalAttachmentSpec extends ParsleyTest {
 
         private val binaryModifiers: Array[(Parsley[Unit], Parsley[Unit]) => Parsley[Unit]] = Array(
             (px, py) => px <|> py,
-            (px, py) => ifP(Parsley.pure(true), px, py),
+            (px, py) => ifS(Parsley.pure(true), px, py),
         )
 
         private val baseParser: Parsley[Unit] = Parsley.unit

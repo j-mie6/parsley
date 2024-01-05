@@ -1,11 +1,11 @@
 {%
 laika.versioned = true
-laika.title = "`parsley.implicits`"
-parsley.tabname = "Syntactic Extensions (parsley.implicits)"
+laika.title = "`parsley.syntax`"
+parsley.tabname = "Syntactic Extensions (parsley.syntax)"
 laika.site.metadata.description = "This page describes Parsley's syntactic extensions."
 %}
-# Synactic Extensions (`parsley.implicits`)
-The `parsley.implicits` package contains several modules that enable new "syntax"
+# Synactic Extensions (`parsley.syntax`)
+The `parsley.syntax` package contains several modules that enable new "syntax"
 on parsers or other values. There are currently four such modules:
 
 * `parsley.syntax.character`: contains conversions that allow for character

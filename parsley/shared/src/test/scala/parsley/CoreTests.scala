@@ -8,7 +8,7 @@ package parsley
 import Predef.{ArrowAssoc => _, _}
 
 import parsley.Parsley.{empty => pempty, _}
-import parsley.combinator.{many, ifP}
+import parsley.combinator.{many, ifS}
 import parsley.lift._
 import parsley.character.{char, satisfy, digit, item, string}
 import parsley.syntax.character.{charLift, stringLift}
@@ -286,11 +286,11 @@ class CoreTests extends ParsleyTest {
     }
 
     "ternary parsers" should "function correctly" in {
-        val p = ifP(pure(true), 'a', 'b')
+        val p = ifS(pure(true), 'a', 'b')
         p.parse("a") should be (Success('a'))
-        val q = ifP(pure(false), 'a', 'b')
+        val q = ifS(pure(false), 'a', 'b')
         q.parse("b") should be (Success('b'))
-        val r = ifP(item.map(_.isLower), 'a', 'b')
+        val r = ifS(item.map(_.isLower), 'a', 'b')
         r.parse("aa") should be (Success('a'))
         r.parse("Ab") should be (Success('b'))
     }
@@ -385,9 +385,9 @@ class CoreTests extends ParsleyTest {
     }
 
     "failures through call boundary" should "ensure that stateful instructions are restored correctly" in {
-        import parsley.combinator.{whileP, some}
+        import parsley.combinator.{whileS, some}
         val n = registers.Reg.make[Int]
-        lazy val p: Parsley[Unit] = whileP(ifP(n.gets(_ % 2 == 0), some('a'), some('b')) *> n.modify(_ - 1) *> n.gets(_ != 0))
+        lazy val p: Parsley[Unit] = whileS(ifS(n.gets(_ % 2 == 0), some('a'), some('b')) *> n.modify(_ - 1) *> n.gets(_ != 0))
         val q = atomic(n.put(4) *> p <* eof) | n.put(2) *> p <* eof
         q.parse("aaaabbb") shouldBe a [Success[_]]
     }

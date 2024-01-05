@@ -9,7 +9,7 @@ import scala.collection.mutable
 
 import parsley.Parsley.{empty, fresh, pure}
 import parsley.XAssert._
-import parsley.combinator.{when, whileP}
+import parsley.combinator.{whenS, whileS}
 import parsley.exceptions.UnfilledRegisterException
 import parsley.syntax.zipped.Zipped2
 
@@ -410,7 +410,7 @@ object registers {
         init.fillReg { reg =>
           lazy val _cond = reg.gets(cond)
           lazy val _step = reg.modify(step)
-          when(_cond, whileP(body(reg.get) *> _step *> _cond))
+          whenS(_cond, whileS(body(reg.get) *> _step *> _cond))
         }
     }
 
