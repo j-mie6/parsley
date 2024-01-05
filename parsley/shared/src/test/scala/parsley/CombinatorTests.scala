@@ -135,7 +135,7 @@ class CombinatorTests extends ParsleyTest {
         "ab" -> None,
     )
     it must "not corrupt the stack on sep hard-fail" in {
-        ('c' <::> atomic(sepEndBy('a', "bb")).getOrElse(List('d'))).parse("cab") should be (Success(List('c', 'd')))
+        ('c' <::> (atomic(sepEndBy('a', "bb")) </> List('d'))).parse("cab") should be (Success(List('c', 'd')))
     }
 
     "sepEndBy1" must "require a p" in {

@@ -108,9 +108,9 @@ private [text] object Character {
     final val MaxLatin1: Int = 0xff
 
     def letter(terminalLead: Char, allowsAllSpace: Boolean, isGraphic: CharPredicate): CharPredicate = isGraphic match {
-        case Unicode(g) if allowsAllSpace => Unicode(c => c != terminalLead.toInt && (g(c) || parsley.character.isWhitespace(c.toChar)))
+        case Unicode(g) if allowsAllSpace => Unicode(c => c != terminalLead.toInt && (g(c) || c.toChar.isWhitespace))
         case Unicode(g)                   => Unicode(c => c != terminalLead.toInt && g(c))
-        case Basic(g) if allowsAllSpace   => Basic(c => c != terminalLead && (g(c) || parsley.character.isWhitespace(c)))
+        case Basic(g) if allowsAllSpace   => Basic(c => c != terminalLead && (g(c) || c.toChar.isWhitespace))
         case Basic(g)                     => Basic(c => c != terminalLead && g(c))
         case NotRequired                  => NotRequired
     }

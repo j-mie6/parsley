@@ -5,8 +5,8 @@
  */
 package parsley.token
 
-import parsley.Parsley, Parsley.unit
-import parsley.combinator.{between, eof, sepBy, sepBy1, skipMany}
+import parsley.Parsley, Parsley.{unit, eof}
+import parsley.combinator.{sepBy, sepBy1, skipMany}
 import parsley.errors.combinator.{markAsToken, ErrorMethods}
 import parsley.registers.Reg
 import parsley.token.names.{ConcreteNames, LexemeNames}
@@ -596,7 +596,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
             def brackets[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, symbol.openSquare, symbol.closingSquare, "square brackets")
 
             private def enclosing[A](p: =>Parsley[A], open: Parsley[Unit], close: Parsley[Unit], plural: String) =
-                between(open, close.explain(s"unclosed $plural"), p)
+                open ~> p <~ close.explain(s"unclosed $plural")
         }
     }
 

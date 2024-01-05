@@ -14,9 +14,9 @@ In the previous post, we saw the basic principles behind handling whitespace in 
 To remind ourselves of what we ended up lets pick up where we left off:
 
 ```scala mdoc
-import parsley.Parsley, Parsley.atomic
+import parsley.Parsley, Parsley.{atomic, eof}
 import parsley.character.{digit, whitespace, string, item, endOfLine}
-import parsley.combinator.{manyUntil, skipMany, eof}
+import parsley.combinator.{manyUntil, skipMany}
 import parsley.expr.{precedence, Ops, InfixL}
 import parsley.errors.combinator.ErrorMethods
 

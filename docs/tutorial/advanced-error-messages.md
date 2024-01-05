@@ -329,7 +329,7 @@ Argh! The `else` _is_ closed this time, but since `}` is a valid continuation ch
 triggered our `explain` message. Again, we can fix this by using a verified error (on `eof`)
 
 ```scala mdoc:nest:silent
-import parsley.combinator.eof
+import parsley.Parsley.eof
 val _eofCheck = eof.verifiedUnexpected("unclosed `if` or `else`")
 def braces[A](p: =>Parsley[A]) = "{" ~> p <~ ("}" | _eofCheck)
 ```

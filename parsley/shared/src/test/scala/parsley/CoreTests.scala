@@ -111,20 +111,20 @@ class CoreTests extends ParsleyTest {
 
     // MONAD LAWS
     "Monadic parsers" must "obey the left identity law: pure x >>= f = f x" in {
-        (pure('a') >>= char).parse("a") should equal ('a'.parse("a"))
+        (pure('a') flatMap char).parse("a") should equal ('a'.parse("a"))
     }
     they must "obey the right identity law: m >>= pure = m" in {
-        ('a' >>= pure).parse("a") should equal ('a'.parse("a"))
+        ('a' flatMap pure).parse("a") should equal ('a'.parse("a"))
     }
     they must "obey the associativity law: (m >>= f) >>= g = m >>= (x => f x >>= g)" in {
         val f: Int => Parsley[Int] = x => pure(x + 1)
         val g: Int => Parsley[Int] = x => pure(x/3)
         val m = '1' #> 4
-        ((m >>= f) >>= g).parse("1") should equal ((m >>= (x => f(x) >>= g)).parse("1"))
+        ((m flatMap f) flatMap g).parse("1") should equal ((m flatMap (x => f(x) flatMap g)).parse("1"))
     }
     they must "allow for flattening" in {
-        join(pure(char('a'))).parse("a") shouldBe Success('a')
-        join(Parsley.empty).parse("") shouldBe a [Failure[_]]
+        pure(char('a')).flatten.parse("a") shouldBe Success('a')
+        Parsley.empty.flatten.parse("") shouldBe a [Failure[_]]
     }
 
     "branch" must "work correctly for non-pure components" in {
@@ -360,7 +360,7 @@ class CoreTests extends ParsleyTest {
         noException should be thrownBy many_('a' *> p).parse("")
     }
     they should "not be caused by bind optimisation" in {
-        lazy val uhoh: Parsley[Unit] = 'a' >>= (_ => uhoh)
+        lazy val uhoh: Parsley[Unit] = 'a'.flatMap(_ => uhoh)
         noException should be thrownBy uhoh.parse("a")
     }
 

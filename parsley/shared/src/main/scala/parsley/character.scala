@@ -105,7 +105,6 @@ object character {
     private def char(c: Char, label: String): Parsley[Char] = char(c, Label(label))
     private def char(c: Char, label: LabelConfig): Parsley[Char] = new Parsley(new singletons.CharTok(c, c, label))
 
-    //TODO: deprecate in 4.5
     // $COVERAGE-OFF$
     /** This combinator tries to parse a single specific codepoint `c` from the input.
       *
@@ -128,6 +127,7 @@ object character {
       * @return
       * @group core
       */
+    @deprecated("This combinator will be removed in 5.x, and `unicode.char` used instead", "4.5.0")
     def codePoint(c: Int): Parsley[Int] = unicode.char(c)
     // $COVERAGE-ON$
 
@@ -766,7 +766,6 @@ object character {
     val bit: Parsley[Char] = satisfy(c => Character.digit(c, 2) != -1, "bit")
 
     // Functions
-    // TODO: deprecate in 4.5
     // $COVERAGE-OFF$
     /** This function returns true if a character is a whitespace character.
       *
@@ -781,6 +780,7 @@ object character {
       * @see [[whitespace `whitespace`]]
       * @group pred
       */
+    @deprecated("This combinator will be removed in 5.x, use _.isWhitespace instead", "4.5.0")
     def isWhitespace(c: Char): Boolean = c.isWhitespace
     // $COVERAGE-ON$
 

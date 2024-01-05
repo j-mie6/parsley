@@ -19,8 +19,9 @@ messages if you wish though. Simply put: the original grammar has more room for 
 import parsley.Parsley, Parsley.atomic
 
 object lexer {
+    import parsley.Parsley.eof
     import parsley.character.{digit, whitespace, string, item, endOfLine}
-    import parsley.combinator.{manyUntil, skipMany, eof}
+    import parsley.combinator.{manyUntil, skipMany}
 
     private def symbol(str: String) = atomic(string(str)).void
     private implicit def implicitSymbol(tok: String) = symbol(tok)
@@ -135,7 +136,7 @@ def mkNumber(digit: Parsley[Char], ws: Parsley[Unit]): Parsley[BigInt] =
     atomic(digit.foldLeft1[BigInt](0)((n, d) => n * 10 + d.asDigit)) <~ ws
 
 def mkExpressions(number: Parsley[BigInt], whiteSpace: Parsley[Unit]) = new {
-    import parsley.combinator.eof
+    import parsley.Parsley.eof
     import parsley.expr.{precedence, Ops, InfixL}
 
     private implicit def implicitSymbol(str: String): Parsley[Unit] =
@@ -289,7 +290,7 @@ or since we only have arithmetic operators here `operator` will do. we don't nee
 special here, when multiple labels are encountered with the same name, they will only appear once!
 
 ```scala mdoc:nest:invisible
-import parsley.combinator.eof
+import parsley.Parsley.eof
 import parsley.expr.{precedence, Ops, InfixL}
 
 implicit def implicitSymbol(str: String): Parsley[Unit] = symbol(str) ~> skipWhitespace
@@ -355,12 +356,12 @@ work with this parser, here is the full code of the finished product. Obviously,
 wider parser!
 
 ```scala mdoc:reset
-import parsley.Parsley, Parsley.atomic
+import parsley.Parsley, Parsley.{atomic, eof}
 import parsley.errors.combinator._
 
 object lexer {
     import parsley.character.{digit, whitespace, string, item, endOfLine}
-    import parsley.combinator.{manyUntil, skipMany, eof}
+    import parsley.combinator.{manyUntil, skipMany}
 
     private def symbol(str: String) = atomic(string(str)).void
     private implicit def implicitSymbol(tok: String) = symbol(tok)
@@ -416,7 +417,7 @@ cook up a string literal parser, supporting some (limited) escape sequences.
 ```scala mdoc:reset:silent
 import parsley.Parsley
 import parsley.implicits.character.charLift
-import parsley.combinator.{between, choice}
+import parsley.combinator.choice
 import parsley.character._
 import parsley.errors.combinator._
 
@@ -427,10 +428,7 @@ val stringLetter =
     ('\\' ~> escapeChar).label("escape character")
 
 val stringLiteral =
-    between('\"',
-            '\"'.label("end of string"),
-            stringOfMany(stringLetter))
-        .label("string")
+    ('\"' ~> stringOfMany(stringLetter) <~ '\"'.label("end of string")).label("string")
 ```
 
 Let's start with something like this. If we run a couple of examples, we can see where it performs
@@ -454,10 +452,7 @@ def mkString(escapeChar: Parsley[Char]) = {
         noneOf('\"', '\\').label("string character") |
         ('\\' ~> escapeChar).label("escape character")
 
-    between('\"',
-            '\"'.label("end of string"),
-            stringOfMany(stringLetter))
-        .label("string")
+    ('\"' ~> stringOfMany(stringLetter) <~ '\"'.label("end of string")).label("string")
 }
 val escapeChar =
     choice('n'.label("\\n") as '\n', 't'.label("\\t") as '\t',

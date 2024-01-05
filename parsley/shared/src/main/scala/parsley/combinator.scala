@@ -12,7 +12,7 @@ import parsley.Parsley.{atomic, empty, fresh, notFollowedBy, pure, select, unit}
 import parsley.implicits.zipped.{Zipped2, Zipped3}
 import parsley.registers.{RegisterMaker, RegisterMethods}
 
-import parsley.internal.deepembedding.{frontend, singletons}
+import parsley.internal.deepembedding.frontend
 
 /** This module contains a huge number of pre-made combinators that are very useful for a variety of purposes.
   *
@@ -110,7 +110,6 @@ object combinator {
       */
     def choice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceRightOption(_ <|> _).getOrElse(empty)
 
-    // TODO: deprecate in 4.5.0
     // $COVERAGE-OFF$
     /** This combinator tries to parse each of the parsers `ps` in order, until one of them succeeds.
       *
@@ -140,6 +139,7 @@ object combinator {
       * @see [[parsley.Parsley$.attempt `attempt`]]
       * @note this combinator is not particularly efficient, because it may unnecessarily backtrack for each alternative.
       */
+    @deprecated("This combinator will be removed in 5.x, and `atomicChoice` used instead", "4.5.0")
     def attemptChoice[A](ps: Parsley[A]*): Parsley[A] = atomicChoice(ps: _*)
     // $COVERAGE-ON$
 
@@ -278,7 +278,7 @@ object combinator {
       * @return a parser that tries to parse `p`, but can still succeed with `None` if that was not possible.
       * @group opt
       */
-    def option[A](p: Parsley[A]): Parsley[Option[A]] = p.map(Some(_)).getOrElse(None)
+    def option[A](p: Parsley[A]): Parsley[Option[A]] = p.map(Some(_)) </> None
 
     /** This combinator will parse `p` if possible, otherwise will do nothing.
       *
@@ -326,7 +326,7 @@ object combinator {
       * @return a parser that tries to parse `p`, returning `x` regardless of success or failure.
       * @group opt
       */
-    def optionalAs[A](p: Parsley[_], x: A): Parsley[A] = p.as(x).getOrElse(x)
+    def optionalAs[A](p: Parsley[_], x: A): Parsley[A] = p.as(x) </> x
 
     /** This combinator can eliminate an `Option` from the result of the parser `p`.
       *
@@ -377,6 +377,7 @@ object combinator {
       * @return a parser that reads `open`, then `p`, then `close` and returns the result of `p`.
       * @group misc
       */
+    @deprecated("This combinator will be removed in 5.x", "4.5.0")
     def between[A](open: Parsley[_], close: =>Parsley[_], p: =>Parsley[A]): Parsley[A] = open *> p <* close
 
     /** This combinator repeatedly parses a given parser '''zero''' or more times, collecting the results into a list.
@@ -632,7 +633,7 @@ object combinator {
       * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
-    def sepBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepBy1(p, sep).getOrElse(Nil)
+    def sepBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepBy1(p, sep) </> Nil
 
     /** This combinator parses '''one''' or more occurrences of `p`, separated by `sep`.
       *
@@ -685,7 +686,7 @@ object combinator {
       * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
-    def sepEndBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepEndBy1(p, sep).getOrElse(Nil)
+    def sepEndBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepEndBy1(p, sep) </> Nil
 
     /** This combinator parses '''one''' or more occurrences of `p`, separated and optionally ended by `sep`.
       *
@@ -778,7 +779,8 @@ object combinator {
       *
       * @group item
       */
-    val eof: Parsley[Unit] = new Parsley(singletons.Eof)
+    @deprecated("This combinator will be removed in 5.x, use Parsley.eof instead", "4.5.0")
+    val eof: Parsley[Unit] = Parsley.eof
 
     /** This parser only succeeds if there is still more input.
       *
@@ -794,6 +796,7 @@ object combinator {
       *
       * @group item
       */
+    @deprecated("This combinator will be removed in 5.x", "4.5.0")
     val more: Parsley[Unit] = notFollowedBy(eof)
 
     /** This combinator repeatedly parses a given parser '''zero''' or more times, until the `end` parser succeeds, collecting the results into a list.

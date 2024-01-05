@@ -310,6 +310,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @group alt
       * @note just an alias for `</>`
       */
+    @deprecated("This combinator will be removed in 5.x, and `</>` used instead", "4.5.0")
     def getOrElse[Aʹ >: A](x: Aʹ): Parsley[Aʹ] = this </> x
     /** This combinator, pronounced "sum", wraps this parser's result in `Left` if it succeeds, and parses `q` if it failed '''without''' consuming input,
       * wrapping the result in `Right`.
@@ -862,6 +863,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @return a new parser, which sequences this parser with the parser generated from its result.
       * @group monad
       */
+    @deprecated("This combinator will be removed in 5.x, and `.flatMap` used instead", "4.5.0")
     def >>=[B](f: A => Parsley[B]): Parsley[B] = this.flatMap(f)
     /** This combinator collapses two layers of parsing structure into one.
       *
@@ -940,7 +942,6 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @group special
       */
     def impure: Parsley[A] = new Parsley(new frontend.Opaque(this.internal))
-    // TODO: deprecate in 4.5, remove 5.0
     /** This combinator signifies that the parser it is invoked on is impure and any optimisations which assume purity
       * are disabled.
       *
@@ -950,6 +951,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @note old alias for `impure`
       * @group special
       */
+    @deprecated("This combinator will be removed in 5.x, and `impure` used instead", "4.5.0")
     def unsafe(): Parsley[A] = impure
 
     // $COVERAGE-ON$
@@ -1162,9 +1164,9 @@ object Parsley {
       * @group monad
       * @see [[Parsley.flatten `flatten`]] for details and examples.
       */
+    @deprecated("This combinator will be removed in 5.x, and `.flatten` used instead", "4.5.0")
     def join[A](p: Parsley[Parsley[A]]): Parsley[A] = p.flatten
     // $COVERAGE-OFF$
-    // TODO: deprecate in 4.5.0
     /** This combinator parses its argument `p`, but rolls back any consumed input on failure.
       *
       * If the parser `p` succeeds, then `attempt(p)` has no effect. However, if `p` failed,
@@ -1187,6 +1189,7 @@ object Parsley {
       * @note `atomic` should be used instead.
       * @group prim
       */
+    @deprecated("This combinator will be removed in 5.x, and `atomic` used instead", "4.5.0")
     def attempt[A](p: Parsley[A]): Parsley[A] = atomic(p)
     // $COVERAGE-ON$
     /** This combinator parses its argument `p`, but rolls back any consumed input on failure.
@@ -1301,6 +1304,23 @@ object Parsley {
       * @group basic
       */
     val unit: Parsley[Unit] = pure(())
+
+    /** This parser only succeeds at the end of the input.
+      *
+      * Equivalent to `notFollowedBy(item)`.
+      *
+      * @example {{{
+      * scala> import parsley.combinator.eof
+      * scala> eof.parse("a")
+      * val res0 = Failure(..)
+      * scala> eof.parse("")
+      * val res1 = Success(())
+      * }}}
+      *
+      * @group item
+      * @since 4.5.0
+      */
+    val eof: Parsley[Unit] = new Parsley(singletons.Eof)
 
     private val emptyErr = new parsley.errors.VanillaGen[Any]
 

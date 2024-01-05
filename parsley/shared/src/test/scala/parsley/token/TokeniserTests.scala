@@ -32,7 +32,7 @@ class TokeniserTests extends ParsleyTest {
                            commentLine = "//",
                            commentLineAllowsEOF = true,
                            nestedComments = true,
-                           space = token.predicate.Basic(character.isWhitespace),
+                           space = token.predicate.Basic(_.isWhitespace),
                            whitespaceIsContextDependent = false))
     val scala_ =
         scala.copy(
