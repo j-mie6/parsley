@@ -13,7 +13,7 @@ import parsley.syntax.character.{charLift, stringLift}
 import parsley.expr.{chain, infix, mixed}
 import parsley.expr.{precedence, Ops, GOps, SOps, InfixL, InfixR, Prefix, Postfix, InfixN, Atoms}
 import parsley.position._
-import parsley.genericbridges._
+import parsley.generic._
 
 class ExpressionParserTests extends ParsleyTest {
     "chain.postfix" must "require an initial value" in {

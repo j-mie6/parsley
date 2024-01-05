@@ -17,13 +17,12 @@ import lift._
   * into the result. Specifically, these traits are designed to be the bare-minimum functionaity,
   * and do not interact with any metadata.
   *
-  * @since 4.0.0
+  * @since 4.5.0
   *
   * @define bridgefor
   *     Generic bridge trait for types that have constructors of arity
   */
-@deprecated("This will be removed in 5.x, use parsley.generic instead", "4.5.0")
-object genericbridges {
+object generic {
     // $COVERAGE-OFF$
     // scalastyle:off parameter.number ensure.single.space.after.token
     /** Generic bridge trait enabling the `<#`/`from` combinator on this type:

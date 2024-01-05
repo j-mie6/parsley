@@ -1,22 +1,22 @@
 {%
 laika.versioned = true
-laika.title = "`parsley.genericbridges`"
-parsley.tabname = "Generic Bridges (parsley.genericbridges)"
+laika.title = "`parsley.generic`"
+parsley.tabname = "Generic Bridges (parsley.generic)"
 laika.site.metadata.description = "This page describes how to use generic bridges to factor code."
 %}
 
 ```scala mdoc:invisible
 import parsley.Parsley, Parsley._
-import parsley.genericbridges.ParserBridge1
+import parsley.generic.ParserBridge1
 ```
-# Generic Bridges (`parsley.genericbridges`)
+# Generic Bridges (`parsley.generic`)
 
 The *Parser Bridge* pattern is a technique for decoupling semantic actions from the parser itself.
-The `parsley.genericbridges` module contains 23 classes that allow
+The `parsley.generic` module contains 23 classes that allow
 you to get started using the technique straight away if you wish.
 
 @:callout(info)
-*The Scaladoc for this page can be found at [`parsley.genericbridges`](@:api(parsley.genericbridges$)).*
+*The Scaladoc for this page can be found at [`parsley.generic`](@:api(parsley.generic$)).*
 @:@
 
 ## What are *Parser Bridges*?
@@ -72,7 +72,7 @@ templates (see [the associated tutorial](../tutorial/parser-bridge-pattern.md) f
 `parsley` provides some basic ones to get you started.
 
 ## How to use
-The [`parsley.genericbridges`](@:api(parsley.genericbridges$)) module contains `ParserBridge1` through
+The [`parsley.generic`](@:api(parsley.generic$)) module contains `ParserBridge1` through
 `ParserBridge22` as well as `ParserBridge0`; they all extend `ParserBridgeSingleton`, which provides
 some additional combinators.
 
@@ -82,7 +82,7 @@ For example, the `Foo` class above can have its companion object turned into a b
 `ParserBridge2` (which is for two argument bridges):
 
 ```scala mdoc
-import parsley.genericbridges.ParserBridge2
+import parsley.generic.ParserBridge2
 object Foo extends ParserBridge2[Int, Int, Foo]
 ```
 
@@ -141,7 +141,7 @@ This trait is a special case for objects that should return themselves.
 As an example, here is an object which forms part of a larger AST, say:
 
 ```scala mdoc
-import parsley.genericbridges.ParserBridge0
+import parsley.generic.ParserBridge0
 trait Expr
 // rest of AST
 case object NullLit extends Expr with ParserBridge0[Expr]

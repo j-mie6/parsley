@@ -467,7 +467,7 @@ trait ParserBridgePos2[-A, -B, +C] {
 These are the two generic bridge traits that provide the implementations of our bridge constructors.
 Obviously, there are many many more possible such traits. At the very least, it is also useful to
 have "plain" versions that do not interact with positions at all also (these are provided by `parsley`
-within `parsley.genericbridges`):
+within `parsley.generic`):
 
 ```scala mdoc
 trait ParserBridge1[-A, +B] {

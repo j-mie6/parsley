@@ -147,7 +147,7 @@ just outlining the datatypes themselves and why they are how they are:
 
 ```scala mdoc
 object ast {
-    import parsley.genericbridges._
+    import parsley.generic._
 
     case class HaskellProgram(lines: List[ProgramUnit])
     sealed trait ProgramUnit
@@ -737,7 +737,7 @@ _inside_ the factored parentheses. The problem is that they use different bridge
 new ***disambiguator bridge***! Let's take a look at them:
 
 ```scala mdoc:invisible
-import parsley.genericbridges._
+import parsley.generic._
 ```
 ```scala mdoc
 object NestedPatOrPatTuple extends ParserBridge1[List[Pat], PatNaked] {
