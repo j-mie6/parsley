@@ -9,15 +9,15 @@ Parsley is distributed on Maven Central, and can be added to your project via:
 
 ```scala
 // SBT
-libraryDependencies += "com.github.j-mie6" %% "parsley" % "4.4.0"
+libraryDependencies += "com.github.j-mie6" %% "parsley" % "4.5.0"
 
 // scala-cli
---dependency com.github.j-mie6::parsley:4.4.0
+--dependency com.github.j-mie6::parsley:4.5.0
 // or in file
-//> using dep com.github.j-mie6::parsley:4.4.0
+//> using dep com.github.j-mie6::parsley:4.5.0
 
 // mill
-ivy"com.github.j-mie6::parsley:4.4.0"
+ivy"com.github.j-mie6::parsley:4.5.0"
 ```
 
 Documentation can be found [**here**](https://javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest/index.html)
@@ -167,7 +167,8 @@ _An exception to this policy is made for any version `3.x.y`, which reaches EoL 
 | `4.1.0` | 18th January 2023  | EoL reached (`4.1.8`)           |
 | `4.2.0` | 22nd January 2023  | EoL reached (`4.2.14`)          |
 | `4.3.0` | 8th July 2023      | EoL reached (`4.3.1`)           |
-| `4.4.0` | 6th October 2023   | Enjoying indefinite support     |
+| `4.4.0` | 6th October 2023   | Supported until 6th April 2024  |
+| `4.5.0` | 6th January 2023   | Enjoying indefinite support     |
 
 ## Bug Reports [![Percentage of issues still open](https://isitmaintained.com/badge/open/j-mie6/Parsley.svg)](https://isitmaintained.com/project/j-mie6/Parsley "Percentage of issues still open") [![Maintainability](https://img.shields.io/codeclimate/maintainability/j-mie6/parsley)](https://codeclimate.com/github/j-mie6/parsley) [![Test Coverage](https://img.shields.io/codeclimate/coverage-letter/j-mie6/parsley)](https://codeclimate.com/github/j-mie6/parsley)
 
