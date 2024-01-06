@@ -16,17 +16,17 @@ To remind ourselves of what we ended up lets pick up where we left off:
 ```scala mdoc
 import parsley.Parsley, Parsley.{atomic, eof}
 import parsley.character.{digit, whitespace, string, item, endOfLine}
-import parsley.combinator.{manyUntil, many}
+import parsley.combinator.{manyTill, many}
 import parsley.expr.{precedence, Ops, InfixL}
 import parsley.errors.combinator.ErrorMethods
 
 object lexer {
     private def symbol(str: String): Parsley[String] = atomic(string(str))
 
-    private val lineComment = symbol("//") ~> manyUntil(item, endOfLine)
-    private val multiComment = symbol("/*") ~> manyUntil(item, symbol("*/"))
+    private val lineComment = symbol("//") ~> manyTill(item, endOfLine).void
+    private val multiComment = symbol("/*") ~> manyTill(item, symbol("*/")).void
     private val comment = lineComment | multiComment
-    private val skipWhitespace = many(whitespace | comment).void.hide
+    private val skipWhitespace = many(whitespace.void | comment).void.hide
 
     private def lexeme[A](p: Parsley[A]): Parsley[A] = p <~ skipWhitespace
     private def token[A](p: Parsley[A]): Parsley[A] = lexeme(atomic(p))
@@ -65,10 +65,10 @@ import parsley.character.{stringOfSome, letter}
 object lexer {
     def symbol(str: String): Parsley[String] = atomic(string(str))
 
-    private val lineComment = symbol("//") ~> manyUntil(item, endOfLine)
-    private val multiComment = symbol("/*") ~> manyUntil(item, symbol("*/"))
+    private val lineComment = symbol("//") ~> manyTill(item, endOfLine).void
+    private val multiComment = symbol("/*") ~> manyTill(item, symbol("*/")).void
     private val comment = lineComment | multiComment
-    private val skipWhitespace = many(whitespace | comment).void.hide
+    private val skipWhitespace = many(whitespace.void | comment).void.hide
 
     def lexeme[A](p: Parsley[A]): Parsley[A] = p <~ skipWhitespace
     def token[A](p: Parsley[A]): Parsley[A] = lexeme(atomic(p))
@@ -249,7 +249,7 @@ relook at the problematic example:
 ```scala mdoc:invisible:reset
 import parsley.Parsley, Parsley.{atomic, notFollowedBy, eof}
 import parsley.character.{digit, letter, whitespace, string, item, endOfLine, strings, stringOfSome}
-import parsley.combinator.{manyUntil, many}
+import parsley.combinator.{manyTill, many}
 import parsley.expr.{precedence, Ops, InfixL, Prefix}
 import parsley.errors.combinator.ErrorMethods
 ```
@@ -260,10 +260,10 @@ object lexer {
 
     private def symbol(str: String): Parsley[String] = atomic(string(str))
 
-    private val lineComment = symbol("//") ~> manyUntil(item, endOfLine)
-    private val multiComment = symbol("/*") ~> manyUntil(item, symbol("*/"))
+    private val lineComment = symbol("//") ~> manyTill(item, endOfLine).void
+    private val multiComment = symbol("/*") ~> manyTill(item, symbol("*/")).void
     private val comment = lineComment | multiComment
-    private val skipWhitespace = many(whitespace | comment).void.hide
+    private val skipWhitespace = many(whitespace.void | comment).void.hide
 
     private def lexeme[A](p: Parsley[A]): Parsley[A] = p <~ skipWhitespace
     private def token[A](p: Parsley[A]): Parsley[A] = lexeme(atomic(p))

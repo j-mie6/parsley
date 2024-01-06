@@ -579,6 +579,7 @@ object combinator {
       * @group iter
       * @since 4.4.0
       */
+    @deprecated("This combinator will be removed in 5.0.0, use `countMany` instead", "4.5.0")
     def count(p: Parsley[_]): Parsley[Int] = p.foldLeft(0)((n, _) => n + 1)
 
     /** This combinator repeatedly parses a given parser '''one''' or more times, returning how many times it succeeded.
@@ -606,7 +607,62 @@ object combinator {
       * @group iter
       * @since 4.4.0
       */
+    @deprecated("This combinator will be removed in 5.0.0, use `countSome` instead", "4.5.0")
     def count1(p: Parsley[_]): Parsley[Int] = p.foldLeft1(0)((n, _) => n + 1)
+
+    /** This combinator repeatedly parses a given parser '''zero''' or more times, returning how many times it succeeded.
+      *
+      * Parses a given parser, `p`, repeatedly until it fails. If `p` failed having consumed input,
+      * this combinator fails. Otherwise when `p` fails '''without consuming input''', this combinator
+      * will succeed. The number of times `p` succeeded is returned as the result.
+      *
+      * @example {{{
+      * scala> import parsley.character.string
+      * scala> import parsley.combinator.countMany
+      * scala> val p = countMany(string("ab"))
+      * scala> p.parse("")
+      * val res0 = Success(0)
+      * scala> p.parse("ab")
+      * val res1 = Success(1)
+      * scala> p.parse("abababab")
+      * val res2 = Success(4)
+      * scala> p.parse("aba")
+      * val res3 = Failure(..)
+      * }}}
+      *
+      * @param p the parser to execute multiple times.
+      * @return the number of times `p` successfully parses
+      * @group iter
+      * @since 4.5.0
+      */
+    def countMany(p: Parsley[_]): Parsley[Int] = p.foldLeft(0)((n, _) => n + 1)
+
+    /** This combinator repeatedly parses a given parser '''one''' or more times, returning how many times it succeeded.
+      *
+      * Parses a given parser, `p`, repeatedly until it fails. If `p` failed having consumed input,
+      * this combinator fails. Otherwise when `p` fails '''without consuming input''', this combinator
+      * will succeed. The parser `p` must succeed at least once. The number of times `p` succeeded is returned as the result.
+      *
+      * @example {{{
+      * scala> import parsley.character.string
+      * scala> import parsley.combinator.countSome
+      * scala> val p = countSome(string("ab"))
+      * scala> p.parse("")
+      * val res0 = Failure(..)
+      * scala> p.parse("ab")
+      * val res1 = Success(1)
+      * scala> p.parse("abababab")
+      * val res2 = Success(4)
+      * scala> p.parse("aba")
+      * val res3 = Failure(..)
+      * }}}
+      *
+      * @param p the parser to execute multiple times.
+      * @return the number of times `p` successfully parses
+      * @group iter
+      * @since 4.5.0
+      */
+    def countSome(p: Parsley[_]): Parsley[Int] = p.foldLeft1(0)((n, _) => n + 1)
 
     /** This combinator parses '''zero''' or more occurrences of `p`, separated by `sep`.
       *
@@ -830,8 +886,8 @@ object combinator {
       *
       * @example This can be useful for scanning comments: {{{
       * scala> import parsley.character.{string, item, endOfLine}
-      * scala> import parsley.combinator.many
-      * scala> val comment = string("//") *> manyUntil(item, endOfLine)
+      * scala> import parsley.combinator.manyTill
+      * scala> val comment = string("//") *> manyTill(item, endOfLine)
       * scala> p.parse("//hello world")
       * val res0 = Failure(..)
       * scala> p.parse("//hello world\n")
@@ -868,8 +924,8 @@ object combinator {
       *
       * @example This can be useful for scanning comments: {{{
       * scala> import parsley.character.{string, item, endOfLine}
-      * scala> import parsley.combinator.someUntil
-      * scala> val comment = string("//") *> someUntil(item, endOfLine)
+      * scala> import parsley.combinator.someTill
+      * scala> val comment = string("//") *> someTill(item, endOfLine)
       * scala> p.parse("//hello world")
       * val res0 = Failure(..)
       * scala> p.parse("//hello world\n")

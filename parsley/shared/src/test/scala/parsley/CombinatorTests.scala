@@ -203,8 +203,8 @@ class CombinatorTests extends ParsleyTest {
     }
 
     "count" should "report how many successful parses occurred" in {
-        val p = count("ab")
-        val q = count1("ab")
+        val p = countMany("ab")
+        val q = countSome("ab")
         p.parse("") shouldBe Success(0)
         q.parse("") shouldBe a [Failure[_]]
         p.parse("ab") shouldBe Success(1)
@@ -214,7 +214,7 @@ class CombinatorTests extends ParsleyTest {
     }
 
     it should "not allow partial results" in {
-        count("ab").parse("aba") shouldBe a [Failure[_]]
+        countMany("ab").parse("aba") shouldBe a [Failure[_]]
     }
 
     it should "allow for ranges" in {
