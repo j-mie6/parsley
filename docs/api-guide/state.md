@@ -145,7 +145,7 @@ well-interleaved with the other kinds of brackets.
 ```scala mdoc:to-string
 import parsley.Parsley.eof
 import parsley.character.char
-import parsley.combinator.skipMany
+import parsley.combinator.many
 import parsley.errors.patterns.VerifiedErrors
 import parsley.position.pos
 

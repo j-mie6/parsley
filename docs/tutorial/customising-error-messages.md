@@ -21,15 +21,15 @@ import parsley.Parsley, Parsley.atomic
 object lexer {
     import parsley.Parsley.eof
     import parsley.character.{digit, whitespace, string, item, endOfLine}
-    import parsley.combinator.{manyUntil, many}
+    import parsley.combinator.{manyTill, many}
 
     private def symbol(str: String) = atomic(string(str)).void
     private implicit def implicitSymbol(tok: String) = symbol(tok)
 
-    private val lineComment = "//" ~> manyUntil(item, endOfLine)
-    private val multiComment = "/*" ~> manyUntil(item, "*/")
+    private val lineComment = "//" ~> manyTill(item, endOfLine).void
+    private val multiComment = "/*" ~> manyTill(item, "*/").void
     private val comment = lineComment | multiComment
-    private val skipWhitespace = many(whitespace | comment).void
+    private val skipWhitespace = many(whitespace.void | comment).void
 
     private def lexeme[A](p: =>Parsley[A]) = p <~ skipWhitespace
     private def token[A](p: =>Parsley[A]) = lexeme(atomic(p))
@@ -119,15 +119,15 @@ All of these can be found in the `parsley.errors.combinator` module.
 // the curtain
 import parsley.Parsley, Parsley.atomic
 import parsley.character.{digit, whitespace, string, item, endOfLine}
-import parsley.combinator.{manyUntil, many}
+import parsley.combinator.{manyTill, many}
 
 def symbol(str: String) = atomic(string(str))
 implicit def implicitSymbol(tok: String) = symbol(tok)
 
-val lineComment = "//" ~> manyUntil(item, endOfLine)
-val multiComment = "/*" ~> manyUntil(item, "*/")
+val lineComment = "//" ~> manyTill(item, endOfLine)
+val multiComment = "/*" ~> manyTill(item, "*/")
 val comment = lineComment | multiComment
-val skipWhitespace = many(whitespace | comment).void
+val skipWhitespace = many(whitespace.void | comment).void
 
 def lexeme[A](p: =>Parsley[A]) = p <~ skipWhitespace
 def token[A](p: =>Parsley[A]) = lexeme(atomic(p))
@@ -163,7 +163,7 @@ import parsley.errors.combinator._
 val comment = (lineComment | multiComment).label("comment")
 ```
 ```scala mdoc:invisible
-val skipWhitespace = skipMany(whitespace | comment)
+val skipWhitespace = many(whitespace.void | comment).void
 val expressions = mkExpressions(mkNumber(digit, skipWhitespace), skipWhitespace)
 ```
 
@@ -187,7 +187,7 @@ it a good candidate for the `hide` combinator:
 ```scala mdoc:silent:nest
 import parsley.errors.combinator._
 
-val skipWhitespace = many(whitespace | comment).void.hide
+val skipWhitespace = many(whitespace.void | comment).void.hide
 ```
 ```scala mdoc:invisible
 val expressions = mkExpressions(mkNumber(digit, skipWhitespace), skipWhitespace)
@@ -213,14 +213,14 @@ to extend the comment, but clearly `*/` is a way to properly end it. Let's add a
 however, to make it a bit friendlier:
 
 ```scala mdoc:silent:nest
-val lineComment = "//" *> manyUntil(item, endOfLine.label("end of comment"))
-val multiComment = "/*" *> manyUntil(item, "*/".label("end of comment"))
+val lineComment = "//" *> manyTill(item, endOfLine.label("end of comment"))
+val multiComment = "/*" *> manyTill(item, "*/".label("end of comment"))
 ```
 ```scala mdoc:invisible
 import parsley.errors.combinator._
 
 val comment = (lineComment | multiComment).label("comment")
-val skipWhitespace = many(whitespace | comment).void.hide
+val skipWhitespace = many(whitespace.void | comment).void.hide
 val expressions = mkExpressions(mkNumber(digit, skipWhitespace), skipWhitespace)
 ```
 
@@ -361,15 +361,15 @@ import parsley.errors.combinator._
 
 object lexer {
     import parsley.character.{digit, whitespace, string, item, endOfLine}
-    import parsley.combinator.{manyUntil, many}
+    import parsley.combinator.{manyTill, many}
 
     private def symbol(str: String) = atomic(string(str)).void
     private implicit def implicitSymbol(tok: String) = symbol(tok)
 
-    private val lineComment = "//" ~> manyUntil(item, endOfLine).label("end of comment")
-    private val multiComment = "/*" ~> manyUntil(item, "*/").label("end of comment")
+    private val lineComment = "//" ~> manyTill(item, endOfLine).label("end of comment")
+    private val multiComment = "/*" ~> manyTill(item, "*/").label("end of comment")
     private val comment = (lineComment | multiComment).label("comment")
-    private val skipWhitespace = many(whitespace | comment).void.hide
+    private val skipWhitespace = many(whitespace.void | comment).void.hide
 
     private def lexeme[A](p: =>Parsley[A]) = p <~ skipWhitespace
     private def token[A](p: =>Parsley[A]) = lexeme(atomic(p))

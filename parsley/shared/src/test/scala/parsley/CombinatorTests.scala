@@ -159,21 +159,21 @@ class CombinatorTests extends ParsleyTest {
         eof.parse("a") shouldBe a [Failure[_]]
     }
 
-    "manyUntil" must "require an end" in {
-        manyUntil('a', 'b').parse("aa") shouldBe a [Failure[_]]
-        manyUntil('a', 'b').parse("ab") should be (Success(List('a')))
+    "manyTill" must "require an end" in {
+        manyTill('a', 'b').parse("aa") shouldBe a [Failure[_]]
+        manyTill('a', 'b').parse("ab") should be (Success(List('a')))
     }
     it should "parse the end without result" in {
-        manyUntil('a', 'b').parse("b") should be (Success(Nil))
+        manyTill('a', 'b').parse("b") should be (Success(Nil))
     }
     it should "parse p until that end is found" in {
-        manyUntil('a', 'b').parse("aaaaaaaaaaaab") should not be a [Failure[_]]
-        manyUntil("aa", 'b').parse("ab") shouldBe a [Failure[_]]
+        manyTill('a', 'b').parse("aaaaaaaaaaaab") should not be a [Failure[_]]
+        manyTill("aa", 'b').parse("ab") shouldBe a [Failure[_]]
     }
 
-    "someUntil" must "parse at least 1 p" in {
-        someUntil('a', 'b').parse("ab") should be (Success(List('a')))
-        someUntil('a', 'b').parse("b") shouldBe a [Failure[_]]
+    "someTill" must "parse at least 1 p" in {
+        someTill('a', 'b').parse("ab") should be (Success(List('a')))
+        someTill('a', 'b').parse("b") shouldBe a [Failure[_]]
     }
 
     "forYieldP" should "be able to parse context-sensitive grammars" in {

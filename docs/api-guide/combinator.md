@@ -41,15 +41,15 @@ any minimum required parses `n`. When the results are not needed, `skipMany`,
 `skipSome`, and `skipManyN` can be used instead. To determine how many times
 the parse was successful, the `count` and `count1` can be used instead.
 
-The `manyUntil` and `someUntil` combinators can be used to parse iteratively
+The `manyTill` and `someTill` combinators can be used to parse iteratively
 until some other parse is successful: this can be used, for instance, to
 scan comments:
 
 ```scala mdoc:to-string
 import parsley.character.{string, item, endOfLine}
-import parsley.combinator.{manyUntil}
+import parsley.combinator.{manyTill}
 
-val comment = string("//") ~> manyUntil(item, endOfLine)
+val comment = string("//") ~> manyTill(item, endOfLine)
 comment.parse("// this is a comment\n")
 ```
 
