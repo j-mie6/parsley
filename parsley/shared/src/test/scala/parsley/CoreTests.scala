@@ -365,9 +365,9 @@ class CoreTests extends ParsleyTest {
     }
 
     "lazy parsley" should "be able to prevent overly strict combinators" in {
-        import parsley.combinator.{skip, optional}
+        import parsley.combinator.{sequence, optional}
         // without the ~, this would loop forever as skip is strict in position 2
-        lazy val fishySkipMany: Parsley[Unit] = optional(skip('a', ~fishySkipMany))
+        lazy val fishySkipMany: Parsley[Unit] = optional(sequence('a', ~fishySkipMany))
         (fishySkipMany *> 'b').parse("aaaaaab") shouldBe Success('b')
     }
 

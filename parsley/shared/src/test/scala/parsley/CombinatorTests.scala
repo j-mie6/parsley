@@ -88,14 +88,6 @@ class CombinatorTests extends ParsleyTest {
         for (n <- 0 to 10) manyN(n/2, 'a').parse("a"*n) should be (Success(("a"*n).toList))
     }
 
-    "skipManyN" must "ensure that n are parsed" in {
-        for (n <- 0 to 10) skipManyN(n, 'a').parse("a"*n) should be (Success(()))
-        for (n <- 0 to 10) skipManyN(n+1, 'a').parse("a"*n) shouldBe a [Failure[_]]
-    }
-    it should "not care if more are present" in {
-        for (n <- 0 to 10) skipManyN(n/2, 'a').parse("a"*n) should be (Success(()))
-    }
-
     "sepBy" must "accept empty input" in cases(sepBy('a', 'b')) (
         "" -> Some(Nil),
     )
@@ -251,14 +243,5 @@ class CombinatorTests extends ParsleyTest {
         p.parse("abcd") shouldBe Success(List('a', 'b', 'c', 'd'))
         p.parse("abcde") shouldBe Success(List('a', 'b', 'c', 'd', 'e'))
         p.parse("abcdef") shouldBe Success(List('a', 'b', 'c', 'd', 'e'))
-    }
-
-    "range_" should "perform a range with no results" in {
-        val p = range_(min = 2, max = 5)(item)
-        (p <~ eof).parse("a") shouldBe a [Failure[_]]
-        (p <~ eof).parse("ab") shouldBe Success(())
-        (p <~ eof).parse("abcd") shouldBe Success(())
-        (p <~ eof).parse("abcde") shouldBe Success(())
-        (p <~ 'f').parse("abcdef") shouldBe Success(())
     }
 }

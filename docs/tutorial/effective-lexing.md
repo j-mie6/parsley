@@ -16,7 +16,7 @@ To remind ourselves of what we ended up lets pick up where we left off:
 ```scala mdoc
 import parsley.Parsley, Parsley.{atomic, eof}
 import parsley.character.{digit, whitespace, string, item, endOfLine}
-import parsley.combinator.{manyUntil, skipMany}
+import parsley.combinator.{manyUntil, many}
 import parsley.expr.{precedence, Ops, InfixL}
 import parsley.errors.combinator.ErrorMethods
 
@@ -26,7 +26,7 @@ object lexer {
     private val lineComment = symbol("//") ~> manyUntil(item, endOfLine)
     private val multiComment = symbol("/*") ~> manyUntil(item, symbol("*/"))
     private val comment = lineComment | multiComment
-    private val skipWhitespace = skipMany(whitespace | comment).hide
+    private val skipWhitespace = many(whitespace | comment).void.hide
 
     private def lexeme[A](p: Parsley[A]): Parsley[A] = p <~ skipWhitespace
     private def token[A](p: Parsley[A]): Parsley[A] = lexeme(atomic(p))
@@ -68,7 +68,7 @@ object lexer {
     private val lineComment = symbol("//") ~> manyUntil(item, endOfLine)
     private val multiComment = symbol("/*") ~> manyUntil(item, symbol("*/"))
     private val comment = lineComment | multiComment
-    private val skipWhitespace = skipMany(whitespace | comment).hide
+    private val skipWhitespace = many(whitespace | comment).void.hide
 
     def lexeme[A](p: Parsley[A]): Parsley[A] = p <~ skipWhitespace
     def token[A](p: Parsley[A]): Parsley[A] = lexeme(atomic(p))
@@ -249,7 +249,7 @@ relook at the problematic example:
 ```scala mdoc:invisible:reset
 import parsley.Parsley, Parsley.{atomic, notFollowedBy, eof}
 import parsley.character.{digit, letter, whitespace, string, item, endOfLine, strings, stringOfSome}
-import parsley.combinator.{manyUntil, skipMany}
+import parsley.combinator.{manyUntil, many}
 import parsley.expr.{precedence, Ops, InfixL, Prefix}
 import parsley.errors.combinator.ErrorMethods
 ```
@@ -263,7 +263,7 @@ object lexer {
     private val lineComment = symbol("//") ~> manyUntil(item, endOfLine)
     private val multiComment = symbol("/*") ~> manyUntil(item, symbol("*/"))
     private val comment = lineComment | multiComment
-    private val skipWhitespace = skipMany(whitespace | comment).hide
+    private val skipWhitespace = many(whitespace | comment).void.hide
 
     private def lexeme[A](p: Parsley[A]): Parsley[A] = p <~ skipWhitespace
     private def token[A](p: Parsley[A]): Parsley[A] = lexeme(atomic(p))

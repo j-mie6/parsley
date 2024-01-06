@@ -230,7 +230,7 @@ object combinator {
     def traverse[A, B](f: A => Parsley[B], xs: A*): Parsley[List[B]] = sequence(xs.map(f): _*)
     // TODO: this will be used in future!
     private [parsley] def traverse5[A, B](xs: A*)(f: A => Parsley[B]): Parsley[List[B]] = traverse(f, xs: _*)
-    private [parsley] def traverse_[A](xs: A*)(f: A => Parsley[_]): Parsley[Unit] = skip(unit, xs.map(f): _*) // TODO: does traverse.void just work?
+    private [parsley] def traverse_[A](xs: A*)(f: A => Parsley[_]): Parsley[Unit] = traverse5(xs: _*)(f).void // TODO: drop in 5.0.0
 
     /** This combinator will parse each of `ps` in order, discarding the results.
       *
@@ -255,7 +255,8 @@ object combinator {
       * @see [[parsley.Parsley.*> `*>`]]
       * @note $strict
       */
-    def skip(p: Parsley[_], ps: Parsley[_]*): Parsley[Unit] = ps.foldLeft(p.void)(_ <* _) // TODO: does sequence.void just work?
+    @deprecated("This combinator will be removed in 5.0.0, use `sequence((p +: ps): _*).void` instead", "4.5.0")
+    def skip(p: Parsley[_], ps: Parsley[_]*): Parsley[Unit] = sequence((p +: ps): _*).void
 
     /** This combinator tries to parse `p`, wrapping its result in a `Some` if it succeeds, or returns `None` if it fails.
       *
@@ -496,6 +497,7 @@ object combinator {
       * @since 2.2.0
       * @group iter
       */
+    @deprecated("This combinator will be removed in 5.0.0, use `many(p).void` instead", "4.5.0")
     def skipMany(p: Parsley[_]): Parsley[Unit] = many(p).void
 
     /** This combinator repeatedly parses a given parser '''one''' or more times, ignoring the results.
@@ -522,6 +524,7 @@ object combinator {
       * @return a parser that parses `p` until it fails, returning unit.
       * @group iter
       */
+    @deprecated("This combinator will be removed in 5.0.0, use `some(p).void` instead", "4.5.0")
     def skipSome(p: Parsley[_]): Parsley[Unit] = some(p).void
 
     /** This combinator repeatedly parses a given parser '''`n`''' or more times, ignoring the results.
@@ -548,14 +551,8 @@ object combinator {
       * @return a parser that parses `p` until it fails, returning unit.
       * @group iter
       */
-    def skipManyN(n: Int, p: Parsley[_]): Parsley[Unit] = {
-        require(n >= 0, "cannot pass negative integer to `skipManyN`")
-        @tailrec def go(n: Int, acc: Parsley[Unit] = skipMany(p)): Parsley[Unit] = {
-            if (n == 0) acc
-            else go(n-1, p *> acc)
-        }
-        go(n)
-    }
+    @deprecated("This combinator will be removed in 5.0.0, use `manyN(n, p).void` instead", "4.5.0")
+    def skipManyN(n: Int, p: Parsley[_]): Parsley[Unit] = manyN(n, p).void
 
     /** This combinator repeatedly parses a given parser '''zero''' or more times, returning how many times it succeeded.
       *
@@ -1142,6 +1139,7 @@ object combinator {
       * @group range
       * @since 4.4.0
       */
+    @deprecated("This combinator will be removed in 5.0.0, use `count(min, max)(p).void` instead", "4.5.0")
     def range_(min: Int, max: Int)(p: Parsley[_]): Parsley[Unit] = count(min, max)(p).void
 
     /** This combinator parses between `min` and `max` occurrences of `p`, returning the number of successes.
@@ -1176,7 +1174,7 @@ object combinator {
       */
     def count(min: Int, max: Int)(p: Parsley[_]): Parsley[Int] = min.makeRef { i =>
         skipExactly(min, p) ~>
-        skipMany(ensure(i.gets(_ < max), p) ~> i.update(_ + 1)) ~>
+        many(ensure(i.gets(_ < max), p) ~> i.update(_ + 1)) ~>
         i.get
     }
 }

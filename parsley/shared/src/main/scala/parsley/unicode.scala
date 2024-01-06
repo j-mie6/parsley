@@ -6,7 +6,7 @@
 package parsley
 
 import parsley.Parsley.{empty, fresh, pure}
-import parsley.combinator.{skipMany, skipSome}
+import parsley.combinator.{many, some}
 import parsley.errors.combinator.ErrorMethods
 import parsley.token.errors.{Label, LabelConfig, NotConfigured}
 
@@ -419,7 +419,7 @@ object unicode {
       * @since 4.4.0
       * @group string
       */
-    def stringOfMany(pred: Int => Boolean): Parsley[String] = skipMany(satisfy(pred)).span//stringOfMany(satisfy(pred))
+    def stringOfMany(pred: Int => Boolean): Parsley[String] = many(satisfy(pred)).span
 
     // TODO: test?
     /** This combinator parses `pc` '''one''' or more times, collecting its results into a string.
@@ -474,7 +474,7 @@ object unicode {
       * @since 4.4.0
       * @group string
       */
-    def stringOfSome(pred: Int => Boolean): Parsley[String] = skipSome(satisfy(pred)).span//stringOfSome(satisfy(pred))
+    def stringOfSome(pred: Int => Boolean): Parsley[String] = some(satisfy(pred)).span
 
     // These should always just match up, so no need to test
     // $COVERAGE-OFF$
@@ -562,10 +562,9 @@ object unicode {
 
     /** This parser skips zero or more space characters using [[space `space`]].
       *
-      * @see [[combinator.skipMany `combinator.skipMany`]]
       * @group skip
       */
-    val spaces: Parsley[Unit] = skipMany(space)
+    val spaces: Parsley[Unit] = many(space).void
 
     /** This parser tries to parse a whitespace character, and returns it if successful.
       *
@@ -583,10 +582,9 @@ object unicode {
 
     /** This parser skips zero or more space characters using [[whitespace `whitespace`]].
       *
-      * @see [[combinator.skipMany `combinator.skipMany`]]
       * @group skip
       */
-    val whitespaces: Parsley[Unit] = skipMany(whitespace)
+    val whitespaces: Parsley[Unit] = many(whitespace).void
 
     /** This parser tries to parse a line feed newline (`'\n'`) character, and returns it if successful.
       *

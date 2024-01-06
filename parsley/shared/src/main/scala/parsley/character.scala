@@ -8,7 +8,7 @@ package parsley
 import scala.collection.immutable.NumericRange
 
 import parsley.Parsley.{atomic, empty, fresh, pure}
-import parsley.combinator.{choice, skipMany, skipSome}
+import parsley.combinator.{choice, many, some}
 import parsley.errors.combinator.ErrorMethods
 import parsley.token.errors.{Label, LabelConfig, NotConfigured}
 
@@ -454,7 +454,7 @@ object character {
       * @since 4.4.0
       * @group string
       */
-    def stringOfMany(pred: Char => Boolean): Parsley[String] = skipMany(satisfy(pred)).span
+    def stringOfMany(pred: Char => Boolean): Parsley[String] = many(satisfy(pred)).span
 
     /** This combinator parses `pc` '''one''' or more times, collecting its results into a string.
       *
@@ -508,7 +508,7 @@ object character {
       * @since 4.4.0
       * @group string
       */
-    def stringOfSome(pred: Char => Boolean): Parsley[String] = skipSome(satisfy(pred)).span
+    def stringOfSome(pred: Char => Boolean): Parsley[String] = some(satisfy(pred)).span
 
     /** This combinator tries to parse each of the strings `strs` (and `str0`), until one of them succeeds.
       *
@@ -604,10 +604,9 @@ object character {
 
     /** This parser skips zero or more space characters using [[space `space`]].
       *
-      * @see [[combinator.skipMany `combinator.skipMany`]]
       * @group skip
       */
-    val spaces: Parsley[Unit] = skipMany(space)
+    val spaces: Parsley[Unit] = many(space).void
 
     /** This parser tries to parse a whitespace character, and returns it if successful.
       *
@@ -626,10 +625,9 @@ object character {
 
     /** This parser skips zero or more space characters using [[whitespace `whitespace`]].
       *
-      * @see [[combinator.skipMany `combinator.skipMany`]]
       * @group skip
       */
-    val whitespaces: Parsley[Unit] = skipMany(whitespace)
+    val whitespaces: Parsley[Unit] = many(whitespace).void
 
     /** This parser tries to parse a line feed newline (`'\n'`) character, and returns it if successful.
       *

@@ -21,7 +21,7 @@ import parsley.Parsley, Parsley.atomic
 object lexer {
     import parsley.Parsley.eof
     import parsley.character.{digit, whitespace, string, item, endOfLine}
-    import parsley.combinator.{manyUntil, skipMany}
+    import parsley.combinator.{manyUntil, many}
 
     private def symbol(str: String) = atomic(string(str)).void
     private implicit def implicitSymbol(tok: String) = symbol(tok)
@@ -29,7 +29,7 @@ object lexer {
     private val lineComment = "//" ~> manyUntil(item, endOfLine)
     private val multiComment = "/*" ~> manyUntil(item, "*/")
     private val comment = lineComment | multiComment
-    private val skipWhitespace = skipMany(whitespace | comment)
+    private val skipWhitespace = many(whitespace | comment).void
 
     private def lexeme[A](p: =>Parsley[A]) = p <~ skipWhitespace
     private def token[A](p: =>Parsley[A]) = lexeme(atomic(p))
@@ -119,7 +119,7 @@ All of these can be found in the `parsley.errors.combinator` module.
 // the curtain
 import parsley.Parsley, Parsley.atomic
 import parsley.character.{digit, whitespace, string, item, endOfLine}
-import parsley.combinator.{manyUntil, skipMany}
+import parsley.combinator.{manyUntil, many}
 
 def symbol(str: String) = atomic(string(str))
 implicit def implicitSymbol(tok: String) = symbol(tok)
@@ -127,7 +127,7 @@ implicit def implicitSymbol(tok: String) = symbol(tok)
 val lineComment = "//" ~> manyUntil(item, endOfLine)
 val multiComment = "/*" ~> manyUntil(item, "*/")
 val comment = lineComment | multiComment
-val skipWhitespace = skipMany(whitespace | comment)
+val skipWhitespace = many(whitespace | comment).void
 
 def lexeme[A](p: =>Parsley[A]) = p <~ skipWhitespace
 def token[A](p: =>Parsley[A]) = lexeme(atomic(p))
@@ -187,7 +187,7 @@ it a good candidate for the `hide` combinator:
 ```scala mdoc:silent:nest
 import parsley.errors.combinator._
 
-val skipWhitespace = skipMany(whitespace <|> comment).hide
+val skipWhitespace = many(whitespace | comment).void.hide
 ```
 ```scala mdoc:invisible
 val expressions = mkExpressions(mkNumber(digit, skipWhitespace), skipWhitespace)
@@ -220,7 +220,7 @@ val multiComment = "/*" *> manyUntil(item, "*/".label("end of comment"))
 import parsley.errors.combinator._
 
 val comment = (lineComment | multiComment).label("comment")
-val skipWhitespace = skipMany(whitespace <|> comment).hide
+val skipWhitespace = many(whitespace | comment).void.hide
 val expressions = mkExpressions(mkNumber(digit, skipWhitespace), skipWhitespace)
 ```
 
@@ -361,7 +361,7 @@ import parsley.errors.combinator._
 
 object lexer {
     import parsley.character.{digit, whitespace, string, item, endOfLine}
-    import parsley.combinator.{manyUntil, skipMany}
+    import parsley.combinator.{manyUntil, many}
 
     private def symbol(str: String) = atomic(string(str)).void
     private implicit def implicitSymbol(tok: String) = symbol(tok)
@@ -369,7 +369,7 @@ object lexer {
     private val lineComment = "//" ~> manyUntil(item, endOfLine).label("end of comment")
     private val multiComment = "/*" ~> manyUntil(item, "*/").label("end of comment")
     private val comment = (lineComment | multiComment).label("comment")
-    private val skipWhitespace = skipMany(whitespace | comment).hide
+    private val skipWhitespace = many(whitespace | comment).void.hide
 
     private def lexeme[A](p: =>Parsley[A]) = p <~ skipWhitespace
     private def token[A](p: =>Parsley[A]) = lexeme(atomic(p))

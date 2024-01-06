@@ -6,7 +6,7 @@
 package parsley.token
 
 import parsley.Parsley, Parsley.{unit, eof}
-import parsley.combinator.{sepBy, sepBy1, skipMany}
+import parsley.combinator.{sepBy, sepBy1, many}
 import parsley.errors.combinator.{markAsToken, ErrorMethods}
 import parsley.state.Ref
 import parsley.token.names.{ConcreteNames, LexemeNames}
@@ -1058,8 +1058,8 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
             case Basic(ws) => new Parsley(new singletons.WhiteSpace(ws, desc.spaceDesc, errConfig))
             // satisfyUtf16 is effectively hidden, and so is Comment
             case Unicode(ws) if desc.spaceDesc.supportsComments =>
-                skipMany(new Parsley(new singletons.Comment(desc.spaceDesc, errConfig)) <|> satisfy(ws))
-            case Unicode(ws) => skipMany(satisfy(ws))
+                many(new Parsley(new singletons.Comment(desc.spaceDesc, errConfig)) | satisfy(ws).void).void
+            case Unicode(ws) => many(satisfy(ws)).void
         }
     }
 }

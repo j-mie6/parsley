@@ -424,7 +424,7 @@ complex and general `SOps` precedence architecture. This has some really nice co
 Next up is the remaining three rules: `<expr-10>`, `<alt>`, and `<func-app>`.
 
 ```scala mdoc:nest:silent
-import parsley.combinator.{some, skipMany}
+import parsley.combinator.{some, many}
 
 val `<clause>`: Parsley[Clause] = /???/
 val `<pat-naked>`: Parsley[PatNaked] = /???/
@@ -437,7 +437,7 @@ lazy val `<expr-10>` = Atoms(
     Let("let" ~> `<clause>`, "in" ~> `<expr>`),
     If("if" ~> `<expr>`, "then" ~> `<expr>`, "else" ~> `<expr>`),
     Case("case" ~> `<expr>`,
-         "of" ~> "{" ~> sepBy1(`<alt>`, (";" | NEWLINE) <~ skipMany(NEWLINE)) <~ "}"),
+         "of" ~> "{" ~> sepBy1(`<alt>`, (";" | NEWLINE) <~ many(NEWLINE)) <~ "}"),
     `<func-app>`)
 ```
 ```scala mdoc:invisible
@@ -531,13 +531,13 @@ Here is a nice easy finish. These last rules are really just book-keeping. I'm a
 introduce a way of running the parser directly.
 
 ```scala mdoc
-import parsley.combinator.{sepEndBy, skipSome}
+import parsley.combinator.{sepEndBy, some}
 import parsley.errors.ErrorBuilder
 
 def parse[Err: ErrorBuilder](input: String) = `<program>`.parse(input)
 
 lazy val `<program>` =
-    fully(sepEndBy(`<data>` | atomic(`<declaration>`) | `<clause>`, skipSome(NEWLINE)))
+    fully(sepEndBy(`<data>` | atomic(`<declaration>`) | `<clause>`, some(NEWLINE)))
 
 lazy val `<data>` = Data("data" ~> `<con-id>`, many(`<var-id>`), "=" ~> `<constructors>`)
 lazy val `<constructors>` = sepBy1(`<constructor>`, "|")
@@ -1109,7 +1109,7 @@ val `<clause>` =
     Clause(`<var-id>`, many(`<pat-naked>`), option(`<guard>`), "=" ~> `<expr>`)
 
 val `<program>` =
-    fully(sepEndBy(`<data>` | atomic(`<declaration>`) | `<clause>`, skipSome(NEWLINE)))
+    fully(sepEndBy(`<data>` | atomic(`<declaration>`) | `<clause>`, some(NEWLINE)))
 ```
 ```scala mdoc:invisible
 val _ = `<program>`: @unused
@@ -1156,7 +1156,7 @@ val `<clause>` = Clause(`<var-id>`, `<partial-clause>`)
 
 val `<decl-or-clause>` = DeclOrClause(`<var-id>`, `<declaration>` <+> `<partial-clause>`)
 val `<program>` =
-    fully(sepEndBy(`<data>` | `<decl-or-clause>`, skipSome(NEWLINE)))
+    fully(sepEndBy(`<data>` | `<decl-or-clause>`, some(NEWLINE)))
 ```
 ```scala mdoc:invisible
 val _ = `<program>`: @unused
@@ -1192,7 +1192,7 @@ val `<clause>` = `<var-id>` <**> `<partial-clause>`
 
 val `<decl-or-clause>` = `<var-id>` <**> (`<declaration>` | `<partial-clause>`)
 val `<program>` =
-    fully(sepEndBy(`<data>` | `<decl-or-clause>`, skipSome(NEWLINE)))
+    fully(sepEndBy(`<data>` | `<decl-or-clause>`, some(NEWLINE)))
 ```
 ```scala mdoc:invisible
 val _ = `<program>`: @unused

@@ -589,9 +589,9 @@ comes to mind...):
 ```scala mdoc:silent
 import parsley.Parsley, Parsley.eof
 import parsley.syntax.character.charLift
-import parsley.combinator.skipMany
+import parsley.combinator.many
 
-lazy val matching: Parsley[Unit] = skipMany('(' *> matching <* ')')
+lazy val matching: Parsley[Unit] = many('(' *> matching <* ')').void
 val onlyMatching = matching <* eof
 
 onlyMatching.parse("") // succeeds
@@ -653,7 +653,7 @@ Before we move on with a more fleshed out example, I want to annotate the `match
 ```scala mdoc:invisible
 import parsley.debug._
 parsley.debug.disableColourRendering()
-lazy val matchingDebug: Parsley[Unit] = skipMany('('.debug("left") ~> matchingDebug <~ ')'.debug("right")).debug("matching")
+lazy val matchingDebug: Parsley[Unit] = many('('.debug("left") ~> matchingDebug <~ ')'.debug("right")).void.debug("matching")
 val onlyMatchingDebug = matchingDebug <~ eof
 ```
 ```scala mdoc:to-string

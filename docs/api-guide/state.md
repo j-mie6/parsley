@@ -176,11 +176,11 @@ def brackets = Brackets.empty.makeRef { bs =>
     def scope[A](p: Parsley[A]): Parsley[A] = bs.updateDuring(identity[Brackets])(p)
 
     lazy val matching: Parsley[Unit] = scope {
-        skipMany {
+        many {
               open('(') ~> matching <~ close(')')
             | open('[') ~> matching <~ close(']')
             | open('{') ~> matching <~ close('}')
-        }
+        }.void
     }
     matching <~ eof
 }
@@ -230,7 +230,7 @@ with references to carry state is likely to be efficient. For example:
 ```scala mdoc:silent
 def setOf[A](p: Parsley[A]): Parsley[Set[A]] = {
     Set.empty[A].makeRef { set =>
-        skipMany(set.update(p.map[Set[A] => Set[A]](x => _ + x))) ~> set.get
+        many(set.update(p.map[Set[A] => Set[A]](x => _ + x))) ~> set.get
     }
 }
 ```
@@ -257,7 +257,7 @@ grammar of `a^n b^n c^n` can be matched effectively using a reference and a `for
 import parsley.Parsley.pure
 import parsley.state.forP
 val abcs = 0.makeRef { i =>
-    skipMany('a' ~> i.update(_ + 1)) ~>
+    many('a' ~> i.update(_ + 1)) ~>
     forP[Int](i.get, pure(_ > 0), pure(_ - 1)) {
         'b'
     } ~>
