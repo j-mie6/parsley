@@ -7,7 +7,7 @@ package parsley
 
 import scala.collection.mutable
 
-import parsley.Parsley, Parsley.{fresh, pure}
+import Parsley.{fresh, pure}
 import parsley.combinator.{whenS, whileS}
 import parsley.registers.Reg
 import parsley.syntax.zipped.Zipped2
