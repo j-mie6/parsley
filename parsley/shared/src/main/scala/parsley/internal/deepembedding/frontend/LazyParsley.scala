@@ -16,6 +16,8 @@ import parsley.internal.deepembedding.{Cont, ContOps, Id}, ContOps.{perform, res
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 import parsley.internal.machine.instructions, instructions.Instr
 
+import org.typelevel.scalaccompat.annotation.nowarn3
+
 /** This is the root type of the parsley "frontend": it represents a combinator tree
   * where the join-points in the tree (recursive or otherwise) have not been identified
   * or factored. As such, it is a potentially cyclic graph (though finite), and must be handled with
@@ -212,7 +214,7 @@ private [deepembedding] trait UsesRef {
 private [deepembedding] class LetFinderState {
     private val _recs = mutable.Set.empty[LazyParsley[_]]
     private val _preds = mutable.Map.empty[LazyParsley[_], Int]
-    private val _usedRefs = mutable.Set.empty[Ref[_]]
+    private val _usedRefs: mutable.Set[Ref[_]] @nowarn3 = mutable.Set.empty[Ref[_]]: @nowarn3
 
     /** Adds a "predecessor" to a given parser, which means that it is referenced by another parser.
       *
@@ -242,7 +244,7 @@ private [deepembedding] class LetFinderState {
     /** Returns all the recursive parsers in the tree */
     private [frontend] lazy val recs: Set[LazyParsley[_]] = _recs.toSet
     /** Returns all the registers used by the parser */
-    private [frontend] def usedRefs: Set[Ref[_]] = _usedRefs.toSet
+    private [frontend] def usedRefs: Set[Ref[_]] @nowarn3 = _usedRefs.toSet: @nowarn3
     /** Returns the number of registers used by the parser */
     private [frontend] def numRegs: Int = _usedRefs.size
 }

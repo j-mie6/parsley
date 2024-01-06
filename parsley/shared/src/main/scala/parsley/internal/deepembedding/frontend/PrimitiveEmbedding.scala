@@ -11,6 +11,8 @@ import parsley.state.Ref
 
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 
+import org.typelevel.scalaccompat.annotation.nowarn3
+
 private [parsley] final class Attempt[A](p: LazyParsley[A]) extends Unary[A, A](p) {
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.Attempt(p)
 
@@ -67,7 +69,7 @@ private [parsley] final class Span(p: LazyParsley[_]) extends Unary[Any, String]
 }
 
 // $COVERAGE-OFF$
-private [parsley] final class Debug[A](p: LazyParsley[A], name: String, ascii: Boolean, break: Breakpoint, watchedRefs: Seq[(Ref[_], String)])
+private [parsley] final class Debug[A](p: LazyParsley[A], name: String, ascii: Boolean, break: Breakpoint, watchedRefs: Seq[(Ref[_], String)] @nowarn3)
     extends Unary[A, A](p) {
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.Debug(p, name, ascii, break, watchedRefs)
 

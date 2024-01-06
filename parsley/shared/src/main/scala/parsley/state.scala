@@ -9,7 +9,6 @@ import scala.collection.mutable
 
 import Parsley.{fresh, pure}
 import parsley.combinator.{whenS, whileS}
-import parsley.registers.Reg
 import parsley.syntax.zipped.Zipped2
 
 import parsley.internal.deepembedding.frontend
@@ -79,7 +78,7 @@ object state {
       *   that any changes to the reference may be reverted after the execution of the parser:
       *   this may be on the parsers success, but it could also involve the parsers failure.
       */
-    type Ref[A] = Reg[A] @nowarn
+    type Ref[A] = parsley.registers.Reg[A] @nowarn
 
     /** This object allows for the construction of a reference via its `make` function.
       * @group ref
@@ -97,7 +96,7 @@ object state {
           *       caution. It is recommended to use `makeRef` and `fillRef` where possible.
           * @since 2.2.0
           */
-        def make[A]: Ref[A] = new Reg: @nowarn
+        def make[A]: Ref[A] = new parsley.registers.Reg: @nowarn
     }
 
     /** This class, when in scope, enables the use of combinators directly on parsers

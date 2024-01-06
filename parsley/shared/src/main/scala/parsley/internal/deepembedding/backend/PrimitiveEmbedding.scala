@@ -13,6 +13,8 @@ import parsley.internal.deepembedding.ContOps, ContOps.{ContAdapter, result, sus
 import parsley.internal.deepembedding.singletons._
 import parsley.internal.machine.instructions
 
+import org.typelevel.scalaccompat.annotation.nowarn3
+
 import StrictParsley.InstrBuffer
 private [deepembedding] final class Attempt[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, A] {
     override val instr: instructions.Instr = instructions.PopHandlerAndState
@@ -124,12 +126,13 @@ private [deepembedding] final class Span(p: StrictParsley[_]) extends StrictPars
 }
 
 // $COVERAGE-OFF$
-private [deepembedding] final class Debug[A](val p: StrictParsley[A], name: String, ascii: Boolean, break: Breakpoint, watchedRefs: scala.Seq[(Ref[_], String)])
+private [deepembedding] final class Debug[A](val p: StrictParsley[A], name: String, ascii: Boolean,
+                                             break: Breakpoint, watchedRefs: scala.Seq[(Ref[_], String)] @nowarn3)
     extends Unary[A, A] {
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val watchedAddrs = watchedRefs.map {
             case (r, name) => (r.addr, name)
-        }
+        }: @nowarn3
         val handler = state.freshLabel()
         instrs += new instructions.LogBegin(handler, name, ascii, (break eq EntryBreak) || (break eq FullBreak), watchedAddrs)
         suspend(p.codeGen[M, R](producesResults)) |> {
