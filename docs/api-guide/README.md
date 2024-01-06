@@ -23,7 +23,7 @@ There are a few modules of note:
 * [`parsley.character`](@:api(parsley.character$)):
   contains a variety of combinators which deal with characters, key ones include `char`,
   `satisfy` and `string`.
-* [`parsley.implicits`](@:api(parsley.implicits$)):
+* [`parsley.syntax`](@:api(parsley.syntax$)):
   contains the very useful implicit conversion combinators. In particular, importing `charLift`
   and `stringLift` allows you write character and string literals as if they were parsers
   themselves. There are also implicit classes here which extend functions of any arity with a

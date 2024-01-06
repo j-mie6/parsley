@@ -81,7 +81,7 @@ The `flatMap` combinator is another way of sequencing two parsers, but where
 the second depends on the result of the first. In `parsley`, this operation
 is **very** expensive, and it (and its derived `flatten` combinator) should
 be avoided. One way of avoiding the `flatMap` combinator is to use features
-found in [`parsley.registers`][Context-Sensitive Parsing (`parsley.registers`)],
+found in [`parsley.state`][Context-Sensitive Parsing (`parsley.state`)],
 or to use `lift` combinators instead.
 
 #### Choice
