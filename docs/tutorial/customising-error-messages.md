@@ -124,8 +124,8 @@ import parsley.combinator.{manyTill, many}
 def symbol(str: String) = atomic(string(str))
 implicit def implicitSymbol(tok: String) = symbol(tok)
 
-val lineComment = "//" ~> manyTill(item, endOfLine)
-val multiComment = "/*" ~> manyTill(item, "*/")
+val lineComment = "//" ~> manyTill(item, endOfLine).void
+val multiComment = "/*" ~> manyTill(item, "*/").void
 val comment = lineComment | multiComment
 val skipWhitespace = many(whitespace.void | comment).void
 
@@ -213,8 +213,8 @@ to extend the comment, but clearly `*/` is a way to properly end it. Let's add a
 however, to make it a bit friendlier:
 
 ```scala mdoc:silent:nest
-val lineComment = "//" *> manyTill(item, endOfLine.label("end of comment"))
-val multiComment = "/*" *> manyTill(item, "*/".label("end of comment"))
+val lineComment = "//" *> manyTill(item, endOfLine.label("end of comment")).void
+val multiComment = "/*" *> manyTill(item, "*/".label("end of comment")).void
 ```
 ```scala mdoc:invisible
 import parsley.errors.combinator._
@@ -366,8 +366,8 @@ object lexer {
     private def symbol(str: String) = atomic(string(str)).void
     private implicit def implicitSymbol(tok: String) = symbol(tok)
 
-    private val lineComment = "//" ~> manyTill(item, endOfLine).label("end of comment")
-    private val multiComment = "/*" ~> manyTill(item, "*/").label("end of comment")
+    private val lineComment = "//" ~> manyTill(item, endOfLine).void.label("end of comment")
+    private val multiComment = "/*" ~> manyTill(item, "*/").void.label("end of comment")
     private val comment = (lineComment | multiComment).label("comment")
     private val skipWhitespace = many(whitespace.void | comment).void.hide
 
