@@ -1006,7 +1006,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
   *     parse-time, which is '''very''' expensive to do repeatedly. These combinators are only
   *     needed in exceptional circumstances, and should be avoided otherwise.
   */
-object Parsley {
+object Parsley extends PlatformSpecific {
     /** This class enables the prefix `~` combinator, which allows a parser in an otherwise strict
       * position to be made lazy.
       *

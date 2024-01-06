@@ -14,24 +14,17 @@ import parsley.errors.ErrorBuilder
 
 import parsley.internal.machine.Context
 
-/** This module contains utilities to have parsers interact with IO, including the very useful `parseFromFile` method (exposed by `ParseFromIO`)
-  * @since 3.0.0
-  */
-@deprecated("This object is deprecated for removal, its contents are now inherited by parsley.Parsley", "4.5.0")
-object io {
+class PlatformSpecific {
     /** This class exposes a method of running parsers from a file.
       *
       * This extension class operates on values that are convertible to parsers. It enables the use of
-      * the `parseFromFile` method, which can be used to run a parser on the contents of a file.
+      * an alternative `parseFile` method, which can be used to run a parser on the contents of a file.
       *
       * @constructor This constructor should not be called manually, it is designed to be used via Scala's implicit resolution.
       * @param p the value that this class is enabling methods on.
-      * @param con a conversion that allows values convertible to parsers to be used.
-      * @tparam P the type of base value that this class is used on (the conversion to `Parsley`) is summoned automatically.
-      * @version 3.0.0
+      * @version 4.5.0
       */
-    @deprecated("This class is deprecated for removal, its contents are now inherited by parsley.Parsley", "4.5.0")
-    implicit final class ParseFromIO[P, +A](p: P)(implicit con: P => Parsley[A]) {
+    implicit final class ParseFromIO[+A](p: Parsley[A]) {
         /** This method executes a parser, but collects the input to the parser from the given file.
           *
           * The file name is used to annotate any error messages. The result of this method handles
@@ -41,10 +34,9 @@ object io {
           * @param codec the encoding of the file.
           * @return a `Try` containing a result of either a success with a value of type `A` or a failure with error message on success,
           *         and a failure if an IOException occured.
-          * @since 3.0.0
+          * @since 4.5.0
           */
-        @deprecated("This method will be removed in 5.0.0, use `.parseFile` instead", "4.5.0")
-        def parseFromFile[Err: ErrorBuilder](file: File)(implicit codec: Codec): Try[Result[Err, A]] = {
+        def parseFile[Err: ErrorBuilder](file: File)(implicit codec: Codec): Try[Result[Err, A]] = {
             for {
                 src <- Try(Source.fromFile(file))
                 input <- Try(src.mkString).recoverWith {
@@ -54,7 +46,7 @@ object io {
                 }
             } yield {
                 src.close()
-                val internal = con(p).internal
+                val internal = p.internal
                 new Context(internal.instrs, input, internal.numRegs, Some(file.getName)).run()
             }
         }
