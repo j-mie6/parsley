@@ -121,11 +121,11 @@ which does the same job as `symbol.apply`, but is defined as an implicit convers
 importing this, string literals can themselves serve as parsers of type `Parsley[Unit]`, and
 parse symbols correctly. With this, it instead of `symbol("if")` you can simply write `"if"`.
 
-## `Lexer.{lexeme, nonlexeme}.numeric`
-This [object](@:api(parsley.token.Lexer$lexeme$$numeric$)) contains the definitions of several different parsers for handling *numeric* data:
+## `Lexer.{lexeme, nonlexeme}` Numeric Parsers
+This [object](@:api(parsley.token.Lexer$lexeme$)) contains the definitions of several different parsers for handling *numeric* data:
 this includes both integers and floating point numbers. The configuration for all of these parsers
 is managed by [`LexicalDesc.numericDesc`](@:api(parsley.token.descriptions.numeric.NumericDesc)).
-The members of the `numeric` object a split into three kinds:
+The members are split into three kinds:
 
 * [`parsley.token.numeric.Integer`](@:api(parsley.token.numeric.Integer)): values with this type
   deal with whole numbers, and this interface in particular has support for different bases of
@@ -184,7 +184,7 @@ and `345`. For `signed`, each of these may be preceded by a `+` sign, but this i
 disabled by setting `leadingZerosAllowed` to `false`.
 
 ```scala mdoc
-val num = lexer.lexeme.numeric.signed.number
+val num = lexer.lexeme.signed.number
 num.parse("0")
 num.parse("0xff")
 num.parse("+0o45")
@@ -201,7 +201,7 @@ val lexerWithBreak = new Lexer(LexicalDesc.plain.copy(
         numericDesc = NumericDesc.plain.copy(
             literalBreakChar = BreakCharDesc.Supported('_', allowedAfterNonDecimalPrefix = true))
     ))
-val withBreak = lexerWithBreak.lexeme.numeric.signed.number
+val withBreak = lexerWithBreak.lexeme.signed.number
 withBreak.parse("1_000")
 withBreak.parse("1_")
 withBreak.parse("2__0") // no double break
@@ -216,11 +216,12 @@ configured that the non-decimal bases all *require* exponents for valid literals
 `3.142` is valid decimal literal, `0x3.142` is not a legal hexadecimal literal: to make
 it work, the exponent must be added, i.e. `0x3.142p0`, where `p0` is performing `* 2^0`.
 For each of the non-decimal literals, the base of the exponent is configured to be `2`, hence
-`2^0` in the previous example; for decimal it is set to the usual `10`, so that `2e3` is `2*10^3`, or `2000`. Notice that literals do not *require* a point, so long as they do have
+`2^0` in the previous example; for decimal it is set to the usual `10`, so that `2e3` is `2*10^3`,
+or `2000`. Notice that literals do not *require* a point, so long as they do have
 an exponent.
 
 ```scala mdoc:height=2
-val real = lexer.lexeme.numeric.real
+val real = lexer.lexeme.real
 real.hexadecimalDouble.parse("0x3.142")
 real.hexadecimalDouble.parse("0x3.142p0")
 real.binary.parse("0b0.1011p0")
@@ -236,7 +237,7 @@ to the decimal `3.142`. Instead, it is equal to `(3 + 1/16 + 4/(16^2) + 2/(16^3)
 floats: `0x0.Bp0` is the same as `0b0.1011p0`, both of which are `0.6875` in decimal.
 @:@
 
-## `Lexer.{lexeme, nonlexeme}.text`
+## `Lexer.{lexeme, nonlexeme}` Text Parsers
 This [object](@:api(parsley.token.Lexer$lexeme$$text$)) deals with the parsing of both string
 literals and character literals, configured broadby by [`LexicalDesc.textDesc`](@:api(parsley.token.descriptions.text.TextDesc)):
 
@@ -294,7 +295,7 @@ def stringParsers(graphicChar: CharPredicate = aboveSpace,
             escapeSequences = escapeDesc,
             graphicCharacter = graphicChar
         )
-    )).nonlexeme.text.string
+    )).nonlexeme.string
 
 val fullUnicode = stringParsers(aboveSpace)
 val latin1Limited = stringParsers(predicate.Basic(c => c >= 0x20 && c <= 0xcf))

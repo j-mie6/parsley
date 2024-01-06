@@ -361,7 +361,7 @@ object lexer {
     private val lexer = new Lexer(desc)
 
     val identifier = lexer.lexeme.names.identifier
-    val number = lexer.lexeme.numeric.natural.decimal
+    val number = lexer.lexeme.natural.decimal
 
     def fully[A](p: Parsley[A]) = lexer.fully(p)
     val implicits = lexer.lexeme.symbol.implicits
@@ -374,7 +374,7 @@ assert(lexer.implicits.implicitSymbol("negate").parse("negatex").isInstanceOf[Fa
 
 The `implicitSymbol` function we developed before, along with `operator` and
 `keyword` are all implemented by `lexer.lexeme.symbol`. The `names.identifier` parser
-accounts for the keyword problem for us. The basic `numeric.natural.decimal` parser
+accounts for the keyword problem for us. The basic `natural.decimal` parser
 meets our needs without any additional configuration: it also returns `BigInt`, which
 is arbitrary precision. By using `token.lexeme`, this will already handle the
 whitespace and atomicity of the token for us. This is just the tip of the iceberg

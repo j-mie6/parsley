@@ -117,13 +117,13 @@ object lexer {
 
     val CON_ID = lexer.lexeme.names.identifier(Basic(_.isUpper))
     val VAR_ID = lexer.lexeme.names.identifier(Basic(_.isLower))
-    val INTEGER = lexer.lexeme.numeric.natural.number
-    val FLOAT = lexer.lexeme.numeric.floating.number
-    val INT_OR_FLOAT = lexer.lexeme.numeric.unsignedCombined.number
+    val INTEGER = lexer.lexeme.natural.number
+    val FLOAT = lexer.lexeme.floating.number
+    val INT_OR_FLOAT = lexer.lexeme.unsignedCombined.number
     // Strictly speaking, Haskell files are probably encoded as UTF-8, but this
     // is not supported by Parsley _yet_
-    val STRING = lexer.lexeme.text.string.fullUtf16
-    val CHAR = lexer.lexeme.text.character.fullUtf16
+    val STRING = lexer.lexeme.string.fullUtf16
+    val CHAR = lexer.lexeme.character.fullUtf16
 
     val NEWLINE = lexer.lexeme(newline).void
 

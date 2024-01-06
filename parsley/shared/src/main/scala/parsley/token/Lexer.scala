@@ -286,17 +286,74 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
           */
         val names: parsley.token.names.Names = new LexemeNames(nonlexeme.names, this)
 
+        /** $natural
+          *
+          * @since 4.5.0
+          * @note alias for [[natural `natural`]].
+          */
+        // $COVERAGE-OFF$
+        def unsigned: parsley.token.numeric.Integer = natural
+        // $COVERAGE-ON$
+        /** $natural
+          *
+          * @since 4.5.0
+          */
+        def natural: parsley.token.numeric.Integer = numeric._natural
+
+        /** $integer
+          *
+          * @since 4.5.0
+          * @note alias for [[integer `integer`]]
+          * @see [[unsigned `unsigned`]] for a full description of signed integer configuration
+          */
+        // $COVERAGE-OFF$
+        def signed: parsley.token.numeric.Integer = integer
+        // $COVERAGE-ON$
+        /** $integer
+          *
+          * @since 4.5.0
+          * @see [[natural `natural`]] for a full description of integer configuration
+          */
+        def integer: parsley.token.numeric.Integer = numeric._integer
+
+        /** $real
+          *
+          * @since 4.5.0
+          * @note alias for [[real `real`]]
+          * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
+          */
+        // $COVERAGE-OFF$
+        def floating: parsley.token.numeric.Real = real
+        // $COVERAGE-ON$
+        /** $real
+          *
+          * @since 4.5.0
+          * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
+          */
+        def real: parsley.token.numeric.Real = numeric._real
+
+        /** $unsignedCombined
+          *
+          * @since 4.5.0
+          */
+        def unsignedCombined: parsley.token.numeric.Combined = numeric._unsignedCombined
+        /** $signedCombined
+          *
+          * @since 4.5.0
+          */
+        def signedCombined: parsley.token.numeric.Combined = numeric._signedCombined
+
         /** $numeric
           *
           * @since 4.0.0
           */
         object numeric {
-            private [Lexer] val _natural = new LexemeInteger(nonlexeme.numeric.natural, lexeme)
-            private [Lexer] val _integer = new LexemeInteger(nonlexeme.numeric.integer, lexeme)
+            private [Lexer] val _natural = new LexemeInteger(nonlexeme.natural, lexeme)
+            private [Lexer] val _integer = new LexemeInteger(nonlexeme.integer, lexeme)
             private [Lexer] val _positiveReal = new LexemeReal(nonlexeme.numeric._positiveReal, lexeme, errConfig)
-            private [Lexer] val _real = new LexemeReal(nonlexeme.numeric.real, lexeme, errConfig)
-            private [Lexer] val _unsignedCombined = new LexemeCombined(nonlexeme.numeric.unsignedCombined, lexeme, errConfig)
-            private [Lexer] val _signedCombined = new LexemeCombined(nonlexeme.numeric.signedCombined, lexeme, errConfig)
+            private [Lexer] val _real = new LexemeReal(nonlexeme.real, lexeme, errConfig)
+            private [Lexer] val _unsignedCombined = new LexemeCombined(nonlexeme.unsignedCombined, lexeme, errConfig)
+            private [Lexer] val _signedCombined = new LexemeCombined(nonlexeme.signedCombined, lexeme, errConfig)
 
             /** $natural
               *
@@ -304,12 +361,14 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
               * @note alias for [[natural `natural`]].
               */
             // $COVERAGE-OFF$
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def unsigned: parsley.token.numeric.Integer = natural
             // $COVERAGE-ON$
             /** $natural
               *
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def natural: parsley.token.numeric.Integer = _natural
 
             /** $integer
@@ -319,6 +378,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
               * @see [[unsigned `unsigned`]] for a full description of signed integer configuration
               */
             // $COVERAGE-OFF$
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def signed: parsley.token.numeric.Integer = integer
             // $COVERAGE-ON$
             /** $integer
@@ -326,6 +386,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
               * @since 4.0.0
               * @see [[natural `natural`]] for a full description of integer configuration
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def integer: parsley.token.numeric.Integer = _integer
 
             /** $real
@@ -335,6 +396,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
               * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
               */
             // $COVERAGE-OFF$
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def floating: parsley.token.numeric.Real = real
             // $COVERAGE-ON$
             /** $real
@@ -342,19 +404,50 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
               * @since 4.0.0
               * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def real: parsley.token.numeric.Real = _real
 
             /** $unsignedCombined
               *
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def unsignedCombined: parsley.token.numeric.Combined = _unsignedCombined
             /** $signedCombined
               *
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def signedCombined: parsley.token.numeric.Combined = _signedCombined
         }
+
+        /** $character
+          *
+          * @since 4.5.0
+          */
+        def character: parsley.token.text.Character = text._character
+        /** $string
+          *
+          * @since 4.5.0
+          */
+        def string: parsley.token.text.String = text._string
+        /** $string
+          *
+          * @note $raw
+          * @since 4.5.0
+          */
+        def rawString: parsley.token.text.String = text._rawString
+        /** $multiString
+          *
+          * @since 4.5.0
+          */
+        def multiString: parsley.token.text.String = text._multiString
+        /** $multiString
+          *
+          * @note $raw
+          * @since 4.5.0
+          */
+        def rawMultiString: parsley.token.text.String = text._rawMultiString
 
         /** $text
           *
@@ -371,28 +464,33 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
               *
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `text` object instead", "4.5.0")
             def character: parsley.token.text.Character = _character
             /** $string
               *
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `text` object instead", "4.5.0")
             def string: parsley.token.text.String = _string
             /** $string
               *
               * @note $raw
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `text` object instead", "4.5.0")
             def rawString: parsley.token.text.String = _rawString
             /** $multiString
               *
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `text` object instead", "4.5.0")
             def multiString: parsley.token.text.String = _multiString
             /** $multiString
               *
               * @note $raw
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `text` object instead", "4.5.0")
             def rawMultiString: parsley.token.text.String = _rawMultiString
         }
 
@@ -629,6 +727,63 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
           */
         val names: parsley.token.names.Names = new ConcreteNames(desc.nameDesc, desc.symbolDesc, errConfig)
 
+        /** $natural
+          *
+          * @since 4.5.0
+          * @note alias for [[natural `natural`]].
+          */
+        // $COVERAGE-OFF$
+        def unsigned: parsley.token.numeric.Integer = numeric._natural
+        // $COVERAGE-ON$
+        /** $natural
+          *
+          * @since 4.5.0
+          */
+        def natural: parsley.token.numeric.Integer = numeric._natural
+
+        /** $integer
+          *
+          * @since 4.5.0
+          * @note alias for [[integer `integer`]]
+          * @see [[unsigned `unsigned`]] for a full description of signed integer configuration
+          */
+        // $COVERAGE-OFF$
+        def signed: parsley.token.numeric.Integer = numeric._integer
+        // $COVERAGE-ON$
+        /** $integer
+          *
+          * @since 4.5.0
+          * @see [[natural `natural`]] for a full description of integer configuration
+          */
+        def integer: parsley.token.numeric.Integer = numeric._integer
+
+        /** $real
+          *
+          * @since 4.5.0
+          * @note alias for [[real `real`]]
+          * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
+          */
+        // $COVERAGE-OFF$
+        def floating: parsley.token.numeric.Real = real
+        // $COVERAGE-ON$
+        /** $real
+          *
+          * @since 4.5.0
+          * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
+          */
+        def real: parsley.token.numeric.Real = numeric._real
+
+        /** $unsignedCombined
+          *
+          * @since 4.5.0
+          */
+        def unsignedCombined: parsley.token.numeric.Combined = numeric._unsignedCombined
+        /** $signedCombined
+          *
+          * @since 4.5.0
+          */
+        def signedCombined: parsley.token.numeric.Combined = numeric._signedCombined
+
         /** $numeric
           *
           * @since 4.0.0
@@ -647,6 +802,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
               * @note alias for [[natural `natural`]].
               */
             // $COVERAGE-OFF$
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def unsigned: parsley.token.numeric.Integer = _natural
             // $COVERAGE-ON$
 
@@ -654,6 +810,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
               *
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def natural: parsley.token.numeric.Integer = _natural
 
             /** $integer
@@ -663,6 +820,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
               * @see [[unsigned `unsigned`]] for a full description of signed integer configuration
               */
             // $COVERAGE-OFF$
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def signed: parsley.token.numeric.Integer = _integer
             // $COVERAGE-ON$
             /** $integer
@@ -670,6 +828,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
               * @since 4.0.0
               * @see [[natural `natural`]] for a full description of integer configuration
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def integer: parsley.token.numeric.Integer = _integer
 
             /** $real
@@ -679,6 +838,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
               * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
               */
             // $COVERAGE-OFF$
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def floating: parsley.token.numeric.Real = real
             // $COVERAGE-ON$
 
@@ -687,19 +847,50 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
               * @since 4.0.0
               * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def real: parsley.token.numeric.Real = _real
 
             /** $unsignedCombined
               *
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def unsignedCombined: parsley.token.numeric.Combined = _unsignedCombined
             /** $signedCombined
               *
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def signedCombined: parsley.token.numeric.Combined = _signedCombined
         }
+
+        /** $character
+          *
+          * @since 4.5.0
+          */
+        def character: parsley.token.text.Character = text._character
+        /** $string
+          *
+          * @since 4.5.0
+          */
+        def string: parsley.token.text.String = text._string
+        /** $string
+          *
+          * @note $raw
+          * @since 4.5.0
+          */
+        def rawString: parsley.token.text.String = text._rawString
+        /** $multiString
+          *
+          * @since 4.5.0
+          */
+        def multiString: parsley.token.text.String = text._multiString
+        /** $multiString
+          *
+          * @note $raw
+          * @since 4.5.0
+          */
+        def rawMultiString: parsley.token.text.String = text._rawMultiString
 
         /** $text
           *
@@ -719,28 +910,33 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
               *
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `text` object instead", "4.5.0")
             def character: parsley.token.text.Character = _character
             /** $string
               *
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `text` object instead", "4.5.0")
             def string: parsley.token.text.String = _string
             /** $string
               *
               * @note $raw
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `text` object instead", "4.5.0")
             def rawString: parsley.token.text.String = _rawString
             /** $multiString
               *
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `text` object instead", "4.5.0")
             def multiString: parsley.token.text.String = _multiString
             /** $multiString
               *
               * @note $raw
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `text` object instead", "4.5.0")
             def rawMultiString: parsley.token.text.String = _rawMultiString
         }
 

@@ -24,7 +24,7 @@ object lexer {
     private val lexer = new Lexer(desc)
 
     val identifier = lexer.lexeme.names.identifier
-    val number = lexer.lexeme.numeric.natural.decimal
+    val number = lexer.lexeme.natural.decimal
 
     def fully[A](p: Parsley[A]) = lexer.fully(p)
     val implicits = lexer.lexeme.symbol.implicits
@@ -277,7 +277,7 @@ object lexer {
     private val lexer = new Lexer(desc)
 
     val identifier = lexer.lexeme.names.identifier
-    val number = lexer.lexeme.numeric.natural.decimal
+    val number = lexer.lexeme.natural.decimal
 
     def fully[A](p: Parsley[A]) = lexer.fully(p)
     val implicits = lexer.lexeme.symbol.implicits
@@ -690,7 +690,7 @@ object lexer {
     private val lexer = new Lexer(desc)
 
     val identifier = lexer.lexeme.names.identifier
-    val number = lexer.lexeme.numeric.natural.decimal
+    val number = lexer.lexeme.natural.decimal
 
     def fully[A](p: Parsley[A]) = lexer.fully(p)
     val implicits = lexer.lexeme.symbol.implicits

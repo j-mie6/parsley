@@ -110,39 +110,39 @@ class TokeniserTests extends ParsleyTest {
     )
 
     "naturalOrFloat" should "parse either naturals or unsigned floats" in {
-        tokeniser.lexeme.numeric.unsignedCombined.number.parse("3.142  /*what a sick number am I right*/") should be (Success(Right(3.142)))
-        tokeniser.lexeme.numeric.unsignedCombined.number.parse("0.23") should be (Success(Right(0.23)))
-        tokeniser.lexeme.numeric.unsignedCombined.number.parse("10.0\n") should be (Success(Right(10.0)))
-        tokeniser.lexeme.numeric.unsignedCombined.number.parse("3e10") should be (Success(Right(3e10)))
-        tokeniser.lexeme.numeric.unsignedCombined.number.parse("5E-4") should be (Success(Right(5e-4)))
-        tokeniser.lexeme.numeric.unsignedCombined.number.parse("3.142e2\t ") should be (Success(Right(3.142e2)))
-        tokeniser.lexeme.numeric.unsignedCombined.number.parse("0.23e1") should be (Success(Right(0.23e1)))
-        tokeniser.lexeme.numeric.unsignedCombined.number.parse("10.0e-5") should be (Success(Right(10.0e-5)))
-        tokeniser.lexeme.numeric.unsignedCombined.number.parse("1024") should be (Success(Left(1024)))
-        tokeniser.lexeme.numeric.unsignedCombined.number.parse("0x340") should be (Success(Left(0x340)))
-        tokeniser.lexeme.numeric.unsignedCombined.number.parse("0xFF") should be (Success(Left(0xFF)))
-        tokeniser.lexeme.numeric.unsignedCombined.number.parse("0o201 //ooh, octal") should be (Success(Left(129)))
+        tokeniser.lexeme.unsignedCombined.number.parse("3.142  /*what a sick number am I right*/") should be (Success(Right(3.142)))
+        tokeniser.lexeme.unsignedCombined.number.parse("0.23") should be (Success(Right(0.23)))
+        tokeniser.lexeme.unsignedCombined.number.parse("10.0\n") should be (Success(Right(10.0)))
+        tokeniser.lexeme.unsignedCombined.number.parse("3e10") should be (Success(Right(3e10)))
+        tokeniser.lexeme.unsignedCombined.number.parse("5E-4") should be (Success(Right(5e-4)))
+        tokeniser.lexeme.unsignedCombined.number.parse("3.142e2\t ") should be (Success(Right(3.142e2)))
+        tokeniser.lexeme.unsignedCombined.number.parse("0.23e1") should be (Success(Right(0.23e1)))
+        tokeniser.lexeme.unsignedCombined.number.parse("10.0e-5") should be (Success(Right(10.0e-5)))
+        tokeniser.lexeme.unsignedCombined.number.parse("1024") should be (Success(Left(1024)))
+        tokeniser.lexeme.unsignedCombined.number.parse("0x340") should be (Success(Left(0x340)))
+        tokeniser.lexeme.unsignedCombined.number.parse("0xFF") should be (Success(Left(0xFF)))
+        tokeniser.lexeme.unsignedCombined.number.parse("0o201 //ooh, octal") should be (Success(Left(129)))
     }
     // Now they do :)
     it should "not allow hexadecimal floats without the exponent" in {
-        (tokeniser.lexeme.numeric.unsignedCombined.number <* eof).parse("0x340.0") shouldBe a [Failure[_]]
+        (tokeniser.lexeme.unsignedCombined.number <* eof).parse("0x340.0") shouldBe a [Failure[_]]
     }
     it should "not allow octal floats without the exponent" in {
-        (tokeniser.lexeme.numeric.unsignedCombined.number <* eof).parse("0o201.0") shouldBe a [Failure[_]]
+        (tokeniser.lexeme.unsignedCombined.number <* eof).parse("0o201.0") shouldBe a [Failure[_]]
     }
 
     "number" should "parse integers or floats" in {
-        tokeniser.lexeme.numeric.signedCombined.number.parse("3.142  /*what a sick number am I right*/") should be (Success(Right(3.142)))
-        tokeniser.lexeme.numeric.signedCombined.number.parse("-0.23") should be (Success(Right(-0.23)))
-        tokeniser.lexeme.numeric.signedCombined.number.parse("10.0\n") should be (Success(Right(10.0)))
-        tokeniser.lexeme.numeric.signedCombined.number.parse("+3e10") should be (Success(Right(3e10)))
-        tokeniser.lexeme.numeric.signedCombined.number.parse("5E-4") should be (Success(Right(5e-4)))
-        tokeniser.lexeme.numeric.signedCombined.number.parse("3.142e2\t ") should be (Success(Right(3.142e2)))
-        tokeniser.lexeme.numeric.signedCombined.number.parse("+0.23e1") should be (Success(Right(0.23e1)))
-        tokeniser.lexeme.numeric.signedCombined.number.parse("10.0e-5") should be (Success(Right(10.0e-5)))
-        tokeniser.lexeme.numeric.signedCombined.number.parse("-1024") should be (Success(Left(-1024)))
-        tokeniser.lexeme.numeric.signedCombined.number.parse("0x340") should be (Success(Left(0x340)))
-        tokeniser.lexeme.numeric.signedCombined.number.parse("0xFF") should be (Success(Left(0xFF)))
-        tokeniser.lexeme.numeric.signedCombined.number.parse("0o201 //ooh, octal") should be (Success(Left(129)))
+        tokeniser.lexeme.signedCombined.number.parse("3.142  /*what a sick number am I right*/") should be (Success(Right(3.142)))
+        tokeniser.lexeme.signedCombined.number.parse("-0.23") should be (Success(Right(-0.23)))
+        tokeniser.lexeme.signedCombined.number.parse("10.0\n") should be (Success(Right(10.0)))
+        tokeniser.lexeme.signedCombined.number.parse("+3e10") should be (Success(Right(3e10)))
+        tokeniser.lexeme.signedCombined.number.parse("5E-4") should be (Success(Right(5e-4)))
+        tokeniser.lexeme.signedCombined.number.parse("3.142e2\t ") should be (Success(Right(3.142e2)))
+        tokeniser.lexeme.signedCombined.number.parse("+0.23e1") should be (Success(Right(0.23e1)))
+        tokeniser.lexeme.signedCombined.number.parse("10.0e-5") should be (Success(Right(10.0e-5)))
+        tokeniser.lexeme.signedCombined.number.parse("-1024") should be (Success(Left(-1024)))
+        tokeniser.lexeme.signedCombined.number.parse("0x340") should be (Success(Left(0x340)))
+        tokeniser.lexeme.signedCombined.number.parse("0xFF") should be (Success(Left(0xFF)))
+        tokeniser.lexeme.signedCombined.number.parse("0o201 //ooh, octal") should be (Success(Left(129)))
     }
 }
