@@ -96,10 +96,10 @@
     <li class="level2 nav-leaf"><a href="../Parsley.html"><code>parsley.Parsley</code></a></li>
     <li class="level2 nav-leaf"><a href="../character.html"><code>parsley.character</code></a></li>
     <li class="level2 nav-leaf"><a href="../combinator.html"><code>parsley.combinator</code></a></li>
-    <li class="level2 nav-leaf"><a href="../generic.html"><code>parsley.genericbridges</code></a></li>
-    <li class="level2 nav-leaf"><a href="../syntax.html"><code>parsley.implicits</code></a></li>
+    <li class="level2 nav-leaf"><a href="../generic.html"><code>parsley.generic</code></a></li>
+    <li class="level2 nav-leaf"><a href="../syntax.html"><code>parsley.syntax</code></a></li>
     <li class="level2 nav-leaf"><a href="../position.html"><code>parsley.position</code></a></li>
-    <li class="level2 nav-leaf"><a href="../state.html"><code>parsley.registers</code></a></li>
+    <li class="level2 nav-leaf"><a href="../state.html"><code>parsley.state</code></a></li>
     <li class="level2 nav-leaf"><a href="../debug.html"><code>parsley.debug</code></a></li>
     <li class="level2 nav-header"><code>parsley.expr</code></li>
     <li class="level3 nav-leaf"><a href="../expr/chain.html"><code>chain</code></a></li>
@@ -285,7 +285,7 @@
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">builder</span><span> = </span><span class="keyword">new</span><span> </span><span class="type-name">DefaultErrorBuilder</span><span> </span><span class="keyword">with</span><span> </span><span class="type-name">LexToken</span><span> {
     </span><span class="keyword">def</span><span> </span><span class="declaration-name">tokens</span><span> = </span><span class="type-name">Seq</span><span>(
-        </span><span class="identifier">lexer</span><span>.</span><span class="identifier">nonlexeme</span><span>.</span><span class="identifier">numeric</span><span>.</span><span class="identifier">integer</span><span>.</span><span class="identifier">decimal</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">n</span><span> =&gt; </span><span class="string-literal">s&quot;integer </span><span class="substitution">$n</span><span class="string-literal">&quot;</span><span>),
+        </span><span class="identifier">lexer</span><span>.</span><span class="identifier">nonlexeme</span><span>.</span><span class="identifier">integer</span><span>.</span><span class="identifier">decimal</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">n</span><span> =&gt; </span><span class="string-literal">s&quot;integer </span><span class="substitution">$n</span><span class="string-literal">&quot;</span><span>),
         </span><span class="identifier">lexer</span><span>.</span><span class="identifier">nonlexeme</span><span>.</span><span class="identifier">names</span><span>.</span><span class="identifier">identifier</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">v</span><span> =&gt; </span><span class="string-literal">s&quot;identifier </span><span class="substitution">$v</span><span class="string-literal">&quot;</span><span>)
     ) ++ </span><span class="identifier">desc</span><span>.</span><span class="identifier">symbolDesc</span><span>.</span><span class="identifier">hardKeywords</span><span>.</span><span class="identifier">map</span><span> { </span><span class="identifier">k</span><span> =&gt;
         </span><span class="identifier">lexer</span><span>.</span><span class="identifier">nonlexeme</span><span>.</span><span class="identifier">symbol</span><span>(</span><span class="identifier">k</span><span>).</span><span class="identifier">as</span><span>(</span><span class="string-literal">s&quot;keyword </span><span class="substitution">$k</span><span class="string-literal">&quot;</span><span>)

@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Typelevel Laika + Parsley Theme" />
     
-    <title>Syntactic Extensions (parsley.implicits)</title>
+    <title>Syntactic Extensions (parsley.syntax)</title>
     
     
     <meta name="author" content="parsley contributors"/>
@@ -96,10 +96,10 @@
     <li class="level2 nav-leaf"><a href="Parsley.html"><code>parsley.Parsley</code></a></li>
     <li class="level2 nav-leaf"><a href="character.html"><code>parsley.character</code></a></li>
     <li class="level2 nav-leaf"><a href="combinator.html"><code>parsley.combinator</code></a></li>
-    <li class="level2 nav-leaf"><a href="generic.html"><code>parsley.genericbridges</code></a></li>
-    <li class="level2 active nav-leaf"><a href="#"><code>parsley.implicits</code></a></li>
+    <li class="level2 nav-leaf"><a href="generic.html"><code>parsley.generic</code></a></li>
+    <li class="level2 active nav-leaf"><a href="#"><code>parsley.syntax</code></a></li>
     <li class="level2 nav-leaf"><a href="position.html"><code>parsley.position</code></a></li>
-    <li class="level2 nav-leaf"><a href="state.html"><code>parsley.registers</code></a></li>
+    <li class="level2 nav-leaf"><a href="state.html"><code>parsley.state</code></a></li>
     <li class="level2 nav-leaf"><a href="debug.html"><code>parsley.debug</code></a></li>
     <li class="level2 nav-header"><code>parsley.expr</code></li>
     <li class="level3 nav-leaf"><a href="expr/chain.html"><code>chain</code></a></li>
@@ -134,7 +134,7 @@
 
       
 <nav id="page-nav">
-  <p class="header"><a href="#"><code>parsley.implicits</code></a></p>
+  <p class="header"><a href="#"><code>parsley.syntax</code></a></p>
 
   <ul class="nav-list">
     <li class="level1 nav-leaf"><a href="#implicit-conversions">Implicit Conversions</a></li>
@@ -147,28 +147,26 @@
 
       <main class="content">
 
-        <h1 id="synactic-extensions-parsley-implicits" class="title">Synactic Extensions (<code>parsley.implicits</code>)</h1>
-        <p>The <code>parsley.implicits</code> package contains several modules that enable new &quot;syntax&quot;
+        <h1 id="synactic-extensions-parsley-syntax" class="title">Synactic Extensions (<code>parsley.syntax</code>)</h1>
+        <p>The <code>parsley.syntax</code> package contains several modules that enable new &quot;syntax&quot;
         on parsers or other values. There are currently four such modules:</p>
         <ul>
-          <li><code>parsley.implicits.character</code>: contains conversions that allow for character
+          <li><code>parsley.syntax.character</code>: contains conversions that allow for character
           and string literals to serve as parsers.</li>
-          <li><code>parsley.implicits.combinator</code>: contains an implicit function that allows any
-          parser to drop its result when required by the type of another combinator.</li>
-          <li><code>parsley.implicits.lift</code>: enables the <code>lift</code> method on functions to allow them
+          <li><code>parsley.syntax.lift</code>: enables the <code>lift</code> method on functions to allow them
           to work on parsers.</li>
-          <li><code>parsley.implicits.zipped</code>: enables the <code>zipped</code> method on tuples of parsers to
+          <li><code>parsley.syntax.zipped</code>: enables the <code>zipped</code> method on tuples of parsers to
           sequence and combine their results with a single function.</li>
         </ul>
         
         <h2 id="implicit-conversions" class="section"><a class="anchor-link left" href="#implicit-conversions"><i class="icofont-laika link">&#xef71;</i></a>Implicit Conversions</h2>
-        <p>The <code>charLift</code> and <code>stringLift</code> conversions in <code>parsley.implicits.character</code>
+        <p>The <code>charLift</code> and <code>stringLift</code> conversions in <code>parsley.syntax.character</code>
         allow for Scala character and string literals to work directly as parsers for
         those specific literals. For example:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">_</span><span>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">_</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="char-literal">&#39;a&#39;</span><span> ~&gt; </span><span class="string-literal">&quot;bc&quot;</span><span>
-</span><span class="comment">// p: parsley.Parsley[String] = parsley.Parsley@23549220
+</span><span class="comment">// p: parsley.Parsley[String] = parsley.Parsley@3b83c484
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>)
 </span><span class="comment">// res0: parsley.Result[String, String] = Success(bc)
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;axy&quot;</span><span>)
@@ -208,7 +206,7 @@
         ways of sequencing parsers in an idiomatic way. The <code>lift</code> syntax is perhaps
         more natural, where the function to apply appears to the left of the arguments:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">char</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">lift</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">lift</span><span>.</span><span class="identifier">_</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">add</span><span> = (</span><span class="identifier">x</span><span>: </span><span class="type-name">Int</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Int</span><span>) =&gt; </span><span class="identifier">x</span><span> + </span><span class="identifier">y</span><span>
 </span><span class="comment">// add: (Int, Int) =&gt; Int = &lt;function2&gt;
@@ -226,7 +224,7 @@
         <p>This is where <code>zipped</code> comes in: by placing the function to the right of its
         arguments, it can infer the type of the function based on the arguments. This
         may appear slightly less natural, however:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">zipped</span><span>.</span><span class="identifier">_</span><span>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">zipped</span><span>.</span><span class="identifier">_</span><span>
 (</span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;a&#39;</span><span>).</span><span class="identifier">as</span><span>(</span><span class="number-literal">5</span><span>), </span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;b&#39;</span><span>).</span><span class="identifier">as</span><span>(</span><span class="number-literal">6</span><span>)).</span><span class="identifier">zipped</span><span>(</span><span class="identifier">_</span><span> + </span><span class="identifier">_</span><span>).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;ab&quot;</span><span>)
 </span><span class="comment">// res6: parsley.Result[String, Int] = Success(11)</span></code></pre>
         <p>Both <code>lift</code> and <code>zipped</code> work for up to 22-argument functions.</p>

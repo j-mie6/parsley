@@ -96,10 +96,10 @@
     <li class="level2 nav-leaf"><a href="Parsley.html"><code>parsley.Parsley</code></a></li>
     <li class="level2 nav-leaf"><a href="character.html"><code>parsley.character</code></a></li>
     <li class="level2 nav-leaf"><a href="combinator.html"><code>parsley.combinator</code></a></li>
-    <li class="level2 nav-leaf"><a href="generic.html"><code>parsley.genericbridges</code></a></li>
-    <li class="level2 nav-leaf"><a href="syntax.html"><code>parsley.implicits</code></a></li>
+    <li class="level2 nav-leaf"><a href="generic.html"><code>parsley.generic</code></a></li>
+    <li class="level2 nav-leaf"><a href="syntax.html"><code>parsley.syntax</code></a></li>
     <li class="level2 nav-leaf"><a href="position.html"><code>parsley.position</code></a></li>
-    <li class="level2 nav-leaf"><a href="state.html"><code>parsley.registers</code></a></li>
+    <li class="level2 nav-leaf"><a href="state.html"><code>parsley.state</code></a></li>
     <li class="level2 active nav-leaf"><a href="#"><code>parsley.debug</code></a></li>
     <li class="level2 nav-header"><code>parsley.expr</code></li>
     <li class="level3 nav-leaf"><a href="expr/chain.html"><code>chain</code></a></li>
@@ -139,7 +139,7 @@
   <ul class="nav-list">
     <li class="level1 nav-node"><a href="#debugging-problematic-parsers-debug">Debugging Problematic Parsers (<code>debug</code>)</a></li>
     <li class="level2 nav-leaf"><a href="#breakpoints">Breakpoints</a></li>
-    <li class="level2 nav-leaf"><a href="#watching-registers">Watching Registers</a></li>
+    <li class="level2 nav-leaf"><a href="#watching-references">Watching References</a></li>
     <li class="level1 nav-leaf"><a href="#debugging-error-messages-debugerror">Debugging Error Messages (<code>debugError</code>)</a></li>
     <li class="level1 nav-leaf"><a href="#profiling-parser-profiler">Profiling Parser (<code>Profiler</code>)</a></li>
   </ul>
@@ -171,7 +171,7 @@
             | </span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;hey&quot;</span><span>).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;hey&quot;</span><span>)
             | </span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;hi&quot;</span><span>).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;hi&quot;</span><span>)
             )
-</span><span class="comment">// hello: parsley.Parsley[String] = parsley.Parsley@2c9c1ab0
+</span><span class="comment">// hello: parsley.Parsley[String] = parsley.Parsley@645842ec
 </span><span>
 </span><span class="identifier">debug</span><span>.</span><span class="identifier">disableColourRendering</span><span>()
 
@@ -223,27 +223,27 @@
         pause execution on the entry to the combinator, requiring input on the console to proceed, and <code>ExitBreak</code>
         will do the same during the exit.</p>
         
-        <h3 id="watching-registers" class="section"><a class="anchor-link left" href="#watching-registers"><i class="icofont-laika link">&#xef71;</i></a>Watching Registers</h3>
-        <p>The <code>debug</code> combinator takes a variadic number of register/name pairs as its last argument. These
-        allow you to watch the values stored in registers as well during the debugging process. For instance:</p>
+        <h3 id="watching-references" class="section"><a class="anchor-link left" href="#watching-references"><i class="icofont-laika link">&#xef71;</i></a>Watching References</h3>
+        <p>The <code>debug</code> combinator takes a variadic number of reference/name pairs as its last argument. These
+        allow you to watch the values stored in references as well during the debugging process. For instance:</p>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>.</span><span class="identifier">atomic</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">registers</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">state</span><span>.</span><span class="identifier">_</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">string</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">debug</span><span>.</span><span class="identifier">_</span><span>
 
-</span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="number-literal">0</span><span>.</span><span class="identifier">makeReg</span><span> { </span><span class="identifier">r1</span><span> =&gt;
-    </span><span class="boolean-literal">false</span><span>.</span><span class="identifier">makeReg</span><span> { </span><span class="identifier">r2</span><span> =&gt;
+</span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="number-literal">0</span><span>.</span><span class="identifier">makeRef</span><span> { </span><span class="identifier">r1</span><span> =&gt;
+    </span><span class="boolean-literal">false</span><span>.</span><span class="identifier">makeRef</span><span> { </span><span class="identifier">r2</span><span> =&gt;
         </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = (  </span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;hello&quot;</span><span>)
-                ~&gt; </span><span class="identifier">r1</span><span>.</span><span class="identifier">modify</span><span>(</span><span class="identifier">_</span><span> + </span><span class="number-literal">5</span><span>)
+                ~&gt; </span><span class="identifier">r1</span><span>.</span><span class="identifier">update</span><span>(</span><span class="identifier">_</span><span> + </span><span class="number-literal">5</span><span>)
                 ~&gt; ( </span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;!&quot;</span><span>)
-                   | </span><span class="identifier">r2</span><span>.</span><span class="identifier">put</span><span>(</span><span class="boolean-literal">true</span><span>) ~&gt; </span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;?&quot;</span><span>)
+                   | </span><span class="identifier">r2</span><span>.</span><span class="identifier">set</span><span>(</span><span class="boolean-literal">true</span><span>) ~&gt; </span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;?&quot;</span><span>)
                    ).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;punctuation&quot;</span><span>, </span><span class="identifier">r2</span><span> -&gt; </span><span class="string-literal">&quot;r2&quot;</span><span>)
                 )
         </span><span class="identifier">r1</span><span>.</span><span class="identifier">rollback</span><span>(</span><span class="identifier">atomic</span><span>(</span><span class="identifier">p</span><span>).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;hello!&quot;</span><span>, </span><span class="identifier">r1</span><span> -&gt; </span><span class="string-literal">&quot;r1&quot;</span><span>, </span><span class="identifier">r2</span><span> -&gt; </span><span class="string-literal">&quot;r2&quot;</span><span>))
           .</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;rollback&quot;</span><span>, </span><span class="identifier">r1</span><span> -&gt; </span><span class="string-literal">&quot;r1&quot;</span><span>)
     }
 }
-</span><span class="comment">// p: parsley.Parsley[String] = parsley.Parsley@391da648
+</span><span class="comment">// p: parsley.Parsley[String] = parsley.Parsley@af1db87
 </span><span>
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;hello world&quot;</span><span>)
 </span><span class="comment">// &gt;rollback&gt; (1, 1): hello·
@@ -288,7 +288,7 @@
         <p>The <code>debugError</code> is a slightly more experimental combinator that aims to provide some (lower-level)
         insight into how an error message came to be. For instance:</p>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">letter</span><span>, </span><span class="identifier">digit</span><span>, </span><span class="identifier">char</span><span>}
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">many</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>.</span><span class="identifier">many</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">debug</span><span>.</span><span class="identifier">_</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">q</span><span> = (</span><span class="identifier">many</span><span>( ( </span><span class="identifier">digit</span><span>.</span><span class="identifier">debugError</span><span>(</span><span class="string-literal">&quot;digit&quot;</span><span>)
@@ -297,7 +297,7 @@
              ).</span><span class="identifier">debugError</span><span>(</span><span class="string-literal">&quot;many letterOrDigit&quot;</span><span>)
       ~&gt; </span><span class="identifier">many</span><span>(</span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;@&#39;</span><span>).</span><span class="identifier">debugError</span><span>(</span><span class="string-literal">&quot;@&quot;</span><span>)).</span><span class="identifier">debugError</span><span>(</span><span class="string-literal">&quot;many @&quot;</span><span>)
       ~&gt; </span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;#&#39;</span><span>).</span><span class="identifier">debugError</span><span>(</span><span class="string-literal">&quot;#&quot;</span><span>)) | </span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;!&#39;</span><span>).</span><span class="identifier">debugError</span><span>(</span><span class="string-literal">&quot;!&quot;</span><span>)
-</span><span class="comment">// q: parsley.Parsley[Char] = parsley.Parsley@12a52e57
+</span><span class="comment">// q: parsley.Parsley[Char] = parsley.Parsley@65760618
 </span><span>
 </span><span class="identifier">q</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;$&quot;</span><span>)
 </span><span class="comment">// &gt;many letterOrDigit&gt; (offset 0, line 1, col 1): current hints are Set() (valid at offset 0)
@@ -393,10 +393,10 @@
 </span><span class="identifier">profiler</span><span>.</span><span class="identifier">summary</span><span>()
 </span><span class="comment">// name                    self time   num calls   average self time
 // -----------------------------------------------------------------
-// classic string          27770.9μs       10001             2.776μs
-// voided optimised string  1504.6μs       10000             0.150μs
-// optimised string         7582.7μs       10000             0.758μs
-// voided classic string     932.0μs       10001             0.093μs
+// classic string          29578.1μs       10001             2.957μs
+// voided optimised string  2566.7μs       10000             0.256μs
+// optimised string         8115.5μs       10000             0.811μs
+// voided classic string    3976.2μs       10001             0.397μs
 // -----------------------------------------------------------------</span></code></pre>
         <p>The above example shows that the <code>string</code> combinator is much faster than the &quot;classic&quot; definition
         in terms of <code>traverse</code> and <code>char</code> (not even accounting for its improved error messages!). However,

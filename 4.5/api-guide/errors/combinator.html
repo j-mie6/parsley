@@ -96,10 +96,10 @@
     <li class="level2 nav-leaf"><a href="../Parsley.html"><code>parsley.Parsley</code></a></li>
     <li class="level2 nav-leaf"><a href="../character.html"><code>parsley.character</code></a></li>
     <li class="level2 nav-leaf"><a href="../combinator.html"><code>parsley.combinator</code></a></li>
-    <li class="level2 nav-leaf"><a href="../generic.html"><code>parsley.genericbridges</code></a></li>
-    <li class="level2 nav-leaf"><a href="../syntax.html"><code>parsley.implicits</code></a></li>
+    <li class="level2 nav-leaf"><a href="../generic.html"><code>parsley.generic</code></a></li>
+    <li class="level2 nav-leaf"><a href="../syntax.html"><code>parsley.syntax</code></a></li>
     <li class="level2 nav-leaf"><a href="../position.html"><code>parsley.position</code></a></li>
-    <li class="level2 nav-leaf"><a href="../state.html"><code>parsley.registers</code></a></li>
+    <li class="level2 nav-leaf"><a href="../state.html"><code>parsley.state</code></a></li>
     <li class="level2 nav-leaf"><a href="../debug.html"><code>parsley.debug</code></a></li>
     <li class="level2 nav-header"><code>parsley.expr</code></li>
     <li class="level3 nav-leaf"><a href="../expr/chain.html"><code>chain</code></a></li>
@@ -310,7 +310,7 @@
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="type-name">ErrorMethods</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">digit</span><span> = </span><span class="identifier">satisfy</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">isDigit</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;digit&quot;</span><span>)
-</span><span class="comment">// digit: parsley.Parsley[Char] = parsley.Parsley@53626fcc
+</span><span class="comment">// digit: parsley.Parsley[Char] = parsley.Parsley@91ee57a
 </span><span class="identifier">digit</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;a&quot;</span><span>)
 </span><span class="comment">// res9: parsley.Result[String, Char] = Failure((line 1, column 1):
 //   unexpected &quot;a&quot;
@@ -328,7 +328,7 @@
         error message properly lines up with the point the input was at when it
         entered the combinator - otherwise, the label may be inaccurate. For example:</p>
         <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">twoDigits</span><span> = (</span><span class="identifier">digit</span><span> *&gt; </span><span class="identifier">digit</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;two digits&quot;</span><span>)
-</span><span class="comment">// twoDigits: parsley.Parsley[Char] = parsley.Parsley@43a20c89
+</span><span class="comment">// twoDigits: parsley.Parsley[Char] = parsley.Parsley@5be0e3b8
 </span><span class="identifier">twoDigits</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;a&quot;</span><span>)
 </span><span class="comment">// res10: parsley.Result[String, Char] = Failure((line 1, column 1):
 //   unexpected &quot;a&quot;
@@ -396,7 +396,7 @@
 //    ^)</span></code></pre>
         <p>Notice that the above error makes no sense. This is why <code>amend</code> is a precision
         tool: it should ideally be used in conjunction with other combinators. For instance:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">charLift</span><span>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">charLift</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">choice</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">noneOf</span><span>, </span><span class="identifier">stringOfMany</span><span>}
 

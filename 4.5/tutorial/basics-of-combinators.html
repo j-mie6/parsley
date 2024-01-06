@@ -96,10 +96,10 @@
     <li class="level2 nav-leaf"><a href="../api-guide/Parsley.html"><code>parsley.Parsley</code></a></li>
     <li class="level2 nav-leaf"><a href="../api-guide/character.html"><code>parsley.character</code></a></li>
     <li class="level2 nav-leaf"><a href="../api-guide/combinator.html"><code>parsley.combinator</code></a></li>
-    <li class="level2 nav-leaf"><a href="../api-guide/generic.html"><code>parsley.genericbridges</code></a></li>
-    <li class="level2 nav-leaf"><a href="../api-guide/syntax.html"><code>parsley.implicits</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/generic.html"><code>parsley.generic</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/syntax.html"><code>parsley.syntax</code></a></li>
     <li class="level2 nav-leaf"><a href="../api-guide/position.html"><code>parsley.position</code></a></li>
-    <li class="level2 nav-leaf"><a href="../api-guide/state.html"><code>parsley.registers</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/state.html"><code>parsley.state</code></a></li>
     <li class="level2 nav-leaf"><a href="../api-guide/debug.html"><code>parsley.debug</code></a></li>
     <li class="level2 nav-header"><code>parsley.expr</code></li>
     <li class="level3 nav-leaf"><a href="../api-guide/expr/chain.html"><code>chain</code></a></li>
@@ -388,7 +388,7 @@
         From now on, I&#39;m going to use some syntactic sugar from <code>parsley.implicits</code> so I don&#39;t have to
         write <code>char</code> or <code>string</code>.</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">charLift</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">charLift</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">aOrB</span><span> = </span><span class="char-literal">&#39;a&#39;</span><span> &lt;|&gt; </span><span class="char-literal">&#39;b&#39;</span></code></pre>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">aOrB</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;a&quot;</span><span>)
@@ -407,7 +407,7 @@
         <p>Let&#39;s carry on reinforcing the connections with what we&#39;ve seen so far, and see how sequencing
         and branching interact:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">charLift</span><span>, </span><span class="identifier">stringLift</span><span>}
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">charLift</span><span>, </span><span class="identifier">stringLift</span><span>}
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="char-literal">&#39;a&#39;</span><span> ~&gt; (</span><span class="string-literal">&quot;a&quot;</span><span> | </span><span class="string-literal">&quot;bc&quot;</span><span>) &lt;~ </span><span class="char-literal">&#39;d&#39;</span><span>
 
@@ -422,7 +422,7 @@
         basically reads a bunch of characters in sequence, one after the other. Let&#39;s see what happens when
         we put longer strings inside the branches:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">stringLift</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">stringLift</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> | </span><span class="string-literal">&quot;def&quot;</span><span> | </span><span class="string-literal">&quot;dead&quot;</span></code></pre>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>)
@@ -436,7 +436,7 @@
         to this is fairly simple, but I want to illustrate how we can make steps towards diagnosing this
         problem ourselves using the combinators found in <code>parsley.debug</code>:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">stringLift</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">stringLift</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">debug</span><span>.</span><span class="identifier">_</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = (</span><span class="string-literal">&quot;abc&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading abc&quot;</span><span>) |
@@ -506,7 +506,7 @@
         as keeping parsers efficient. The &quot;best&quot; solution to this problem is to change our parser slightly
         to remove the common leading string of the last two alternatives like so:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">charLift</span><span>, </span><span class="identifier">stringLift</span><span>}
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">charLift</span><span>, </span><span class="identifier">stringLift</span><span>}
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> | (</span><span class="string-literal">&quot;de&quot;</span><span> ~&gt; (</span><span class="char-literal">&#39;f&#39;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>) | </span><span class="string-literal">&quot;ad&quot;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="string-literal">&quot;dead&quot;</span><span>)))</span></code></pre>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>)
@@ -530,14 +530,14 @@
         first consumed input before failing. That is to say it doesn&#39;t <em>backtrack</em>. There is, however, a
         combinator that allows <code>|</code> to backtrack in these circumstances, called <code>atomic</code>. Let&#39;s see it in action:</p>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>, </span><span class="type-name">Parsley</span><span>.</span><span class="identifier">atomic</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">stringLift</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">stringLift</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">debug</span><span>.</span><span class="identifier">_</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> | </span><span class="identifier">atomic</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>) | </span><span class="string-literal">&quot;dead&quot;</span><span>
-</span><span class="comment">// p: Parsley[String] = parsley.Parsley@4e16357a
+</span><span class="comment">// p: Parsley[String] = parsley.Parsley@6bfbeda3
 </span><span class="keyword">val</span><span> </span><span class="identifier">q</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> | (</span><span class="identifier">atomic</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading def&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;backtrack!&quot;</span><span>) |
                    </span><span class="string-literal">&quot;dead&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading dead&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;branch&quot;</span><span>)
-</span><span class="comment">// q: Parsley[String] = parsley.Parsley@5de87da9
+</span><span class="comment">// q: Parsley[String] = parsley.Parsley@b4f1b1f
 </span><span>
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;dead&quot;</span><span>)
 </span><span class="comment">// res37: parsley.Result[String, String] = Success(dead)
@@ -578,16 +578,16 @@
         this, which we&#39;ll explore now:</p>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>, </span><span class="type-name">Parsley</span><span>.{</span><span class="identifier">notFollowedBy</span><span>, </span><span class="identifier">lookAhead</span><span>}
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">item</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">stringLift</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">stringLift</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">debug</span><span>.</span><span class="identifier">_</span><span>
 
 </span><span class="comment">// def lookAhead[A](p: Parsley[A]): Parsley[A]
 // def notFollowedBy(p: Parsley[_]): Parsley[Unit]
 </span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">eof</span><span> = </span><span class="identifier">notFollowedBy</span><span>(</span><span class="identifier">item</span><span>)
-</span><span class="comment">// eof: Parsley[Unit] = parsley.Parsley@31a2f064
+</span><span class="comment">// eof: Parsley[Unit] = parsley.Parsley@60cd7cbe
 </span><span class="keyword">val</span><span> </span><span class="identifier">abcOnly</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> &lt;~ </span><span class="identifier">eof</span><span>
-</span><span class="comment">// abcOnly: Parsley[String] = parsley.Parsley@47eba872
+</span><span class="comment">// abcOnly: Parsley[String] = parsley.Parsley@1c6408aa
 </span><span>
 </span><span class="identifier">abcOnly</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>)
 </span><span class="comment">// res39: parsley.Result[String, String] = Success(abc)
@@ -598,7 +598,7 @@
 //       ^)
 </span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>) &lt;~ </span><span class="identifier">lookAhead</span><span>(</span><span class="string-literal">&quot;!!&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;!!&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;lookahead&quot;</span><span>)
-</span><span class="comment">// p: Parsley[String] = parsley.Parsley@1cfefb16
+</span><span class="comment">// p: Parsley[String] = parsley.Parsley@557403a0
 </span><span>
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc!!&quot;</span><span>)
 </span><span class="comment">// &gt;abc&gt; (1, 1): abc!!•
@@ -683,9 +683,9 @@
         <p>With the exception of <code>many</code>, which we can&#39;t define just yet, all of these handy combinators are
         implemented with everything we&#39;ve seen so far. You can find them all, and many more, in
         <code>parsley.combinator</code>.</p>
-        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>, </span><span class="type-name">Parsley</span><span>.</span><span class="identifier">atomic</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.{</span><span class="identifier">many</span><span>, </span><span class="identifier">some</span><span>, </span><span class="identifier">optional</span><span>, </span><span class="identifier">eof</span><span>}
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">charLift</span><span>, </span><span class="identifier">stringLift</span><span>}
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>, </span><span class="type-name">Parsley</span><span>.{</span><span class="identifier">atomic</span><span>, </span><span class="identifier">eof</span><span>, </span><span class="identifier">many</span><span>, </span><span class="identifier">some</span><span>}
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">optional</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">charLift</span><span>, </span><span class="identifier">stringLift</span><span>}
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">noneOf</span><span>, </span><span class="identifier">oneOf</span><span>, </span><span class="identifier">item</span><span>}
 
 </span><span class="comment">// regex .at
@@ -738,11 +738,10 @@
         with regex:
         <a href="https://stackoverflow.com/questions/1732348/regex-match-open-tags-except-xhtml-self-contained-tags">here</a>
         comes to mind...):</p>
-        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">charLift</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.{</span><span class="identifier">skipMany</span><span>, </span><span class="identifier">eof</span><span>}
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>, </span><span class="type-name">Parsley</span><span>.{</span><span class="identifier">eof</span><span>, </span><span class="identifier">many</span><span>}
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">charLift</span><span>
 
-</span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">matching</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">skipMany</span><span>(</span><span class="char-literal">&#39;(&#39;</span><span> *&gt; </span><span class="identifier">matching</span><span> &lt;* </span><span class="char-literal">&#39;)&#39;</span><span>)
+</span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">matching</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">many</span><span>(</span><span class="char-literal">&#39;(&#39;</span><span> *&gt; </span><span class="identifier">matching</span><span> &lt;* </span><span class="char-literal">&#39;)&#39;</span><span>).</span><span class="identifier">void</span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">onlyMatching</span><span> = </span><span class="identifier">matching</span><span> &lt;* </span><span class="identifier">eof</span><span>
 
 </span><span class="identifier">onlyMatching</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;&quot;</span><span>) </span><span class="comment">// succeeds
@@ -890,9 +889,9 @@
         However, I&#39;ll make the inefficient parser first, as it has the simpler translation (even if it&#39;s
         less efficient) and will give a sense of how the solution works out.</p>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>, </span><span class="type-name">Parsley</span><span>.</span><span class="identifier">atomic</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">stringLift</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">lift</span><span>.</span><span class="type-name">Lift2</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">zipped</span><span>.</span><span class="type-name">Zipped2</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">stringLift</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">lift</span><span>.</span><span class="type-name">Lift2</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">zipped</span><span>.</span><span class="type-name">Zipped2</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">or</span><span> = (</span><span class="identifier">x</span><span>: </span><span class="type-name">Boolean</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Boolean</span><span>) =&gt; </span><span class="identifier">x</span><span> || </span><span class="identifier">y</span><span>
 
@@ -932,8 +931,8 @@
         is not ideal because of the heavy backtracking implied by the use of <code>atomic</code>. The solution, as I&#39;ve
         said, is to implement the second grammar. This is, as we&#39;ll see, a little tricker:</p>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">stringLift</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">lift</span><span>.</span><span class="type-name">Lift2</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">stringLift</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">lift</span><span>.</span><span class="type-name">Lift2</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">option</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">and</span><span> = (</span><span class="identifier">y</span><span>: </span><span class="type-name">Boolean</span><span>) =&gt; (</span><span class="identifier">x</span><span>: </span><span class="type-name">Boolean</span><span>) =&gt; </span><span class="identifier">x</span><span> &amp;&amp; </span><span class="identifier">y</span><span>

@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Typelevel Laika + Parsley Theme" />
     
-    <title>Context-Sensitive Parsing (parsley.registers)</title>
+    <title>Context-Sensitive Parsing (parsley.state)</title>
     
     
     <meta name="author" content="parsley contributors"/>
@@ -96,10 +96,10 @@
     <li class="level2 nav-leaf"><a href="Parsley.html"><code>parsley.Parsley</code></a></li>
     <li class="level2 nav-leaf"><a href="character.html"><code>parsley.character</code></a></li>
     <li class="level2 nav-leaf"><a href="combinator.html"><code>parsley.combinator</code></a></li>
-    <li class="level2 nav-leaf"><a href="generic.html"><code>parsley.genericbridges</code></a></li>
-    <li class="level2 nav-leaf"><a href="syntax.html"><code>parsley.implicits</code></a></li>
+    <li class="level2 nav-leaf"><a href="generic.html"><code>parsley.generic</code></a></li>
+    <li class="level2 nav-leaf"><a href="syntax.html"><code>parsley.syntax</code></a></li>
     <li class="level2 nav-leaf"><a href="position.html"><code>parsley.position</code></a></li>
-    <li class="level2 active nav-leaf"><a href="#"><code>parsley.registers</code></a></li>
+    <li class="level2 active nav-leaf"><a href="#"><code>parsley.state</code></a></li>
     <li class="level2 nav-leaf"><a href="debug.html"><code>parsley.debug</code></a></li>
     <li class="level2 nav-header"><code>parsley.expr</code></li>
     <li class="level3 nav-leaf"><a href="expr/chain.html"><code>chain</code></a></li>
@@ -134,10 +134,10 @@
 
       
 <nav id="page-nav">
-  <p class="header"><a href="#"><code>parsley.registers</code></a></p>
+  <p class="header"><a href="#"><code>parsley.state</code></a></p>
 
   <ul class="nav-list">
-    <li class="level1 nav-node"><a href="#registers">Registers</a></li>
+    <li class="level1 nav-node"><a href="#references">References</a></li>
     <li class="level2 nav-leaf"><a href="#persistence">Persistence</a></li>
     <li class="level2 nav-leaf"><a href="#long-term-state">Long-Term State</a></li>
     <li class="level1 nav-leaf"><a href="#stateful-combinators">Stateful Combinators</a></li>
@@ -149,82 +149,82 @@
 
       <main class="content">
 
-        <h1 id="context-sensitive-parsing-parsley-registers" class="title">Context-Sensitive Parsing (<code>parsley.registers</code>)</h1>
+        <h1 id="context-sensitive-parsing-parsley-state" class="title">Context-Sensitive Parsing (<code>parsley.state</code>)</h1>
         <p>Normally, context-sensitive parsing can be done with monadic <code>flatMap</code>. However,
         in <code>parsley</code>, <code>flatMap</code> is a very expensive operation and is best avoided.
-        Instead, <code>parsley</code> supports a form of arbitrary state threading called <em>registers</em>. These can be used to perform context-sensitive parsing in a
+        Instead, <code>parsley</code> supports a form of arbitrary state threading called <em>references</em>. These can be used to perform context-sensitive parsing in a
         more performant way at a cost to expressive power.</p>
         <div class="callout info">
           <i class="icofont-laika info">&#xef4e;</i>
-          <p><em>The Scaladoc for this page can be found at <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/registers$.html"><code>parsley.registers</code></a>.</em></p>
+          <p><em>The Scaladoc for this page can be found at <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/state$.html"><code>parsley.state</code></a>.</em></p>
         </div>
         
-        <h2 id="registers" class="section"><a class="anchor-link left" href="#registers"><i class="icofont-laika link">&#xef71;</i></a>Registers</h2>
-        <p>A register is a single piece of mutable state threaded through a parser.
+        <h2 id="references" class="section"><a class="anchor-link left" href="#references"><i class="icofont-laika link">&#xef71;</i></a>References</h2>
+        <p>A reference is a single piece of mutable state threaded through a parser.
         They can be made in three different ways:</p>
         <ol class="arabic">
           <li>
-            <p>Importing <code>parsley.registers.RegisterMaker</code> allows the use of the <code>makeReg</code>
+            <p>Importing <code>parsley.state.RefMaker</code> allows the use of the <code>makeRef</code>
             method on any type <code>A</code>:</p>
-            <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">makeReg</span><span>[</span><span class="type-name">B</span><span>](</span><span class="identifier">body</span><span>: </span><span class="type-name">Reg</span><span>[</span><span class="type-name">A</span><span>] =&gt; </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">B</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">B</span><span>]</span></code></pre>
-            <p>This will construct a new register filled with the receiver value, and this can be used within the scope of the given continuation. Everytime this is
+            <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">makeRef</span><span>[</span><span class="type-name">B</span><span>](</span><span class="identifier">body</span><span>: </span><span class="type-name">Ref</span><span>[</span><span class="type-name">A</span><span>] =&gt; </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">B</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">B</span><span>]</span></code></pre>
+            <p>This will construct a new reference filled with the receiver value, and this can be used within the scope of the given continuation. Everytime this is
             executed, it will be uniquely scoped (when the parser is recursive).</p>
           </li>
           <li>
-            <p>Similarly, importing <code>parsley.registers.RegisterMethods</code> allows the use of
-            the <code>fillReg</code> combinator on <code>Parsley[A]</code>, which has the same signature as
-            <code>makeReg</code>.</p>
-            <p>It behaves similarly to <code>makeReg</code>, but sources its result from a parser.
-            Loosely: <code>p.fillReg(body)</code> is the same as <code>p.flatMap(_.makeReg(body))</code>,
+            <p>Similarly, importing <code>parsley.state.StateCombinators</code> allows the use of
+            the <code>fillRef</code> combinator on <code>Parsley[A]</code>, which has the same signature as
+            <code>makeRef</code>.</p>
+            <p>It behaves similarly to <code>makeRef</code>, but sources its result from a parser.
+            Loosely: <code>p.fillRef(body)</code> is the same as <code>p.flatMap(_.makeRef(body))</code>,
             but is much more efficient.</p>
           </li>
           <li>
-            <p>The <code>Reg.make[A]: Reg[A]</code> method allows for the creation of a register
+            <p>The <code>Ref.make[A]: Ref[A]</code> method allows for the creation of a reference
             <em>outside</em> of the parsing context. This is not recommended, as it will
             not guarantee uniqueness of scoping. The state will <strong>not</strong> be initialised.</p>
             <div class="callout warning">
               <i class="icofont-laika warning">&#xf026;</i>
-              <p>Using the same globally constructed register in two places is undefined
+              <p>Using the same globally constructed reference in two places is undefined
               behaviour and should <em>not</em> be done.</p>
             </div>
           </li>
         </ol>
-        <p>Registers themselves have two core operations, with several more built on top:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">class</span><span> </span><span class="type-name">Reg</span><span>[</span><span class="type-name">A</span><span>] {
+        <p>References themselves have two core operations, with several more built on top:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">class</span><span> </span><span class="type-name">Ref</span><span>[</span><span class="type-name">A</span><span>] {
     </span><span class="keyword">def</span><span> </span><span class="declaration-name">get</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]
-    </span><span class="keyword">def</span><span> </span><span class="declaration-name">put</span><span>(</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>]
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">set</span><span>(</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>]
 }</span></code></pre>
-        <p>The <code>get</code> method will read the register at parse-time and return the value
-        contained within. The <code>put</code> method takes the result of a parser and stores
-        that into the register. As examples:</p>
+        <p>The <code>get</code> method will read the reference at parse-time and return the value
+        contained within. The <code>set</code> method takes the result of a parser and stores
+        that into the reference. As examples:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">item</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">registers</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">state</span><span>.</span><span class="identifier">_</span><span>
 
-</span><span class="type-name">List</span><span>.</span><span class="identifier">empty</span><span>[</span><span class="type-name">Char</span><span>].</span><span class="identifier">makeReg</span><span> { </span><span class="identifier">r1</span><span> =&gt;
-    </span><span class="identifier">item</span><span>.</span><span class="identifier">fillReg</span><span> { </span><span class="identifier">r2</span><span> =&gt;
-        </span><span class="identifier">r1</span><span>.</span><span class="identifier">put</span><span>(</span><span class="identifier">r2</span><span>.</span><span class="identifier">get</span><span> &lt;::&gt; (</span><span class="identifier">r2</span><span>.</span><span class="identifier">get</span><span> &lt;::&gt; </span><span class="identifier">r1</span><span>.</span><span class="identifier">get</span><span>))
+</span><span class="type-name">List</span><span>.</span><span class="identifier">empty</span><span>[</span><span class="type-name">Char</span><span>].</span><span class="identifier">makeRef</span><span> { </span><span class="identifier">r1</span><span> =&gt;
+    </span><span class="identifier">item</span><span>.</span><span class="identifier">fillRef</span><span> { </span><span class="identifier">r2</span><span> =&gt;
+        </span><span class="identifier">r1</span><span>.</span><span class="identifier">set</span><span>(</span><span class="identifier">r2</span><span>.</span><span class="identifier">get</span><span> &lt;::&gt; (</span><span class="identifier">r2</span><span>.</span><span class="identifier">get</span><span> &lt;::&gt; </span><span class="identifier">r1</span><span>.</span><span class="identifier">get</span><span>))
     } *&gt; </span><span class="identifier">r1</span><span>.</span><span class="identifier">get</span><span>
 }.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;a&quot;</span><span>)
 </span><span class="comment">// res0: parsley.Result[String, List[Char]] = Success(List(a, a))</span></code></pre>
-        <p>The above example fills a register <code>r1</code>, with the empty list, then fills
-        a second register <code>r2</code> with the result of parsing any character. The value
+        <p>The above example fills a reference <code>r1</code>, with the empty list, then fills
+        a second reference <code>r2</code> with the result of parsing any character. The value
         in <code>r1</code> is updated with the list obtained by prepending the parsed character onto
         the empty list stored in <code>r1</code> twice. After <code>r2</code> goes out of scope, the current
         value of <code>r1</code> is returned.</p>
         
         <h3 id="persistence" class="section"><a class="anchor-link left" href="#persistence"><i class="icofont-laika link">&#xef71;</i></a>Persistence</h3>
-        <p>In the above example, the register <code>r2</code> is only used for <code>get</code>, but is used
+        <p>In the above example, the reference <code>r2</code> is only used for <code>get</code>, but is used
         multiple times. Normally, using the value of a parser more than once requires
-        a <code>flatMap</code>; this is not the case in <code>parsley</code> when using registers. To make
-        this application more ergonomic, <code>parsley.registers.RegisterMethods</code> also
+        a <code>flatMap</code>; this is not the case in <code>parsley</code> when using references. To make
+        this application more ergonomic, <code>parsley.state.StateCombinators</code> also
         exposes the <code>persist</code> combinator:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="type-name">List</span><span>.</span><span class="identifier">empty</span><span>[</span><span class="type-name">Char</span><span>].</span><span class="identifier">makeReg</span><span> { </span><span class="identifier">r1</span><span> =&gt;
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="type-name">List</span><span>.</span><span class="identifier">empty</span><span>[</span><span class="type-name">Char</span><span>].</span><span class="identifier">makeRef</span><span> { </span><span class="identifier">r1</span><span> =&gt;
     </span><span class="identifier">item</span><span>.</span><span class="identifier">persist</span><span> { </span><span class="identifier">c</span><span> =&gt;
-        </span><span class="identifier">r1</span><span>.</span><span class="identifier">put</span><span>(</span><span class="identifier">c</span><span> &lt;::&gt; (</span><span class="identifier">c</span><span> &lt;::&gt; </span><span class="identifier">r1</span><span>.</span><span class="identifier">get</span><span>))
+        </span><span class="identifier">r1</span><span>.</span><span class="identifier">set</span><span>(</span><span class="identifier">c</span><span> &lt;::&gt; (</span><span class="identifier">c</span><span> &lt;::&gt; </span><span class="identifier">r1</span><span>.</span><span class="identifier">get</span><span>))
     } *&gt; </span><span class="identifier">r1</span><span>.</span><span class="identifier">get</span><span>
 }.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;a&quot;</span><span>)
 </span><span class="comment">// res1: parsley.Result[String, List[Char]] = Success(List(a, a))</span></code></pre>
-        <p>Persist can be thought of as a composition of <code>fillReg</code> and <code>get</code>, or
+        <p>Persist can be thought of as a composition of <code>fillRef</code> and <code>get</code>, or
         alternatively as a composition of <code>flatMap</code> and <code>pure</code>.</p>
         
         <h4 id="using-persistence" class="section"><a class="anchor-link left" href="#using-persistence"><i class="icofont-laika link">&#xef71;</i></a>Using Persistence</h4>
@@ -232,23 +232,23 @@
         the <code>flatMap</code> combinator is expensive because it has to process the body of the
         function in full everytime it is executed, if the size of the body is reduced,
         that will keep the parser faster. Currently, there is no primitive functionality
-        for parsing with respect to values inside registers, like so:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">string</span><span>(</span><span class="identifier">r</span><span>: </span><span class="type-name">Reg</span><span>[</span><span class="type-name">String</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">r</span><span>.</span><span class="identifier">get</span><span>.</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">string</span><span>(</span><span class="identifier">_</span><span>))</span></code></pre>
+        for parsing with respect to values inside references, like so:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">string</span><span>(</span><span class="identifier">r</span><span>: </span><span class="type-name">Ref</span><span>[</span><span class="type-name">String</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">r</span><span>.</span><span class="identifier">get</span><span>.</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">string</span><span>(</span><span class="identifier">_</span><span>))</span></code></pre>
         <p>The scope of the <code>flatMap</code> in that combinator is small, however, so is likely
         much more efficient than one that didn&#39;t use persistence. With this, the
         context-sensitive parsing of XML tags can be done:</p>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>.{</span><span class="identifier">atomic</span><span>, </span><span class="identifier">notFollowedBy</span><span>}
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">stringOfSome</span><span>, </span><span class="identifier">letter</span><span>}
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">optional</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">charLift</span><span>, </span><span class="identifier">stringLift</span><span>}
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">charLift</span><span>, </span><span class="identifier">stringLift</span><span>}
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">openTag</span><span> = </span><span class="identifier">atomic</span><span>(</span><span class="char-literal">&#39;&lt;&#39;</span><span> &lt;~ </span><span class="identifier">notFollowedBy</span><span>(</span><span class="char-literal">&#39;/&#39;</span><span>))
-</span><span class="comment">// openTag: Parsley[Char] = parsley.Parsley@671eddd8
+</span><span class="comment">// openTag: Parsley[Char] = parsley.Parsley@44499a07
 </span><span class="keyword">val</span><span> </span><span class="identifier">tagName</span><span> = </span><span class="identifier">stringOfSome</span><span>(</span><span class="identifier">letter</span><span>)
-</span><span class="comment">// tagName: Parsley[String] = parsley.Parsley@620b1aff
+</span><span class="comment">// tagName: Parsley[String] = parsley.Parsley@10e4383a
 </span><span>
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">content</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">optional</span><span>(</span><span class="identifier">tag</span><span>)
-</span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">tag</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = (</span><span class="identifier">openTag</span><span> ~&gt; </span><span class="identifier">tagName</span><span> &lt;~ </span><span class="char-literal">&#39;&gt;&#39;</span><span>).</span><span class="identifier">fillReg</span><span> { </span><span class="identifier">name</span><span> =&gt;
+</span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">tag</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = (</span><span class="identifier">openTag</span><span> ~&gt; </span><span class="identifier">tagName</span><span> &lt;~ </span><span class="char-literal">&#39;&gt;&#39;</span><span>).</span><span class="identifier">fillRef</span><span> { </span><span class="identifier">name</span><span> =&gt;
     </span><span class="identifier">content</span><span> &lt;~ (</span><span class="string-literal">&quot;&lt;/&quot;</span><span> ~&gt; </span><span class="identifier">string</span><span>(</span><span class="identifier">name</span><span>) &lt;~ </span><span class="string-literal">&quot;&gt;&quot;</span><span>)
 }
 
@@ -274,12 +274,12 @@
         brackets.</p>
         
         <h4 id="matching-brackets" class="section"><a class="anchor-link left" href="#matching-brackets"><i class="icofont-laika link">&#xef71;</i></a>Matching Brackets</h4>
-        <p>The <code>local</code> combinator can be used to reset state after a specific context is
-        executed. It can be built primitively out of <code>get</code>, <code>put</code>, and <code>persist</code>. The
+        <p>The <code>setDuring</code> and <code>updateDuring</code> combinators can be used to reset state after a specific context is
+        executed. They can be built primitively out of <code>get</code>, <code>set</code>, and <code>persist</code>. The
         following parser reports the position of the last unclosed bracket that is
         well-interleaved with the other kinds of brackets.</p>
-        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">char</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.{</span><span class="identifier">eof</span><span>, </span><span class="identifier">skipMany</span><span>}
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>.{</span><span class="identifier">eof</span><span>, </span><span class="identifier">many</span><span>}
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">char</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">patterns</span><span>.</span><span class="type-name">VerifiedErrors</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">position</span><span>.</span><span class="identifier">pos</span><span>
 
@@ -300,35 +300,35 @@
     }
 }
 
-</span><span class="keyword">def</span><span> </span><span class="declaration-name">brackets</span><span> = </span><span class="type-name">Brackets</span><span>.</span><span class="identifier">empty</span><span>.</span><span class="identifier">makeReg</span><span> { </span><span class="identifier">bs</span><span> =&gt;
+</span><span class="keyword">def</span><span> </span><span class="declaration-name">brackets</span><span> = </span><span class="type-name">Brackets</span><span>.</span><span class="identifier">empty</span><span>.</span><span class="identifier">makeRef</span><span> { </span><span class="identifier">bs</span><span> =&gt;
     </span><span class="keyword">def</span><span> </span><span class="declaration-name">open</span><span>(</span><span class="identifier">c</span><span>: </span><span class="type-name">Char</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] =
-        </span><span class="identifier">char</span><span>(</span><span class="identifier">c</span><span>) ~&gt; </span><span class="identifier">bs</span><span>.</span><span class="identifier">modify</span><span>(</span><span class="identifier">pos</span><span>.</span><span class="identifier">map</span><span>[</span><span class="type-name">Brackets</span><span> =&gt; </span><span class="type-name">Brackets</span><span>](</span><span class="identifier">p</span><span> =&gt; </span><span class="identifier">_</span><span>.</span><span class="identifier">enter</span><span>(</span><span class="identifier">c</span><span>, </span><span class="identifier">p</span><span>)))
+        </span><span class="identifier">char</span><span>(</span><span class="identifier">c</span><span>) ~&gt; </span><span class="identifier">bs</span><span>.</span><span class="identifier">update</span><span>(</span><span class="identifier">pos</span><span>.</span><span class="identifier">map</span><span>[</span><span class="type-name">Brackets</span><span> =&gt; </span><span class="type-name">Brackets</span><span>](</span><span class="identifier">p</span><span> =&gt; </span><span class="identifier">_</span><span>.</span><span class="identifier">enter</span><span>(</span><span class="identifier">c</span><span>, </span><span class="identifier">p</span><span>)))
     </span><span class="keyword">def</span><span> </span><span class="declaration-name">close</span><span>(</span><span class="identifier">c</span><span>: </span><span class="type-name">Char</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] =
-        </span><span class="identifier">char</span><span>(</span><span class="identifier">c</span><span>).</span><span class="identifier">void</span><span> | </span><span class="identifier">bs</span><span>.</span><span class="identifier">get</span><span>.</span><span class="identifier">verifiedUnexpected</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">missingClose</span><span>)
+        </span><span class="identifier">char</span><span>(</span><span class="identifier">c</span><span>).</span><span class="identifier">void</span><span> | </span><span class="identifier">bs</span><span>.</span><span class="identifier">get</span><span>.</span><span class="identifier">verifiedExplain</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">missingClose</span><span>)
 
     </span><span class="comment">// ensure it is reset
-</span><span>    </span><span class="keyword">def</span><span> </span><span class="declaration-name">scope</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">bs</span><span>.</span><span class="identifier">local</span><span>(</span><span class="identifier">identity</span><span>[</span><span class="type-name">Brackets</span><span>])(</span><span class="identifier">p</span><span>)
+</span><span>    </span><span class="keyword">def</span><span> </span><span class="declaration-name">scope</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">bs</span><span>.</span><span class="identifier">updateDuring</span><span>(</span><span class="identifier">identity</span><span>[</span><span class="type-name">Brackets</span><span>])(</span><span class="identifier">p</span><span>)
 
     </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">matching</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">scope</span><span> {
-        </span><span class="identifier">skipMany</span><span> {
+        </span><span class="identifier">many</span><span> {
               </span><span class="identifier">open</span><span>(</span><span class="char-literal">&#39;(&#39;</span><span>) ~&gt; </span><span class="identifier">matching</span><span> &lt;~ </span><span class="identifier">close</span><span>(</span><span class="char-literal">&#39;)&#39;</span><span>)
             | </span><span class="identifier">open</span><span>(</span><span class="char-literal">&#39;[&#39;</span><span>) ~&gt; </span><span class="identifier">matching</span><span> &lt;~ </span><span class="identifier">close</span><span>(</span><span class="char-literal">&#39;]&#39;</span><span>)
             | </span><span class="identifier">open</span><span>(</span><span class="char-literal">&#39;{&#39;</span><span>) ~&gt; </span><span class="identifier">matching</span><span> &lt;~ </span><span class="identifier">close</span><span>(</span><span class="char-literal">&#39;}&#39;</span><span>)
-        }
+        }.</span><span class="identifier">void</span><span>
     }
     </span><span class="identifier">matching</span><span> &lt;~ </span><span class="identifier">eof</span><span>
 }</span></code></pre>
         <p>The above parser is designed to report where the last unclosed bracket
-        was. It creates a register <code>bs</code> that stores a <code>Brackets</code>, which tracks
+        was. It creates a reference <code>bs</code> that stores a <code>Brackets</code>, which tracks
         the last open character and its position. Then, whenever a bracket is
-        entered, <code>matching</code> will save the existing information using the <code>local</code>
+        entered, <code>matching</code> will save the existing information using the <code>updateDuring</code>
         combinator: giving it the <code>identity</code> function will mean it will simply restore
         the existing state after it returns. Whenever an open bracket is parsed, it
         will write its position into the state (lagging by one character), and then
         if the corresponding closing bracket cannot be parsed, it will use an
         unconditional <a href="errors/patterns.html#verified-errors"><em>Verified Error</em></a> to report a message based on the last opened bracket. The results are below:</p>
         <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="identifier">brackets</span><span>
-</span><span class="comment">// p: Parsley[Unit] = parsley.Parsley@6030b28a
+</span><span class="comment">// p: Parsley[Unit] = parsley.Parsley@33b9351d
 </span><span>
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;()()()&quot;</span><span>)
 </span><span class="comment">// res5: parsley.Result[String, Unit] = Success(())
@@ -372,15 +372,15 @@
         <p>The above is tail recursive, for instance. Combinators like <code>skipMany</code>
         are implemented tail recursively, with additional optimisations to make
         them more efficient: implementing new combinators in terms of <code>skipMany</code>
-        with registers to carry state is likely to be efficient. For example:</p>
+        with references to carry state is likely to be efficient. For example:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">setOf</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Set</span><span>[</span><span class="type-name">A</span><span>]] = {
-    </span><span class="type-name">Set</span><span>.</span><span class="identifier">empty</span><span>[</span><span class="type-name">A</span><span>].</span><span class="identifier">makeReg</span><span> { </span><span class="identifier">set</span><span> =&gt;
-        </span><span class="identifier">skipMany</span><span>(</span><span class="identifier">set</span><span>.</span><span class="identifier">modify</span><span>(</span><span class="identifier">p</span><span>.</span><span class="identifier">map</span><span>[</span><span class="type-name">Set</span><span>[</span><span class="type-name">A</span><span>] =&gt; </span><span class="type-name">Set</span><span>[</span><span class="type-name">A</span><span>]](</span><span class="identifier">x</span><span> =&gt; </span><span class="identifier">_</span><span> + </span><span class="identifier">x</span><span>))) ~&gt; </span><span class="identifier">set</span><span>.</span><span class="identifier">get</span><span>
+    </span><span class="type-name">Set</span><span>.</span><span class="identifier">empty</span><span>[</span><span class="type-name">A</span><span>].</span><span class="identifier">makeRef</span><span> { </span><span class="identifier">set</span><span> =&gt;
+        </span><span class="identifier">many</span><span>(</span><span class="identifier">set</span><span>.</span><span class="identifier">update</span><span>(</span><span class="identifier">p</span><span>.</span><span class="identifier">map</span><span>[</span><span class="type-name">Set</span><span>[</span><span class="type-name">A</span><span>] =&gt; </span><span class="type-name">Set</span><span>[</span><span class="type-name">A</span><span>]](</span><span class="identifier">x</span><span> =&gt; </span><span class="identifier">_</span><span> + </span><span class="identifier">x</span><span>))) ~&gt; </span><span class="identifier">set</span><span>.</span><span class="identifier">get</span><span>
     }
 }</span></code></pre>
-        <p>In the above code, a set is carried around in a register, and a new element
-        is added into this set every iteration. When the loop completes (successfully), the set in the register is returned. A more efficient implementation, however,
-        would use <code>persist</code> and a mutable set (along with <code>impure</code> and <code>fresh</code>): this, of course, still uses a register.</p>
+        <p>In the above code, a set is carried around in a reference, and a new element
+        is added into this set every iteration. When the loop completes (successfully), the set in the reference is returned. A more efficient implementation, however,
+        would use <code>persist</code> and a mutable set (along with <code>impure</code> and <code>fresh</code>): this, of course, still uses a reference.</p>
         
         <h4 id="whitespace-sensitive-languages" class="section"><a class="anchor-link left" href="#whitespace-sensitive-languages"><i class="icofont-laika link">&#xef71;</i></a>Whitespace-Sensitive Languages</h4>
         <p>Another application of long-term state is to track indentation levels in
@@ -394,11 +394,11 @@
         <p>For some applications, a more structured strategy for tracking state can be
         useful. The <code>forP</code> combinators allow for looping where the a stateful variable
         is used to control the control flow. For instance, the classic context-sensitive
-        grammar of <code>a^n b^n c^n</code> can be matched effectively using a register and a <code>forP</code>:</p>
+        grammar of <code>a^n b^n c^n</code> can be matched effectively using a reference and a <code>forP</code>:</p>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>.</span><span class="identifier">pure</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">registers</span><span>.</span><span class="identifier">forP</span><span>
-</span><span class="keyword">val</span><span> </span><span class="identifier">abcs</span><span> = </span><span class="number-literal">0</span><span>.</span><span class="identifier">makeReg</span><span> { </span><span class="identifier">i</span><span> =&gt;
-    </span><span class="identifier">skipMany</span><span>(</span><span class="char-literal">&#39;a&#39;</span><span> ~&gt; </span><span class="identifier">i</span><span>.</span><span class="identifier">modify</span><span>(</span><span class="identifier">_</span><span> + </span><span class="number-literal">1</span><span>)) ~&gt;
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">state</span><span>.</span><span class="identifier">forP</span><span>
+</span><span class="keyword">val</span><span> </span><span class="identifier">abcs</span><span> = </span><span class="number-literal">0</span><span>.</span><span class="identifier">makeRef</span><span> { </span><span class="identifier">i</span><span> =&gt;
+    </span><span class="identifier">many</span><span>(</span><span class="char-literal">&#39;a&#39;</span><span> ~&gt; </span><span class="identifier">i</span><span>.</span><span class="identifier">update</span><span>(</span><span class="identifier">_</span><span> + </span><span class="number-literal">1</span><span>)) ~&gt;
     </span><span class="identifier">forP</span><span>[</span><span class="type-name">Int</span><span>](</span><span class="identifier">i</span><span>.</span><span class="identifier">get</span><span>, </span><span class="identifier">pure</span><span>(</span><span class="identifier">_</span><span> &gt; </span><span class="number-literal">0</span><span>), </span><span class="identifier">pure</span><span>(</span><span class="identifier">_</span><span> - </span><span class="number-literal">1</span><span>)) {
         </span><span class="char-literal">&#39;b&#39;</span><span>
     } ~&gt;
@@ -407,7 +407,7 @@
     } ~&gt;
     </span><span class="identifier">i</span><span>.</span><span class="identifier">get</span><span> &lt;~ </span><span class="identifier">eof</span><span>
 }
-</span><span class="comment">// abcs: Parsley[Int] = parsley.Parsley@a4c9fd4
+</span><span class="comment">// abcs: Parsley[Int] = parsley.Parsley@2356d3f4
 </span><span>
 </span><span class="identifier">abcs</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;aabbcc&quot;</span><span>)
 </span><span class="comment">// res12: parsley.Result[String, Int] = Success(2)
@@ -420,7 +420,7 @@
 //   &gt;aaaabbbbbbcccc
 //            ^)</span></code></pre>
         <p>First, as many <code>a</code>s as possible are read and each one will increment the counter
-        <code>i</code>. Then, run the equivalent of a C-style: <code>for (int j = i, j &gt; 0, j -= 1)</code> reading <code>b</code> and <code>c</code>. Internally, <code>forP</code> will use a register to track its state.</p>
+        <code>i</code>. Then, run the equivalent of a C-style: <code>for (int j = i, j &gt; 0, j -= 1)</code> reading <code>b</code> and <code>c</code>. Internally, <code>forP</code> will use a reference to track its state.</p>
 
         
 <hr class="footer-rule"/>

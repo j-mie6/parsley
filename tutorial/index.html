@@ -96,10 +96,10 @@
     <li class="level2 nav-leaf"><a href="../4.5/api-guide/Parsley.html"><code>parsley.Parsley</code></a></li>
     <li class="level2 nav-leaf"><a href="../4.5/api-guide/character.html"><code>parsley.character</code></a></li>
     <li class="level2 nav-leaf"><a href="../4.5/api-guide/combinator.html"><code>parsley.combinator</code></a></li>
-    <li class="level2 nav-leaf"><a href="../4.5/api-guide/generic.html"><code>parsley.genericbridges</code></a></li>
-    <li class="level2 nav-leaf"><a href="../4.5/api-guide/syntax.html"><code>parsley.implicits</code></a></li>
+    <li class="level2 nav-leaf"><a href="../4.5/api-guide/generic.html"><code>parsley.generic</code></a></li>
+    <li class="level2 nav-leaf"><a href="../4.5/api-guide/syntax.html"><code>parsley.syntax</code></a></li>
     <li class="level2 nav-leaf"><a href="../4.5/api-guide/position.html"><code>parsley.position</code></a></li>
-    <li class="level2 nav-leaf"><a href="../4.5/api-guide/state.html"><code>parsley.registers</code></a></li>
+    <li class="level2 nav-leaf"><a href="../4.5/api-guide/state.html"><code>parsley.state</code></a></li>
     <li class="level2 nav-leaf"><a href="../4.5/api-guide/debug.html"><code>parsley.debug</code></a></li>
     <li class="level2 nav-header"><code>parsley.expr</code></li>
     <li class="level3 nav-leaf"><a href="../4.5/api-guide/expr/chain.html"><code>chain</code></a></li>
@@ -286,9 +286,9 @@
         naturally! In most other combinator libraries, the <code>flatMap</code> (or <code>&gt;&gt;=</code>) combinator is used to
         deal with context-sensitivity. However, in the Parsley family, the power that <code>flatMap</code>
         provides comes at a heavy cost to performance. Instead, we reach for stateful parsers called
-        &quot;registers&quot;, evoking images of register machines vs stack machines: as we know, register
+        &quot;references&quot;, evoking images of register machines vs stack machines: as we know, register
         machines are turing powerful, and can most certainly do the job, no matter the parsing task.</p>
-        <p>This page provides a more concrete and gentle introduction to using registers specifically
+        <p>This page provides a more concrete and gentle introduction to using references specifically
         demonstrating how to use them to implement combinators for managing indentation-sensitive
         workloads in a clean and effective way.</p>
         

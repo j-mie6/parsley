@@ -96,10 +96,10 @@
     <li class="level2 nav-leaf"><a href="Parsley.html"><code>parsley.Parsley</code></a></li>
     <li class="level2 nav-leaf"><a href="character.html"><code>parsley.character</code></a></li>
     <li class="level2 active nav-leaf"><a href="#"><code>parsley.combinator</code></a></li>
-    <li class="level2 nav-leaf"><a href="generic.html"><code>parsley.genericbridges</code></a></li>
-    <li class="level2 nav-leaf"><a href="syntax.html"><code>parsley.implicits</code></a></li>
+    <li class="level2 nav-leaf"><a href="generic.html"><code>parsley.generic</code></a></li>
+    <li class="level2 nav-leaf"><a href="syntax.html"><code>parsley.syntax</code></a></li>
     <li class="level2 nav-leaf"><a href="position.html"><code>parsley.position</code></a></li>
-    <li class="level2 nav-leaf"><a href="state.html"><code>parsley.registers</code></a></li>
+    <li class="level2 nav-leaf"><a href="state.html"><code>parsley.state</code></a></li>
     <li class="level2 nav-leaf"><a href="debug.html"><code>parsley.debug</code></a></li>
     <li class="level2 nav-header"><code>parsley.expr</code></li>
     <li class="level3 nav-leaf"><a href="expr/chain.html"><code>chain</code></a></li>
@@ -164,50 +164,22 @@
         of these combinators vary. If the parser being repeated fails having consumed
         input, iterative combinators will fail; if no input was consumed on failure,
         the iteration will stop.</p>
-        <p>The most commonly used of these are the <code>many</code> and <code>some</code> combinators, which
-        return a list of the successful results:</p>
-        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">digit</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.{</span><span class="identifier">many</span><span>, </span><span class="identifier">some</span><span>}
-
-</span><span class="identifier">many</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">zip</span><span>(</span><span class="identifier">digit</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;&quot;</span><span>)
-</span><span class="comment">// res0: parsley.Result[String, List[(Char, Char)]] = Success(List())
-</span><span class="identifier">many</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">zip</span><span>(</span><span class="identifier">digit</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;1234&quot;</span><span>)
-</span><span class="comment">// res1: parsley.Result[String, List[(Char, Char)]] = Success(List((1,2), (3,4)))
-</span><span class="identifier">many</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">zip</span><span>(</span><span class="identifier">digit</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;12345&quot;</span><span>)
-</span><span class="comment">// res2: parsley.Result[String, List[(Char, Char)]] = Failure((line 1, column 6):
-//   unexpected end of input
-//   expected digit
-//   &gt;12345
-//         ^)
-</span><span>
-</span><span class="identifier">some</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">zip</span><span>(</span><span class="identifier">digit</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;&quot;</span><span>)
-</span><span class="comment">// res3: parsley.Result[String, List[(Char, Char)]] = Failure((line 1, column 1):
-//   unexpected end of input
-//   expected digit
-//   &gt;
-//    ^)
-</span><span class="identifier">some</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">zip</span><span>(</span><span class="identifier">digit</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;1234&quot;</span><span>)
-</span><span class="comment">// res4: parsley.Result[String, List[(Char, Char)]] = Success(List((1,2), (3,4)))
-</span><span class="identifier">some</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">zip</span><span>(</span><span class="identifier">digit</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;12345&quot;</span><span>)
-</span><span class="comment">// res5: parsley.Result[String, List[(Char, Char)]] = Failure((line 1, column 6):
-//   unexpected end of input
-//   expected digit
-//   &gt;12345
-//         ^)</span></code></pre>
-        <p>While <code>some</code> will parse one or more times, <code>manyN</code> generalises to work for
+        <p>The most commonly used of these are the <code>many</code> and <code>some</code> combinators (see <a href="Parsley.html#object-parsley">Object <code>Parsley</code></a>), which
+        return a list of the successful results. While <code>some</code> will parse one or more times, <code>manyN</code>
+        generalises to work for
         any minimum required parses <code>n</code>. When the results are not needed, <code>skipMany</code>,
         <code>skipSome</code>, and <code>skipManyN</code> can be used instead. To determine how many times
         the parse was successful, the <code>count</code> and <code>count1</code> can be used instead.</p>
-        <p>The <code>manyUntil</code> and <code>someUntil</code> combinators can be used to parse iteratively
+        <p>The <code>manyTill</code> and <code>someTill</code> combinators can be used to parse iteratively
         until some other parse is successful: this can be used, for instance, to
         scan comments:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">string</span><span>, </span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>}
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.{</span><span class="identifier">manyUntil</span><span>}
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.{</span><span class="identifier">manyTill</span><span>}
 
-</span><span class="keyword">val</span><span> </span><span class="identifier">comment</span><span> = </span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;//&quot;</span><span>) ~&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>)
-</span><span class="comment">// comment: parsley.Parsley[List[Char]] = parsley.Parsley@377ed29d
+</span><span class="keyword">val</span><span> </span><span class="identifier">comment</span><span> = </span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;//&quot;</span><span>) ~&gt; </span><span class="identifier">manyTill</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>)
+</span><span class="comment">// comment: parsley.Parsley[List[Char]] = parsley.Parsley@1c7c02cb
 </span><span class="identifier">comment</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;// this is a comment</span><span class="escape-sequence">\n</span><span class="string-literal">&quot;</span><span>)
-</span><span class="comment">// res6: parsley.Result[String, List[Char]] = Success(List( , t, h, i, s,  , i, s,  , a,  , c, o, m, m, e, n, t))</span></code></pre>
+</span><span class="comment">// res0: parsley.Result[String, List[Char]] = Success(List( , t, h, i, s,  , i, s,  , a,  , c, o, m, m, e, n, t))</span></code></pre>
         
         <h3 id="separators" class="section"><a class="anchor-link left" href="#separators"><i class="icofont-laika link">&#xef71;</i></a>Separators</h3>
         <p>There are three variants of the iterative combinators that handle delimited
@@ -227,15 +199,15 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">option</span><span>
 
 </span><span class="identifier">option</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">zip</span><span>(</span><span class="identifier">digit</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;&quot;</span><span>)
-</span><span class="comment">// res7: parsley.Result[String, Option[(Char, Char)]] = Success(None)
+</span><span class="comment">// res1: parsley.Result[String, Option[(Char, Char)]] = Success(None)
 </span><span class="identifier">option</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">zip</span><span>(</span><span class="identifier">digit</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;0&quot;</span><span>)
-</span><span class="comment">// res8: parsley.Result[String, Option[(Char, Char)]] = Failure((line 1, column 2):
+</span><span class="comment">// res2: parsley.Result[String, Option[(Char, Char)]] = Failure((line 1, column 2):
 //   unexpected end of input
 //   expected digit
 //   &gt;0
 //     ^)
 </span><span class="identifier">option</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">zip</span><span>(</span><span class="identifier">digit</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;09&quot;</span><span>)
-</span><span class="comment">// res9: parsley.Result[String, Option[(Char, Char)]] = Success(Some((0,9)))</span></code></pre>
+</span><span class="comment">// res3: parsley.Result[String, Option[(Char, Char)]] = Success(Some((0,9)))</span></code></pre>
         
         <h2 id="conditional-combinators" class="section"><a class="anchor-link left" href="#conditional-combinators"><i class="icofont-laika link">&#xef71;</i></a>Conditional Combinators</h2>
         <p>The conditional combinators are used for conditional execution

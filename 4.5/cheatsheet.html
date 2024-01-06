@@ -96,10 +96,10 @@
     <li class="level2 nav-leaf"><a href="api-guide/Parsley.html"><code>parsley.Parsley</code></a></li>
     <li class="level2 nav-leaf"><a href="api-guide/character.html"><code>parsley.character</code></a></li>
     <li class="level2 nav-leaf"><a href="api-guide/combinator.html"><code>parsley.combinator</code></a></li>
-    <li class="level2 nav-leaf"><a href="api-guide/generic.html"><code>parsley.genericbridges</code></a></li>
-    <li class="level2 nav-leaf"><a href="api-guide/syntax.html"><code>parsley.implicits</code></a></li>
+    <li class="level2 nav-leaf"><a href="api-guide/generic.html"><code>parsley.generic</code></a></li>
+    <li class="level2 nav-leaf"><a href="api-guide/syntax.html"><code>parsley.syntax</code></a></li>
     <li class="level2 nav-leaf"><a href="api-guide/position.html"><code>parsley.position</code></a></li>
-    <li class="level2 nav-leaf"><a href="api-guide/state.html"><code>parsley.registers</code></a></li>
+    <li class="level2 nav-leaf"><a href="api-guide/state.html"><code>parsley.state</code></a></li>
     <li class="level2 nav-leaf"><a href="api-guide/debug.html"><code>parsley.debug</code></a></li>
     <li class="level2 nav-header"><code>parsley.expr</code></li>
     <li class="level3 nav-leaf"><a href="api-guide/expr/chain.html"><code>chain</code></a></li>
@@ -409,8 +409,7 @@
         <p>The quickest way to change the result of a parser is by using <code>.map</code> or the <code>#&gt;</code> combinator (see
         the above quick documentation). This is really useful for changing the result of a <em>single</em> parser,
         but provides no way of combining multiple.</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">some</span><span>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>, </span><span class="type-name">Parsley</span><span>.</span><span class="identifier">some</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">digit</span><span>
 
 </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Num</span><span>(</span><span class="identifier">n</span><span>: </span><span class="type-name">Int</span><span>)
@@ -428,8 +427,7 @@
         digit before we read zero or more digits. In this case, we want the first digit to be added to the
         list of remaining digits. This task is quite common, so the <code>&lt;::&gt;</code> combinator is designed specially
         for it:</p>
-        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">many</span><span>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>, </span><span class="type-name">Parsley</span><span>.</span><span class="identifier">many</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">digit</span><span>, </span><span class="identifier">oneOf</span><span>, </span><span class="identifier">char</span><span>}
 
 </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Num</span><span>(</span><span class="identifier">n</span><span>: </span><span class="type-name">Int</span><span>)
@@ -442,8 +440,7 @@
 </span><span class="keyword">val</span><span> </span><span class="identifier">int</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Int</span><span>] = </span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;0&#39;</span><span>) #&gt; </span><span class="number-literal">0</span><span> | </span><span class="identifier">digits</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">mkString</span><span>.</span><span class="identifier">toInt</span><span>)
 </span><span class="keyword">val</span><span> </span><span class="identifier">num</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Num</span><span>] = </span><span class="identifier">int</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Num</span><span>)</span></code></pre>
         <p>But more generally, we could reach for the <code>lift</code> functions:</p>
-        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">many</span><span>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>, </span><span class="type-name">Parsley</span><span>.</span><span class="identifier">many</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">digit</span><span>, </span><span class="identifier">oneOf</span><span>, </span><span class="identifier">char</span><span>}
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">lift</span><span>.</span><span class="identifier">lift2</span><span>
 
@@ -464,7 +461,7 @@
         <p>Notice that this didn&#39;t seem to be a problem with <code>map</code>. This is because the function is type-checked
         after the receiver of the method: it gets given the right argument type straight away. Parsley has a syntax
         for leveraging this property:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">zipped</span><span>.</span><span class="type-name">Zipped2</span><span>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">zipped</span><span>.</span><span class="type-name">Zipped2</span><span>
 
 (</span><span class="identifier">nonzero</span><span>, </span><span class="identifier">many</span><span>(</span><span class="identifier">digit</span><span>)).</span><span class="identifier">zipped</span><span>(</span><span class="identifier">_</span><span> :: </span><span class="identifier">_</span><span>)</span></code></pre>
         <div class="callout warning">
@@ -474,7 +471,7 @@
         </div>
         <p>Use this form of lifting when type-inference fails you. Otherwise, for clarity, use a regular <code>liftN</code>, or the
         syntactic sugar for it:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">lift</span><span>.{</span><span class="type-name">Lift2</span><span>, </span><span class="type-name">Lift1</span><span>}
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">lift</span><span>.{</span><span class="type-name">Lift2</span><span>, </span><span class="type-name">Lift1</span><span>}
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">charCons</span><span> = (</span><span class="identifier">c</span><span>: </span><span class="type-name">Char</span><span>, </span><span class="identifier">cs</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">Char</span><span>]) =&gt; </span><span class="identifier">c</span><span> :: </span><span class="identifier">cs</span><span>
 

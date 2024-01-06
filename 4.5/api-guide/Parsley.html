@@ -96,10 +96,10 @@
     <li class="level2 active nav-leaf"><a href="#"><code>parsley.Parsley</code></a></li>
     <li class="level2 nav-leaf"><a href="character.html"><code>parsley.character</code></a></li>
     <li class="level2 nav-leaf"><a href="combinator.html"><code>parsley.combinator</code></a></li>
-    <li class="level2 nav-leaf"><a href="generic.html"><code>parsley.genericbridges</code></a></li>
-    <li class="level2 nav-leaf"><a href="syntax.html"><code>parsley.implicits</code></a></li>
+    <li class="level2 nav-leaf"><a href="generic.html"><code>parsley.generic</code></a></li>
+    <li class="level2 nav-leaf"><a href="syntax.html"><code>parsley.syntax</code></a></li>
     <li class="level2 nav-leaf"><a href="position.html"><code>parsley.position</code></a></li>
-    <li class="level2 nav-leaf"><a href="state.html"><code>parsley.registers</code></a></li>
+    <li class="level2 nav-leaf"><a href="state.html"><code>parsley.state</code></a></li>
     <li class="level2 nav-leaf"><a href="debug.html"><code>parsley.debug</code></a></li>
     <li class="level2 nav-header"><code>parsley.expr</code></li>
     <li class="level3 nav-leaf"><a href="expr/chain.html"><code>chain</code></a></li>
@@ -144,7 +144,8 @@
     <li class="level2 nav-leaf"><a href="#filtering-results">Filtering Results</a></li>
     <li class="level2 nav-leaf"><a href="#reductions">Reductions</a></li>
     <li class="level2 nav-leaf"><a href="#special-methods">Special Methods</a></li>
-    <li class="level1 nav-leaf"><a href="#object-parsley">Object <code>Parsley</code></a></li>
+    <li class="level1 nav-node"><a href="#object-parsley">Object <code>Parsley</code></a></li>
+    <li class="level2 nav-leaf"><a href="#iterative-combinators">Iterative Combinators</a></li>
   </ul>
 
   <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/master/docs/api-guide/Parsley.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
@@ -226,7 +227,7 @@
         the second depends on the result of the first. In <code>parsley</code>, this operation
         is <strong>very</strong> expensive, and it (and its derived <code>flatten</code> combinator) should
         be avoided. One way of avoiding the <code>flatMap</code> combinator is to use features
-        found in <a href="state.html#context-sensitive-parsing-parsley-registers"><code>parsley.registers</code></a>,
+        found in <a href="state.html#context-sensitive-parsing-parsley-state"><code>parsley.state</code></a>,
         or to use <code>lift</code> combinators instead.</p>
         
         <h4 id="choice" class="section"><a class="anchor-link left" href="#choice"><i class="icofont-laika link">&#xef71;</i></a>Choice</h4>
@@ -317,6 +318,43 @@
         immediately (but recoverably) and produces a given width of caret (and <code>0</code> in the case of <code>empty</code>); <code>lookAhead</code> and <code>notFollowedBy</code> for dealing with positive
         and negative lookahead; and <code>fresh</code>, which can be used like <code>pure</code> but evaluates
         its argument every time, which is useful in the presence of mutable values.</p>
+        
+        <h3 id="iterative-combinators" class="section"><a class="anchor-link left" href="#iterative-combinators"><i class="icofont-laika link">&#xef71;</i></a>Iterative Combinators</h3>
+        <p>One of the main classes of combinator are the iterative combinators, which
+        execute parsers multiple times until they cannot match any more; the results
+        of these combinators vary. If the parser being repeated fails having consumed
+        input, iterative combinators will fail; if no input was consumed on failure,
+        the iteration will stop.</p>
+        <p>The most commonly used of these are the <code>many</code> and <code>some</code> combinators, which
+        return a list of the successful results:</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">digit</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>.{</span><span class="identifier">many</span><span>, </span><span class="identifier">some</span><span>}
+
+</span><span class="identifier">many</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">zip</span><span>(</span><span class="identifier">digit</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;&quot;</span><span>)
+</span><span class="comment">// res0: parsley.Result[String, List[(Char, Char)]] = Success(List())
+</span><span class="identifier">many</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">zip</span><span>(</span><span class="identifier">digit</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;1234&quot;</span><span>)
+</span><span class="comment">// res1: parsley.Result[String, List[(Char, Char)]] = Success(List((1,2), (3,4)))
+</span><span class="identifier">many</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">zip</span><span>(</span><span class="identifier">digit</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;12345&quot;</span><span>)
+</span><span class="comment">// res2: parsley.Result[String, List[(Char, Char)]] = Failure((line 1, column 6):
+//   unexpected end of input
+//   expected digit
+//   &gt;12345
+//         ^)
+</span><span>
+</span><span class="identifier">some</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">zip</span><span>(</span><span class="identifier">digit</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;&quot;</span><span>)
+</span><span class="comment">// res3: parsley.Result[String, List[(Char, Char)]] = Failure((line 1, column 1):
+//   unexpected end of input
+//   expected digit
+//   &gt;
+//    ^)
+</span><span class="identifier">some</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">zip</span><span>(</span><span class="identifier">digit</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;1234&quot;</span><span>)
+</span><span class="comment">// res4: parsley.Result[String, List[(Char, Char)]] = Success(List((1,2), (3,4)))
+</span><span class="identifier">some</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">zip</span><span>(</span><span class="identifier">digit</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;12345&quot;</span><span>)
+</span><span class="comment">// res5: parsley.Result[String, List[(Char, Char)]] = Failure((line 1, column 6):
+//   unexpected end of input
+//   expected digit
+//   &gt;12345
+//         ^)</span></code></pre>
 
         
 <hr class="footer-rule"/>

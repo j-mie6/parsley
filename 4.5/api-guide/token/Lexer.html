@@ -96,10 +96,10 @@
     <li class="level2 nav-leaf"><a href="../Parsley.html"><code>parsley.Parsley</code></a></li>
     <li class="level2 nav-leaf"><a href="../character.html"><code>parsley.character</code></a></li>
     <li class="level2 nav-leaf"><a href="../combinator.html"><code>parsley.combinator</code></a></li>
-    <li class="level2 nav-leaf"><a href="../generic.html"><code>parsley.genericbridges</code></a></li>
-    <li class="level2 nav-leaf"><a href="../syntax.html"><code>parsley.implicits</code></a></li>
+    <li class="level2 nav-leaf"><a href="../generic.html"><code>parsley.generic</code></a></li>
+    <li class="level2 nav-leaf"><a href="../syntax.html"><code>parsley.syntax</code></a></li>
     <li class="level2 nav-leaf"><a href="../position.html"><code>parsley.position</code></a></li>
-    <li class="level2 nav-leaf"><a href="../state.html"><code>parsley.registers</code></a></li>
+    <li class="level2 nav-leaf"><a href="../state.html"><code>parsley.state</code></a></li>
     <li class="level2 nav-leaf"><a href="../debug.html"><code>parsley.debug</code></a></li>
     <li class="level2 nav-header"><code>parsley.expr</code></li>
     <li class="level3 nav-leaf"><a href="../expr/chain.html"><code>chain</code></a></li>
@@ -141,9 +141,9 @@
     <li class="level1 nav-node"><a href="#names-and-symbols">Names and Symbols</a></li>
     <li class="level2 nav-leaf"><a href="#lexer-lexeme-nonlexeme-names"><code>Lexer.{lexeme, nonlexeme}.names</code></a></li>
     <li class="level2 nav-leaf"><a href="#lexer-lexeme-nonlexeme-symbol"><code>Lexer.{lexeme, nonlexeme}.symbol</code></a></li>
-    <li class="level1 nav-node"><a href="#lexer-lexeme-nonlexeme-numeric"><code>Lexer.{lexeme, nonlexeme}.numeric</code></a></li>
+    <li class="level1 nav-node"><a href="#lexer-lexeme-nonlexeme-numeric-parsers"><code>Lexer.{lexeme, nonlexeme}</code> Numeric Parsers</a></li>
     <li class="level2 nav-leaf"><a href="#examples-of-configuration-and-valid-literals-1">Examples of Configuration and Valid Literals</a></li>
-    <li class="level1 nav-node"><a href="#lexer-lexeme-nonlexeme-text"><code>Lexer.{lexeme, nonlexeme}.text</code></a></li>
+    <li class="level1 nav-node"><a href="#lexer-lexeme-nonlexeme-text-parsers"><code>Lexer.{lexeme, nonlexeme}</code> Text Parsers</a></li>
     <li class="level2 nav-leaf"><a href="#examples-of-configuration-and-valid-literals-2">Examples of Configuration and Valid Literals</a></li>
     <li class="level1 nav-leaf"><a href="#lexer-lexeme-enclosing-separators"><code>Lexer.lexeme.{enclosing, separators}</code></a></li>
     <li class="level1 nav-leaf"><a href="#whitespace-sensitive-languages-and-lexer-space">Whitespace-Sensitive Languages and <code>Lexer.space</code></a></li>
@@ -256,11 +256,11 @@
         importing this, string literals can themselves serve as parsers of type <code>Parsley[Unit]</code>, and
         parse symbols correctly. With this, it instead of <code>symbol(&quot;if&quot;)</code> you can simply write <code>&quot;if&quot;</code>.</p>
         
-        <h2 id="lexer-lexeme-nonlexeme-numeric" class="section"><a class="anchor-link left" href="#lexer-lexeme-nonlexeme-numeric"><i class="icofont-laika link">&#xef71;</i></a><code>Lexer.{lexeme, nonlexeme}.numeric</code></h2>
-        <p>This <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/token/Lexer$lexeme$$numeric$.html">object</a> contains the definitions of several different parsers for handling <em>numeric</em> data:
+        <h2 id="lexer-lexeme-nonlexeme-numeric-parsers" class="section"><a class="anchor-link left" href="#lexer-lexeme-nonlexeme-numeric-parsers"><i class="icofont-laika link">&#xef71;</i></a><code>Lexer.{lexeme, nonlexeme}</code> Numeric Parsers</h2>
+        <p>This <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/token/Lexer$lexeme$.html">object</a> contains the definitions of several different parsers for handling <em>numeric</em> data:
         this includes both integers and floating point numbers. The configuration for all of these parsers
         is managed by <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/token/descriptions/numeric/NumericDesc.html"><code>LexicalDesc.numericDesc</code></a>.
-        The members of the <code>numeric</code> object a split into three kinds:</p>
+        The members are split into three kinds:</p>
         <ul>
           <li>
             <p><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/token/numeric/Integer.html"><code>parsley.token.numeric.Integer</code></a>: values with this type
@@ -315,8 +315,8 @@
         variants). This means that <code>unsigned.number</code> will allow literals like <code>0</code>, <code>0xff</code>, <code>0o45</code>
         and <code>345</code>. For <code>signed</code>, each of these may be preceded by a <code>+</code> sign, but this is not <em>required</em>; if <code>positiveSign</code> is set to <code>PlusSignPresence.Compulsory</code>, positive literals would always require a <code>+</code>; and if it is set to <code>PlusSignPrecense.Illegal</code>, the <code>+</code> prefix can never be used (but <code>-</code> is fine regardless). By default, <code>023</code> is legal, but this can be
         disabled by setting <code>leadingZerosAllowed</code> to <code>false</code>.</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">num</span><span> = </span><span class="identifier">lexer</span><span>.</span><span class="identifier">lexeme</span><span>.</span><span class="identifier">numeric</span><span>.</span><span class="identifier">signed</span><span>.</span><span class="identifier">number</span><span>
-</span><span class="comment">// num: parsley.Parsley[BigInt] = parsley.Parsley@183fd200
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">num</span><span> = </span><span class="identifier">lexer</span><span>.</span><span class="identifier">lexeme</span><span>.</span><span class="identifier">signed</span><span>.</span><span class="identifier">number</span><span>
+</span><span class="comment">// num: parsley.Parsley[BigInt] = parsley.Parsley@15d09c0a
 </span><span class="identifier">num</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;0&quot;</span><span>)
 </span><span class="comment">// res0: parsley.Result[String, BigInt] = Success(x = 0)
 </span><span class="identifier">num</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;0xff&quot;</span><span>)
@@ -333,9 +333,9 @@
         </span><span class="identifier">numericDesc</span><span> = </span><span class="type-name">NumericDesc</span><span>.</span><span class="identifier">plain</span><span>.</span><span class="identifier">copy</span><span>(
             </span><span class="identifier">literalBreakChar</span><span> = </span><span class="type-name">BreakCharDesc</span><span>.</span><span class="type-name">Supported</span><span>(</span><span class="char-literal">&#39;_&#39;</span><span>, </span><span class="identifier">allowedAfterNonDecimalPrefix</span><span> = </span><span class="boolean-literal">true</span><span>))
     ))
-</span><span class="comment">// lexerWithBreak: Lexer = parsley.token.Lexer@6fbeaf4a
-</span><span class="keyword">val</span><span> </span><span class="identifier">withBreak</span><span> = </span><span class="identifier">lexerWithBreak</span><span>.</span><span class="identifier">lexeme</span><span>.</span><span class="identifier">numeric</span><span>.</span><span class="identifier">signed</span><span>.</span><span class="identifier">number</span><span>
-</span><span class="comment">// withBreak: parsley.Parsley[BigInt] = parsley.Parsley@40e7e0f
+</span><span class="comment">// lexerWithBreak: Lexer = parsley.token.Lexer@2346b59f
+</span><span class="keyword">val</span><span> </span><span class="identifier">withBreak</span><span> = </span><span class="identifier">lexerWithBreak</span><span>.</span><span class="identifier">lexeme</span><span>.</span><span class="identifier">signed</span><span>.</span><span class="identifier">number</span><span>
+</span><span class="comment">// withBreak: parsley.Parsley[BigInt] = parsley.Parsley@1b60c595
 </span><span class="identifier">withBreak</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;1_000&quot;</span><span>)
 </span><span class="comment">// res4: parsley.Result[String, BigInt] = Success(x = 1000)
 </span><span class="identifier">withBreak</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;1_&quot;</span><span>)
@@ -353,10 +353,11 @@
         <code>3.142</code> is valid decimal literal, <code>0x3.142</code> is not a legal hexadecimal literal: to make
         it work, the exponent must be added, i.e. <code>0x3.142p0</code>, where <code>p0</code> is performing <code>* 2^0</code>.
         For each of the non-decimal literals, the base of the exponent is configured to be <code>2</code>, hence
-        <code>2^0</code> in the previous example; for decimal it is set to the usual <code>10</code>, so that <code>2e3</code> is <code>2*10^3</code>, or <code>2000</code>. Notice that literals do not <em>require</em> a point, so long as they do have
+        <code>2^0</code> in the previous example; for decimal it is set to the usual <code>10</code>, so that <code>2e3</code> is <code>2*10^3</code>,
+        or <code>2000</code>. Notice that literals do not <em>require</em> a point, so long as they do have
         an exponent.</p>
-        <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">real</span><span> = </span><span class="identifier">lexer</span><span>.</span><span class="identifier">lexeme</span><span>.</span><span class="identifier">numeric</span><span>.</span><span class="identifier">real</span><span>
-</span><span class="comment">// real: parsley.token.numeric.Real = parsley.token.numeric.LexemeReal@7f78647a
+        <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">real</span><span> = </span><span class="identifier">lexer</span><span>.</span><span class="identifier">lexeme</span><span>.</span><span class="identifier">real</span><span>
+</span><span class="comment">// real: parsley.token.numeric.Real = parsley.token.numeric.LexemeReal@2133faac
 </span><span class="identifier">real</span><span>.</span><span class="identifier">hexadecimalDouble</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;0x3.142&quot;</span><span>)
 </span><span class="comment">// res7: parsley.Result[String, Double] = Failure(
 // ...
@@ -379,7 +380,7 @@
           floats: <code>0x0.Bp0</code> is the same as <code>0b0.1011p0</code>, both of which are <code>0.6875</code> in decimal.</p>
         </div>
         
-        <h2 id="lexer-lexeme-nonlexeme-text" class="section"><a class="anchor-link left" href="#lexer-lexeme-nonlexeme-text"><i class="icofont-laika link">&#xef71;</i></a><code>Lexer.{lexeme, nonlexeme}.text</code></h2>
+        <h2 id="lexer-lexeme-nonlexeme-text-parsers" class="section"><a class="anchor-link left" href="#lexer-lexeme-nonlexeme-text-parsers"><i class="icofont-laika link">&#xef71;</i></a><code>Lexer.{lexeme, nonlexeme}</code> Text Parsers</h2>
         <p>This <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/token/Lexer$lexeme$$text$.html">object</a> deals with the parsing of both string
         literals and character literals, configured broadby by <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.4.0/parsley/token/descriptions/text/TextDesc.html"><code>LexicalDesc.textDesc</code></a>:</p>
         <ul>
@@ -444,12 +445,12 @@
             </span><span class="identifier">escapeSequences</span><span> = </span><span class="identifier">escapeDesc</span><span>,
             </span><span class="identifier">graphicCharacter</span><span> = </span><span class="identifier">graphicChar</span><span>
         )
-    )).</span><span class="identifier">nonlexeme</span><span>.</span><span class="identifier">text</span><span>.</span><span class="identifier">string</span><span>
+    )).</span><span class="identifier">nonlexeme</span><span>.</span><span class="identifier">string</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">fullUnicode</span><span> = </span><span class="identifier">stringParsers</span><span>(</span><span class="identifier">aboveSpace</span><span>)
-</span><span class="comment">// fullUnicode: parsley.token.text.String = parsley.token.text.ConcreteString@3254e6b5
+</span><span class="comment">// fullUnicode: parsley.token.text.String = parsley.token.text.ConcreteString@479798c1
 </span><span class="keyword">val</span><span> </span><span class="identifier">latin1Limited</span><span> = </span><span class="identifier">stringParsers</span><span>(</span><span class="identifier">predicate</span><span>.</span><span class="type-name">Basic</span><span>(</span><span class="identifier">c</span><span> =&gt; </span><span class="identifier">c</span><span> &gt;= </span><span class="number-literal">0x20</span><span> &amp;&amp; </span><span class="identifier">c</span><span> &lt;= </span><span class="number-literal">0xcf</span><span>))
-</span><span class="comment">// latin1Limited: parsley.token.text.String = parsley.token.text.ConcreteString@65bed68f
+</span><span class="comment">// latin1Limited: parsley.token.text.String = parsley.token.text.ConcreteString@ac970c7
 </span><span>
 </span><span class="identifier">fullUnicode</span><span>.</span><span class="identifier">latin1</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;</span><span class="escape-sequence">\&quot;</span><span class="string-literal">hello α</span><span class="escape-sequence">\&quot;</span><span class="string-literal">&quot;</span><span>)
 </span><span class="comment">// res13: parsley.Result[String, String] = Failure((line 1, column 2):
@@ -523,7 +524,7 @@
         terminated by another backslash (this can include newlines, even in otherwise
         single-line strings). As an example:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">withGaps</span><span> = </span><span class="identifier">stringParsers</span><span>(</span><span class="identifier">escapeDesc</span><span> = </span><span class="type-name">EscapeDesc</span><span>.</span><span class="identifier">plain</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">gapsSupported</span><span> = </span><span class="boolean-literal">true</span><span>))
-</span><span class="comment">// withGaps: parsley.token.text.String = parsley.token.text.ConcreteString@6189f0ac
+</span><span class="comment">// withGaps: parsley.token.text.String = parsley.token.text.ConcreteString@58d32caf
 </span><span class="identifier">withGaps</span><span>.</span><span class="identifier">ascii</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;&quot;&quot;&quot;Hello \
 
       \World!&quot; &quot;&quot;&quot;</span><span>)

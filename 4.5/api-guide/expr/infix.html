@@ -96,10 +96,10 @@
     <li class="level2 nav-leaf"><a href="../Parsley.html"><code>parsley.Parsley</code></a></li>
     <li class="level2 nav-leaf"><a href="../character.html"><code>parsley.character</code></a></li>
     <li class="level2 nav-leaf"><a href="../combinator.html"><code>parsley.combinator</code></a></li>
-    <li class="level2 nav-leaf"><a href="../generic.html"><code>parsley.genericbridges</code></a></li>
-    <li class="level2 nav-leaf"><a href="../syntax.html"><code>parsley.implicits</code></a></li>
+    <li class="level2 nav-leaf"><a href="../generic.html"><code>parsley.generic</code></a></li>
+    <li class="level2 nav-leaf"><a href="../syntax.html"><code>parsley.syntax</code></a></li>
     <li class="level2 nav-leaf"><a href="../position.html"><code>parsley.position</code></a></li>
-    <li class="level2 nav-leaf"><a href="../state.html"><code>parsley.registers</code></a></li>
+    <li class="level2 nav-leaf"><a href="../state.html"><code>parsley.state</code></a></li>
     <li class="level2 nav-leaf"><a href="../debug.html"><code>parsley.debug</code></a></li>
     <li class="level2 nav-header"><code>parsley.expr</code></li>
     <li class="level3 nav-leaf"><a href="chain.html"><code>chain</code></a></li>
@@ -179,7 +179,7 @@
         <p>As an example:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">digit</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">expr</span><span>.</span><span class="identifier">infix</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">stringLift</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">stringLift</span><span>
 
 </span><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">Expr</span><span>
 </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Add</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Expr</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Num</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Expr</span><span>
