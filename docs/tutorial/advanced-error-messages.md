@@ -246,7 +246,7 @@ import parsley.character.char
 import parsley.errors.patterns.VerifiedErrors
 
 val _semiCheck =
-    char(';').verifiedUnexpected("semi-colons cannot be written between `if` and `else`")
+    char(';').verifiedExplain("semi-colons cannot be written between `if` and `else`")
 
 lazy val ifStmt: Parsley[Eval[Unit]] =
     ( "if" ~> pred
@@ -330,7 +330,7 @@ triggered our `explain` message. Again, we can fix this by using a verified erro
 
 ```scala mdoc:nest:silent
 import parsley.Parsley.eof
-val _eofCheck = eof.verifiedUnexpected("unclosed `if` or `else`")
+val _eofCheck = eof.verifiedExplain("unclosed `if` or `else`")
 def braces[A](p: =>Parsley[A]) = "{" ~> p <~ ("}" | _eofCheck)
 ```
 ```scala mdoc:invisible
@@ -388,7 +388,7 @@ val _boolCheck = choice(
         lexer.nonLexemeSymbol("true"),
         lexer.nonLexemeSymbol("false"),
         lexer.nonLexemeSymbol("not"),
-    ).verifiedUnexpected("booleans cannot be assigned to variables")
+    ).verifiedExplain("booleans cannot be assigned to variables")
 ```
 
 The `lexer.nonLexemeSymbol` combinator here is allowing for the parsing of keywords *without*

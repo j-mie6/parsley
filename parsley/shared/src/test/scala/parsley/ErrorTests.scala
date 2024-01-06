@@ -553,14 +553,14 @@ class ErrorTests extends ParsleyTest {
         }
     }
 
-    "verifiedUnexpected" should "fail having consumed input on the parser success" in {
-        inside(optional("abc".verifiedUnexpected(x => s"$x is not allowed")).parse("abc")) {
+    "verifiedExplain/Unexpected" should "fail having consumed input on the parser success" in {
+        inside(optional("abc".verifiedExplain(x => s"$x is not allowed")).parse("abc")) {
             case Failure(TestError((1, 1), VanillaError(unex, expecteds, reasons, 3))) =>
                 expecteds shouldBe empty
                 unex should contain (Raw("abc"))
                 reasons should contain only ("abc is not allowed")
         }
-        inside(optional("abc".verifiedUnexpected(s"abc is not allowed")).parse("abc")) {
+        inside(optional("abc".verifiedExplain(s"abc is not allowed")).parse("abc")) {
             case Failure(TestError((1, 1), VanillaError(unex, expecteds, reasons, 3))) =>
                 expecteds shouldBe empty
                 unex should contain (Raw("abc"))
@@ -574,8 +574,8 @@ class ErrorTests extends ParsleyTest {
         }
     }
     it should "not consume input if the parser did not succeed" in {
-        optional("abc".verifiedUnexpected(x => s"$x is not allowed")).parse("ab") shouldBe Success(())
-        optional("abc".verifiedUnexpected(s"abc is not allowed")).parse("ab") shouldBe Success(())
+        optional("abc".verifiedExplain(x => s"$x is not allowed")).parse("ab") shouldBe Success(())
+        optional("abc".verifiedExplain(s"abc is not allowed")).parse("ab") shouldBe Success(())
         optional("abc".verifiedUnexpected).parse("ab") shouldBe Success(())
     }
     it should "not produce any labels" in {

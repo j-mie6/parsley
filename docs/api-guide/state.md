@@ -169,7 +169,7 @@ def brackets = Brackets.empty.makeRef { bs =>
     def open(c: Char): Parsley[Unit] =
         char(c) ~> bs.update(pos.map[Brackets => Brackets](p => _.enter(c, p)))
     def close(c: Char): Parsley[Unit] =
-        char(c).void | bs.get.verifiedUnexpected(_.missingClose)
+        char(c).void | bs.get.verifiedExplain(_.missingClose)
 
     // ensure it is reset
     def scope[A](p: Parsley[A]): Parsley[A] = bs.updateDuring(identity[Brackets])(p)

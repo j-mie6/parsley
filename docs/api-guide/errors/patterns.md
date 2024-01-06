@@ -59,7 +59,7 @@ import parsley.character.char
 // assume that a `lexer` is available
 val float = lexer.nonlexeme.floating.decimal
 val _noFloat =
-    float.verifiedUnexpected("floating-point values may not be used as array indices")
+    float.verifiedExplain("floating-point values may not be used as array indices")
 
 _noFloat.parse("hello")
 _noFloat.parse("3.142")
