@@ -1,7 +1,7 @@
 {
   "versions": [
-    { "displayValue": "4.5.x", "pathSegment": "4.5", "fallbackLink": "/api-guide", "label": "dev", "canonical": false },
-    { "displayValue": "4.4.x", "pathSegment": "4.4", "fallbackLink": "/api-guide", "label": "stable", "canonical": true }
+    { "displayValue": "4.5.x", "pathSegment": "4.5", "fallbackLink": "/api-guide", "label": "stable", "canonical": true },
+    { "displayValue": "4.4.x", "pathSegment": "4.4", "fallbackLink": "/api-guide", "label": "stable", "canonical": false }
   ],
   "linkTargets": [
     { "path": "/api-guide/Parsley.html", "versions": ["4.4", "4.5"] },

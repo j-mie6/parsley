@@ -70,7 +70,7 @@ object ParsleySitePlugin extends AutoPlugin {
                 subtitle = Some("A fast and modern parser combinator library for Scala"),
                 latestReleases = Seq(
                     ReleaseInfo("Latest Stable Release", mdocVariables.value("VERSION")),
-                    ReleaseInfo("Latest Dev Snapshot", mdocVariables.value("PRERELEASE_VERSION")),
+                    ReleaseInfo("Latest Dev Pre-Release", mdocVariables.value("PRERELEASE_VERSION")),
                 ),
                 license = Some(licenses.value.head._1),
                 documentationLinks = Seq(
@@ -114,8 +114,8 @@ object ParsleySitePlugin extends AutoPlugin {
                 def version(v: String, label: String)(path: String = v) =
                     Version(s"$v.x", path).withLabel(label).withFallbackLink(s"api-guide")
                 Versions
-                  .forCurrentVersion(version(tlBaseVersion.value, "dev")())
-                  .withOlderVersions(version("4.4", "stable")().setCanonical)
+                  .forCurrentVersion(version(tlBaseVersion.value, "stable")().setCanonical)
+                  .withOlderVersions(version("4.4", "stable")())
                   .withRenderUnversioned(notBackport)
             }
             .site.themeColors(
