@@ -14,6 +14,7 @@ import parsley.errors.ErrorBuilder
 
 import parsley.internal.machine.Context
 
+// $COVERAGE-OFF$
 /** This module contains utilities to have parsers interact with IO, including the very useful `parseFromFile` method (exposed by `ParseFromIO`)
   * @since 3.0.0
   */
@@ -60,3 +61,4 @@ object io {
         }
     }
 }
+// $COVERAGE-ON$

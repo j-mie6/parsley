@@ -41,35 +41,35 @@ class TokeniserTests extends ParsleyTest {
     val tokeniser = new token.Lexer(scala)
     val tokeniser_ = new token.Lexer(scala_)
 
-    "semiSep" should "parse semi-colon separated values" in cases(tokeniser.lexeme.separators.semiSep(string("aa"))) (
+    "semiSep" should "parse semi-colon separated values" in cases(tokeniser.lexeme.semiSep(string("aa"))) (
         "" -> Some(Nil),
         "aa" -> Some(List("aa")),
         "aa; aa;aa" -> Some(List("aa", "aa", "aa")),
         "aa;" -> None,
     )
 
-    "semiSep1" should "parse semi-colon separated values" in cases(tokeniser.lexeme.separators.semiSep1(string("aa"))) (
+    "semiSep1" should "parse semi-colon separated values" in cases(tokeniser.lexeme.semiSep1(string("aa"))) (
         "" -> None,
         "aa" -> Some(List("aa")),
         "aa; aa;aa" -> Some(List("aa", "aa", "aa")),
         "aa;" -> None,
     )
 
-    "commaSep" should "parse comma separated values" in cases(tokeniser.lexeme.separators.commaSep(string("aa"))) (
+    "commaSep" should "parse comma separated values" in cases(tokeniser.lexeme.commaSep(string("aa"))) (
         "" -> Some(Nil),
         "aa" -> Some(List("aa")),
         "aa, aa,aa" -> Some(List("aa", "aa", "aa")),
         "aa," -> None,
     )
 
-    "commaSep1" should "parse comma separated values" in cases(tokeniser.lexeme.separators.commaSep1(string("aa"))) (
+    "commaSep1" should "parse comma separated values" in cases(tokeniser.lexeme.commaSep1(string("aa"))) (
         "" -> None,
         "aa" -> Some(List("aa")),
         "aa, aa,aa" -> Some(List("aa", "aa", "aa")),
         "aa," -> None,
     )
 
-    "parens" should "parse values within parentheses" in cases(tokeniser.lexeme.enclosing.parens(string("aa"))) (
+    "parens" should "parse values within parentheses" in cases(tokeniser.lexeme.parens(string("aa"))) (
         "" -> None,
         "( aa)" -> Some("aa"),
         "(aa)  " -> Some("aa"),
@@ -79,7 +79,7 @@ class TokeniserTests extends ParsleyTest {
         "{aa}" -> None,
     )
 
-    "braces" should "parse values within braces" in cases(tokeniser.lexeme.enclosing.braces(string("aa"))) (
+    "braces" should "parse values within braces" in cases(tokeniser.lexeme.braces(string("aa"))) (
         "" -> None,
         "{ aa}" -> Some("aa"),
         "{aa}  " -> Some("aa"),
@@ -89,7 +89,7 @@ class TokeniserTests extends ParsleyTest {
         "(aa)" -> None,
     )
 
-    "angles" should "parse values within angle brackets" in cases(tokeniser.lexeme.enclosing.angles(string("aa"))) (
+    "angles" should "parse values within angle brackets" in cases(tokeniser.lexeme.angles(string("aa"))) (
         "" -> None,
         "< aa>" -> Some("aa"),
         "<aa>  " -> Some("aa"),
@@ -99,7 +99,7 @@ class TokeniserTests extends ParsleyTest {
         "(aa)" -> None,
     )
 
-    "brackets" should "parse values within square brackets" in cases(tokeniser.lexeme.enclosing.brackets(string("aa"))) (
+    "brackets" should "parse values within square brackets" in cases(tokeniser.lexeme.brackets(string("aa"))) (
         "" -> None,
         "[ aa]" -> Some("aa"),
         "[aa]  " -> Some("aa"),

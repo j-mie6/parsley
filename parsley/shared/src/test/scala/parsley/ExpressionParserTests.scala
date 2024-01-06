@@ -302,7 +302,7 @@ class ExpressionParserTests extends ParsleyTest {
         lazy val ops = Seq(
             Ops(InfixR)(Binary <# ".="),
             Ops(InfixL)(Binary <# '.'),
-            Ops(Postfix)(Call(tok.lexeme.enclosing.parens(expr </> Constant(""))))
+            Ops(Postfix)(Call(tok.lexeme.parens(expr </> Constant(""))))
         )
 
         lazy val atom: Parsley[Expr] = Constant(tok.lexeme.names.identifier)
