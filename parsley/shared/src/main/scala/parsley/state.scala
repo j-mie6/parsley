@@ -7,12 +7,12 @@ package parsley
 
 import scala.collection.mutable
 
-import Parsley.{fresh, pure}
 import parsley.combinator.{whenS, whileS}
 import parsley.syntax.zipped.Zipped2
 
 import parsley.internal.deepembedding.frontend
 
+import Parsley.{fresh, pure}
 import org.typelevel.scalaccompat.annotation.nowarn
 
 /** This module contains all the functionality and operations for using and manipulating references.

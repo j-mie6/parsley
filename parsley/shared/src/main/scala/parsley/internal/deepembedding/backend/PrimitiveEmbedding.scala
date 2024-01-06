@@ -13,9 +13,9 @@ import parsley.internal.deepembedding.ContOps, ContOps.{ContAdapter, result, sus
 import parsley.internal.deepembedding.singletons._
 import parsley.internal.machine.instructions
 
+import StrictParsley.InstrBuffer
 import org.typelevel.scalaccompat.annotation.nowarn3
 
-import StrictParsley.InstrBuffer
 private [deepembedding] final class Attempt[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, A] {
     override val instr: instructions.Instr = instructions.PopHandlerAndState
     override def instrNeedsLabel: Boolean = false

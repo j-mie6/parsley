@@ -9,8 +9,8 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 
 import parsley.Parsley.{atomic, empty, fresh, notFollowedBy, pure, select, unit}
-import parsley.syntax.zipped.{Zipped2, Zipped3}
 import parsley.state.{RefMaker, StateCombinators}
+import parsley.syntax.zipped.{Zipped2, Zipped3}
 
 import parsley.internal.deepembedding.frontend
 
@@ -232,6 +232,7 @@ object combinator {
     private [parsley] def traverse5[A, B](xs: A*)(f: A => Parsley[B]): Parsley[List[B]] = traverse(f, xs: _*)
     private [parsley] def traverse_[A](xs: A*)(f: A => Parsley[_]): Parsley[Unit] = traverse5[A, Any](xs: _*)(f).void // TODO: drop in 5.0.0
 
+    // $COVERAGE-OFF$
     /** This combinator will parse each of `ps` in order, discarding the results.
       *
       * Given the parsers `ps`, consisting of `p,,1,,` through `p,,n,,`, parses
@@ -257,6 +258,7 @@ object combinator {
       */
     @deprecated("This combinator will be removed in 5.0.0, use `sequence((p +: ps): _*).void` instead", "4.5.0")
     def skip(p: Parsley[_], ps: Parsley[_]*): Parsley[Unit] = sequence((p +: ps): _*).void
+    // $COVERAGE-ON$
 
     /** This combinator tries to parse `p`, wrapping its result in a `Some` if it succeeds, or returns `None` if it fails.
       *
@@ -363,6 +365,7 @@ object combinator {
       */
     def decide[A](p: Parsley[Option[A]], q: =>Parsley[A]): Parsley[A] = select(p.map(_.toRight(())), q.map(x => (_: Unit) => x))
 
+    // $COVERAGE-OFF$
     /** This combinator parses `open`, followed by `p`, and then `close`.
       *
       * First parse `open`, ignore its result, then parse, `p`, producing `x`. Finally, parse `close`, ignoring its result.
@@ -437,6 +440,7 @@ object combinator {
       */
     @deprecated("This combinator will be removed in 5.0.0, use `Parsley.many` instead", "4.5.0")
     def some[A](p: Parsley[A]): Parsley[List[A]] = manyN(1, p)
+    // $COVERAGE-ON$
 
     /** This combinator repeatedly parses a given parser '''`n`''' or more times, collecting the results into a list.
       *
@@ -474,6 +478,7 @@ object combinator {
         go(n)
     }
 
+    // $COVERAGE-OFF$
     /** This combinator repeatedly parses a given parser '''zero''' or more times, ignoring the results.
       *
       * Parses a given parser, `p`, repeatedly until it fails. If `p` failed having consumed input,
@@ -611,6 +616,7 @@ object combinator {
       */
     @deprecated("This combinator will be removed in 5.0.0, use `countSome` instead", "4.5.0")
     def count1(p: Parsley[_]): Parsley[Int] = p.foldLeft1(0)((n, _) => n + 1)
+    // $COVERAGE-ON$
 
     /** This combinator repeatedly parses a given parser '''zero''' or more times, returning how many times it succeeded.
       *
@@ -820,6 +826,7 @@ object combinator {
       */
     def endBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = Parsley.some(p <* sep)
 
+    // $COVERAGE-OFF$
     /** This parser only succeeds at the end of the input.
       *
       * Equivalent to `notFollowedBy(item)`.
@@ -879,6 +886,7 @@ object combinator {
       */
     @deprecated("This combinator will be removed in 5.0.0, use `manyTill` instead", "4.5.0")
     def manyUntil[A](p: Parsley[A], end: Parsley[_]): Parsley[List[A]] = manyTill(p, end)
+    // $COVERAGE-ON$
 
     /** This combinator repeatedly parses a given parser '''zero''' or more times, until the `end` parser succeeds, collecting the results into a list.
       *
@@ -917,6 +925,7 @@ object combinator {
         object Stop
     }
 
+    // $COVERAGE-OFF$
     /** This combinator repeatedly parses a given parser '''one''' or more times, until the `end` parser succeeds, collecting the results into a list.
       *
       * First ensures that trying to parse `end` fails, then tries to parse `p`. If it succeed then it will repeatedly: try to parse `end`, if it fails
@@ -945,6 +954,7 @@ object combinator {
       */
     @deprecated("This combinator will be removed in 5.0.0, use `someTill` instead", "4.5.0")
     def someUntil[A](p: Parsley[A], end: Parsley[_]): Parsley[List[A]] = someTill(p, end)
+    // $COVERAGE-ON$
 
     /** This combinator repeatedly parses a given parser '''one''' or more times, until the `end` parser succeeds, collecting the results into a list.
       *
@@ -980,7 +990,6 @@ object combinator {
     // TODO: remove
     // $COVERAGE-OFF$
     private [parsley] def skipSomeUntil(p: Parsley[_], end: Parsley[_]): Parsley[Unit] = notFollowedBy(end) *> (p *> skipManyUntil(p, end))
-    // $COVERAGE-ON$
 
     /** This combinator parses one of `thenP` or `elseP` depending on the result of parsing `condP`.
       *
@@ -1005,6 +1014,7 @@ object combinator {
       */
     @deprecated("This will be removed in 5.x, use ifS instead", "4.5.0")
     def ifP[A](condP: Parsley[Boolean], thenP: =>Parsley[A], elseP: =>Parsley[A]): Parsley[A] = ifS(condP, thenP, elseP)
+    // $COVERAGE-ON$
 
     /** This combinator parses one of `thenP` or `elseP` depending on the result of parsing `condP`.
       *
@@ -1031,6 +1041,7 @@ object combinator {
         new Parsley(new frontend.If(condP.internal, thenP.internal, elseP.internal))
     }
 
+    // $COVERAGE-OFF$
     /** This combinator conditionally parses `thenP` depending on the result of parsing `condP`.
       *
       * This is a lifted `if`-statement. First, parse `condP`: if it is successful and returns
@@ -1052,6 +1063,7 @@ object combinator {
       */
     @deprecated("This will be removed in 5.x, use whenS instead", "4.5.0")
     def when(condP: Parsley[Boolean], thenP: =>Parsley[Unit]): Parsley[Unit] = ifS(condP, thenP, unit)
+    // $COVERAGE-ON$
 
     /** This combinator conditionally parses `thenP` depending on the result of parsing `condP`.
       *
@@ -1074,6 +1086,7 @@ object combinator {
       */
     def whenS(condP: Parsley[Boolean], thenP: =>Parsley[Unit]): Parsley[Unit] = ifS(condP, thenP, unit)
 
+    // $COVERAGE-OFF$
     /** This combinator verfies that the given parser returns `true`, or else fails.
       *
       * First, parse `p`; if it succeeds then, so long at returns `true`, this `guard(p)` succeeds. Otherwise,
@@ -1090,6 +1103,7 @@ object combinator {
       */
     @deprecated("This will be removed in 5.x, use guardS instead", "4.5.0")
     def guard(p: Parsley[Boolean]): Parsley[Unit] = ifS(p, unit, empty)
+    // $COVERAGE-ON$
 
     /** This combinator verfies that the given parser returns `true`, or else fails.
       *
@@ -1107,6 +1121,7 @@ object combinator {
       */
     def guardS(p: Parsley[Boolean]): Parsley[Unit] = ifS(p, unit, empty)
 
+    // $COVERAGE-OFF$
     // TODO: remove
     private [parsley] def ensure[A](condP: Parsley[Boolean], beforeP: =>Parsley[A]): Parsley[A] = guardS(condP) *> beforeP
 
@@ -1137,6 +1152,7 @@ object combinator {
         lazy val whilePP: Parsley[Unit] = when(p, whilePP)
         whilePP
     }
+    // $COVERAGE-ON$
 
     /** This combinator repeatedly parses `p` so long as it returns `true`.
       *
@@ -1226,6 +1242,7 @@ object combinator {
         xs.map(_.toList)
     }
 
+    // $COVERAGE-OFF$
     /** This combinator parses between `min` and `max` occurrences of `p` but ignoring the results.
       *
       * Parses `p` repeatedly a minimum of `min` times and up to `max` times both inclusive. If `p` fails before
@@ -1256,6 +1273,7 @@ object combinator {
       */
     @deprecated("This combinator will be removed in 5.0.0, use `count(min, max)(p).void` instead", "4.5.0")
     def range_(min: Int, max: Int)(p: Parsley[_]): Parsley[Unit] = count(min, max)(p).void
+    // $COVERAGE-ON$
 
     /** This combinator parses between `min` and `max` occurrences of `p`, returning the number of successes.
       *

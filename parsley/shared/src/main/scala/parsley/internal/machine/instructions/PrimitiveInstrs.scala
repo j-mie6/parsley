@@ -5,8 +5,8 @@
  */
 package parsley.internal.machine.instructions
 
-import parsley.token.errors.LabelConfig
 import parsley.state.Ref
+import parsley.token.errors.LabelConfig
 
 import parsley.internal.errors.ExpectDesc
 import parsley.internal.machine.Context

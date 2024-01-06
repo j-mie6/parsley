@@ -81,6 +81,7 @@ object patterns {
           */
         def verifiedUnexpected: Parsley[Nothing] = this.verifiedWithVanillaRaw(_ => None)
 
+        // $COVERAGE-OFF$
         /** Ensures this parser does not succeed, failing with a vanilla error with an unexpected message and caret spanning the parse and a given reason.
           *
           * If this parser succeeds, input is consumed and this combinator will fail, producing an unexpected message the same width as
@@ -109,6 +110,7 @@ object patterns {
           */
         @deprecated("This combinator will be removed in 5.0.0, use `verifiedExplain` instead", "4.5.0")
         def verifiedUnexpected(reason: A => String): Parsley[Nothing] = this.verifiedWithVanillaRaw(x => Some(reason(x)))
+        // $COVERAGE-ON$
 
         /** Ensures this parser does not succeed, failing with a vanilla error with an unexpected message and caret spanning the parse and a given reason.
           *

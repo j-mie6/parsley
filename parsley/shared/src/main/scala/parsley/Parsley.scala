@@ -844,6 +844,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @group monad
       */
     def flatMap[B](f: A => Parsley[B]): Parsley[B] = new Parsley(new frontend.>>=(this.internal, f.andThen(_.internal)))
+    // $COVERAGE-OFF$
     /** This combinator, pronounced "bind", $bind
       *
       * @example {{{
@@ -865,6 +866,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       */
     @deprecated("This combinator will be removed in 5.x, and `.flatMap` used instead", "4.5.0")
     def >>=[B](f: A => Parsley[B]): Parsley[B] = this.flatMap(f)
+    // $COVERAGE-ON$
     /** This combinator collapses two layers of parsing structure into one.
       *
       * The implicit (compiler-provided) evidence proves that this parser really has type `Parsley[Parsley[B]]`.
@@ -954,9 +956,6 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
     @deprecated("This combinator will be removed in 5.x, and `impure` used instead", "4.5.0")
     def unsafe(): Parsley[A] = impure
 
-    // $COVERAGE-ON$
-
-    // $COVERAGE-OFF$
     /** This is an alias for `p.filter(pred)`. It is needed to support for-comprehension syntax with `if`s.
       *
       * @since 4.0.0
@@ -1165,6 +1164,7 @@ object Parsley extends PlatformSpecific {
       * @group cond
       */
     def select[A, B](p: Parsley[Either[A, B]], q: =>Parsley[A => B]): Parsley[B] = branch(p, q, pure(identity[B](_)))
+    // $COVERAGE-OFF$
     /** This combinator collapses two layers of parsing structure into one.
       *
       * Just an alias for `_.flatten`, providing a namesake to Haskell.
@@ -1174,7 +1174,6 @@ object Parsley extends PlatformSpecific {
       */
     @deprecated("This combinator will be removed in 5.x, and `.flatten` used instead", "4.5.0")
     def join[A](p: Parsley[Parsley[A]]): Parsley[A] = p.flatten
-    // $COVERAGE-OFF$
     /** This combinator parses its argument `p`, but rolls back any consumed input on failure.
       *
       * If the parser `p` succeeds, then `attempt(p)` has no effect. However, if `p` failed,

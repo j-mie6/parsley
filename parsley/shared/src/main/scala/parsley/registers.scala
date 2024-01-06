@@ -120,6 +120,7 @@ object registers {
           * @group getters
           */
         def gets[B](pf: Parsley[A => B]): Parsley[B] = pf <*> this.get
+        // $COVERAGE-OFF$
         /** This combinator stores a new value into this register.
           *
           * Without any other effect, the value `x` will be placed into this register.
@@ -138,6 +139,7 @@ object registers {
           */
         @deprecated("this method will be removed in 5.x, use `set` instead", "4.5.0")
         def put(x: A): Parsley[Unit] = this.set(x)
+        // $COVERAGE-ON$
         /** This combinator stores a new value into this reference.
           *
           * Without any other effect, the value `x` will be placed into this reference.
@@ -155,6 +157,7 @@ object registers {
           * @group setters
           */
         def set(x: A): Parsley[Unit] = this.set(pure(x))
+        // $COVERAGE-OFF$
         /** This combinator stores a new value into this register.
           *
           * First, parse `p` to obtain its result `x`. Then store `x` into
@@ -176,6 +179,7 @@ object registers {
           */
         @deprecated("this method will be removed in 5.x, use `set` instead", "4.5.0")
         def put(p: Parsley[A]): Parsley[Unit] = this.set(p)
+        // $COVERAGE-ON$
         /** This combinator stores a new value into this reference.
           *
           * First, parse `p` to obtain its result `x`. Then store `x` into
@@ -196,6 +200,7 @@ object registers {
           * @group setters
           */
         def set(p: Parsley[A]): Parsley[Unit] = new Parsley(new frontend.Put(this, p.internal))
+        // $COVERAGE-OFF$
         /** This combinator stores a new value into this register.
           *
           * First, parse `p` to obtain its result `x`. Then store `f(x)` into
@@ -213,6 +218,7 @@ object registers {
           */
         @deprecated("this method will be removed in 5.x, use `sets` instead", "4.5.0")
         def puts[B](p: Parsley[B], f: B => A): Parsley[Unit] = this.sets(p, f)
+        // $COVERAGE-ON$
         /** This combinator stores a new value into this reference.
           *
           * First, parse `p` to obtain its result `x`. Then store `f(x)` into
@@ -229,6 +235,7 @@ object registers {
           * @group setters
           */
         def sets[B](p: Parsley[B], f: B => A): Parsley[Unit] = this.set(p.map(f))
+        // $COVERAGE-OFF$
         /** This combinator modifies the value stored in this register with a function.
           *
           * Without any other effect, get the value stored in this register, `x`, and
@@ -244,6 +251,7 @@ object registers {
           */
         @deprecated("this method will be removed in 5.x, use `set` instead", "4.5.0")
         def modify(f: A => A): Parsley[Unit] = this.update(f)
+        // $COVERAGE-ON$
         /** This combinator modifies the value stored in this reference with a function.
           *
           * Without any other effect, get the value stored in this reference, `x`, and
@@ -258,6 +266,7 @@ object registers {
           * @group mod
           */
         def update(f: A => A): Parsley[Unit] = new Parsley(new singletons.Modify(this, f))
+        // $COVERAGE-OFF$
         /** This combinator modifies the value stored in this register with a function.
           *
           * First, parse `pf` to obtain its result `f`. Then get the value stored in
@@ -273,6 +282,7 @@ object registers {
           */
         @deprecated("this method will be removed in 5.x, use `update` instead", "4.5.0")
         def modify(pf: Parsley[A => A]): Parsley[Unit] = this.update(pf)
+        // $COVERAGE-ON$
         /** This combinator modifies the value stored in this reference with a function.
           *
           * First, parse `pf` to obtain its result `f`. Then get the value stored in
@@ -287,6 +297,7 @@ object registers {
           * @group mod
           */
         def update(pf: Parsley[A => A]): Parsley[Unit] = this.set(this.gets(pf))
+        // $COVERAGE-OFF$
         /** This combinator changed the value stored in this register for the duration of a given parser, resetting it afterwards.
           *
           * First get the current value in this register `x,,old,,`, then place `x` into this register
@@ -306,6 +317,7 @@ object registers {
           */
         @deprecated("this method will be removed in 5.x, use `setDuring` instead", "4.5.0")
         def local[B](x: A)(p: Parsley[B]): Parsley[B] = this.setDuring(x)(p)
+        // $COVERAGE-ON$
         /** This combinator changed the value stored in this reference for the duration of a given parser, resetting it afterwards.
           *
           * First get the current value in this reference `x,,old,,`, then place `x` into this reference
@@ -324,6 +336,7 @@ object registers {
           * @group local
           */
         def setDuring[B](x: A)(p: Parsley[B]): Parsley[B] = this.setDuring(pure(x))(p)
+        // $COVERAGE-OFF$
         /** This combinator changed the value stored in this register for the duration of a given parser, resetting it afterwards.
           *
           * First get the current value in this register `x,,old,,`, then parse `p` to get the result `x`, placing it into this register
@@ -339,6 +352,7 @@ object registers {
           */
         @deprecated("this method will be removed in 5.x, use `setDuring` instead", "4.5.0")
         def local[B](p: Parsley[A])(q: =>Parsley[B]): Parsley[B] = new Parsley(new frontend.Local(this, p.internal, q.internal))
+        // $COVERAGE-ON$
         /** This combinator changed the value stored in this reference for the duration of a given parser, resetting it afterwards.
           *
           * First get the current value in this reference `x,,old,,`, then parse `p` to get the result `x`, placing it into this reference
@@ -353,6 +367,7 @@ object registers {
           * @group local
           */
         def setDuring[B](p: Parsley[A])(q: =>Parsley[B]): Parsley[B] = new Parsley(new frontend.Local(this, p.internal, q.internal))
+        // $COVERAGE-OFF$
         /** This combinator changed the value stored in this register for the duration of a given parser, resetting it afterwards.
           *
           * First get the current value in this register `x,,old,,`, then place `f(x,,old,,)` into this register
@@ -372,6 +387,7 @@ object registers {
           */
         @deprecated("this method will be removed in 5.x, use `updateDuring` instead", "4.5.0")
         def local[B](f: A => A)(p: Parsley[B]): Parsley[B] = this.local(this.gets(f))(p)
+        // $COVERAGE-ON$
         /** This combinator changed the value stored in this reference for the duration of a given parser, resetting it afterwards.
           *
           * First get the current value in this reference `x,,old,,`, then place `f(x,,old,,)` into this reference
@@ -425,6 +441,7 @@ object registers {
         private [parsley] def deallocate(): Unit = _v = -1
         //override def toString: String = s"Reg(${if (allocated) addr else "unallocated"})"
     }
+    // $COVERAGE-OFF$
     /** This object allows for the construction of a register via its `make` function.
       * @group reg
       */
@@ -637,4 +654,5 @@ object registers {
       */
     def forYieldP[A, B](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: =>Parsley[B]): Parsley[List[B]] =
         state.forYieldP(init, cond, step)(body)
+    // $COVERAGE-ON$
 }
