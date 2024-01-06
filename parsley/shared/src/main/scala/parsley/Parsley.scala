@@ -307,7 +307,6 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * val res2 = Failure(..) // first parser consumed an 'a'!
       * }}}
       *
-      * @group alt
       * @note just an alias for `</>`
       */
     @deprecated("This combinator will be removed in 5.x, and `</>` used instead", "4.5.0")
@@ -862,7 +861,6 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *       during parse-time.
       * @param f the function that produces the next parser.
       * @return a new parser, which sequences this parser with the parser generated from its result.
-      * @group monad
       */
     @deprecated("This combinator will be removed in 5.x, and `.flatMap` used instead", "4.5.0")
     def >>=[B](f: A => Parsley[B]): Parsley[B] = this.flatMap(f)
@@ -951,7 +949,6 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *          parsley's aggressive optimisations that remove results that are not needed: in this case,
       *          the optimiser cannot see that the result of a parser is mutating some value, and may remove it.
       * @note old alias for `impure`
-      * @group special
       */
     @deprecated("This combinator will be removed in 5.x, and `impure` used instead", "4.5.0")
     def unsafe(): Parsley[A] = impure
@@ -1002,16 +999,12 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
   *     repeated execution of the parser are returned in a `List`. These are almost essential for any practical parsing
   *     task.
   *
-  * @groupprio monad 100
-  * @groupname monad Expensive Sequencing Combinators
-  * @groupdesc monad
-  *     These combinators can sequence two parsers, where the first parser's result influences
-  *     the structure of the second one. This may be because the second parser is generated
-  *     from the result of the first, or that the first parser ''returns'' the second parser.
-  *     Either way, the second parser cannot be known until runtime, when the first parser
-  *     has been executed: this means that Parsley is forced to compile the second parser during
-  *     parse-time, which is '''very''' expensive to do repeatedly. These combinators are only
-  *     needed in exceptional circumstances, and should be avoided otherwise.
+  * @groupprio item 15
+  * @groupname item Input Query Combinators
+  * @groupdesc item
+  *     These combinators do not consume input, but they allow for querying of the input stream - specifically checking
+  *     whether or not there is more input that can be consumed or not. In particular, most parsers should be making
+  *     use of `eof` to ensure that the parser consumes all the input available at the end of the parse.
   */
 object Parsley extends PlatformSpecific {
     /** This class enables the prefix `~` combinator, which allows a parser in an otherwise strict
@@ -1169,7 +1162,6 @@ object Parsley extends PlatformSpecific {
       *
       * Just an alias for `_.flatten`, providing a namesake to Haskell.
       *
-      * @group monad
       * @see [[Parsley.flatten `flatten`]] for details and examples.
       */
     @deprecated("This combinator will be removed in 5.x, and `.flatten` used instead", "4.5.0")
@@ -1194,7 +1186,6 @@ object Parsley extends PlatformSpecific {
       * @param p the parser to execute, if it fails, it will not have consumed input.
       * @return a parser that tries `p`, but never consumes input if it fails.
       * @note `atomic` should be used instead.
-      * @group prim
       */
     @deprecated("This combinator will be removed in 5.x, and `atomic` used instead", "4.5.0")
     def attempt[A](p: Parsley[A]): Parsley[A] = atomic(p)

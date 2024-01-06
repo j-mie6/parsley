@@ -77,9 +77,6 @@ import parsley.internal.deepembedding.frontend
   *     based on another. They are morally related to [[Parsley.branch `branch`]] and [[Parsley.select `select`]] but are
   *     less fundamental.
   *
-  * @groupprio misc 100
-  * @groupname misc Miscellaneous
-  *
   * @define strict be aware that all of the arguments to this combinator are in '''strict''' positions.
   */
 object combinator {
@@ -134,7 +131,6 @@ object combinator {
       *
       * @param ps the parsers to try, in order.
       * @return a parser that tries to parse one of `ps`.
-      * @group multi
       * @see [[parsley.Parsley.<|> `<|>`]]
       * @see [[parsley.Parsley$.attempt `attempt`]]
       * @note this combinator is not particularly efficient, because it may unnecessarily backtrack for each alternative.
@@ -252,7 +248,6 @@ object combinator {
       * @param p first parser to be sequenced
       * @param ps parsers to be sequenced.
       * @return a parser that parses each of `ps`, returning `()`.
-      * @group multi
       * @see [[parsley.Parsley.*> `*>`]]
       * @note $strict
       */
@@ -379,7 +374,6 @@ object combinator {
       * @param close the last parser to parse.
       * @param p the parser to parse between the other two.
       * @return a parser that reads `open`, then `p`, then `close` and returns the result of `p`.
-      * @group misc
       */
     @deprecated("This combinator will be removed in 5.x", "4.5.0")
     def between[A](open: Parsley[_], close: =>Parsley[_], p: =>Parsley[A]): Parsley[A] = open *> p <* close
@@ -408,7 +402,6 @@ object combinator {
       * @param p the parser to execute multiple times.
       * @return a parser that parses `p` until it fails, returning the list of all the successful results.
       * @since 2.2.0
-      * @group iter
       */
     @deprecated("This combinator will be removed in 5.0.0, use `Parsley.many` instead", "4.5.0")
     def many[A](p: Parsley[A]): Parsley[List[A]] = new Parsley(new frontend.Many(p.internal))
@@ -436,7 +429,6 @@ object combinator {
       *
       * @param p the parser to execute multiple times.
       * @return a parser that parses `p` until it fails, returning the list of all the successful results.
-      * @group iter
       */
     @deprecated("This combinator will be removed in 5.0.0, use `Parsley.many` instead", "4.5.0")
     def some[A](p: Parsley[A]): Parsley[List[A]] = manyN(1, p)
@@ -502,7 +494,6 @@ object combinator {
       * @param p the parser to execute multiple times.
       * @return a parser that parses `p` until it fails, returning unit.
       * @since 2.2.0
-      * @group iter
       */
     @deprecated("This combinator will be removed in 5.0.0, use `many(p).void` instead", "4.5.0")
     def skipMany(p: Parsley[_]): Parsley[Unit] = many(p).void
@@ -529,7 +520,6 @@ object combinator {
       *
       * @param p the parser to execute multiple times.
       * @return a parser that parses `p` until it fails, returning unit.
-      * @group iter
       */
     @deprecated("This combinator will be removed in 5.0.0, use `some(p).void` instead", "4.5.0")
     def skipSome(p: Parsley[_]): Parsley[Unit] = some(p).void
@@ -556,7 +546,6 @@ object combinator {
       *
       * @param p the parser to execute multiple times.
       * @return a parser that parses `p` until it fails, returning unit.
-      * @group iter
       */
     @deprecated("This combinator will be removed in 5.0.0, use `manyN(n, p).void` instead", "4.5.0")
     def skipManyN(n: Int, p: Parsley[_]): Parsley[Unit] = manyN(n, p).void
@@ -583,7 +572,6 @@ object combinator {
       *
       * @param p the parser to execute multiple times.
       * @return the number of times `p` successfully parses
-      * @group iter
       * @since 4.4.0
       */
     @deprecated("This combinator will be removed in 5.0.0, use `countMany` instead", "4.5.0")
@@ -611,7 +599,6 @@ object combinator {
       *
       * @param p the parser to execute multiple times.
       * @return the number of times `p` successfully parses
-      * @group iter
       * @since 4.4.0
       */
     @deprecated("This combinator will be removed in 5.0.0, use `countSome` instead", "4.5.0")
@@ -838,8 +825,6 @@ object combinator {
       * scala> eof.parse("")
       * val res1 = Success(())
       * }}}
-      *
-      * @group item
       */
     @deprecated("This combinator will be removed in 5.x, use Parsley.eof instead", "4.5.0")
     val eof: Parsley[Unit] = Parsley.eof
@@ -855,8 +840,6 @@ object combinator {
       * scala> more.parse("a")
       * val res1 = Success(())
       * }}}
-      *
-      * @group item
       */
     @deprecated("This combinator will be removed in 5.x", "4.5.0")
     val more: Parsley[Unit] = notFollowedBy(eof)
@@ -882,7 +865,6 @@ object combinator {
       * @param p the parser to execute multiple times.
       * @param end the parser that stops the parsing of `p`.
       * @return a parser that parses `p` until `end` succeeds, returning the list of all the successful results.
-      * @group iter
       */
     @deprecated("This combinator will be removed in 5.0.0, use `manyTill` instead", "4.5.0")
     def manyUntil[A](p: Parsley[A], end: Parsley[_]): Parsley[List[A]] = manyTill(p, end)
@@ -950,7 +932,6 @@ object combinator {
       * @param p the parser to execute multiple times.
       * @param end the parser that stops the parsing of `p`.
       * @return a parser that parses `p` until `end` succeeds, returning the list of all the successful results.
-      * @group iter
       */
     @deprecated("This combinator will be removed in 5.0.0, use `someTill` instead", "4.5.0")
     def someUntil[A](p: Parsley[A], end: Parsley[_]): Parsley[List[A]] = someTill(p, end)
@@ -1009,7 +990,6 @@ object combinator {
       * @param thenP the parser to execute if the condition is `true`.
       * @param elseP the parser to execute if the condition is `false.
       * @return a parser that conditionally parses `thenP` or `elseP` after `condP`.
-      * @group cond
       * @since 4.0.0
       */
     @deprecated("This will be removed in 5.x, use ifS instead", "4.5.0")
@@ -1059,7 +1039,6 @@ object combinator {
       * @param condP the parser that yields the condition value.
       * @param thenP the parser to execute if the condition is `true`.
       * @return a parser that conditionally parses `thenP` after `condP`.
-      * @group cond
       */
     @deprecated("This will be removed in 5.x, use whenS instead", "4.5.0")
     def when(condP: Parsley[Boolean], thenP: =>Parsley[Unit]): Parsley[Unit] = ifS(condP, thenP, unit)
@@ -1099,7 +1078,6 @@ object combinator {
       * }}}
       *
       * @param p the parser that yields the condition value.
-      * @group cond
       */
     @deprecated("This will be removed in 5.x, use guardS instead", "4.5.0")
     def guard(p: Parsley[Boolean]): Parsley[Unit] = ifS(p, unit, empty)
@@ -1145,7 +1123,6 @@ object combinator {
       *
       * @param p the parser to repeatedly parse.
       * @return a parser that continues to parse `p` until it returns `false`.
-      * @group cond
       */
     @deprecated("This will be removed in 5.x, use whileS instead", "4.5.0")
     def whileP(p: Parsley[Boolean]): Parsley[Unit] = {
@@ -1268,7 +1245,6 @@ object combinator {
       * @param min the minimum number of times to repeat `p`, inclusive.
       * @param max the maximum number of times to repeat `p`, inclusive.
       * @param p the parser to repeat.
-      * @group range
       * @since 4.4.0
       */
     @deprecated("This combinator will be removed in 5.0.0, use `count(min, max)(p).void` instead", "4.5.0")

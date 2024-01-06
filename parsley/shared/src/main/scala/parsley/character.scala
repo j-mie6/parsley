@@ -125,7 +125,6 @@ object character {
       *
       * @param c the code-point to parse
       * @return
-      * @group core
       */
     @deprecated("This combinator will be removed in 5.x, and `unicode.char` used instead", "4.5.0")
     def codePoint(c: Int): Parsley[Int] = unicode.char(c)
@@ -776,7 +775,6 @@ object character {
       *   1. a vertical tab (`'\u000b'`)
       *
       * @see [[whitespace `whitespace`]]
-      * @group pred
       */
     @deprecated("This combinator will be removed in 5.x, use _.isWhitespace instead", "4.5.0")
     def isWhitespace(c: Char): Boolean = c.isWhitespace

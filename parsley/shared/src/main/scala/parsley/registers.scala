@@ -135,7 +135,6 @@ object registers {
           *
           * @param x the value to place in the register.
           * @since 3.2.0
-          * @group setters
           */
         @deprecated("this method will be removed in 5.x, use `set` instead", "4.5.0")
         def put(x: A): Parsley[Unit] = this.set(x)
@@ -175,7 +174,6 @@ object registers {
           *
           * @param p the parser that produces the value to store in the register.
           * @since 3.2.0
-          * @group setters
           */
         @deprecated("this method will be removed in 5.x, use `set` instead", "4.5.0")
         def put(p: Parsley[A]): Parsley[Unit] = this.set(p)
@@ -214,7 +212,6 @@ object registers {
           * @param p the parser that produces the value to store in the register.
           * @param f a function which adapts the result of `p` so that it can fit into this register.
           * @since 3.0.0
-          * @group setters
           */
         @deprecated("this method will be removed in 5.x, use `sets` instead", "4.5.0")
         def puts[B](p: Parsley[B], f: B => A): Parsley[Unit] = this.sets(p, f)
@@ -247,7 +244,6 @@ object registers {
           *
           * @param f the function used to modify this register's value.
           * @since 3.2.0
-          * @group mod
           */
         @deprecated("this method will be removed in 5.x, use `set` instead", "4.5.0")
         def modify(f: A => A): Parsley[Unit] = this.update(f)
@@ -278,7 +274,6 @@ object registers {
           *
           * @param pf  the parser that produces the function used to transform the value in this register.
           * @since 3.2.0
-          * @group mod
           */
         @deprecated("this method will be removed in 5.x, use `update` instead", "4.5.0")
         def modify(pf: Parsley[A => A]): Parsley[Unit] = this.update(pf)
@@ -313,7 +308,6 @@ object registers {
           * @param p the parser to execute with the adjusted state.
           * @return the parser that performs `p` with the modified state `x`.
           * @since 3.2.0
-          * @group local
           */
         @deprecated("this method will be removed in 5.x, use `setDuring` instead", "4.5.0")
         def local[B](x: A)(p: Parsley[B]): Parsley[B] = this.setDuring(x)(p)
@@ -348,7 +342,6 @@ object registers {
           * @param q the parser to execute with the adjusted state.
           * @return the parser that performs `q` with the modified state.
           * @since 3.2.0
-          * @group local
           */
         @deprecated("this method will be removed in 5.x, use `setDuring` instead", "4.5.0")
         def local[B](p: Parsley[A])(q: =>Parsley[B]): Parsley[B] = new Parsley(new frontend.Local(this, p.internal, q.internal))
@@ -363,7 +356,7 @@ object registers {
           * @param p the parser whose return value is placed in this reference.
           * @param q the parser to execute with the adjusted state.
           * @return the parser that performs `q` with the modified state.
-          * @since 3.2.0
+          * @since 4.5.0
           * @group local
           */
         def setDuring[B](p: Parsley[A])(q: =>Parsley[B]): Parsley[B] = new Parsley(new frontend.Local(this, p.internal, q.internal))
@@ -383,7 +376,6 @@ object registers {
           * @param p the parser to execute with the adjusted state.
           * @return the parser that performs `p` with the modified state.
           * @since 3.2.0
-          * @group local
           */
         @deprecated("this method will be removed in 5.x, use `updateDuring` instead", "4.5.0")
         def local[B](f: A => A)(p: Parsley[B]): Parsley[B] = this.local(this.gets(f))(p)
@@ -402,7 +394,7 @@ object registers {
           * @param f the function used to modify the value in this reference.
           * @param p the parser to execute with the adjusted state.
           * @return the parser that performs `p` with the modified state.
-          * @since 3.2.0
+          * @since 4.5.0
           * @group local
           */
         def updateDuring[B](f: A => A)(p: Parsley[B]): Parsley[B] = this.setDuring(this.gets(f))(p)
