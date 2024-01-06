@@ -5,9 +5,8 @@
  */
 package parsley.token.text
 
-import parsley.Parsley, Parsley.empty
+import parsley.Parsley, Parsley.{empty, some}
 import parsley.character.{char, satisfyMap}
-import parsley.combinator.some
 import parsley.syntax.character.charLift
 import parsley.token.descriptions.text.EscapeDesc
 import parsley.token.errors.ErrorConfig

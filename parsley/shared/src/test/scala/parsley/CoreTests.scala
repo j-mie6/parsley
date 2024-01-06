@@ -8,7 +8,7 @@ package parsley
 import Predef.{ArrowAssoc => _, _}
 
 import parsley.Parsley.{empty => pempty, _}
-import parsley.combinator.{many, ifS}
+import parsley.combinator.ifS
 import parsley.lift._
 import parsley.character.{char, satisfy, digit, item, string}
 import parsley.syntax.character.{charLift, stringLift}
@@ -385,7 +385,8 @@ class CoreTests extends ParsleyTest {
     }
 
     "failures through call boundary" should "ensure that stateful instructions are restored correctly" in {
-        import parsley.combinator.{whileS, some}
+        import parsley.Parsley.some
+        import parsley.combinator.whileS
         val n = Ref.make[Int]
         lazy val p: Parsley[Unit] = whileS(ifS(n.gets(_ % 2 == 0), some('a'), some('b')) *> n.update(_ - 1) *> n.gets(_ != 0))
         val q = atomic(n.set(4) *> p <* eof) | n.set(2) *> p <* eof

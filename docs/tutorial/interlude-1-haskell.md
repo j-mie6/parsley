@@ -424,7 +424,7 @@ complex and general `SOps` precedence architecture. This has some really nice co
 Next up is the remaining three rules: `<expr-10>`, `<alt>`, and `<func-app>`.
 
 ```scala mdoc:nest:silent
-import parsley.combinator.{some, many}
+import parsley.Parsley.{some, many}
 
 val `<clause>`: Parsley[Clause] = /???/
 val `<pat-naked>`: Parsley[PatNaked] = /???/
@@ -462,7 +462,8 @@ ambiguity in the grammar that need to be resolved with `atomic`, specifically th
 parentheses. But other than that there isn't anything really new here.
 
 ```scala mdoc:nest
-import parsley.combinator.{many, option}
+import parsley.Parsley.many
+import parsley.combinator.option
 import parsley.expr.infix
 
 lazy val `<clause>` =
@@ -531,7 +532,8 @@ Here is a nice easy finish. These last rules are really just book-keeping. I'm a
 introduce a way of running the parser directly.
 
 ```scala mdoc
-import parsley.combinator.{sepEndBy, some}
+import parsley.Parsley.some
+import parsley.combinator.sepEndBy
 import parsley.errors.ErrorBuilder
 
 def parse[Err: ErrorBuilder](input: String) = `<program>`.parse(input)

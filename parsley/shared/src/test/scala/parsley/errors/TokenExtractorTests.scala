@@ -6,7 +6,7 @@
 package parsley.errors
 
 import parsley.{ParsleyTest, TestErrorBuilder}
-import parsley.combinator.{some, many}
+import parsley.Parsley.{many, some}
 import parsley.character.{string, digit, letter, char, whitespace}
 import parsley.errors.tokenextractors._
 

@@ -407,6 +407,7 @@ object combinator {
       * @since 2.2.0
       * @group iter
       */
+    @deprecated("This combinator will be removed in 5.0.0, use `Parsley.many` instead", "4.5.0")
     def many[A](p: Parsley[A]): Parsley[List[A]] = new Parsley(new frontend.Many(p.internal))
 
     /** This combinator repeatedly parses a given parser '''one''' or more times, collecting the results into a list.
@@ -434,6 +435,7 @@ object combinator {
       * @return a parser that parses `p` until it fails, returning the list of all the successful results.
       * @group iter
       */
+    @deprecated("This combinator will be removed in 5.0.0, use `Parsley.many` instead", "4.5.0")
     def some[A](p: Parsley[A]): Parsley[List[A]] = manyN(1, p)
 
     /** This combinator repeatedly parses a given parser '''`n`''' or more times, collecting the results into a list.
@@ -465,7 +467,7 @@ object combinator {
       */
     def manyN[A](n: Int, p: Parsley[A]): Parsley[List[A]] = {
         require(n >= 0, "cannot pass negative integer to `manyN`")
-        @tailrec def go(n: Int, acc: Parsley[List[A]] = many(p)): Parsley[List[A]] = {
+        @tailrec def go(n: Int, acc: Parsley[List[A]] = Parsley.many(p)): Parsley[List[A]] = {
             if (n == 0) acc
             else go(n-1, p <::> acc)
         }
@@ -714,7 +716,7 @@ object combinator {
       * @group sep
       */
     def sepBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = {
-        p <::> many(sep *> p)
+        p <::> Parsley.many(sep *> p)
     }
 
     /** This combinator parses '''zero''' or more occurrences of `p`, separated and optionally ended by `sep`.
@@ -790,7 +792,7 @@ object combinator {
       * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
-    def endBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = many(p <* sep)
+    def endBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = Parsley.many(p <* sep)
 
     /** This combinator parses '''one''' or more occurrences of `p`, separated and ended by `sep`.
       *
@@ -816,7 +818,7 @@ object combinator {
       * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
-    def endBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = some(p <* sep)
+    def endBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = Parsley.some(p <* sep)
 
     /** This parser only succeeds at the end of the input.
       *
@@ -1287,7 +1289,7 @@ object combinator {
       */
     def count(min: Int, max: Int)(p: Parsley[_]): Parsley[Int] = min.makeRef { i =>
         skipExactly(min, p) ~>
-        many(ensure(i.gets(_ < max), p) ~> i.update(_ + 1)) ~>
+        Parsley.many(ensure(i.gets(_ < max), p) ~> i.update(_ + 1)) ~>
         i.get
     }
 }

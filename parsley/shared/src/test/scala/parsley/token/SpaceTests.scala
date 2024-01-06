@@ -301,8 +301,7 @@ class SpaceTests extends ParsleyTest {
     }
 
     "unicode spaces" should "not revive dead hints" in {
-        import parsley.Parsley.eof
-        import parsley.combinator.many
+        import parsley.Parsley.{eof, many}
         val lexer = makeLexer(unicodeNoComments)
         val hintKiller = lexer.lexeme(string("!"))
         val hintMaker = many(string("a"))

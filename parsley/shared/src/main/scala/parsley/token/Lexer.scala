@@ -5,8 +5,8 @@
  */
 package parsley.token
 
-import parsley.Parsley, Parsley.{unit, eof}
-import parsley.combinator.{sepBy, sepBy1, many}
+import parsley.Parsley, Parsley.{unit, eof, many}
+import parsley.combinator.{sepBy, sepBy1}
 import parsley.errors.combinator.{markAsToken, ErrorMethods}
 import parsley.state.Ref
 import parsley.token.names.{ConcreteNames, LexemeNames}

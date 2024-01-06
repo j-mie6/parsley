@@ -527,8 +527,8 @@ implemented with everything we've seen so far. You can find them all, and many m
 `parsley.combinator`.
 
 ```scala mdoc:silent:reset
-import parsley.Parsley, Parsley.{atomic, eof}
-import parsley.combinator.{many, some, optional}
+import parsley.Parsley, Parsley.{atomic, eof, many, some}
+import parsley.combinator.optional
 import parsley.syntax.character.{charLift, stringLift}
 import parsley.character.{noneOf, oneOf, item}
 
@@ -587,9 +587,8 @@ with regex:
 comes to mind...):
 
 ```scala mdoc:silent
-import parsley.Parsley, Parsley.eof
+import parsley.Parsley, Parsley.{eof, many}
 import parsley.syntax.character.charLift
-import parsley.combinator.many
 
 lazy val matching: Parsley[Unit] = many('(' *> matching <* ')').void
 val onlyMatching = matching <* eof

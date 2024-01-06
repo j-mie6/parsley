@@ -5,14 +5,14 @@
  */
 package parsley
 
-import parsley.combinator.{option, some}
+import parsley.combinator.option
 import parsley.errors.ErrorBuilder
 import parsley.expr.{chain, infix}
 
 import parsley.internal.deepembedding.{frontend, singletons}
 import parsley.internal.machine.Context
 
-import Parsley.{emptyErr, pure}
+import Parsley.{emptyErr, pure, some}
 import XCompat._ // substituteCo
 
 /**
@@ -995,6 +995,14 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
   *     useful; in particular, `pure` and `unit` can be put to good use in injecting results into a parser
   *     without needing to consume anything, or mapping another parser.
   *
+  * @groupprio iter 10
+  * @groupname iter Iterative Combinators
+  * @groupdesc iter
+  *     These combinators all execute a given parser an unbounded number of times, until either it fails, or another
+  *     parser succeeds, depending on the combinator. All of the results produced by the
+  *     repeated execution of the parser are returned in a `List`. These are almost essential for any practical parsing
+  *     task.
+  *
   * @groupprio monad 100
   * @groupname monad Expensive Sequencing Combinators
   * @groupdesc monad
@@ -1323,6 +1331,62 @@ object Parsley extends PlatformSpecific {
     val eof: Parsley[Unit] = new Parsley(singletons.Eof)
 
     private val emptyErr = new parsley.errors.VanillaGen[Any]
+
+    /** This combinator repeatedly parses a given parser '''zero''' or more times, collecting the results into a list.
+      *
+      * Parses a given parser, `p`, repeatedly until it fails. If `p` failed having consumed input,
+      * this combinator fails. Otherwise when `p` fails '''without consuming input''', this combinator
+      * will return all of the results, `x,,1,,` through `x,,n,,` (with `n >= 0`), in a list: `List(x,,1,,, .., x,,n,,)`.
+      * If `p` was never successful, the empty list is returned.
+      *
+      * @example {{{
+      * scala> import parsley.character.string
+      * scala> import parsley.Parsley.many
+      * scala> val p = many(string("ab"))
+      * scala> p.parse("")
+      * val res0 = Success(Nil)
+      * scala> p.parse("ab")
+      * val res1 = Success(List("ab"))
+      * scala> p.parse("abababab")
+      * val res2 = Success(List("ab", "ab", "ab", "ab"))
+      * scala> p.parse("aba")
+      * val res3 = Failure(..)
+      * }}}
+      *
+      * @param p the parser to execute multiple times.
+      * @return a parser that parses `p` until it fails, returning the list of all the successful results.
+      * @since 4.5.0
+      * @group iter
+      */
+    def many[A](p: Parsley[A]): Parsley[List[A]] = new Parsley(new frontend.Many(p.internal))
+
+    /** This combinator repeatedly parses a given parser '''one''' or more times, collecting the results into a list.
+      *
+      * Parses a given parser, `p`, repeatedly until it fails. If `p` failed having consumed input,
+      * this combinator fails. Otherwise when `p` fails '''without consuming input''', this combinator
+      * will return all of the results, `x,,1,,` through `x,,n,,` (with `n >= 1`), in a list: `List(x,,1,,, .., x,,n,,)`.
+      * If `p` was not successful at least one time, this combinator fails.
+      *
+      * @example {{{
+      * scala> import parsley.character.string
+      * scala> import parsley.Parsley.some
+      * scala> val p = some(string("ab"))
+      * scala> p.parse("")
+      * val res0 = Failure(..)
+      * scala> p.parse("ab")
+      * val res1 = Success(List("ab"))
+      * scala> p.parse("abababab")
+      * val res2 = Success(List("ab", "ab", "ab", "ab"))
+      * scala> p.parse("aba")
+      * val res3 = Failure(..)
+      * }}}
+      *
+      * @param p the parser to execute multiple times.
+      * @return a parser that parses `p` until it fails, returning the list of all the successful results.
+      * @since 4.5.0
+      * @group iter
+      */
+    def some[A](p: Parsley[A]): Parsley[List[A]] = combinator.manyN(1, p)
 
     // $COVERAGE-OFF$
     /** This parser returns the current line number of the input without having any other effect.

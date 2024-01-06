@@ -5,8 +5,7 @@
  */
 package parsley
 
-import parsley.Parsley.{empty, fresh, pure}
-import parsley.combinator.{many, some}
+import parsley.Parsley.{empty, fresh, many, pure, some}
 import parsley.errors.combinator.ErrorMethods
 import parsley.token.errors.{Label, LabelConfig, NotConfigured}
 

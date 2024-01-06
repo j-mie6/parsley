@@ -7,8 +7,8 @@ package parsley
 
 import scala.collection.immutable.NumericRange
 
-import parsley.Parsley.{atomic, empty, fresh, pure}
-import parsley.combinator.{choice, many, some}
+import parsley.Parsley.{atomic, empty, fresh, many, pure, some}
+import parsley.combinator.choice
 import parsley.errors.combinator.ErrorMethods
 import parsley.token.errors.{Label, LabelConfig, NotConfigured}
 

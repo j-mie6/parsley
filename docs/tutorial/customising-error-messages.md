@@ -19,9 +19,9 @@ messages if you wish though. Simply put: the original grammar has more room for 
 import parsley.Parsley, Parsley.atomic
 
 object lexer {
-    import parsley.Parsley.eof
+    import parsley.Parsley.{eof, many}
     import parsley.character.{digit, whitespace, string, item, endOfLine}
-    import parsley.combinator.{manyTill, many}
+    import parsley.combinator.manyTill
 
     private def symbol(str: String) = atomic(string(str)).void
     private implicit def implicitSymbol(tok: String) = symbol(tok)
@@ -117,9 +117,9 @@ All of these can be found in the `parsley.errors.combinator` module.
 ```scala mdoc:reset:invisible
 // welcome to the mad house, we need to do it this way to "hide behind"
 // the curtain
-import parsley.Parsley, Parsley.atomic
+import parsley.Parsley, Parsley.{atomic, many}
 import parsley.character.{digit, whitespace, string, item, endOfLine}
-import parsley.combinator.{manyTill, many}
+import parsley.combinator.manyTill
 
 def symbol(str: String) = atomic(string(str))
 implicit def implicitSymbol(tok: String) = symbol(tok)
@@ -356,12 +356,12 @@ work with this parser, here is the full code of the finished product. Obviously,
 wider parser!
 
 ```scala mdoc:reset
-import parsley.Parsley, Parsley.{atomic, eof}
+import parsley.Parsley, Parsley.{atomic, eof, many}
 import parsley.errors.combinator._
 
 object lexer {
     import parsley.character.{digit, whitespace, string, item, endOfLine}
-    import parsley.combinator.{manyTill, many}
+    import parsley.combinator.manyTill
 
     private def symbol(str: String) = atomic(string(str)).void
     private implicit def implicitSymbol(tok: String) = symbol(tok)

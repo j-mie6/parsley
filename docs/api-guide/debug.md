@@ -83,7 +83,7 @@ insight into how an error message came to be. For instance:
 
 ```scala mdoc:to-string
 import parsley.character.{letter, digit, char}
-import parsley.combinator.many
+import parsley.Parsley.many
 import parsley.debug._
 
 val q = (many( ( digit.debugError("digit")

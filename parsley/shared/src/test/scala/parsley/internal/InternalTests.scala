@@ -8,7 +8,7 @@ package parsley.internal
 import parsley.{ParsleyTest, Success, Failure, TestError, VanillaError}
 import parsley.Parsley, Parsley._
 import parsley.character.{char, satisfy, digit, string, stringOfSome}
-import parsley.combinator.{atomicChoice, choice, some, optional}
+import parsley.combinator.{atomicChoice, choice, optional}
 import parsley.expr._
 import parsley.syntax.character.charLift
 import parsley.errors.combinator.ErrorMethods

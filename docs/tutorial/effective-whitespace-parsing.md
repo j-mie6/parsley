@@ -19,9 +19,9 @@ recognise the grammar itself.  The two concerns usually are spaces and comments.
 comments, the combinator `combinator.manyTill` is _very_ useful. For example:
 
 ```scala mdoc:silent
-import parsley.Parsley, Parsley.atomic
+import parsley.Parsley, Parsley.{atomic, many}
 import parsley.character.{whitespace, string, item, endOfLine}
-import parsley.combinator.{manyTill, many}
+import parsley.combinator.manyTill
 import parsley.errors.combinator.ErrorMethods //for hide
 
 def symbol(str: String): Parsley[String] = atomic(string(str))
@@ -111,9 +111,9 @@ to limit the scope of these implicits, so we can be clear about which we mean wh
 what I mean, let's restructure the code a little for the parser and ensure we don't run into any issues.
 
 ```scala mdoc:reset
-import parsley.Parsley, Parsley.{atomic, eof}
+import parsley.Parsley, Parsley.{atomic, eof, many}
 import parsley.character.{digit, whitespace, string, item, endOfLine}
-import parsley.combinator.{manyTill, many}
+import parsley.combinator.manyTill
 import parsley.expr.{precedence, Ops, InfixL}
 import parsley.errors.combinator.ErrorMethods //for hide
 

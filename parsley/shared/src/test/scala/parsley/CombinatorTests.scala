@@ -7,7 +7,7 @@ package parsley
 
 import Predef.{ArrowAssoc => _, _}
 
-import parsley.combinator.{exactly => repeat, eof => _, _}
+import parsley.combinator.{exactly => repeat, eof => _, many => _, some => _, _}
 import parsley.character.item
 import parsley.Parsley._
 import parsley.state.{forYieldP, forYieldP_, Ref}

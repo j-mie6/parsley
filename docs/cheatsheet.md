@@ -97,8 +97,7 @@ the above quick documentation). This is really useful for changing the result of
 but provides no way of combining multiple.
 
 ```scala mdoc:silent
-import parsley.Parsley
-import parsley.combinator.some
+import parsley.Parsley, Parsley.some
 import parsley.character.digit
 
 case class Num(n: Int)
@@ -121,8 +120,7 @@ list of remaining digits. This task is quite common, so the `<::>` combinator is
 for it:
 
 ```scala mdoc:reset:silent
-import parsley.Parsley
-import parsley.combinator.many
+import parsley.Parsley, Parsley.many
 import parsley.character.{digit, oneOf, char}
 
 case class Num(n: Int)
@@ -139,8 +137,7 @@ val num: Parsley[Num] = int.map(Num)
 But more generally, we could reach for the `lift` functions:
 
 ```scala mdoc:reset:silent
-import parsley.Parsley
-import parsley.combinator.many
+import parsley.Parsley, Parsley.many
 import parsley.character.{digit, oneOf, char}
 import parsley.lift.lift2
 

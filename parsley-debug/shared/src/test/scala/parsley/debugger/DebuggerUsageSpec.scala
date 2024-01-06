@@ -11,7 +11,6 @@ import org.typelevel.scalaccompat.annotation.unused
 import parsley.Parsley, Parsley._
 import parsley.ParsleyTest
 import parsley.character._
-import parsley.combinator._
 import parsley.debugger.combinator.{attachDebugger, named}
 import parsley.debugger.internal.DebugContext
 import parsley.expr._

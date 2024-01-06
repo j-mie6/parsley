@@ -14,9 +14,9 @@ In the previous post, we saw the basic principles behind handling whitespace in 
 To remind ourselves of what we ended up lets pick up where we left off:
 
 ```scala mdoc
-import parsley.Parsley, Parsley.{atomic, eof}
+import parsley.Parsley, Parsley.{atomic, eof, many}
 import parsley.character.{digit, whitespace, string, item, endOfLine}
-import parsley.combinator.{manyTill, many}
+import parsley.combinator.manyTill
 import parsley.expr.{precedence, Ops, InfixL}
 import parsley.errors.combinator.ErrorMethods
 
@@ -247,9 +247,9 @@ a valid keyword or an operator and, if so, it can use our specialised combinator
 relook at the problematic example:
 
 ```scala mdoc:invisible:reset
-import parsley.Parsley, Parsley.{atomic, notFollowedBy, eof}
+import parsley.Parsley, Parsley.{atomic, notFollowedBy, eof, many}
 import parsley.character.{digit, letter, whitespace, string, item, endOfLine, strings, stringOfSome}
-import parsley.combinator.{manyTill, many}
+import parsley.combinator.manyTill
 import parsley.expr.{precedence, Ops, InfixL, Prefix}
 import parsley.errors.combinator.ErrorMethods
 ```
