@@ -119,26 +119,16 @@ private [parsley] abstract class CollectorImpl {
         lexer.space,
         lexer.lexeme,
         lexer.lexeme.names,
-        lexer.lexeme.text,
-        lexer.lexeme.enclosing,
-        lexer.lexeme.separators,
         lexer.lexeme.symbol,
-        lexer.lexeme.numeric,
         lexer.nonlexeme,
         lexer.nonlexeme.names,
-        lexer.nonlexeme.numeric,
         lexer.nonlexeme.symbol,
-        lexer.nonlexeme.text
     )
 
     // All of these objects inside a lexer have private sub-objects which contain parsers.
     // They require special handling where those sub-objects must be exposed, and then the parsers inside will be
     // extracted in a second step.
-    @inline protected final def unsafeLexerObjects(lexer: Lexer): List[Any] = List(
-        lexer.lexeme.text,
-        lexer.lexeme.numeric,
-        lexer.nonlexeme.text,
-        lexer.nonlexeme.numeric
-    )
+    @deprecated("This method is no longer needed, because the lexer does not nest anymore for numeric/test/enclosing/separators", "4.5.0")
+    @inline protected final def unsafeLexerObjects(lexer: Lexer): List[Any] = Nil
 }
 // $COVERAGE-ON$

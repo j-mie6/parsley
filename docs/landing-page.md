@@ -26,7 +26,7 @@ description of the parser uncluttered:
 
 ```scala mdoc:to-string
 import parsley.Parsley
-import parsley.implicits.character.{charLift, stringLift}
+import parsley.syntax.character.{charLift, stringLift}
 
 val hello: Parsley[Unit] = ('h' ~> ("ello" | "i") ~> " world!").void
 hello.parse("hello world!")

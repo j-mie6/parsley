@@ -5,11 +5,11 @@
  */
 package parsley.internal.deepembedding.singletons
 
-import parsley.registers.Reg
+import parsley.state.Ref
 import parsley.token.errors.LabelConfig
 
 import parsley.internal.deepembedding.backend.StrictParsley, StrictParsley.InstrBuffer
-import parsley.internal.deepembedding.frontend.{LazyParsleyIVisitor, UsesRegister}
+import parsley.internal.deepembedding.frontend.{LazyParsleyIVisitor, UsesRef}
 import parsley.internal.machine.instructions
 
 private [parsley] final class CharTok[A](private val c: Char, private val x: A, val expected: LabelConfig) extends Singleton[A] {
@@ -94,17 +94,17 @@ private [parsley] final class UniSatisfy(private [UniSatisfy] val f: Int => Bool
     // $COVERAGE-ON$
 }
 
-private [parsley] final class Modify[S](val reg: Reg[S], f: S => S) extends Singleton[Unit] with UsesRegister {
+private [parsley] final class Modify[S](val ref: Ref[S], f: S => S) extends Singleton[Unit] with UsesRef {
     // $COVERAGE-OFF$
-    override def pretty: String = s"modify($reg, ?)"
+    override def pretty: String = s"modify($ref, ?)"
     // $COVERAGE-ON$
     override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
-        instrs += instructions.Modify(reg.addr, f)
+        instrs += instructions.Modify(ref.addr, f)
         if (producesResults) instrs += instructions.Push.Unit
     }
 
     // $COVERAGE-OFF$
-    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)(reg, f)
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)(ref, f)
 
     override private[parsley] def prettyName = "Reg.modify"
     // $COVERAGE-ON$

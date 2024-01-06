@@ -8,7 +8,7 @@ package parsley.token.text
 import parsley.Parsley, Parsley.{atomic, empty, pure}
 import parsley.character.{bit, char, digit, hexDigit, octDigit, strings}
 import parsley.combinator.ensure
-import parsley.implicits.zipped.Zipped3
+import parsley.syntax.zipped.Zipped3
 import parsley.token.descriptions.text.{EscapeDesc, NumberOfDigits, NumericEscape}
 import parsley.token.errors.{ErrorConfig, NotConfigured}
 import parsley.token.numeric
@@ -39,10 +39,10 @@ private [token] class OriginalEscape(desc: EscapeDesc, err: ErrorConfig, generic
     }
 
     // this is a really neat trick :)
-    private lazy val atMostReg = parsley.registers.Reg.make[Int]
+    private lazy val atMostReg = parsley.state.Ref.make[Int]
     private def atMost(n: Int, radix: Int, digit: Parsley[Char]): Parsley[BigInt] = {
-        atMostReg.put(n) *> ensure(atMostReg.gets(_ > 0),
-                                   digit <* atMostReg.modify(_ - 1)).foldLeft1[BigInt](0)((n, d) => n * radix + d.asDigit)
+        atMostReg.set(n) *> ensure(atMostReg.gets(_ > 0),
+                                   digit <* atMostReg.update(_ - 1)).foldLeft1[BigInt](0)((n, d) => n * radix + d.asDigit)
     }
 
     private def exactly(n: Int, full: Int, radix: Int, digit: Parsley[Char], reqDigits: Seq[Int]): Parsley[BigInt] = {
@@ -51,16 +51,16 @@ private [token] class OriginalEscape(desc: EscapeDesc, err: ErrorConfig, generic
         }
     }
 
-    private lazy val digitsParsed = parsley.registers.Reg.make[Int]
+    private lazy val digitsParsed = parsley.state.Ref.make[Int]
     private def oneOfExactly(n: Int, ns: List[Int], radix: Int, digit: Parsley[Char]): Parsley[BigInt] = {
         val reqDigits@(m :: ms) = (n :: ns).sorted: @unchecked // make this a precondition of the description?
         def go(digits: Int, m: Int, ns: List[Int]): Parsley[BigInt] = ns match {
-            case Nil => exactly(digits, m, radix, digit, reqDigits) <* digitsParsed.put(digits)
+            case Nil => exactly(digits, m, radix, digit, reqDigits) <* digitsParsed.set(digits)
             case n :: ns  =>
                 val theseDigits = exactly(digits, m, radix, digit, reqDigits)
                 val restDigits = (
-                        (atomic(go(n-m, n, ns).map(Some(_)) <* digitsParsed.modify(_ + digits)))
-                    <|> (digitsParsed.put(digits).as(None))
+                        (atomic(go(n-m, n, ns).map(Some(_)) <* digitsParsed.update(_ + digits)))
+                    <|> (digitsParsed.set(digits).as(None))
                 )
                 (theseDigits, restDigits, digitsParsed.get).zipped[BigInt] {
                     case (x, None, _) => x

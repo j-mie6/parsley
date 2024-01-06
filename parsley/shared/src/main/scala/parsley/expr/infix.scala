@@ -8,7 +8,7 @@ package parsley.expr
 import parsley.Parsley, Parsley.notFollowedBy
 import parsley.XAnnotation.{implicitNotFound212, implicitNotFound213}
 import parsley.errors.combinator.ErrorMethods
-import parsley.implicits.zipped.Zipped2
+import parsley.syntax.zipped.Zipped2
 
 import parsley.internal.deepembedding.frontend
 
@@ -141,7 +141,7 @@ object infix {
       */
     def right[A, B, C >: B](p: Parsley[A], op: =>Parsley[(A, C) => B], x: C)
             (implicit @implicitNotFound213("Please provide a wrapper function from ${A} to ${C}")
-                      @implicitNotFound212("Please provide a wrapper function from A to C") wrap: A => C): Parsley[C] = right1(p, op).getOrElse(x)
+                      @implicitNotFound212("Please provide a wrapper function from A to C") wrap: A => C): Parsley[C] = right1(p, op) </> x
 
     /** This combinator handles left-associative parsing, and application of, '''zero''' or more binary operators between '''zero''' or more values.
       *
@@ -180,7 +180,7 @@ object infix {
       */
     def left[A, B, C >: B](p: Parsley[A], op: =>Parsley[(C, A) => B], x: C)
             (implicit @implicitNotFound213("Please provide a wrapper function from ${A} to ${C}")
-                      @implicitNotFound212("Please provide a wrapper function from A to C") wrap: A => C): Parsley[C] = left1(p, op).getOrElse(x)
+                      @implicitNotFound212("Please provide a wrapper function from A to C") wrap: A => C): Parsley[C] = left1(p, op) </> x
 
     // Private Helpers (maybe expose these in future?)
     private [expr] def prefix[A, B](op: Parsley[B => B], p: Parsley[A])(implicit wrap: A => B): Parsley[B] =

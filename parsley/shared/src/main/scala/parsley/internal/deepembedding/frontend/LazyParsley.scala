@@ -10,11 +10,13 @@ import scala.collection.mutable
 
 import parsley.XAssert._
 import parsley.exceptions.BadLazinessException
-import parsley.registers.Reg
+import parsley.state.Ref
 
 import parsley.internal.deepembedding.{Cont, ContOps, Id}, ContOps.{perform, result, ContAdapter}
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 import parsley.internal.machine.instructions, instructions.Instr
+
+import org.typelevel.scalaccompat.annotation.nowarn3
 
 /** This is the root type of the parsley "frontend": it represents a combinator tree
   * where the join-points in the tree (recursive or otherwise) have not been identified
@@ -114,11 +116,11 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
         implicit val letFinderState: LetFinderState = new LetFinderState
         (perform[M, Array[Instr]] {
             findLets(Set.empty) >> {
-                val usedRegs: Set[Reg[_]] = letFinderState.usedRegs
+                val usedRefs: Set[Ref[_]] = letFinderState.usedRefs
                 implicit val letMap: LetMap = LetMap(letFinderState.lets, letFinderState.recs)
                 for { sp <- this.optimised } yield {
                     implicit val state: backend.CodeGenState = new backend.CodeGenState(letFinderState.numRegs)
-                    sp.generateInstructions(numRegsUsedByParent, usedRegs, letMap.bodies)
+                    sp.generateInstructions(numRegsUsedByParent, usedRefs, letMap.bodies)
                 }
             }
         }, letFinderState.numRegs)
@@ -144,8 +146,8 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
         if (seen.contains(this)) result(state.addRec(this))
         else if (state.notProcessedBefore(this)) {
             this match {
-                case self: UsesRegister => state.addReg(self.reg)
-                case _                  =>
+                case self: UsesRef => state.addRef(self.ref)
+                case _             =>
             }
 
             try findLetsAux(seen + this)
@@ -203,16 +205,16 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
 }
 
 /** A mix-in trait that denotes that this parser uses a specific register, which must be allocated. */
-private [deepembedding] trait UsesRegister {
+private [deepembedding] trait UsesRef {
     /** The register used by this combinator. */
-    val reg: Reg[_]
+    val ref: Ref[_]
 }
 
 /** This is a collection of builders that track the shared parsers and used registers during Pass 1 */
 private [deepembedding] class LetFinderState {
     private val _recs = mutable.Set.empty[LazyParsley[_]]
     private val _preds = mutable.Map.empty[LazyParsley[_], Int]
-    private val _usedRegs = mutable.Set.empty[Reg[_]]
+    private val _usedRefs: mutable.Set[Ref[_]] @nowarn3 = mutable.Set.empty[Ref[_]]: @nowarn3
 
     /** Adds a "predecessor" to a given parser, which means that it is referenced by another parser.
       *
@@ -230,7 +232,7 @@ private [deepembedding] class LetFinderState {
       *
       * @param reg the register used by the parser.
       */
-    private [frontend] def addReg(reg: Reg[_]): Unit = _usedRegs += reg
+    private [frontend] def addRef(ref: Ref[_]): Unit = _usedRefs += ref
     /** Has the given parser never been analysed before? */
     private [frontend] def notProcessedBefore(p: LazyParsley[_]): Boolean = _preds(p) == 1
 
@@ -242,9 +244,9 @@ private [deepembedding] class LetFinderState {
     /** Returns all the recursive parsers in the tree */
     private [frontend] lazy val recs: Set[LazyParsley[_]] = _recs.toSet
     /** Returns all the registers used by the parser */
-    private [frontend] def usedRegs: Set[Reg[_]] = _usedRegs.toSet
+    private [frontend] def usedRefs: Set[Ref[_]] @nowarn3 = _usedRefs.toSet: @nowarn3
     /** Returns the number of registers used by the parser */
-    private [frontend] def numRegs: Int = _usedRegs.size
+    private [frontend] def numRegs: Int = _usedRefs.size
 }
 
 /** Represents a map of let-bound lazy parsers to their strict equivalents. */

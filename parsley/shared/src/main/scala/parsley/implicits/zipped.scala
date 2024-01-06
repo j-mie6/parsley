@@ -17,7 +17,7 @@ import parsley.lift._
   *
   * @example {{{
   * scala> import parsley.character.char
-  * scala> import parsley.implicits.zipped.{Zipped2, Zipped3}
+  * scala> import parsley.syntax.zipped.{Zipped2, Zipped3}
   * scala> case class Add(x: Int, y: Int)
   * scala> val p = (char('a').as(4), char('b').as(5)).zipped(Add)
   * scala> p.parse("ab")
@@ -56,6 +56,7 @@ import parsley.lift._
   *     The pair formed from all of the results is returned by the parser. If any of these parsers
   *     fail, the whole combinator fails.
   */
+@deprecated("This will be removed in 5.x, use parsley.syntax.zipped instead", "4.5.0")
 object zipped {
     // $COVERAGE-OFF$
     // scalastyle:off parameter.number ensure.single.space.after.token

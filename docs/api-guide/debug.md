@@ -51,22 +51,22 @@ default. `FullBreak` has the effect of both `EntryBreak` and `ExitBreak` combine
 pause execution on the entry to the combinator, requiring input on the console to proceed, and `ExitBreak`
 will do the same during the exit.
 
-### Watching Registers
-The `debug` combinator takes a variadic number of register/name pairs as its last argument. These
-allow you to watch the values stored in registers as well during the debugging process. For instance:
+### Watching References
+The `debug` combinator takes a variadic number of reference/name pairs as its last argument. These
+allow you to watch the values stored in references as well during the debugging process. For instance:
 
 ```scala mdoc:to-string
 import parsley.Parsley.atomic
-import parsley.registers._
+import parsley.state._
 import parsley.character.string
 import parsley.debug._
 
-val p = 0.makeReg { r1 =>
-    false.makeReg { r2 =>
+val p = 0.makeRef { r1 =>
+    false.makeRef { r2 =>
         val p = (  string("hello")
-                ~> r1.modify(_ + 5)
+                ~> r1.update(_ + 5)
                 ~> ( string("!")
-                   | r2.put(true) ~> string("?")
+                   | r2.set(true) ~> string("?")
                    ).debug("punctuation", r2 -> "r2")
                 )
         r1.rollback(atomic(p).debug("hello!", r1 -> "r1", r2 -> "r2"))
@@ -83,7 +83,7 @@ insight into how an error message came to be. For instance:
 
 ```scala mdoc:to-string
 import parsley.character.{letter, digit, char}
-import parsley.combinator.many
+import parsley.Parsley.many
 import parsley.debug._
 
 val q = (many( ( digit.debugError("digit")

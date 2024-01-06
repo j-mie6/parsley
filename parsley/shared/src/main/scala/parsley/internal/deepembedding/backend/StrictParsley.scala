@@ -9,13 +9,14 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 
 import parsley.XAssert._
-import parsley.registers.Reg
+import parsley.state.Ref
 
 import parsley.internal.collection.mutable.ResizableArray
 import parsley.internal.deepembedding.ContOps, ContOps.{perform, ContAdapter}
 import parsley.internal.machine.instructions, instructions.{Instr, Label}
 
-import StrictParsley._ // scalastyle:ignore underscore.import
+import StrictParsley.*
+import org.typelevel.scalaccompat.annotation.{nowarn, nowarn3}
 
 /** This is the root type of the parsley "backend": it represents a combinator tree
   * where the join-points in the tree (recursive or otherwise) have been factored into
@@ -37,18 +38,18 @@ private [deepembedding] trait StrictParsley[+A] {
       *   1. jump-labels in the code are removed, and tail-call optimisation is applied
       *
       * @param numRegsUsedByParent the number of registers in use by the parent (should one exist), required by callee-save
-      * @param usedRegs the registers used by this parser (these may require allocation)
+      * @param usedRefs the registers used by this parser (these may require allocation)
       * @param recs a stream of pairs of rec nodes and the generators for their strict parsers
       *             (this is just because more `Cont` operations are performed later)
       * @param state the code generator state
       * @return the final array of instructions for this parser
       */
-    final private [deepembedding] def generateInstructions[M[_, +_]: ContOps](numRegsUsedByParent: Int, usedRegs: Set[Reg[_]],
+    final private [deepembedding] def generateInstructions[M[_, +_]: ContOps](numRegsUsedByParent: Int, usedRefs: Set[Ref[_]],
                                                                               bodyMap: Map[Let[_], StrictParsley[_]])
                                                                             (implicit state: CodeGenState): Array[Instr] = {
         implicit val instrs: InstrBuffer = newInstrBuffer
         perform {
-            generateCalleeSave[M, Array[Instr]](numRegsUsedByParent, this.codeGen(producesResults = true), usedRegs) |> {
+            generateCalleeSave[M, Array[Instr]](numRegsUsedByParent, this.codeGen(producesResults = true), usedRefs) |> {
                 // When `numRegsUsedByParent` is -1 this is top level, otherwise it is a flatMap
                 instrs += (if (numRegsUsedByParent >= 0) instructions.Return else instructions.Halt)
                 val letRets = finaliseLets(bodyMap)
@@ -104,14 +105,14 @@ private [deepembedding] object StrictParsley {
       * @param regs the set of all registers used by a specific parser
       * @return the list of slots that have been freshly allocated to
       */
-    private def allocateRegisters(unallocatedRegs: Set[Reg[_]], regs: Set[Reg[_]]): List[Int] = {
+    private def allocateRegisters(unallocatedRegs: Set[Ref[_]], regs: Set[Ref[_]]): List[Int] = {
         // Global registers cannot occupy the same slot as another global register
         // In a flatMap, that means a newly discovered global register must be allocated to a new slot: this may resize the register pool
         assert(unallocatedRegs == regs.filterNot(_.allocated))
         if (unallocatedRegs.nonEmpty) {
             val usedSlots = regs.collect {
                 case reg if reg.allocated => reg.addr
-            }
+            }: @nowarn
             val freeSlots = (0 until regs.size).filterNot(usedSlots)
             applyAllocation(unallocatedRegs, freeSlots)
         }
@@ -125,11 +126,18 @@ private [deepembedding] object StrictParsley {
       * @param freeSlots the supply of slots that are currently not in-use
       * @return the slots that were used for allocation
       */
-    private def applyAllocation(regs: Set[Reg[_]], freeSlots: Iterable[Int]): List[Int] = {
+    private def applyAllocation(refs: Set[Ref[_]] @nowarn3, freeSlots: Iterable[Int]): List[Int] = {
         val allocatedSlots = mutable.ListBuffer.empty[Int]
-        // TODO: For scala 2.12, use lazyZip and map!
-        for ((reg, addr) <- regs.zip(freeSlots)) {
-            reg.allocate(addr)
+        // TODO: For scala 2.12, use lazyZip and foreach!
+        /*for ((ref, addr) <- refs.zip(freeSlots)) {
+            ref.allocate(addr)
+            allocatedSlots += addr
+        }*/ // FIXME: until 5.0.0 we need to suppress warnings, and Scala 3 is being annoying (refreshing change)
+        type Ref_ = Ref[_]
+        refs.zip(freeSlots).foreach { (refAndAddr: (Ref[_], Int) @nowarn3) =>
+            val ref: Ref_ @nowarn3 = refAndAddr._1
+            val addr = refAndAddr._2
+            ref.allocate(addr)
             allocatedSlots += addr
         }
         allocatedSlots.toList
@@ -152,11 +160,11 @@ private [deepembedding] object StrictParsley {
       * @param instrs the instruction buffer
       * @param state the code generation state, for label generation
       */
-    private def generateCalleeSave[M[_, +_]: ContOps, R](numRegsUsedByParent: Int, bodyGen: =>M[R, Unit], usedRegs: Set[Reg[_]])
+    private def generateCalleeSave[M[_, +_]: ContOps, R](numRegsUsedByParent: Int, bodyGen: =>M[R, Unit], usedRefs: Set[Ref[_]])
                                                        (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
-        val reqRegs = usedRegs.size
-        val localRegs = usedRegs.filterNot(_.allocated)
-        val allocatedRegs = allocateRegisters(localRegs, usedRegs)
+        val reqRegs = usedRefs.size
+        val localRegs: Set[Ref[_]] @nowarn3 = usedRefs.filterNot(_.allocated): @nowarn3
+        val allocatedRegs = allocateRegisters(localRegs, usedRefs)
         val calleeSaveRequired = numRegsUsedByParent >= 0 // if this is -1, then we are the top level and have no parent, otherwise it needs to be done
         if (calleeSaveRequired && localRegs.nonEmpty) {
             val end = state.freshLabel()
@@ -335,7 +343,7 @@ private [deepembedding] class CodeGenState(val numRegs: Int) {
     /** A map of reasons to the assigned jump-label to its instruction. */
     private val applyReasonMap = mutable.Map.empty[String, Int]
     /** A map of registers to the assigned jump-label to its instruction. */
-    private val putAndFailMap = mutable.Map.empty[Reg[_], Int]
+    private val putAndFailMap: mutable.Map[Ref[_], Int] @nowarn3 = mutable.Map.empty[Ref[_], Int]: @nowarn3
     /** A map of dislodge amounts to the assigned jump-label to its instruction. */
     private val dislodgeAndFailMap = mutable.Map.empty[Int, Int]
 
@@ -354,7 +362,7 @@ private [deepembedding] class CodeGenState(val numRegs: Int) {
     /** Given a register, fetch the corresponding jump-label that will represent
       * the `PutAndFail(reg)` instruction in the final instruction array.
       */
-    def getLabelForPutAndFail(reg: Reg[_]): Int = putAndFailMap.getOrElseUpdate(reg, freshLabel())
+    def getLabelForPutAndFail(reg: Ref[_]): Int = putAndFailMap.getOrElseUpdate(reg, freshLabel())
     /** Given an amount to dislodge, fetch the corresponding jump-label that will represent
       * the `DislodgeAndFail(reg)` instruction in the final instruction array.
       */
@@ -372,7 +380,7 @@ private [deepembedding] class CodeGenState(val numRegs: Int) {
         }
         val putAndFail = putAndFailMap.view.map {
             case (reg, i) => new instructions.PutAndFail(reg.addr) -> i
-        }
+        }: @nowarn3
         val dislodgeAndFail = dislodgeAndFailMap.view.map {
             case (n, i) => new instructions.DislodgeAndFail(n) -> i
         }

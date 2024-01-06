@@ -15,6 +15,7 @@ import combinator.{ifP, many, option, some}
   * or might enable some syntactic sugar that is not part of the core combinator "style".
   */
 // $COVERAGE-OFF$
+@deprecated("This will be removed in 5.x, use parsley.syntax.extension instead", "4.5.0")
 object extension {
     /** This class exposes the `<#>` combinator on functions.
       *

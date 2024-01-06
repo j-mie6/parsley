@@ -108,7 +108,7 @@ Java 14 Helpful NPEs don't help much either). But here are the possible causes:
 Now, the solution to (1) is simple, just either add a `lazy val`, or reorder the grammar clauses so
 that there is no forward referencing. Similarly, (2) is simple to fix by adding in the right
 laziness to the parameter. However, because Parsley is careful to make as much as possible lazy (be
-careful of `parsley.implicits.zipped.{Zipped2, Zipped3}`, however, neither of them are lazy!) you
+careful of `parsley.syntax.zipped.{Zipped2, Zipped3}`, however, neither of them are lazy!) you
 may find that you can define an entire parser without ever running into this problem, even if nothing
 is marked `lazy`: lucky you! My advice is to try and keep things ordered nicely, or mark everything
 as lazy; of course, laziness will have a slight runtime penalty, so its worth seeing how much of the

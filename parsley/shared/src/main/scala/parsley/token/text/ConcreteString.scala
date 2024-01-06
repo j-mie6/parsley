@@ -11,7 +11,7 @@ import parsley.Parsley, Parsley.{atomic, fresh, pure}
 import parsley.character.{char, string}
 import parsley.combinator.{choice, skipManyUntil}
 import parsley.errors.combinator.ErrorMethods
-import parsley.implicits.zipped.Zipped2
+import parsley.syntax.zipped.Zipped2
 import parsley.token.errors.{ErrorConfig, LabelConfig, LabelWithExplainConfig}
 import parsley.token.predicate.CharPredicate
 
@@ -26,7 +26,7 @@ private [token] final class ConcreteString(ends: Set[ScalaString], stringChar: S
     override lazy val ascii: Parsley[ScalaString] = stringLiteral(String.ensureAscii(err), err.labelStringAscii, err.labelStringAsciiEnd)
     override lazy val latin1: Parsley[ScalaString] = stringLiteral(String.ensureExtendedAscii(err), err.labelStringLatin1, err.labelStringLatin1End)
 
-    private val sbReg = parsley.registers.Reg.make[StringBuilder]
+    private val sbReg = parsley.state.Ref.make[StringBuilder]
 
     private def makeStringParser(valid: Parsley[StringBuilder] => Parsley[StringBuilder],
                                  openLabel: (Boolean, Boolean) => LabelWithExplainConfig, closeLabel: (Boolean, Boolean) => LabelConfig)
@@ -44,8 +44,8 @@ private [token] final class ConcreteString(ends: Set[ScalaString], stringChar: S
         // terminal should be first, to allow for a jump table on the main choice
         openLabel(allowsAllSpace, stringChar.isRaw)(terminal) *>
         // then only one string builder needs allocation
-        sbReg.put(fresh(new StringBuilder)) *>
-        skipManyUntil(sbReg.modify(char(terminalInit).newHide.as((sb: StringBuilder) => sb += terminalInit)) <|> content,
+        sbReg.set(fresh(new StringBuilder)) *>
+        skipManyUntil(sbReg.update(char(terminalInit).newHide.as((sb: StringBuilder) => sb += terminalInit)) <|> content,
                       closeLabel(allowsAllSpace, stringChar.isRaw)(atomic(terminal))) //is the atomic needed here? not sure
     }
 }

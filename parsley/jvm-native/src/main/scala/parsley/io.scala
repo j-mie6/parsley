@@ -14,9 +14,11 @@ import parsley.errors.ErrorBuilder
 
 import parsley.internal.machine.Context
 
+// $COVERAGE-OFF$
 /** This module contains utilities to have parsers interact with IO, including the very useful `parseFromFile` method (exposed by `ParseFromIO`)
   * @since 3.0.0
   */
+@deprecated("This object is deprecated for removal, its contents are now inherited by parsley.Parsley", "4.5.0")
 object io {
     /** This class exposes a method of running parsers from a file.
       *
@@ -29,6 +31,7 @@ object io {
       * @tparam P the type of base value that this class is used on (the conversion to `Parsley`) is summoned automatically.
       * @version 3.0.0
       */
+    @deprecated("This class is deprecated for removal, its contents are now inherited by parsley.Parsley", "4.5.0")
     implicit final class ParseFromIO[P, +A](p: P)(implicit con: P => Parsley[A]) {
         /** This method executes a parser, but collects the input to the parser from the given file.
           *
@@ -41,6 +44,7 @@ object io {
           *         and a failure if an IOException occured.
           * @since 3.0.0
           */
+        @deprecated("This method will be removed in 5.0.0, use `.parseFile` instead", "4.5.0")
         def parseFromFile[Err: ErrorBuilder](file: File)(implicit codec: Codec): Try[Result[Err, A]] = {
             for {
                 src <- Try(Source.fromFile(file))
@@ -57,3 +61,4 @@ object io {
         }
     }
 }
+// $COVERAGE-ON$

@@ -17,6 +17,7 @@ import parsley.character.{char, string}
   *
   * @since 3.0.0
   */
+@deprecated("This will be removed in 5.x, use parsley.syntax.character instead", "4.5.0")
 object character {
     // $COVERAGE-OFF$
     /** Converts a string literal into a parser that reads that string.

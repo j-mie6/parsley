@@ -7,8 +7,8 @@ package parsley
 
 import scala.collection.immutable.NumericRange
 
-import parsley.Parsley.{atomic, empty, fresh, pure}
-import parsley.combinator.{choice, skipMany, skipSome}
+import parsley.Parsley.{atomic, empty, fresh, many, pure, some}
+import parsley.combinator.choice
 import parsley.errors.combinator.ErrorMethods
 import parsley.token.errors.{Label, LabelConfig, NotConfigured}
 
@@ -105,7 +105,6 @@ object character {
     private def char(c: Char, label: String): Parsley[Char] = char(c, Label(label))
     private def char(c: Char, label: LabelConfig): Parsley[Char] = new Parsley(new singletons.CharTok(c, c, label))
 
-    //TODO: deprecate in 4.5
     // $COVERAGE-OFF$
     /** This combinator tries to parse a single specific codepoint `c` from the input.
       *
@@ -126,8 +125,8 @@ object character {
       *
       * @param c the code-point to parse
       * @return
-      * @group core
       */
+    @deprecated("This combinator will be removed in 5.x, and `unicode.char` used instead", "4.5.0")
     def codePoint(c: Int): Parsley[Int] = unicode.char(c)
     // $COVERAGE-ON$
 
@@ -406,7 +405,7 @@ object character {
       *
       * @example {{{
       * scala> import parsley.character.{letter, letterOrDigit, stringOfMany}
-      * scala> import parsley.implicits.zipped.Zipped2
+      * scala> import parsley.syntax.zipped.Zipped2
       * scala> val ident = (letter, stringOfMany(letterOrDigit)).zipped((c, s) => s"&#36;c&#36;s")
       * scala> ident.parse("abdc9d")
       * val res0 = Success("abdc9d")
@@ -437,7 +436,7 @@ object character {
       *
       * @example {{{
       * scala> import parsley.character.{letter, stringOfMany}
-      * scala> import parsley.implicits.zipped.Zipped2
+      * scala> import parsley.syntax.zipped.Zipped2
       * scala> val ident = (letter, stringOfMany(_.isLetterOrDigit)).zipped((c, s) => s"&#36;c&#36;s")
       * scala> ident.parse("abdc9d")
       * val res0 = Success("abdc9d")
@@ -454,7 +453,7 @@ object character {
       * @since 4.4.0
       * @group string
       */
-    def stringOfMany(pred: Char => Boolean): Parsley[String] = skipMany(satisfy(pred)).span
+    def stringOfMany(pred: Char => Boolean): Parsley[String] = many(satisfy(pred)).span
 
     /** This combinator parses `pc` '''one''' or more times, collecting its results into a string.
       *
@@ -508,7 +507,7 @@ object character {
       * @since 4.4.0
       * @group string
       */
-    def stringOfSome(pred: Char => Boolean): Parsley[String] = skipSome(satisfy(pred)).span
+    def stringOfSome(pred: Char => Boolean): Parsley[String] = some(satisfy(pred)).span
 
     /** This combinator tries to parse each of the strings `strs` (and `str0`), until one of them succeeds.
       *
@@ -604,10 +603,9 @@ object character {
 
     /** This parser skips zero or more space characters using [[space `space`]].
       *
-      * @see [[combinator.skipMany `combinator.skipMany`]]
       * @group skip
       */
-    val spaces: Parsley[Unit] = skipMany(space)
+    val spaces: Parsley[Unit] = many(space).void
 
     /** This parser tries to parse a whitespace character, and returns it if successful.
       *
@@ -626,10 +624,9 @@ object character {
 
     /** This parser skips zero or more space characters using [[whitespace `whitespace`]].
       *
-      * @see [[combinator.skipMany `combinator.skipMany`]]
       * @group skip
       */
-    val whitespaces: Parsley[Unit] = skipMany(whitespace)
+    val whitespaces: Parsley[Unit] = many(whitespace).void
 
     /** This parser tries to parse a line feed newline (`'\n'`) character, and returns it if successful.
       *
@@ -766,7 +763,6 @@ object character {
     val bit: Parsley[Char] = satisfy(c => Character.digit(c, 2) != -1, "bit")
 
     // Functions
-    // TODO: deprecate in 4.5
     // $COVERAGE-OFF$
     /** This function returns true if a character is a whitespace character.
       *
@@ -779,8 +775,8 @@ object character {
       *   1. a vertical tab (`'\u000b'`)
       *
       * @see [[whitespace `whitespace`]]
-      * @group pred
       */
+    @deprecated("This combinator will be removed in 5.x, use _.isWhitespace instead", "4.5.0")
     def isWhitespace(c: Char): Boolean = c.isWhitespace
     // $COVERAGE-ON$
 

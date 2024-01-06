@@ -19,16 +19,17 @@ messages if you wish though. Simply put: the original grammar has more room for 
 import parsley.Parsley, Parsley.atomic
 
 object lexer {
+    import parsley.Parsley.{eof, many}
     import parsley.character.{digit, whitespace, string, item, endOfLine}
-    import parsley.combinator.{manyUntil, skipMany, eof}
+    import parsley.combinator.manyTill
 
     private def symbol(str: String) = atomic(string(str)).void
     private implicit def implicitSymbol(tok: String) = symbol(tok)
 
-    private val lineComment = "//" ~> manyUntil(item, endOfLine)
-    private val multiComment = "/*" ~> manyUntil(item, "*/")
+    private val lineComment = "//" ~> manyTill(item, endOfLine).void
+    private val multiComment = "/*" ~> manyTill(item, "*/").void
     private val comment = lineComment | multiComment
-    private val skipWhitespace = skipMany(whitespace | comment)
+    private val skipWhitespace = many(whitespace.void | comment).void
 
     private def lexeme[A](p: =>Parsley[A]) = p <~ skipWhitespace
     private def token[A](p: =>Parsley[A]) = lexeme(atomic(p))
@@ -116,17 +117,17 @@ All of these can be found in the `parsley.errors.combinator` module.
 ```scala mdoc:reset:invisible
 // welcome to the mad house, we need to do it this way to "hide behind"
 // the curtain
-import parsley.Parsley, Parsley.atomic
+import parsley.Parsley, Parsley.{atomic, many}
 import parsley.character.{digit, whitespace, string, item, endOfLine}
-import parsley.combinator.{manyUntil, skipMany}
+import parsley.combinator.manyTill
 
 def symbol(str: String) = atomic(string(str))
 implicit def implicitSymbol(tok: String) = symbol(tok)
 
-val lineComment = "//" ~> manyUntil(item, endOfLine)
-val multiComment = "/*" ~> manyUntil(item, "*/")
+val lineComment = "//" ~> manyTill(item, endOfLine).void
+val multiComment = "/*" ~> manyTill(item, "*/").void
 val comment = lineComment | multiComment
-val skipWhitespace = skipMany(whitespace | comment)
+val skipWhitespace = many(whitespace.void | comment).void
 
 def lexeme[A](p: =>Parsley[A]) = p <~ skipWhitespace
 def token[A](p: =>Parsley[A]) = lexeme(atomic(p))
@@ -135,7 +136,7 @@ def mkNumber(digit: Parsley[Char], ws: Parsley[Unit]): Parsley[BigInt] =
     atomic(digit.foldLeft1[BigInt](0)((n, d) => n * 10 + d.asDigit)) <~ ws
 
 def mkExpressions(number: Parsley[BigInt], whiteSpace: Parsley[Unit]) = new {
-    import parsley.combinator.eof
+    import parsley.Parsley.eof
     import parsley.expr.{precedence, Ops, InfixL}
 
     private implicit def implicitSymbol(str: String): Parsley[Unit] =
@@ -162,7 +163,7 @@ import parsley.errors.combinator._
 val comment = (lineComment | multiComment).label("comment")
 ```
 ```scala mdoc:invisible
-val skipWhitespace = skipMany(whitespace | comment)
+val skipWhitespace = many(whitespace.void | comment).void
 val expressions = mkExpressions(mkNumber(digit, skipWhitespace), skipWhitespace)
 ```
 
@@ -186,7 +187,7 @@ it a good candidate for the `hide` combinator:
 ```scala mdoc:silent:nest
 import parsley.errors.combinator._
 
-val skipWhitespace = skipMany(whitespace <|> comment).hide
+val skipWhitespace = many(whitespace.void | comment).void.hide
 ```
 ```scala mdoc:invisible
 val expressions = mkExpressions(mkNumber(digit, skipWhitespace), skipWhitespace)
@@ -212,14 +213,14 @@ to extend the comment, but clearly `*/` is a way to properly end it. Let's add a
 however, to make it a bit friendlier:
 
 ```scala mdoc:silent:nest
-val lineComment = "//" *> manyUntil(item, endOfLine.label("end of comment"))
-val multiComment = "/*" *> manyUntil(item, "*/".label("end of comment"))
+val lineComment = "//" *> manyTill(item, endOfLine.label("end of comment")).void
+val multiComment = "/*" *> manyTill(item, "*/".label("end of comment")).void
 ```
 ```scala mdoc:invisible
 import parsley.errors.combinator._
 
 val comment = (lineComment | multiComment).label("comment")
-val skipWhitespace = skipMany(whitespace <|> comment).hide
+val skipWhitespace = many(whitespace.void | comment).void.hide
 val expressions = mkExpressions(mkNumber(digit, skipWhitespace), skipWhitespace)
 ```
 
@@ -289,7 +290,7 @@ or since we only have arithmetic operators here `operator` will do. we don't nee
 special here, when multiple labels are encountered with the same name, they will only appear once!
 
 ```scala mdoc:nest:invisible
-import parsley.combinator.eof
+import parsley.Parsley.eof
 import parsley.expr.{precedence, Ops, InfixL}
 
 implicit def implicitSymbol(str: String): Parsley[Unit] = symbol(str) ~> skipWhitespace
@@ -355,20 +356,20 @@ work with this parser, here is the full code of the finished product. Obviously,
 wider parser!
 
 ```scala mdoc:reset
-import parsley.Parsley, Parsley.atomic
+import parsley.Parsley, Parsley.{atomic, eof, many}
 import parsley.errors.combinator._
 
 object lexer {
     import parsley.character.{digit, whitespace, string, item, endOfLine}
-    import parsley.combinator.{manyUntil, skipMany, eof}
+    import parsley.combinator.manyTill
 
     private def symbol(str: String) = atomic(string(str)).void
     private implicit def implicitSymbol(tok: String) = symbol(tok)
 
-    private val lineComment = "//" ~> manyUntil(item, endOfLine).label("end of comment")
-    private val multiComment = "/*" ~> manyUntil(item, "*/").label("end of comment")
+    private val lineComment = "//" ~> manyTill(item, endOfLine).void.label("end of comment")
+    private val multiComment = "/*" ~> manyTill(item, "*/").void.label("end of comment")
     private val comment = (lineComment | multiComment).label("comment")
-    private val skipWhitespace = skipMany(whitespace | comment).hide
+    private val skipWhitespace = many(whitespace.void | comment).void.hide
 
     private def lexeme[A](p: =>Parsley[A]) = p <~ skipWhitespace
     private def token[A](p: =>Parsley[A]) = lexeme(atomic(p))
@@ -415,8 +416,8 @@ cook up a string literal parser, supporting some (limited) escape sequences.
 
 ```scala mdoc:reset:silent
 import parsley.Parsley
-import parsley.implicits.character.charLift
-import parsley.combinator.{between, choice}
+import parsley.syntax.character.charLift
+import parsley.combinator.choice
 import parsley.character._
 import parsley.errors.combinator._
 
@@ -427,10 +428,7 @@ val stringLetter =
     ('\\' ~> escapeChar).label("escape character")
 
 val stringLiteral =
-    between('\"',
-            '\"'.label("end of string"),
-            stringOfMany(stringLetter))
-        .label("string")
+    ('\"' ~> stringOfMany(stringLetter) <~ '\"'.label("end of string")).label("string")
 ```
 
 Let's start with something like this. If we run a couple of examples, we can see where it performs
@@ -454,10 +452,7 @@ def mkString(escapeChar: Parsley[Char]) = {
         noneOf('\"', '\\').label("string character") |
         ('\\' ~> escapeChar).label("escape character")
 
-    between('\"',
-            '\"'.label("end of string"),
-            stringOfMany(stringLetter))
-        .label("string")
+    ('\"' ~> stringOfMany(stringLetter) <~ '\"'.label("end of string")).label("string")
 }
 val escapeChar =
     choice('n'.label("\\n") as '\n', 't'.label("\\t") as '\t',

@@ -5,10 +5,10 @@
  */
 package parsley.token
 
-import parsley.Parsley, Parsley.unit
-import parsley.combinator.{between, eof, sepBy, sepBy1, skipMany}
+import parsley.Parsley, Parsley.{unit, eof, many}
+import parsley.combinator.{sepBy, sepBy1}
 import parsley.errors.combinator.{markAsToken, ErrorMethods}
-import parsley.registers.Reg
+import parsley.state.Ref
 import parsley.token.names.{ConcreteNames, LexemeNames}
 import parsley.token.numeric.{LexemeCombined, LexemeInteger, LexemeReal,
                               SignedCombined, SignedInteger, SignedReal,
@@ -286,30 +286,89 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
           */
         val names: parsley.token.names.Names = new LexemeNames(nonlexeme.names, this)
 
+        /** $natural
+          *
+          * @since 4.5.0
+          * @note alias for [[natural `natural`]].
+          */
+        // $COVERAGE-OFF$
+        def unsigned: parsley.token.numeric.Integer = natural
+        // $COVERAGE-ON$
+        /** $natural
+          *
+          * @since 4.5.0
+          */
+        def natural: parsley.token.numeric.Integer = _natural
+
+        /** $integer
+          *
+          * @since 4.5.0
+          * @note alias for [[integer `integer`]]
+          * @see [[unsigned `unsigned`]] for a full description of signed integer configuration
+          */
+        // $COVERAGE-OFF$
+        def signed: parsley.token.numeric.Integer = integer
+        // $COVERAGE-ON$
+        /** $integer
+          *
+          * @since 4.5.0
+          * @see [[natural `natural`]] for a full description of integer configuration
+          */
+        def integer: parsley.token.numeric.Integer = _integer
+
+        /** $real
+          *
+          * @since 4.5.0
+          * @note alias for [[real `real`]]
+          * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
+          */
+        // $COVERAGE-OFF$
+        def floating: parsley.token.numeric.Real = real
+        // $COVERAGE-ON$
+        /** $real
+          *
+          * @since 4.5.0
+          * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
+          */
+        def real: parsley.token.numeric.Real = _real
+
+        /** $unsignedCombined
+          *
+          * @since 4.5.0
+          */
+        def unsignedCombined: parsley.token.numeric.Combined = _unsignedCombined
+        /** $signedCombined
+          *
+          * @since 4.5.0
+          */
+        def signedCombined: parsley.token.numeric.Combined = _signedCombined
+
+        private [Lexer] val _natural = new LexemeInteger(nonlexeme.natural, this)
+        private [Lexer] val _integer = new LexemeInteger(nonlexeme.integer, this)
+        private [Lexer] val _positiveReal = new LexemeReal(nonlexeme._positiveReal, this, errConfig)
+        private [Lexer] val _real = new LexemeReal(nonlexeme.real, this, errConfig)
+        private [Lexer] val _unsignedCombined = new LexemeCombined(nonlexeme.unsignedCombined, this, errConfig)
+        private [Lexer] val _signedCombined = new LexemeCombined(nonlexeme.signedCombined, this, errConfig)
+
         /** $numeric
           *
           * @since 4.0.0
           */
+        @deprecated("This will be removed in Parsley 5.0, the contents have been flattened", "4.5.0")
         object numeric {
-            private [Lexer] val _natural = new LexemeInteger(nonlexeme.numeric.natural, lexeme)
-            private [Lexer] val _integer = new LexemeInteger(nonlexeme.numeric.integer, lexeme)
-            private [Lexer] val _positiveReal = new LexemeReal(nonlexeme.numeric._positiveReal, lexeme, errConfig)
-            private [Lexer] val _real = new LexemeReal(nonlexeme.numeric.real, lexeme, errConfig)
-            private [Lexer] val _unsignedCombined = new LexemeCombined(nonlexeme.numeric.unsignedCombined, lexeme, errConfig)
-            private [Lexer] val _signedCombined = new LexemeCombined(nonlexeme.numeric.signedCombined, lexeme, errConfig)
-
             /** $natural
               *
               * @since 4.0.0
               * @note alias for [[natural `natural`]].
               */
             // $COVERAGE-OFF$
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def unsigned: parsley.token.numeric.Integer = natural
-            // $COVERAGE-ON$
             /** $natural
               *
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def natural: parsley.token.numeric.Integer = _natural
 
             /** $integer
@@ -318,7 +377,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
               * @note alias for [[integer `integer`]]
               * @see [[unsigned `unsigned`]] for a full description of signed integer configuration
               */
-            // $COVERAGE-OFF$
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def signed: parsley.token.numeric.Integer = integer
             // $COVERAGE-ON$
             /** $integer
@@ -326,6 +385,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
               * @since 4.0.0
               * @see [[natural `natural`]] for a full description of integer configuration
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def integer: parsley.token.numeric.Integer = _integer
 
             /** $real
@@ -334,7 +394,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
               * @note alias for [[real `real`]]
               * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
               */
-            // $COVERAGE-OFF$
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def floating: parsley.token.numeric.Real = real
             // $COVERAGE-ON$
             /** $real
@@ -342,58 +402,98 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
               * @since 4.0.0
               * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def real: parsley.token.numeric.Real = _real
 
             /** $unsignedCombined
               *
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def unsignedCombined: parsley.token.numeric.Combined = _unsignedCombined
             /** $signedCombined
               *
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def signedCombined: parsley.token.numeric.Combined = _signedCombined
+            // $COVERAGE-ON$
         }
+
+        /** $character
+          *
+          * @since 4.5.0
+          */
+        def character: parsley.token.text.Character = _character
+        /** $string
+          *
+          * @since 4.5.0
+          */
+        def string: parsley.token.text.String = _string
+        /** $string
+          *
+          * @note $raw
+          * @since 4.5.0
+          */
+        def rawString: parsley.token.text.String = _rawString
+        /** $multiString
+          *
+          * @since 4.5.0
+          */
+        def multiString: parsley.token.text.String = _multiString
+        /** $multiString
+          *
+          * @note $raw
+          * @since 4.5.0
+          */
+        def rawMultiString: parsley.token.text.String = _rawMultiString
+
+        private [Lexer] val _character = new LexemeCharacter(nonlexeme._character, this)
+        private [Lexer] val _string = new LexemeString(nonlexeme._string, this)
+        private [Lexer] val _rawString = new LexemeString(nonlexeme._rawString, this)
+        private [Lexer] val _multiString = new LexemeString(nonlexeme._multiString, this)
+        private [Lexer] val _rawMultiString = new LexemeString(nonlexeme._rawMultiString, this)
 
         /** $text
           *
           * @since 4.0.0
           */
+        @deprecated("This will be removed in Parsley 5.0, the contents have been flattened", "4.5.0")
         object text {
-            private [Lexer] val _character = new LexemeCharacter(nonlexeme.text._character, lexeme)
-            private [Lexer] val _string = new LexemeString(nonlexeme.text._string, lexeme)
-            private [Lexer] val _rawString = new LexemeString(nonlexeme.text._rawString, lexeme)
-            private [Lexer] val _multiString = new LexemeString(nonlexeme.text._multiString, lexeme)
-            private [Lexer] val _rawMultiString = new LexemeString(nonlexeme.text._rawMultiString, lexeme)
-
+            // $COVERAGE-OFF$
             /** $character
               *
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `text` object instead", "4.5.0")
             def character: parsley.token.text.Character = _character
             /** $string
               *
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `text` object instead", "4.5.0")
             def string: parsley.token.text.String = _string
             /** $string
               *
               * @note $raw
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `text` object instead", "4.5.0")
             def rawString: parsley.token.text.String = _rawString
             /** $multiString
               *
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `text` object instead", "4.5.0")
             def multiString: parsley.token.text.String = _multiString
             /** $multiString
               *
               * @note $raw
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `text` object instead", "4.5.0")
             def rawMultiString: parsley.token.text.String = _rawMultiString
+            // $COVERAGE-ON$
         }
 
         /** $symbol
@@ -402,11 +502,195 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
           */
         val symbol: parsley.token.symbol.Symbol = new LexemeSymbol(nonlexeme.symbol, this, errConfig)
 
+        /**  This combinator parses '''zero''' or more occurrences of `p`, separated by semi-colons.
+          *
+          * Behaves just like `semiSep1`, except does not require an initial `p`, returning the empty list instead.
+          *
+          * @example {{{
+          * scala> ...
+          * scala> val stmts = lexer.lexeme.separators.semiSep(int)
+          * scala> stmts.parse("7; 3;2")
+          * val res0 = Success(List(7; 3; 2))
+          * scala> stmts.parse("")
+          * val res1 = Success(Nil)
+          * scala> stmts.parse("1")
+          * val res2 = Success(List(1))
+          * scala> stmts.parse("1; 2; ")
+          * val res3 = Failure(..) // no trailing semi-colon allowed
+          * }}}
+          *
+          * @param p the parser whose results are collected into a list.
+          * @return a parser that parses `p` delimited by semi-colons, returning the list of `p`'s results.
+          * @since 4.5.0
+          */
+        def semiSep[A](p: Parsley[A]): Parsley[List[A]] = sepBy(p, symbol.semi)
+        /**  This combinator parses '''one''' or more occurrences of `p`, separated by semi-colons.
+          *
+          * First parses a `p`. Then parses a semi-colon followed by `p` until there are no more  semi-colons.
+          * The results of the `p`'s, `x,,1,,` through `x,,n,,`, are returned as `List(x,,1,,, .., x,,n,,)`.
+          * If `p` fails having consumed input, the whole parser fails. Requires at least
+          * one `p` to have been parsed.
+          *
+          * @example {{{
+          * scala> ...
+          * scala> val stmts = lexer.lexeme.separators.semiSep1(int)
+          * scala> stmts.parse("7; 3;2")
+          * val res0 = Success(List(7; 3; 2))
+          * scala> stmts.parse("")
+          * val res1 = Failure(..)
+          * scala> stmts.parse("1")
+          * val res2 = Success(List(1))
+          * scala> stmts.parse("1; 2; ")
+          * val res3 = Failure(..) // no trailing semi-colon allowed
+          * }}}
+          *
+          * @param p the parser whose results are collected into a list.
+          * @return a parser that parses `p` delimited by semi-colons, returning the list of `p`'s results.
+          * @since 4.5.0
+          */
+        def semiSep1[A](p: Parsley[A]): Parsley[List[A]] = sepBy1(p, symbol.semi)
+        /**  This combinator parses '''zero''' or more occurrences of `p`, separated by commas.
+          *
+          * Behaves just like `commaSep1`, except does not require an initial `p`, returning the empty list instead.
+          *
+          * @example {{{
+          * scala> ...
+          * scala> val stmts = lexer.lexeme.separators.commaSep(int)
+          * scala> stmts.parse("7, 3,2")
+          * val res0 = Success(List(7, 3, 2))
+          * scala> stmts.parse("")
+          * val res1 = Success(Nil)
+          * scala> stmts.parse("1")
+          * val res2 = Success(List(1))
+          * scala> stmts.parse("1, 2, ")
+          * val res3 = Failure(..) // no trailing comma allowed
+          * }}}
+          *
+          * @param p the parser whose results are collected into a list.
+          * @return a parser that parses `p` delimited by commas, returning the list of `p`'s results.
+          * @since 4.5.0
+          */
+        def commaSep[A](p: Parsley[A]): Parsley[List[A]] = sepBy(p, symbol.comma)
+        /**  This combinator parses '''one''' or more occurrences of `p`, separated by commas.
+          *
+          * First parses a `p`. Then parses a comma followed by `p` until there are no more  commas.
+          * The results of the `p`'s, `x,,1,,` through `x,,n,,`, are returned as `List(x,,1,,, .., x,,n,,)`.
+          * If `p` fails having consumed input, the whole parser fails. Requires at least
+          * one `p` to have been parsed.
+          *
+          * @example {{{
+          * scala> ...
+          * scala> val stmts = lexer.lexeme.separators.commaSep1(int)
+          * scala> stmts.parse("7, 3,2")
+          * val res0 = Success(List(7, 3, 2))
+          * scala> stmts.parse("")
+          * val res1 = Failure(..)
+          * scala> stmts.parse("1")
+          * val res2 = Success(List(1))
+          * scala> stmts.parse("1, 2, ")
+          * val res3 = Failure(..) // no trailing comma allowed
+          * }}}
+          *
+          * @param p the parser whose results are collected into a list.
+          * @return a parser that parses `p` delimited by commas, returning the list of `p`'s results.
+          * @since 4.5.0
+          */
+        def commaSep1[A](p: Parsley[A]): Parsley[List[A]] = sepBy1(p, symbol.comma)
+
+        /** This combinator parses a `p` enclosed within parentheses.
+          *
+          * First parse an open parenthesis, any whitespace, then parse, `p`, producing `x`. Finally, parse a closing parenthesis and any whitespace.
+          * If all three parts succeeded, then return `x`. If any of them failed, this combinator fails.
+          *
+          * @example {{{
+          * scala> ...
+          * scala> val p = lexer.nonlexeme.enclosing.parens(int)
+          * scala> p.parse("( 5)")
+          * val res0 = Success(5)
+          * scala> p.parse("(5")
+          * val res1 = Failure(...)
+          * scala> p.parse("5)")
+          * val res2 = Failure(...)
+          * }}}
+          *
+          * @param p the parser to parse between parentheses.
+          * @return a parser that reads an open parenthesis, then `p`, then a closing parenthesis and returns the result of `p`.
+          * @since 4.5.0
+          */
+        def parens[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, symbol.openParen, symbol.closingParen, "parentheses")
+        /** This combinator parses a `p` enclosed within braces.
+          *
+          * First parse an open brace, any whitespace, then parse, `p`, producing `x`. Finally, parse a closing brace and any whitespace.
+          * If all three parts succeeded, then return `x`. If any of them failed, this combinator fails.
+          *
+          * @example {{{
+          * scala> ...
+          * scala> val p = lexer.nonlexeme.enclosing.braces(int)
+          * scala> p.parse("{ 5}")
+          * val res0 = Success(5)
+          * scala> p.parse("{5")
+          * val res1 = Failure(...)
+          * scala> p.parse("5}")
+          * val res2 = Failure(...)
+          * }}}
+          *
+          * @param p the parser to parse between parentheses.
+          * @return a parser that reads an open brace, then `p`, then a closing brace and returns the result of `p`.
+          * @since 4.5.0
+          */
+        def braces[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, symbol.openBrace, symbol.closingBrace, "braces")
+        /** This combinator parses a `p` enclosed within angle brackets.
+          *
+          * First parse an open bracket, any whitespace, then parse, `p`, producing `x`. Finally, parse a closing bracket and any whitespace.
+          * If all three parts succeeded, then return `x`. If any of them failed, this combinator fails.
+          *
+          * @example {{{
+          * scala> ...
+          * scala> val p = lexer.nonlexeme.enclosing.brackets(int)
+          * scala> p.parse("< 5>")
+          * val res0 = Success(5)
+          * scala> p.parse("<5")
+          * val res1 = Failure(...)
+          * scala> p.parse("5>")
+          * val res2 = Failure(...)
+          * }}}
+          *
+          * @param p the parser to parse between parentheses.
+          * @return a parser that reads an open bracket, then `p`, then a closing bracket and returns the result of `p`.
+          * @since 4.5.0
+          */
+        def angles[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, symbol.openAngle, symbol.closingAngle, "angle brackets")
+        /** This combinator parses a `p` enclosed within square brackets.
+          *
+          * First parse an open bracket, any whitespace, then parse, `p`, producing `x`. Finally, parse a closing bracket and any whitespace.
+          * If all three parts succeeded, then return `x`. If any of them failed, this combinator fails.
+          *
+          * @example {{{
+          * scala> ...
+          * scala> val p = lexer.nonlexeme.enclosing.brackets(int)
+          * scala> p.parse("[ 5]")
+          * val res0 = Success(5)
+          * scala> p.parse("[5")
+          * val res1 = Failure(...)
+          * scala> p.parse("5]")
+          * val res2 = Failure(...)
+          * }}}
+          *
+          * @param p the parser to parse between parentheses.
+          * @return a parser that reads an open bracket, then `p`, then a closing bracket and returns the result of `p`.
+          * @since 4.5.0
+          */
+        def brackets[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, symbol.openSquare, symbol.closingSquare, "square brackets")
+
+        private def enclosing[A](p: =>Parsley[A], open: Parsley[Unit], close: Parsley[Unit], plural: String) = open ~> p <~ close.explain(s"unclosed $plural")
+
+        // $COVERAGE-OFF$
         /** This object contains helper combinators for parsing terms separated by
           * common symbols.
           *
           * @since 4.0.0
           */
+        @deprecated("This will be removed in Parsley 5.0, the contents have been flattened", "4.5.0")
         object separators {
             /**  This combinator parses '''zero''' or more occurrences of `p`, separated by semi-colons.
               *
@@ -509,6 +793,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
           *
           * @since 4.0.0
           */
+        @deprecated("This will be removed in Parsley 5.0, the contents have been flattened", "4.5.0")
         object enclosing {
             /** This combinator parses a `p` enclosed within parentheses.
               *
@@ -596,8 +881,9 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
             def brackets[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, symbol.openSquare, symbol.closingSquare, "square brackets")
 
             private def enclosing[A](p: =>Parsley[A], open: Parsley[Unit], close: Parsley[Unit], plural: String) =
-                between(open, close.explain(s"unclosed $plural"), p)
+                open ~> p <~ close.explain(s"unclosed $plural")
         }
+        // $COVERAGE-OFF$
     }
 
     /** This object is concerned with ''non-lexemes'': these are tokens that
@@ -629,31 +915,90 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
           */
         val names: parsley.token.names.Names = new ConcreteNames(desc.nameDesc, desc.symbolDesc, errConfig)
 
+        /** $natural
+          *
+          * @since 4.5.0
+          * @note alias for [[natural `natural`]].
+          */
+        // $COVERAGE-OFF$
+        def unsigned: parsley.token.numeric.Integer = _natural
+        // $COVERAGE-ON$
+        /** $natural
+          *
+          * @since 4.5.0
+          */
+        def natural: parsley.token.numeric.Integer = _natural
+
+        /** $integer
+          *
+          * @since 4.5.0
+          * @note alias for [[integer `integer`]]
+          * @see [[unsigned `unsigned`]] for a full description of signed integer configuration
+          */
+        // $COVERAGE-OFF$
+        def signed: parsley.token.numeric.Integer = _integer
+        // $COVERAGE-ON$
+        /** $integer
+          *
+          * @since 4.5.0
+          * @see [[natural `natural`]] for a full description of integer configuration
+          */
+        def integer: parsley.token.numeric.Integer = _integer
+
+        /** $real
+          *
+          * @since 4.5.0
+          * @note alias for [[real `real`]]
+          * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
+          */
+        // $COVERAGE-OFF$
+        def floating: parsley.token.numeric.Real = real
+        // $COVERAGE-ON$
+        /** $real
+          *
+          * @since 4.5.0
+          * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
+          */
+        def real: parsley.token.numeric.Real = _real
+
+        /** $unsignedCombined
+          *
+          * @since 4.5.0
+          */
+        def unsignedCombined: parsley.token.numeric.Combined = _unsignedCombined
+        /** $signedCombined
+          *
+          * @since 4.5.0
+          */
+        def signedCombined: parsley.token.numeric.Combined = _signedCombined
+
+        private [Lexer] val _natural = new UnsignedInteger(desc.numericDesc, errConfig, generic)
+        private [Lexer] val _integer = new SignedInteger(desc.numericDesc, _natural, errConfig)
+        private [Lexer] val _positiveReal = new UnsignedReal(desc.numericDesc, _natural, errConfig, generic)
+        private [Lexer] val _real = new SignedReal(desc.numericDesc, _positiveReal, errConfig)
+        private [Lexer] val _unsignedCombined = new UnsignedCombined(desc.numericDesc, _natural, _positiveReal, errConfig)
+        private [Lexer] val _signedCombined = new SignedCombined(desc.numericDesc, _unsignedCombined, errConfig)
+
         /** $numeric
           *
           * @since 4.0.0
           */
+        @deprecated("This will be removed in Parsley 5.0, the contents have been flattened", "4.5.0")
         object numeric {
-            private [Lexer] val _natural = new UnsignedInteger(desc.numericDesc, errConfig, generic)
-            private [Lexer] val _integer = new SignedInteger(desc.numericDesc, _natural, errConfig)
-            private [Lexer] val _positiveReal = new UnsignedReal(desc.numericDesc, _natural, errConfig, generic)
-            private [Lexer] val _real = new SignedReal(desc.numericDesc, _positiveReal, errConfig)
-            private [Lexer] val _unsignedCombined = new UnsignedCombined(desc.numericDesc, _natural, _positiveReal, errConfig)
-            private [Lexer] val _signedCombined = new SignedCombined(desc.numericDesc, _unsignedCombined, errConfig)
-
             /** $natural
               *
               * @since 4.0.0
               * @note alias for [[natural `natural`]].
               */
             // $COVERAGE-OFF$
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def unsigned: parsley.token.numeric.Integer = _natural
-            // $COVERAGE-ON$
 
             /** $natural
               *
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def natural: parsley.token.numeric.Integer = _natural
 
             /** $integer
@@ -662,14 +1007,14 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
               * @note alias for [[integer `integer`]]
               * @see [[unsigned `unsigned`]] for a full description of signed integer configuration
               */
-            // $COVERAGE-OFF$
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def signed: parsley.token.numeric.Integer = _integer
-            // $COVERAGE-ON$
             /** $integer
               *
               * @since 4.0.0
               * @see [[natural `natural`]] for a full description of integer configuration
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def integer: parsley.token.numeric.Integer = _integer
 
             /** $real
@@ -678,70 +1023,109 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
               * @note alias for [[real `real`]]
               * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
               */
-            // $COVERAGE-OFF$
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def floating: parsley.token.numeric.Real = real
-            // $COVERAGE-ON$
 
             /** $real
               *
               * @since 4.0.0
               * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def real: parsley.token.numeric.Real = _real
 
             /** $unsignedCombined
               *
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def unsignedCombined: parsley.token.numeric.Combined = _unsignedCombined
             /** $signedCombined
               *
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `numeric` object instead", "4.5.0")
             def signedCombined: parsley.token.numeric.Combined = _signedCombined
+            // $COVERAGE-ON$
         }
+
+        /** $character
+          *
+          * @since 4.5.0
+          */
+        def character: parsley.token.text.Character = _character
+        /** $string
+          *
+          * @since 4.5.0
+          */
+        def string: parsley.token.text.String = _string
+        /** $string
+          *
+          * @note $raw
+          * @since 4.5.0
+          */
+        def rawString: parsley.token.text.String = _rawString
+        /** $multiString
+          *
+          * @since 4.5.0
+          */
+        def multiString: parsley.token.text.String = _multiString
+        /** $multiString
+          *
+          * @note $raw
+          * @since 4.5.0
+          */
+        def rawMultiString: parsley.token.text.String = _rawMultiString
+
+        private val escapes = new Escape(desc.textDesc.escapeSequences, errConfig, generic)
+        private val escapeChar = new EscapableCharacter(desc.textDesc.escapeSequences, escapes, space.space, errConfig)
+        private val rawChar = new RawCharacter(errConfig)
+        private [Lexer] val _character: parsley.token.text.Character = new ConcreteCharacter(desc.textDesc, escapes, errConfig)
+        private [Lexer] val _string = new ConcreteString(desc.textDesc.stringEnds, escapeChar, desc.textDesc.graphicCharacter, false, errConfig)
+        private [Lexer] val _rawString = new ConcreteString(desc.textDesc.stringEnds, rawChar, desc.textDesc.graphicCharacter, false, errConfig)
+        private [Lexer] val _multiString = new ConcreteString(desc.textDesc.multiStringEnds, escapeChar, desc.textDesc.graphicCharacter, true, errConfig)
+        private [Lexer] val _rawMultiString = new ConcreteString(desc.textDesc.multiStringEnds, rawChar, desc.textDesc.graphicCharacter, true, errConfig)
 
         /** $text
           *
           * @since 4.0.0
           */
+        @deprecated("This will be removed in Parsley 5.0, the contents have been flattened", "4.5.0")
         object text {
-            private val escapes = new Escape(desc.textDesc.escapeSequences, errConfig, generic)
-            private val escapeChar = new EscapableCharacter(desc.textDesc.escapeSequences, escapes, space.space, errConfig)
-            private val rawChar = new RawCharacter(errConfig)
-            private [Lexer] val _character: parsley.token.text.Character = new ConcreteCharacter(desc.textDesc, escapes, errConfig)
-            private [Lexer] val _string = new ConcreteString(desc.textDesc.stringEnds, escapeChar, desc.textDesc.graphicCharacter, false, errConfig)
-            private [Lexer] val _rawString = new ConcreteString(desc.textDesc.stringEnds, rawChar, desc.textDesc.graphicCharacter, false, errConfig)
-            private [Lexer] val _multiString = new ConcreteString(desc.textDesc.multiStringEnds, escapeChar, desc.textDesc.graphicCharacter, true, errConfig)
-            private [Lexer] val _rawMultiString = new ConcreteString(desc.textDesc.multiStringEnds, rawChar, desc.textDesc.graphicCharacter, true, errConfig)
-
+            // $COVERAGE-OFF$
             /** $character
               *
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `text` object instead", "4.5.0")
             def character: parsley.token.text.Character = _character
             /** $string
               *
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `text` object instead", "4.5.0")
             def string: parsley.token.text.String = _string
             /** $string
               *
               * @note $raw
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `text` object instead", "4.5.0")
             def rawString: parsley.token.text.String = _rawString
             /** $multiString
               *
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `text` object instead", "4.5.0")
             def multiString: parsley.token.text.String = _multiString
             /** $multiString
               *
               * @note $raw
               * @since 4.0.0
               */
+            @deprecated("This will be removed in Parsley 5.0, use the version outside the `text` object instead", "4.5.0")
             def rawMultiString: parsley.token.text.String = _rawMultiString
+            // $COVERAGE-ON$
         }
 
         /** $symbol
@@ -779,7 +1163,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
       */
     object space {
         private [Lexer] lazy val space = desc.spaceDesc.space.toNative
-        private lazy val wsImpl = Reg.make[Parsley[Unit]]
+        private lazy val wsImpl = Ref.make[Parsley[Unit]]
 
         /** This parser initialises the whitespace used by the lexer when
           * `spaceDesc.whiteSpaceIsContextDependent` is set to `true`.
@@ -798,7 +1182,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
                     "Whitespace cannot be initialised unless `spaceDesc.whitespaceIsContextDependent` is true"
                 )
             }
-            wsImpl.put(configuredWhiteSpace)
+            wsImpl.set(configuredWhiteSpace)
         }
 
         /** This combinator changes how whitespace is parsed by lexemes for the duration of
@@ -824,7 +1208,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
                     "Whitespace cannot be altered unless `spaceDesc.whitespaceIsContextDependent` is true"
                 )
             }
-            wsImpl.rollback(wsImpl.local(whiteSpace(newSpace))(within))
+            wsImpl.rollback(wsImpl.setDuring(whiteSpace(newSpace))(within))
         }
 
         /** This parser skips '''zero''' or more (insignificant) whitespace characters as well as comments.
@@ -862,8 +1246,8 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
             case Basic(ws) => new Parsley(new singletons.WhiteSpace(ws, desc.spaceDesc, errConfig))
             // satisfyUtf16 is effectively hidden, and so is Comment
             case Unicode(ws) if desc.spaceDesc.supportsComments =>
-                skipMany(new Parsley(new singletons.Comment(desc.spaceDesc, errConfig)) <|> satisfy(ws))
-            case Unicode(ws) => skipMany(satisfy(ws))
+                many(new Parsley(new singletons.Comment(desc.spaceDesc, errConfig)) | satisfy(ws).void).void
+            case Unicode(ws) => many(satisfy(ws)).void
         }
     }
 }

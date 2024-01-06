@@ -104,7 +104,7 @@ object lexer {
     private val lexer = new Lexer(desc)
 
     val identifier = lexer.lexeme.names.identifier
-    val number = lexer.lexeme.numeric.natural.decimal32.label("number")
+    val number = lexer.lexeme.natural.decimal32.label("number")
 
     def fully[A](p: Parsley[A]) = lexer.fully(p)
     val implicits = lexer.lexeme.symbol.implicits
@@ -118,7 +118,7 @@ import parsley.Parsley.atomic
 import lexer.implicits.implicitSymbol
 import lexer.{number, identifier, fully}
 import parsley.combinator.sepEndBy
-import parsley.implicits.zipped.{Zipped2, Zipped3}
+import parsley.syntax.zipped.{Zipped2, Zipped3}
 import parsley.expr.{Prefix, InfixR, InfixL, precedence, Ops}
 
 def infixN[A, B](p: Parsley[A])(op: Parsley[(A, A) => B]): Parsley[B] =
@@ -246,7 +246,7 @@ import parsley.character.char
 import parsley.errors.patterns.VerifiedErrors
 
 val _semiCheck =
-    char(';').verifiedUnexpected("semi-colons cannot be written between `if` and `else`")
+    char(';').verifiedExplain("semi-colons cannot be written between `if` and `else`")
 
 lazy val ifStmt: Parsley[Eval[Unit]] =
     ( "if" ~> pred
@@ -329,8 +329,8 @@ Argh! The `else` _is_ closed this time, but since `}` is a valid continuation ch
 triggered our `explain` message. Again, we can fix this by using a verified error (on `eof`)
 
 ```scala mdoc:nest:silent
-import parsley.combinator.eof
-val _eofCheck = eof.verifiedUnexpected("unclosed `if` or `else`")
+import parsley.Parsley.eof
+val _eofCheck = eof.verifiedExplain("unclosed `if` or `else`")
 def braces[A](p: =>Parsley[A]) = "{" ~> p <~ ("}" | _eofCheck)
 ```
 ```scala mdoc:invisible
@@ -388,7 +388,7 @@ val _boolCheck = choice(
         lexer.nonLexemeSymbol("true"),
         lexer.nonLexemeSymbol("false"),
         lexer.nonLexemeSymbol("not"),
-    ).verifiedUnexpected("booleans cannot be assigned to variables")
+    ).verifiedExplain("booleans cannot be assigned to variables")
 ```
 
 The `lexer.nonLexemeSymbol` combinator here is allowing for the parsing of keywords *without*

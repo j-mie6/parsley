@@ -5,19 +5,18 @@
  */
 package parsley
 
-import parsley.combinator.manyUntil
+import parsley.combinator.manyTill
 import parsley.character.item
-import parsley.implicits.character.stringLift
-import parsley.io._
+import parsley.syntax.character.stringLift
 
 import java.io.File
 
 class CoreIOTests extends ParsleyTest {
-    "parseFromFile" should "work" in {
-        (manyUntil(item, "Jamie Willis") *> item).parseFromFile(new File("LICENSE")).get shouldBe Success('\n')
+    "parse" should "work" in {
+        (manyTill(item, "Jamie Willis") *> item).parseFile(new File("LICENSE")).get shouldBe Success('\n')
     }
     it should "fail with an error when file does not exist" in {
-        Parsley.empty.parseFromFile(new File("foo.diuh")) shouldBe a [scala.util.Failure[_]]
+        Parsley.empty.parseFile(new File("foo.diuh")) shouldBe a [scala.util.Failure[_]]
     }
 
     // FIXME: this case is occasionally problematic on scala 3... I suspect a bug, seems like a race-condition

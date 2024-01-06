@@ -81,7 +81,7 @@ The `flatMap` combinator is another way of sequencing two parsers, but where
 the second depends on the result of the first. In `parsley`, this operation
 is **very** expensive, and it (and its derived `flatten` combinator) should
 be avoided. One way of avoiding the `flatMap` combinator is to use features
-found in [`parsley.registers`][Context-Sensitive Parsing (`parsley.registers`)],
+found in [`parsley.state`][Context-Sensitive Parsing (`parsley.state`)],
 or to use `lift` combinators instead.
 
 #### Choice
@@ -171,3 +171,26 @@ In addition to these, it also has `empty` and `empty(Int)`, which fail the parse
 immediately (but recoverably) and produces a given width of caret (and `0` in the case of `empty`); `lookAhead` and `notFollowedBy` for dealing with positive
 and negative lookahead; and `fresh`, which can be used like `pure` but evaluates
 its argument every time, which is useful in the presence of mutable values.
+
+### Iterative Combinators
+One of the main classes of combinator are the iterative combinators, which
+execute parsers multiple times until they cannot match any more; the results
+of these combinators vary. If the parser being repeated fails having consumed
+input, iterative combinators will fail; if no input was consumed on failure,
+the iteration will stop.
+
+The most commonly used of these are the `many` and `some` combinators, which
+return a list of the successful results:
+
+```scala mdoc:to-string
+import parsley.character.digit
+import parsley.Parsley.{many, some}
+
+many(digit.zip(digit)).parse("")
+many(digit.zip(digit)).parse("1234")
+many(digit.zip(digit)).parse("12345")
+
+some(digit.zip(digit)).parse("")
+some(digit.zip(digit)).parse("1234")
+some(digit.zip(digit)).parse("12345")
+```

@@ -20,36 +20,22 @@ of these combinators vary. If the parser being repeated fails having consumed
 input, iterative combinators will fail; if no input was consumed on failure,
 the iteration will stop.
 
-The most commonly used of these are the `many` and `some` combinators, which
-return a list of the successful results:
-
-```scala mdoc:to-string
-import parsley.character.digit
-import parsley.combinator.{many, some}
-
-many(digit.zip(digit)).parse("")
-many(digit.zip(digit)).parse("1234")
-many(digit.zip(digit)).parse("12345")
-
-some(digit.zip(digit)).parse("")
-some(digit.zip(digit)).parse("1234")
-some(digit.zip(digit)).parse("12345")
-```
-
-While `some` will parse one or more times, `manyN` generalises to work for
+The most commonly used of these are the `many` and `some` combinators (see [Object `Parsley`]), which
+return a list of the successful results. While `some` will parse one or more times, `manyN`
+generalises to work for
 any minimum required parses `n`. When the results are not needed, `skipMany`,
 `skipSome`, and `skipManyN` can be used instead. To determine how many times
 the parse was successful, the `count` and `count1` can be used instead.
 
-The `manyUntil` and `someUntil` combinators can be used to parse iteratively
+The `manyTill` and `someTill` combinators can be used to parse iteratively
 until some other parse is successful: this can be used, for instance, to
 scan comments:
 
 ```scala mdoc:to-string
 import parsley.character.{string, item, endOfLine}
-import parsley.combinator.{manyUntil}
+import parsley.combinator.{manyTill}
 
-val comment = string("//") ~> manyUntil(item, endOfLine)
+val comment = string("//") ~> manyTill(item, endOfLine)
 comment.parse("// this is a comment\n")
 ```
 

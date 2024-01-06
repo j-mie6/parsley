@@ -8,13 +8,13 @@ package parsley
 import Predef.{ArrowAssoc => _, _}
 
 import parsley.Parsley.{empty => pempty, _}
-import parsley.combinator.{many, ifP}
+import parsley.combinator.ifS
 import parsley.lift._
 import parsley.character.{char, satisfy, digit, item, string}
-import parsley.implicits.character.{charLift, stringLift}
-import parsley.implicits.lift.Lift1
-import parsley.implicits.zipped.Zipped2
-import parsley.registers._
+import parsley.syntax.character.{charLift, stringLift}
+import parsley.syntax.lift.Lift1
+import parsley.syntax.zipped.Zipped2
+import parsley.state._
 import parsley.errors.combinator.{fail => pfail}
 
 class CoreTests extends ParsleyTest {
@@ -111,20 +111,20 @@ class CoreTests extends ParsleyTest {
 
     // MONAD LAWS
     "Monadic parsers" must "obey the left identity law: pure x >>= f = f x" in {
-        (pure('a') >>= char).parse("a") should equal ('a'.parse("a"))
+        (pure('a') flatMap char).parse("a") should equal ('a'.parse("a"))
     }
     they must "obey the right identity law: m >>= pure = m" in {
-        ('a' >>= pure).parse("a") should equal ('a'.parse("a"))
+        ('a' flatMap pure).parse("a") should equal ('a'.parse("a"))
     }
     they must "obey the associativity law: (m >>= f) >>= g = m >>= (x => f x >>= g)" in {
         val f: Int => Parsley[Int] = x => pure(x + 1)
         val g: Int => Parsley[Int] = x => pure(x/3)
         val m = '1' #> 4
-        ((m >>= f) >>= g).parse("1") should equal ((m >>= (x => f(x) >>= g)).parse("1"))
+        ((m flatMap f) flatMap g).parse("1") should equal ((m flatMap (x => f(x) flatMap g)).parse("1"))
     }
     they must "allow for flattening" in {
-        join(pure(char('a'))).parse("a") shouldBe Success('a')
-        join(Parsley.empty).parse("") shouldBe a [Failure[_]]
+        pure(char('a')).flatten.parse("a") shouldBe Success('a')
+        Parsley.empty.flatten.parse("") shouldBe a [Failure[_]]
     }
 
     "branch" must "work correctly for non-pure components" in {
@@ -188,10 +188,10 @@ class CoreTests extends ParsleyTest {
     }
     /*it should "not affect the state of the registers on success" in {
         val r1 = Reg.make[Int]
-        (r1.put(5) *> lookAhead(r1.put(7) *> 'a') *> r1.get).parse("a") should be {
+        (r1.set(5) *> lookAhead(r1.set(7) *> 'a') *> r1.get).parse("a") should be {
             Success(5)
         }
-        (r1.put(5) *> (lookAhead(r1.put(7) *> 'a') <|> 'b') *> r1.get).parse("b") should be {
+        (r1.set(5) *> (lookAhead(r1.set(7) *> 'a') <|> 'b') *> r1.get).parse("b") should be {
             Success(7)
         }
     }*/
@@ -201,96 +201,96 @@ class CoreTests extends ParsleyTest {
     }
 
     "stateful parsers" should "allow for persistent state" in {
-        val p = 5.makeReg { r1 =>
-            7.makeReg { r2 =>
-                r1.put(lift2[Int, Int, Int](_+_, r1.get, r2.get)) *> (r1.get zip r2.gets(_+1))
+        val p = 5.makeRef { r1 =>
+            7.makeRef { r2 =>
+                r1.set(lift2[Int, Int, Int](_+_, r1.get, r2.get)) *> (r1.get zip r2.gets(_+1))
             }
         }
         p.parse("") should be (Success((12, 8)))
     }
     they should "be modifiable" in {
-        val p = 5.makeReg(r1 => r1.modify(_+1) *> r1.get)
+        val p = 5.makeRef(r1 => r1.update(_+1) *> r1.get)
         p.parse("") should be (Success(6))
     }
     they should "provide localised context" in {
-        val r1 = Reg.make[Int]
-        val p = r1.put(5) *> (r1.local(_+1)(r1.get) zip r1.get)
-        val q = r1.put(5) *> (r1.local(6)(r1.get) <~> r1.get)
+        val r1 = Ref.make[Int]
+        val p = r1.set(5) *> (r1.updateDuring(_+1)(r1.get) zip r1.get)
+        val q = r1.set(5) *> (r1.setDuring(6)(r1.get) <~> r1.get)
         p.parse("") should be (Success((6, 5)))
         q.parse("") should be (Success((6, 5)))
     }
     they should "be correctly allocated when found inside recursion" in {
-        val r1 = Reg.make[Int]
-        lazy val rec: Parsley[Unit] = char('a') *> r1.put(1) *> rec <|> unit
-        val p = "hello :)".makeReg(r2 => rec *> r2.get)
+        val r1 = Ref.make[Int]
+        lazy val rec: Parsley[Unit] = char('a') *> r1.set(1) *> rec <|> unit
+        val p = "hello :)".makeRef(r2 => rec *> r2.get)
         p.parse("a") shouldBe Success("hello :)")
     }
     they should "be correctly allocated when found inside sub-routines" in {
-        val r1 = Reg.make[Int]
-        val q = char('a') *> r1.put(1)
-        val p = "hello :)".makeReg(r2 => q *> q *> r2.get)
+        val r1 = Ref.make[Int]
+        val q = char('a') *> r1.set(1)
+        val p = "hello :)".makeRef(r2 => q *> q *> r2.get)
         p.parse("aa") shouldBe Success("hello :)")
     }
     they should "be preserved by callee-save in flatMap" in {
-        val p = "hello world".makeReg(r2 => {
-            6.makeReg(r1 => {
-                unit.flatMap(_ => 4.makeReg(_ => r2.put("hi"))) *>
+        val p = "hello world".makeRef(r2 => {
+            6.makeRef(r1 => {
+                unit.flatMap(_ => 4.makeRef(_ => r2.set("hi"))) *>
                 (r1.get <~> r2.get)
             })
         })
         p.parse("") shouldBe Success((6, "hi"))
     }
     they should "be preserved by callee-save in flatMap even when it fails" in {
-        val p = "hello world".makeReg(r2 => {
-            6.makeReg(r1 => {
-                combinator.optional(unit.flatMap(_ => r2.put("hi") *> 4.makeReg(_ => Parsley.empty))) *>
+        val p = "hello world".makeRef(r2 => {
+            6.makeRef(r1 => {
+                combinator.optional(unit.flatMap(_ => r2.set("hi") *> 4.makeRef(_ => Parsley.empty))) *>
                 (r1.get zip r2.get)
             })
         })
         p.parse("") shouldBe Success((6, "hi"))
     }
     they should "be able to be rolled back if they fail softly" in {
-        val p = 3.makeReg(r1 => (r1.rollback(r1.put(2) *> Parsley.empty) <|> unit) *> r1.get)
+        val p = 3.makeRef(r1 => (r1.rollback(r1.set(2) *> Parsley.empty) <|> unit) *> r1.get)
         p.parse("") shouldBe Success(3)
     }
     they should "but not roll back if they hard fail" in {
-        val p = 3.makeReg(r1 => (atomic(r1.rollback('a' *> r1.put(2) *> Parsley.empty)) <|> unit) *> r1.get)
+        val p = 3.makeRef(r1 => (atomic(r1.rollback('a' *> r1.set(2) *> Parsley.empty)) <|> unit) *> r1.get)
         p.parse("a") shouldBe Success(2)
     }
     they should "not rollback if successful" in {
-        val p = 3.makeReg(r1 => r1.rollback(r1.put(2)) *> r1.get)
+        val p = 3.makeRef(r1 => r1.rollback(r1.set(2)) *> r1.get)
         p.parse("") shouldBe Success(2)
     }
     they should "support more than 4 registers" in {
         def loop(n: Int): Parsley[List[Char]] = {
             if (n == 0) pure(Nil)
-            else item.fillReg { c => c.get <::> loop(n-1) }
+            else item.fillRef { c => c.get <::> loop(n-1) }
         }
         val p = loop(16)
         p.parse("abcdefghijklmnop") shouldBe Success(List('a', 'b', 'c','d', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p'))
     }
 
     "fillReg" should "appear to create a fresh register every time its invoked" in {
-        def inc(reg: Reg[Int]): Parsley[Int] = reg.get <* reg.modify(_ + 1)
-        val p = 0.makeReg { i =>
+        def inc(reg: Ref[Int]): Parsley[Int] = reg.get <* reg.update(_ + 1)
+        val p = 0.makeRef { i =>
             // the register j is static, however, each recursive call should save its value, making it appear dynamic
-            lazy val p: Parsley[List[Int]] = char('a') *> inc(i).fillReg(j => (p, j.get).zipped(_ :+ _) <* char('b')) <|> pure(Nil)
+            lazy val p: Parsley[List[Int]] = char('a') *> inc(i).fillRef(j => (p, j.get).zipped(_ :+ _) <* char('b')) <|> pure(Nil)
             p
         }
         p.parse("aaabbb") shouldBe Success(List(2, 1, 0))
     }
 
     it should "also appear to create a fresh register even in the presence of a hard failure" in {
-        lazy val p: Parsley[Char] = item.fillReg(c => item *> (atomic(p) <|> c.get))
+        lazy val p: Parsley[Char] = item.fillRef(c => item *> (atomic(p) <|> c.get))
         p.parse("abc") shouldBe Success('a')
     }
 
     "ternary parsers" should "function correctly" in {
-        val p = ifP(pure(true), 'a', 'b')
+        val p = ifS(pure(true), 'a', 'b')
         p.parse("a") should be (Success('a'))
-        val q = ifP(pure(false), 'a', 'b')
+        val q = ifS(pure(false), 'a', 'b')
         q.parse("b") should be (Success('b'))
-        val r = ifP(item.map(_.isLower), 'a', 'b')
+        val r = ifS(item.map(_.isLower), 'a', 'b')
         r.parse("aa") should be (Success('a'))
         r.parse("Ab") should be (Success('b'))
     }
@@ -360,14 +360,14 @@ class CoreTests extends ParsleyTest {
         noException should be thrownBy many_('a' *> p).parse("")
     }
     they should "not be caused by bind optimisation" in {
-        lazy val uhoh: Parsley[Unit] = 'a' >>= (_ => uhoh)
+        lazy val uhoh: Parsley[Unit] = 'a'.flatMap(_ => uhoh)
         noException should be thrownBy uhoh.parse("a")
     }
 
     "lazy parsley" should "be able to prevent overly strict combinators" in {
-        import parsley.combinator.{skip, optional}
+        import parsley.combinator.{sequence, optional}
         // without the ~, this would loop forever as skip is strict in position 2
-        lazy val fishySkipMany: Parsley[Unit] = optional(skip('a', ~fishySkipMany))
+        lazy val fishySkipMany: Parsley[Unit] = optional(sequence('a', ~fishySkipMany))
         (fishySkipMany *> 'b').parse("aaaaaab") shouldBe Success('b')
     }
 
@@ -385,18 +385,19 @@ class CoreTests extends ParsleyTest {
     }
 
     "failures through call boundary" should "ensure that stateful instructions are restored correctly" in {
-        import parsley.combinator.{whileP, some, eof}
-        val n = registers.Reg.make[Int]
-        lazy val p: Parsley[Unit] = whileP(ifP(n.gets(_ % 2 == 0), some('a'), some('b')) *> n.modify(_ - 1) *> n.gets(_ != 0))
-        val q = atomic(n.put(4) *> p <* eof) | n.put(2) *> p <* eof
+        import parsley.Parsley.some
+        import parsley.combinator.whileS
+        val n = Ref.make[Int]
+        lazy val p: Parsley[Unit] = whileS(ifS(n.gets(_ % 2 == 0), some('a'), some('b')) *> n.update(_ - 1) *> n.gets(_ != 0))
+        val q = atomic(n.set(4) *> p <* eof) | n.set(2) *> p <* eof
         q.parse("aaaabbb") shouldBe a [Success[_]]
     }
 
     "flatMap" should "consistently generate a callee-save instruction if needed" in {
-        import parsley.registers._
-        val r = Reg.make[Int]
+        import parsley.state._
+        val r = Ref.make[Int]
         val p = pure(7).flatMap { _ =>
-            r.put(4) *> r.get
+            r.set(4) *> r.get
         }
         (p *> p).parse("") shouldBe Success(4)
     }

@@ -81,7 +81,7 @@ object BadCharsFail {
 }
 
 private final class BadCharsReason private (cs: Map[Int, String]) extends VerifiedBadChars {
-    private [token] def checkBadChar: Parsley[Nothing] = satisfy(cs.contains).verifiedUnexpected(cs.apply(_))
+    private [token] def checkBadChar: Parsley[Nothing] = satisfy(cs.contains).verifiedExplain(cs.apply(_))
 }
 /** This object makes "bad literal chars" generate a reason in a ''vanilla'' error. Requires a map from bad characters to their reasons.
   * @since 4.1.0

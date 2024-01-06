@@ -16,24 +16,24 @@ the best practices for handling whitespace in your grammars.
 ## Defining whitespace readers
 The first step in the correct handling of whitespace is to build the small parsers that
 recognise the grammar itself.  The two concerns usually are spaces and comments. For
-comments, the combinator `combinator.manyUntil` is _very_ useful. For example:
+comments, the combinator `combinator.manyTill` is _very_ useful. For example:
 
 ```scala mdoc:silent
-import parsley.Parsley, Parsley.atomic
+import parsley.Parsley, Parsley.{atomic, many}
 import parsley.character.{whitespace, string, item, endOfLine}
-import parsley.combinator.{manyUntil, skipMany}
+import parsley.combinator.manyTill
 import parsley.errors.combinator.ErrorMethods //for hide
 
 def symbol(str: String): Parsley[String] = atomic(string(str))
 
-val lineComment = symbol("//") ~> manyUntil(item, endOfLine)
-val multiComment = symbol("/*") ~> manyUntil(item, symbol("*/"))
+val lineComment = symbol("//") ~> manyTill(item, endOfLine).void
+val multiComment = symbol("/*") ~> manyTill(item, symbol("*/")).void
 val comment = lineComment | multiComment
 
-val skipWhitespace = skipMany(whitespace | comment).hide
+val skipWhitespace = many(whitespace.void | comment).void.hide
 ```
 
-Here, the `manyUntil` combinator is used to read up until the end of the comment. You may
+Here, the `manyTill` combinator is used to read up until the end of the comment. You may
 notice the `hide` method having been called on `skipWhitespace`. This handy operation
 hides the "expected" error message from a given parser. In other words, when we have a
 parse error, it isn't particularly useful to see in the suggestions of what would have
@@ -111,19 +111,19 @@ to limit the scope of these implicits, so we can be clear about which we mean wh
 what I mean, let's restructure the code a little for the parser and ensure we don't run into any issues.
 
 ```scala mdoc:reset
-import parsley.Parsley, Parsley.atomic
+import parsley.Parsley, Parsley.{atomic, eof, many}
 import parsley.character.{digit, whitespace, string, item, endOfLine}
-import parsley.combinator.{manyUntil, skipMany, eof}
+import parsley.combinator.manyTill
 import parsley.expr.{precedence, Ops, InfixL}
 import parsley.errors.combinator.ErrorMethods //for hide
 
 object lexer {
     private def symbol(str: String): Parsley[String] = atomic(string(str))
 
-    private val lineComment = symbol("//") ~> manyUntil(item, endOfLine)
-    private val multiComment = symbol("/*") ~> manyUntil(item, symbol("*/"))
+    private val lineComment = symbol("//") ~> manyTill(item, endOfLine).void
+    private val multiComment = symbol("/*") ~> manyTill(item, symbol("*/")).void
     private val comment = lineComment | multiComment
-    private val skipWhitespace = skipMany(whitespace | comment).hide
+    private val skipWhitespace = many(whitespace.void | comment).void.hide
 
     private def lexeme[A](p: Parsley[A]): Parsley[A] = p <~ skipWhitespace
     private def token[A](p: Parsley[A]): Parsley[A] = lexeme(atomic(p))

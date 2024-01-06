@@ -6,7 +6,8 @@
 package parsley.token.symbol
 
 import parsley.Parsley, Parsley.{atomic, empty, notFollowedBy, unit}
-import parsley.character.{char, codePoint, string, strings}
+import parsley.character.{char, string, strings}
+import parsley.unicode
 import parsley.errors.combinator.{ErrorMethods, amend}
 import parsley.token.descriptions.{NameDesc, SymbolDesc}
 import parsley.token.errors.ErrorConfig
@@ -24,7 +25,9 @@ private [token] class OriginalSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc,
     override def apply(name: Char): Parsley[Unit] = char(name).void
 
     private lazy val identLetter = nameDesc.identifierLetter.toNative
-    private def caseChar(c: Int) = if (Character.isLetter(c)) codePoint(Character.toLowerCase(c)) <|> codePoint(Character.toUpperCase(c)) else codePoint(c)
+    private def caseChar(c: Int) = {
+        if (Character.isLetter(c)) unicode.char(Character.toLowerCase(c)) | unicode.char(Character.toUpperCase(c)) else unicode.char(c)
+    }
     private def caseString(name: String): Parsley[Unit] = {
         if (symbolDesc.caseSensitive) string(name).void
         else {
@@ -36,7 +39,7 @@ private [token] class OriginalSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc,
                 p <~= caseChar(codepoint)
                 offset += Character.charCount(codepoint)
             }
-            atomic(amend(p)) <|> empty(name.codePointCount(0, name.length))
+            atomic(amend(p)) | empty(name.codePointCount(0, name.length))
         }.label(name)
     }
     override def softKeyword(name: String): Parsley[Unit] = {

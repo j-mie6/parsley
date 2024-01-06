@@ -22,6 +22,7 @@ import lift._
   * @define bridgefor
   *     Generic bridge trait for types that have constructors of arity
   */
+@deprecated("This will be removed in 5.x, use parsley.generic instead", "4.5.0")
 object genericbridges {
     // $COVERAGE-OFF$
     // scalastyle:off parameter.number ensure.single.space.after.token

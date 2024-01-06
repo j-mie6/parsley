@@ -14,19 +14,19 @@ In the previous post, we saw the basic principles behind handling whitespace in 
 To remind ourselves of what we ended up lets pick up where we left off:
 
 ```scala mdoc
-import parsley.Parsley, Parsley.atomic
+import parsley.Parsley, Parsley.{atomic, eof, many}
 import parsley.character.{digit, whitespace, string, item, endOfLine}
-import parsley.combinator.{manyUntil, skipMany, eof}
+import parsley.combinator.manyTill
 import parsley.expr.{precedence, Ops, InfixL}
 import parsley.errors.combinator.ErrorMethods
 
 object lexer {
     private def symbol(str: String): Parsley[String] = atomic(string(str))
 
-    private val lineComment = symbol("//") ~> manyUntil(item, endOfLine)
-    private val multiComment = symbol("/*") ~> manyUntil(item, symbol("*/"))
+    private val lineComment = symbol("//") ~> manyTill(item, endOfLine).void
+    private val multiComment = symbol("/*") ~> manyTill(item, symbol("*/")).void
     private val comment = lineComment | multiComment
-    private val skipWhitespace = skipMany(whitespace | comment).hide
+    private val skipWhitespace = many(whitespace.void | comment).void.hide
 
     private def lexeme[A](p: Parsley[A]): Parsley[A] = p <~ skipWhitespace
     private def token[A](p: Parsley[A]): Parsley[A] = lexeme(atomic(p))
@@ -65,10 +65,10 @@ import parsley.character.{stringOfSome, letter}
 object lexer {
     def symbol(str: String): Parsley[String] = atomic(string(str))
 
-    private val lineComment = symbol("//") ~> manyUntil(item, endOfLine)
-    private val multiComment = symbol("/*") ~> manyUntil(item, symbol("*/"))
+    private val lineComment = symbol("//") ~> manyTill(item, endOfLine).void
+    private val multiComment = symbol("/*") ~> manyTill(item, symbol("*/")).void
     private val comment = lineComment | multiComment
-    private val skipWhitespace = skipMany(whitespace | comment).hide
+    private val skipWhitespace = many(whitespace.void | comment).void.hide
 
     def lexeme[A](p: Parsley[A]): Parsley[A] = p <~ skipWhitespace
     def token[A](p: Parsley[A]): Parsley[A] = lexeme(atomic(p))
@@ -247,9 +247,9 @@ a valid keyword or an operator and, if so, it can use our specialised combinator
 relook at the problematic example:
 
 ```scala mdoc:invisible:reset
-import parsley.Parsley, Parsley.{atomic, notFollowedBy}
+import parsley.Parsley, Parsley.{atomic, notFollowedBy, eof, many}
 import parsley.character.{digit, letter, whitespace, string, item, endOfLine, strings, stringOfSome}
-import parsley.combinator.{manyUntil, skipMany, eof}
+import parsley.combinator.manyTill
 import parsley.expr.{precedence, Ops, InfixL, Prefix}
 import parsley.errors.combinator.ErrorMethods
 ```
@@ -260,10 +260,10 @@ object lexer {
 
     private def symbol(str: String): Parsley[String] = atomic(string(str))
 
-    private val lineComment = symbol("//") ~> manyUntil(item, endOfLine)
-    private val multiComment = symbol("/*") ~> manyUntil(item, symbol("*/"))
+    private val lineComment = symbol("//") ~> manyTill(item, endOfLine).void
+    private val multiComment = symbol("/*") ~> manyTill(item, symbol("*/")).void
     private val comment = lineComment | multiComment
-    private val skipWhitespace = skipMany(whitespace | comment).hide
+    private val skipWhitespace = many(whitespace.void | comment).void.hide
 
     private def lexeme[A](p: Parsley[A]): Parsley[A] = p <~ skipWhitespace
     private def token[A](p: Parsley[A]): Parsley[A] = lexeme(atomic(p))
@@ -361,7 +361,7 @@ object lexer {
     private val lexer = new Lexer(desc)
 
     val identifier = lexer.lexeme.names.identifier
-    val number = lexer.lexeme.numeric.natural.decimal
+    val number = lexer.lexeme.natural.decimal
 
     def fully[A](p: Parsley[A]) = lexer.fully(p)
     val implicits = lexer.lexeme.symbol.implicits
@@ -374,7 +374,7 @@ assert(lexer.implicits.implicitSymbol("negate").parse("negatex").isInstanceOf[Fa
 
 The `implicitSymbol` function we developed before, along with `operator` and
 `keyword` are all implemented by `lexer.lexeme.symbol`. The `names.identifier` parser
-accounts for the keyword problem for us. The basic `numeric.natural.decimal` parser
+accounts for the keyword problem for us. The basic `natural.decimal` parser
 meets our needs without any additional configuration: it also returns `BigInt`, which
 is arbitrary precision. By using `token.lexeme`, this will already handle the
 whitespace and atomicity of the token for us. This is just the tip of the iceberg

@@ -1,29 +1,27 @@
 {%
 laika.versioned = true
-laika.title = "`parsley.implicits`"
-parsley.tabname = "Syntactic Extensions (parsley.implicits)"
+laika.title = "`parsley.syntax`"
+parsley.tabname = "Syntactic Extensions (parsley.syntax)"
 laika.site.metadata.description = "This page describes Parsley's syntactic extensions."
 %}
-# Synactic Extensions (`parsley.implicits`)
-The `parsley.implicits` package contains several modules that enable new "syntax"
+# Synactic Extensions (`parsley.syntax`)
+The `parsley.syntax` package contains several modules that enable new "syntax"
 on parsers or other values. There are currently four such modules:
 
-* `parsley.implicits.character`: contains conversions that allow for character
+* `parsley.syntax.character`: contains conversions that allow for character
    and string literals to serve as parsers.
-* `parsley.implicits.combinator`: contains an implicit function that allows any
-   parser to drop its result when required by the type of another combinator.
-* `parsley.implicits.lift`: enables the `lift` method on functions to allow them
+* `parsley.syntax.lift`: enables the `lift` method on functions to allow them
    to work on parsers.
-* `parsley.implicits.zipped`: enables the `zipped` method on tuples of parsers to
+* `parsley.syntax.zipped`: enables the `zipped` method on tuples of parsers to
    sequence and combine their results with a single function.
 
 ## Implicit Conversions
-The `charLift` and `stringLift` conversions in `parsley.implicits.character`
+The `charLift` and `stringLift` conversions in `parsley.syntax.character`
 allow for Scala character and string literals to work directly as parsers for
 those specific literals. For example:
 
 ```scala mdoc:to-string
-import parsley.implicits.character._
+import parsley.syntax.character._
 
 val p = 'a' ~> "bc"
 p.parse("abc")
@@ -69,7 +67,7 @@ more natural, where the function to apply appears to the left of the arguments:
 
 ```scala mdoc:to-string
 import parsley.character.char
-import parsley.implicits.lift._
+import parsley.syntax.lift._
 
 val add = (x: Int, y: Int) => x + y
 add.lift(char('a').as(5), char('b').as(6)).parse("ab")
@@ -87,7 +85,7 @@ arguments, it can infer the type of the function based on the arguments. This
 may appear slightly less natural, however:
 
 ```scala mdoc:to-string
-import parsley.implicits.zipped._
+import parsley.syntax.zipped._
 (char('a').as(5), char('b').as(6)).zipped(_ + _).parse("ab")
 ```
 

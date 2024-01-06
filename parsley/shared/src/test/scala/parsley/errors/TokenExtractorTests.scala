@@ -6,7 +6,7 @@
 package parsley.errors
 
 import parsley.{ParsleyTest, TestErrorBuilder}
-import parsley.combinator.{skipSome, skipMany}
+import parsley.Parsley.{many, some}
 import parsley.character.{string, digit, letter, char, whitespace}
 import parsley.errors.tokenextractors._
 
@@ -126,10 +126,10 @@ class TokenExtractorTests extends ParsleyTest {
             (string("whi"), "keyword whi"),
             (string("while"), "keyword while"),
             (string("if"), "keyword if"),
-            (skipSome(letter), "identifier"),
+            (some(letter), "identifier"),
             (string("for"), "keyword for"),
-            (skipSome(digit), "number"),
-            (char('"') ~> skipMany(parsley.character.noneOf('"')) <~ char('"'), "string"),
+            (some(digit), "number"),
+            (char('"') ~> many(parsley.character.noneOf('"')) <~ char('"'), "string"),
         )
     }
     "LexToken" should "handle raw input when no token can be matched" in {

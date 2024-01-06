@@ -5,14 +5,14 @@
  */
 package parsley
 
-import parsley.combinator.{option, some}
+import parsley.combinator.option
 import parsley.errors.ErrorBuilder
 import parsley.expr.{chain, infix}
 
 import parsley.internal.deepembedding.{frontend, singletons}
 import parsley.internal.machine.Context
 
-import Parsley.{emptyErr, pure}
+import Parsley.{emptyErr, pure, some}
 import XCompat._ // substituteCo
 
 /**
@@ -307,9 +307,9 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * val res2 = Failure(..) // first parser consumed an 'a'!
       * }}}
       *
-      * @group alt
       * @note just an alias for `</>`
       */
+    @deprecated("This combinator will be removed in 5.x, and `</>` used instead", "4.5.0")
     def getOrElse[Aʹ >: A](x: Aʹ): Parsley[Aʹ] = this </> x
     /** This combinator, pronounced "sum", wraps this parser's result in `Left` if it succeeds, and parses `q` if it failed '''without''' consuming input,
       * wrapping the result in `Right`.
@@ -843,6 +843,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @group monad
       */
     def flatMap[B](f: A => Parsley[B]): Parsley[B] = new Parsley(new frontend.>>=(this.internal, f.andThen(_.internal)))
+    // $COVERAGE-OFF$
     /** This combinator, pronounced "bind", $bind
       *
       * @example {{{
@@ -860,9 +861,10 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *       during parse-time.
       * @param f the function that produces the next parser.
       * @return a new parser, which sequences this parser with the parser generated from its result.
-      * @group monad
       */
+    @deprecated("This combinator will be removed in 5.x, and `.flatMap` used instead", "4.5.0")
     def >>=[B](f: A => Parsley[B]): Parsley[B] = this.flatMap(f)
+    // $COVERAGE-ON$
     /** This combinator collapses two layers of parsing structure into one.
       *
       * The implicit (compiler-provided) evidence proves that this parser really has type `Parsley[Parsley[B]]`.
@@ -940,7 +942,6 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @group special
       */
     def impure: Parsley[A] = new Parsley(new frontend.Opaque(this.internal))
-    // TODO: deprecate in 4.5, remove 5.0
     /** This combinator signifies that the parser it is invoked on is impure and any optimisations which assume purity
       * are disabled.
       *
@@ -948,13 +949,10 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *          parsley's aggressive optimisations that remove results that are not needed: in this case,
       *          the optimiser cannot see that the result of a parser is mutating some value, and may remove it.
       * @note old alias for `impure`
-      * @group special
       */
+    @deprecated("This combinator will be removed in 5.x, and `impure` used instead", "4.5.0")
     def unsafe(): Parsley[A] = impure
 
-    // $COVERAGE-ON$
-
-    // $COVERAGE-OFF$
     /** This is an alias for `p.filter(pred)`. It is needed to support for-comprehension syntax with `if`s.
       *
       * @since 4.0.0
@@ -993,18 +991,22 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
   *     useful; in particular, `pure` and `unit` can be put to good use in injecting results into a parser
   *     without needing to consume anything, or mapping another parser.
   *
-  * @groupprio monad 100
-  * @groupname monad Expensive Sequencing Combinators
-  * @groupdesc monad
-  *     These combinators can sequence two parsers, where the first parser's result influences
-  *     the structure of the second one. This may be because the second parser is generated
-  *     from the result of the first, or that the first parser ''returns'' the second parser.
-  *     Either way, the second parser cannot be known until runtime, when the first parser
-  *     has been executed: this means that Parsley is forced to compile the second parser during
-  *     parse-time, which is '''very''' expensive to do repeatedly. These combinators are only
-  *     needed in exceptional circumstances, and should be avoided otherwise.
+  * @groupprio iter 10
+  * @groupname iter Iterative Combinators
+  * @groupdesc iter
+  *     These combinators all execute a given parser an unbounded number of times, until either it fails, or another
+  *     parser succeeds, depending on the combinator. All of the results produced by the
+  *     repeated execution of the parser are returned in a `List`. These are almost essential for any practical parsing
+  *     task.
+  *
+  * @groupprio item 15
+  * @groupname item Input Query Combinators
+  * @groupdesc item
+  *     These combinators do not consume input, but they allow for querying of the input stream - specifically checking
+  *     whether or not there is more input that can be consumed or not. In particular, most parsers should be making
+  *     use of `eof` to ensure that the parser consumes all the input available at the end of the parse.
   */
-object Parsley {
+object Parsley extends PlatformSpecific {
     /** This class enables the prefix `~` combinator, which allows a parser in an otherwise strict
       * position to be made lazy.
       *
@@ -1155,16 +1157,15 @@ object Parsley {
       * @group cond
       */
     def select[A, B](p: Parsley[Either[A, B]], q: =>Parsley[A => B]): Parsley[B] = branch(p, q, pure(identity[B](_)))
+    // $COVERAGE-OFF$
     /** This combinator collapses two layers of parsing structure into one.
       *
       * Just an alias for `_.flatten`, providing a namesake to Haskell.
       *
-      * @group monad
       * @see [[Parsley.flatten `flatten`]] for details and examples.
       */
+    @deprecated("This combinator will be removed in 5.x, and `.flatten` used instead", "4.5.0")
     def join[A](p: Parsley[Parsley[A]]): Parsley[A] = p.flatten
-    // $COVERAGE-OFF$
-    // TODO: deprecate in 4.5.0
     /** This combinator parses its argument `p`, but rolls back any consumed input on failure.
       *
       * If the parser `p` succeeds, then `attempt(p)` has no effect. However, if `p` failed,
@@ -1185,8 +1186,8 @@ object Parsley {
       * @param p the parser to execute, if it fails, it will not have consumed input.
       * @return a parser that tries `p`, but never consumes input if it fails.
       * @note `atomic` should be used instead.
-      * @group prim
       */
+    @deprecated("This combinator will be removed in 5.x, and `atomic` used instead", "4.5.0")
     def attempt[A](p: Parsley[A]): Parsley[A] = atomic(p)
     // $COVERAGE-ON$
     /** This combinator parses its argument `p`, but rolls back any consumed input on failure.
@@ -1302,7 +1303,80 @@ object Parsley {
       */
     val unit: Parsley[Unit] = pure(())
 
+    /** This parser only succeeds at the end of the input.
+      *
+      * Equivalent to `notFollowedBy(item)`.
+      *
+      * @example {{{
+      * scala> import parsley.combinator.eof
+      * scala> eof.parse("a")
+      * val res0 = Failure(..)
+      * scala> eof.parse("")
+      * val res1 = Success(())
+      * }}}
+      *
+      * @group item
+      * @since 4.5.0
+      */
+    val eof: Parsley[Unit] = new Parsley(singletons.Eof)
+
     private val emptyErr = new parsley.errors.VanillaGen[Any]
+
+    /** This combinator repeatedly parses a given parser '''zero''' or more times, collecting the results into a list.
+      *
+      * Parses a given parser, `p`, repeatedly until it fails. If `p` failed having consumed input,
+      * this combinator fails. Otherwise when `p` fails '''without consuming input''', this combinator
+      * will return all of the results, `x,,1,,` through `x,,n,,` (with `n >= 0`), in a list: `List(x,,1,,, .., x,,n,,)`.
+      * If `p` was never successful, the empty list is returned.
+      *
+      * @example {{{
+      * scala> import parsley.character.string
+      * scala> import parsley.Parsley.many
+      * scala> val p = many(string("ab"))
+      * scala> p.parse("")
+      * val res0 = Success(Nil)
+      * scala> p.parse("ab")
+      * val res1 = Success(List("ab"))
+      * scala> p.parse("abababab")
+      * val res2 = Success(List("ab", "ab", "ab", "ab"))
+      * scala> p.parse("aba")
+      * val res3 = Failure(..)
+      * }}}
+      *
+      * @param p the parser to execute multiple times.
+      * @return a parser that parses `p` until it fails, returning the list of all the successful results.
+      * @since 4.5.0
+      * @group iter
+      */
+    def many[A](p: Parsley[A]): Parsley[List[A]] = new Parsley(new frontend.Many(p.internal))
+
+    /** This combinator repeatedly parses a given parser '''one''' or more times, collecting the results into a list.
+      *
+      * Parses a given parser, `p`, repeatedly until it fails. If `p` failed having consumed input,
+      * this combinator fails. Otherwise when `p` fails '''without consuming input''', this combinator
+      * will return all of the results, `x,,1,,` through `x,,n,,` (with `n >= 1`), in a list: `List(x,,1,,, .., x,,n,,)`.
+      * If `p` was not successful at least one time, this combinator fails.
+      *
+      * @example {{{
+      * scala> import parsley.character.string
+      * scala> import parsley.Parsley.some
+      * scala> val p = some(string("ab"))
+      * scala> p.parse("")
+      * val res0 = Failure(..)
+      * scala> p.parse("ab")
+      * val res1 = Success(List("ab"))
+      * scala> p.parse("abababab")
+      * val res2 = Success(List("ab", "ab", "ab", "ab"))
+      * scala> p.parse("aba")
+      * val res3 = Failure(..)
+      * }}}
+      *
+      * @param p the parser to execute multiple times.
+      * @return a parser that parses `p` until it fails, returning the list of all the successful results.
+      * @since 4.5.0
+      * @group iter
+      */
+    def some[A](p: Parsley[A]): Parsley[List[A]] = combinator.manyN(1, p)
 
     // $COVERAGE-OFF$
     /** This parser returns the current line number of the input without having any other effect.

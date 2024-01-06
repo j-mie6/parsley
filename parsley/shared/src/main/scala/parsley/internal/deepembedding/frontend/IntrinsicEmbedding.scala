@@ -5,7 +5,7 @@
  */
 package parsley.internal.deepembedding.frontend
 
-import parsley.registers.Reg
+import parsley.state.Ref
 
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 
@@ -28,11 +28,11 @@ private [parsley] final class Lift3[A, B, C, D](private val f: (A, B, C) => D, p
     override private[parsley] def prettyName = "lift.lift3"
     // $COVERAGE-ON$
 }
-private [parsley] final class Local[S, A](val reg: Reg[S], p: LazyParsley[S], q: =>LazyParsley[A]) extends Binary[S, A, A](p, q) with UsesRegister {
-    override def make(p: StrictParsley[S], q: StrictParsley[A]): StrictParsley[A] = new backend.Local(reg, p, q)
+private [parsley] final class Local[S, A](val ref: Ref[S], p: LazyParsley[S], q: =>LazyParsley[A]) extends Binary[S, A, A](p, q) with UsesRef {
+    override def make(p: StrictParsley[S], q: StrictParsley[A]): StrictParsley[A] = new backend.Local(ref, p, q)
 
     // $COVERAGE-OFF$
-    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(reg, p, q)
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(ref, p, q)
 
     override private[parsley] def prettyName = "local"
     // $COVERAGE-ON$

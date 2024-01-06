@@ -5,10 +5,9 @@
  */
 package parsley.token.text
 
-import parsley.Parsley, Parsley.empty
+import parsley.Parsley, Parsley.{empty, some}
 import parsley.character.{char, satisfyMap}
-import parsley.combinator.skipSome
-import parsley.implicits.character.charLift
+import parsley.syntax.character.charLift
 import parsley.token.descriptions.text.EscapeDesc
 import parsley.token.errors.ErrorConfig
 import parsley.token.predicate.{Basic, CharPredicate, NotRequired, Unicode}
@@ -34,7 +33,7 @@ private [token] class EscapableCharacter(desc: EscapeDesc, escapes: Escape, spac
     override def isRaw: Boolean = false
     private lazy val escapeEmpty = err.labelStringEscapeEmpty(desc.emptyEscape.fold[Parsley[Char]](empty)(char))
     private lazy val escapeGap = {
-        if (desc.gapsSupported) skipSome(err.labelStringEscapeGap(space)) *> err.labelStringEscapeGapEnd(desc.escBegin)
+        if (desc.gapsSupported) some(err.labelStringEscapeGap(space)) ~> err.labelStringEscapeGapEnd(desc.escBegin)
         else empty
     }
     private lazy val stringEscape: Parsley[Option[Int]] =

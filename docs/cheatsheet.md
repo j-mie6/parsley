@@ -97,8 +97,7 @@ the above quick documentation). This is really useful for changing the result of
 but provides no way of combining multiple.
 
 ```scala mdoc:silent
-import parsley.Parsley
-import parsley.combinator.some
+import parsley.Parsley, Parsley.some
 import parsley.character.digit
 
 case class Num(n: Int)
@@ -121,8 +120,7 @@ list of remaining digits. This task is quite common, so the `<::>` combinator is
 for it:
 
 ```scala mdoc:reset:silent
-import parsley.Parsley
-import parsley.combinator.many
+import parsley.Parsley, Parsley.many
 import parsley.character.{digit, oneOf, char}
 
 case class Num(n: Int)
@@ -139,8 +137,7 @@ val num: Parsley[Num] = int.map(Num)
 But more generally, we could reach for the `lift` functions:
 
 ```scala mdoc:reset:silent
-import parsley.Parsley
-import parsley.combinator.many
+import parsley.Parsley, Parsley.many
 import parsley.character.{digit, oneOf, char}
 import parsley.lift.lift2
 
@@ -169,7 +166,7 @@ after the receiver of the method: it gets given the right argument type straight
 for leveraging this property:
 
 ```scala mdoc:silent
-import parsley.implicits.zipped.Zipped2
+import parsley.syntax.zipped.Zipped2
 
 (nonzero, many(digit)).zipped(_ :: _)
 ```
@@ -183,7 +180,7 @@ Use this form of lifting when type-inference fails you. Otherwise, for clarity, 
 syntactic sugar for it:
 
 ```scala mdoc:silent
-import parsley.implicits.lift.{Lift2, Lift1}
+import parsley.syntax.lift.{Lift2, Lift1}
 
 val charCons = (c: Char, cs: List[Char]) => c :: cs
 

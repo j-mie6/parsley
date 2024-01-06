@@ -5,13 +5,9 @@
  */
 package parsley
 
-import scala.collection.mutable
-
-import parsley.Parsley.{empty, fresh, pure}
+import parsley.Parsley.{empty, pure}
 import parsley.XAssert._
-import parsley.combinator.{when, whileP}
 import parsley.exceptions.UnfilledRegisterException
-import parsley.implicits.zipped.Zipped2
 
 import parsley.internal.deepembedding.{frontend, singletons}
 
@@ -43,12 +39,13 @@ import parsley.internal.deepembedding.{frontend, singletons}
   *     These are implicit classes that, when in scope, enable additional combinators on
   *     parsers that interact with the register system in some way.
   */
+@deprecated("This object is deprecated for removal in 5.x, it has been renamed to `parsley.state`", "4.5.0")
 object registers {
-    /** This class is used to index registers within the mutable state.
+    /** This class is used to describe variables within the mutable state.
       *
-      * @note it is undefined behaviour to use a register in multiple different
+      * @note it is undefined behaviour to use a reference in multiple different
       *       independent parsers. You should be careful to parameterise the
-      *       registers in shared parsers and allocate fresh ones for each "top-level"
+      *       references in shared parsers and allocate fresh ones for each "top-level"
       *       parser you will run.
       * @since 2.2.0
       * @group reg
@@ -56,33 +53,34 @@ object registers {
       * @groupprio getters 0
       * @groupname getters Getters
       * @groupdesc getters
-      *   These combinators allow for the retrieval of the stateful value of a register, and
-      *   injecting it into the parsing context. Does not modify the contents of the register
+      *   These combinators allow for the retrieval of the stateful value of a reference, and
+      *   injecting it into the parsing context. Does not modify the contents of the reference
       *   itself.
       *
       * @groupprio setters 5
       * @groupname setters Setters
       * @groupdesc setters
-      *   These combinators directly update the value contained within a register. This new
+      *   These combinators directly update the value contained within a reference. This new
       *   value can be provided directly or sourced from a parser.
       *
       * @groupprio mod 10
       * @groupname mod Modification
       * @groupdesc mod
-      *   These combinators modify the value stored within a register by using a function.
+      *   These combinators modify the value stored within a reference by using a function.
       *   The function used can be provided directly or sourced from a parser.
       *
       * @groupprio local 15
       * @groupname local Local Modification
       * @groupdesc local
       *   These combinators allow for some form of local stateful modification. This means
-      *   that any changes to the register may be reverted after the execution of the parser:
+      *   that any changes to the reference may be reverted after the execution of the parser:
       *   this may be on the parsers success, but it could also involve the parsers failure.
       */
+    @deprecated("This is deprecated for removal in 5.x, it has been renamed to `parsley.state.Ref`", "4.5.0")
     class Reg[A] private [parsley] {
-        /** This combinator injects the value stored in this register into a parser.
+        /** This combinator injects the value stored in this reference into a parser.
           *
-          * Allows for the value stored in this register to be purely injected into
+          * Allows for the value stored in this reference to be purely injected into
           * the parsing context. No input is consumed in this process, and it cannot fail.
           *
           * @example Get-Get Law: {{{
@@ -90,38 +88,39 @@ object registers {
           * r.get <~> r.get == r.get.map(x => (x, x))
           * }}}
           *
-          * @return a parser that returns the value stored in this register.
+          * @return a parser that returns the value stored in this reference.
           * @since 3.2.0
           * @group getters
           */
         def get: Parsley[A] = new Parsley(new singletons.Get(this))
-        /** This combinator injects the value stored in this register into a parser after applying a function to it.
+        /** This combinator injects the value stored in this reference into a parser after applying a function to it.
           *
-          * Allows for the value stored in this register to be purely injected into
+          * Allows for the value stored in this reference to be purely injected into
           * the parsing context but the function `f` is applied first. No input is
           * consumed in this process, and it cannot fail.
           *
-          * @param f the function used to transform the value in this register.
+          * @param f the function used to transform the value in this reference.
           * @tparam B the desired result type.
-          * @return the value stored in this register applied to `f`.
+          * @return the value stored in this reference applied to `f`.
           * @since 3.2.0
           * @group getters
           */
         def gets[B](f: A => B): Parsley[B] = this.gets(pure(f))
-        /** This combinator injects the value stored in this register into a parser after applying a function obtained from a parser to it.
+        /** This combinator injects the value stored in this reference into a parser after applying a function obtained from a parser to it.
           *
           * First, `pf` is parsed, producing the function `f` on success. Then,
-          * the value stored in this register `x` is applied to the function `f`.
+          * the value stored in this reference `x` is applied to the function `f`.
           * The combinator returns `f(x)`. Only `pf` is allowed to consume input.
           * If `pf` fails, the combinator fails, otherwise it will succeed.
           *
-          * @param pf the parser that produces the function used to transform the value in this register.
+          * @param pf the parser that produces the function used to transform the value in this reference.
           * @tparam B the desired result type.
-          * @return the value stored in this register applied to a function generated from `pf`.
+          * @return the value stored in this reference applied to a function generated from `pf`.
           * @since 3.2.0
           * @group getters
           */
         def gets[B](pf: Parsley[A => B]): Parsley[B] = pf <*> this.get
+        // $COVERAGE-OFF$
         /** This combinator stores a new value into this register.
           *
           * Without any other effect, the value `x` will be placed into this register.
@@ -136,9 +135,28 @@ object registers {
           *
           * @param x the value to place in the register.
           * @since 3.2.0
+          */
+        @deprecated("this method will be removed in 5.x, use `set` instead", "4.5.0")
+        def put(x: A): Parsley[Unit] = this.set(x)
+        // $COVERAGE-ON$
+        /** This combinator stores a new value into this reference.
+          *
+          * Without any other effect, the value `x` will be placed into this reference.
+          *
+          * @example Set-Get Law: {{{
+          * r.set(x) *> r.get == r.set(x).as(x)
+          * }}}
+          *
+          * @example Set-Set Law: {{{
+          * r.set(x) *> r.set(y) == r.set(y)
+          * }}}
+          *
+          * @param x the value to place in the reference.
+          * @since 4.5.0
           * @group setters
           */
-        def put(x: A): Parsley[Unit] = this.put(pure(x))
+        def set(x: A): Parsley[Unit] = this.set(pure(x))
+        // $COVERAGE-OFF$
         /** This combinator stores a new value into this register.
           *
           * First, parse `p` to obtain its result `x`. Then store `x` into
@@ -156,9 +174,31 @@ object registers {
           *
           * @param p the parser that produces the value to store in the register.
           * @since 3.2.0
+          */
+        @deprecated("this method will be removed in 5.x, use `set` instead", "4.5.0")
+        def put(p: Parsley[A]): Parsley[Unit] = this.set(p)
+        // $COVERAGE-ON$
+        /** This combinator stores a new value into this reference.
+          *
+          * First, parse `p` to obtain its result `x`. Then store `x` into
+          * this reference without any further effect. If `p` fails this
+          * combinator fails.
+          *
+          * @example Get-Set Law: {{{
+          * r.set(r.get) == unit
+          * }}}
+          *
+          * @example Set-Set Law: {{{
+          * // only when `q` does not inspect the value of `r`!
+          * r.set(p) *> r.set(q) == p *> r.set(q)
+          * }}}
+          *
+          * @param p the parser that produces the value to store in the reference.
+          * @since 4.5.0
           * @group setters
           */
-        def put(p: Parsley[A]): Parsley[Unit] = new Parsley(new frontend.Put(this, p.internal))
+        def set(p: Parsley[A]): Parsley[Unit] = new Parsley(new frontend.Put(this, p.internal))
+        // $COVERAGE-OFF$
         /** This combinator stores a new value into this register.
           *
           * First, parse `p` to obtain its result `x`. Then store `f(x)` into
@@ -172,9 +212,27 @@ object registers {
           * @param p the parser that produces the value to store in the register.
           * @param f a function which adapts the result of `p` so that it can fit into this register.
           * @since 3.0.0
+          */
+        @deprecated("this method will be removed in 5.x, use `sets` instead", "4.5.0")
+        def puts[B](p: Parsley[B], f: B => A): Parsley[Unit] = this.sets(p, f)
+        // $COVERAGE-ON$
+        /** This combinator stores a new value into this reference.
+          *
+          * First, parse `p` to obtain its result `x`. Then store `f(x)` into
+          * this reference without any further effect. If `p` fails this
+          * combinator fails.
+          *
+          * Equivalent to {{{
+          * this.set(p.map(f))
+          * }}}
+          *
+          * @param p the parser that produces the value to store in the reference.
+          * @param f a function which adapts the result of `p` so that it can fit into this reference.
+          * @since 4.5.0
           * @group setters
           */
-        def puts[B](p: Parsley[B], f: B => A): Parsley[Unit] = this.put(p.map(f))
+        def sets[B](p: Parsley[B], f: B => A): Parsley[Unit] = this.set(p.map(f))
+        // $COVERAGE-OFF$
         /** This combinator modifies the value stored in this register with a function.
           *
           * Without any other effect, get the value stored in this register, `x`, and
@@ -186,9 +244,25 @@ object registers {
           *
           * @param f the function used to modify this register's value.
           * @since 3.2.0
+          */
+        @deprecated("this method will be removed in 5.x, use `set` instead", "4.5.0")
+        def modify(f: A => A): Parsley[Unit] = this.update(f)
+        // $COVERAGE-ON$
+        /** This combinator modifies the value stored in this reference with a function.
+          *
+          * Without any other effect, get the value stored in this reference, `x`, and
+          * put back `f(x)`.
+          *
+          * Equivalent to {{{
+          * this.set(this.gets(f))
+          * }}}
+          *
+          * @param f the function used to modify this reference's value.
+          * @since 4.5.0
           * @group mod
           */
-        def modify(f: A => A): Parsley[Unit] = new Parsley(new singletons.Modify(this, f))
+        def update(f: A => A): Parsley[Unit] = new Parsley(new singletons.Modify(this, f))
+        // $COVERAGE-OFF$
         /** This combinator modifies the value stored in this register with a function.
           *
           * First, parse `pf` to obtain its result `f`. Then get the value stored in
@@ -200,9 +274,25 @@ object registers {
           *
           * @param pf  the parser that produces the function used to transform the value in this register.
           * @since 3.2.0
+          */
+        @deprecated("this method will be removed in 5.x, use `update` instead", "4.5.0")
+        def modify(pf: Parsley[A => A]): Parsley[Unit] = this.update(pf)
+        // $COVERAGE-ON$
+        /** This combinator modifies the value stored in this reference with a function.
+          *
+          * First, parse `pf` to obtain its result `f`. Then get the value stored in
+          * this reference, `x`, and put back `f(x)`. If `p` fails this combinator fails.
+          *
+          * Equivalent to {{{
+          * this.set(this.gets(pf))
+          * }}}
+          *
+          * @param pf  the parser that produces the function used to transform the value in this reference.
+          * @since 4.5.0
           * @group mod
           */
-        def modify(pf: Parsley[A => A]): Parsley[Unit] = this.put(this.gets(pf))
+        def update(pf: Parsley[A => A]): Parsley[Unit] = this.set(this.gets(pf))
+        // $COVERAGE-OFF$
         /** This combinator changed the value stored in this register for the duration of a given parser, resetting it afterwards.
           *
           * First get the current value in this register `x,,old,,`, then place `x` into this register
@@ -218,9 +308,29 @@ object registers {
           * @param p the parser to execute with the adjusted state.
           * @return the parser that performs `p` with the modified state `x`.
           * @since 3.2.0
+          */
+        @deprecated("this method will be removed in 5.x, use `setDuring` instead", "4.5.0")
+        def local[B](x: A)(p: Parsley[B]): Parsley[B] = this.setDuring(x)(p)
+        // $COVERAGE-ON$
+        /** This combinator changed the value stored in this reference for the duration of a given parser, resetting it afterwards.
+          *
+          * First get the current value in this reference `x,,old,,`, then place `x` into this reference
+          * without any further effect. Then, parse `p`, producing result `y` on success. Finally,
+          * put `x,,old,,` back into this reference and return `y`. If `p` fails, the whole combinator fails and
+          * the state is '''not restored'''.
+          *
+          * @example Set-Set Law: {{{
+          * r.set(x) *> r.setDuring(y)(p) == r.set(y) *> p <* r.set(x)
+          * }}}
+          *
+          * @param x the value to place into this reference.
+          * @param p the parser to execute with the adjusted state.
+          * @return the parser that performs `p` with the modified state `x`.
+          * @since 4.5.0
           * @group local
           */
-        def local[B](x: A)(p: Parsley[B]): Parsley[B] = this.local(pure(x))(p)
+        def setDuring[B](x: A)(p: Parsley[B]): Parsley[B] = this.setDuring(pure(x))(p)
+        // $COVERAGE-OFF$
         /** This combinator changed the value stored in this register for the duration of a given parser, resetting it afterwards.
           *
           * First get the current value in this register `x,,old,,`, then parse `p` to get the result `x`, placing it into this register
@@ -232,9 +342,25 @@ object registers {
           * @param q the parser to execute with the adjusted state.
           * @return the parser that performs `q` with the modified state.
           * @since 3.2.0
+          */
+        @deprecated("this method will be removed in 5.x, use `setDuring` instead", "4.5.0")
+        def local[B](p: Parsley[A])(q: =>Parsley[B]): Parsley[B] = new Parsley(new frontend.Local(this, p.internal, q.internal))
+        // $COVERAGE-ON$
+        /** This combinator changed the value stored in this reference for the duration of a given parser, resetting it afterwards.
+          *
+          * First get the current value in this reference `x,,old,,`, then parse `p` to get the result `x`, placing it into this reference
+          * without any further effect. Then, parse `q`, producing result `y` on success. Finally,
+          * put `x,,old,,` back into this reference and return `y`. If `p` or `q` fail, the whole combinator fails and
+          * the state is '''not restored'''.
+          *
+          * @param p the parser whose return value is placed in this reference.
+          * @param q the parser to execute with the adjusted state.
+          * @return the parser that performs `q` with the modified state.
+          * @since 4.5.0
           * @group local
           */
-        def local[B](p: Parsley[A])(q: =>Parsley[B]): Parsley[B] = new Parsley(new frontend.Local(this, p.internal, q.internal))
+        def setDuring[B](p: Parsley[A])(q: =>Parsley[B]): Parsley[B] = new Parsley(new frontend.Local(this, p.internal, q.internal))
+        // $COVERAGE-OFF$
         /** This combinator changed the value stored in this register for the duration of a given parser, resetting it afterwards.
           *
           * First get the current value in this register `x,,old,,`, then place `f(x,,old,,)` into this register
@@ -250,14 +376,33 @@ object registers {
           * @param p the parser to execute with the adjusted state.
           * @return the parser that performs `p` with the modified state.
           * @since 3.2.0
+          */
+        @deprecated("this method will be removed in 5.x, use `updateDuring` instead", "4.5.0")
+        def local[B](f: A => A)(p: Parsley[B]): Parsley[B] = this.local(this.gets(f))(p)
+        // $COVERAGE-ON$
+        /** This combinator changed the value stored in this reference for the duration of a given parser, resetting it afterwards.
+          *
+          * First get the current value in this reference `x,,old,,`, then place `f(x,,old,,)` into this reference
+          * without any further effect. Then, parse `p`, producing result `y` on success. Finally,
+          * put `x,,old,,` back into this reference and return `y`. If `p` fails, the whole combinator fails and
+          * the state is '''not restored'''.
+          *
+          * @example Set-Set Law and Set-Get Law: {{{
+          * r.set(x) *> r.updateDuring(f)(p) == r.set(f(x)) *> p <* r.set(x)
+          * }}}
+          *
+          * @param f the function used to modify the value in this reference.
+          * @param p the parser to execute with the adjusted state.
+          * @return the parser that performs `p` with the modified state.
+          * @since 4.5.0
           * @group local
           */
-        def local[B](f: A => A)(p: Parsley[B]): Parsley[B] = this.local(this.gets(f))(p)
-        /** This combinator rolls-back any changes to this register made by a given parser if it fails.
+        def updateDuring[B](f: A => A)(p: Parsley[B]): Parsley[B] = this.setDuring(this.gets(f))(p)
+        /** This combinator rolls-back any changes to this reference made by a given parser if it fails.
           *
-          * First get the current value in this register `x,,old,,`. Then parse `p`, if it succeeds,
-          * producing `y`, then `y` is returned and this register retains its value post-`p`. Otherwise,
-          * if `p` failed '''without consuming input''', `x,,old,,` is placed back into this register
+          * First get the current value in this reference `x,,old,,`. Then parse `p`, if it succeeds,
+          * producing `y`, then `y` is returned and this reference retains its value post-`p`. Otherwise,
+          * if `p` failed '''without consuming input''', `x,,old,,` is placed back into this reference
           * and this combinator fails.
           *
           * This can be used in conjunction with local to make an ''almost'' unconditional state restore: {{{
@@ -288,9 +433,11 @@ object registers {
         private [parsley] def deallocate(): Unit = _v = -1
         //override def toString: String = s"Reg(${if (allocated) addr else "unallocated"})"
     }
+    // $COVERAGE-OFF$
     /** This object allows for the construction of a register via its `make` function.
       * @group reg
       */
+    @deprecated("This is deprecated for removal in 5.x, it has been renamed to `parsley.state.Ref`", "4.5.0")
     object Reg {
         /** This function creates a new (global) register of a given type.
           *
@@ -317,6 +464,7 @@ object registers {
       * @group ext
       */
     // TODO: rename?
+    @deprecated("This is deprecated for removal in 5.x, it has been renamed to `parsley.state.StateCombinators`", "4.5.0")
     implicit final class RegisterMethods[P, A](p: P)(implicit con: P => Parsley[A]) {
         /** This combinator fills a fresh register with the result of this parser, this
           * register is provided to the given function, which continues the parse.
@@ -335,10 +483,8 @@ object registers {
           * @param body a function to generate a parser that can interact with the freshly created register.
           * @since 4.0.0
           */
-        def fillReg[B](body: Reg[A] => Parsley[B]): Parsley[B] = {
-            val reg = Reg.make[A]
-            new Parsley(new frontend.NewReg(reg, con(p).internal, body(reg).internal))
-        }
+        @deprecated("This is deprecated for removal in 5.x, it has been renamed to `fillRef`", "4.5.0")
+        def fillReg[B](body: Reg[A] => Parsley[B]): Parsley[B] = new state.StateCombinators(p).fillRef(body)
         /** This combinator allows for the result of this parser to be used multiple times within a function,
           * without needing to reparse or recompute.
           *
@@ -354,7 +500,7 @@ object registers {
           * @param f a function to generate a new parser that can observe the result of this parser many times without reparsing.
           * @since 3.2.0
           */
-        def persist[B](f: Parsley[A] => Parsley[B]): Parsley[B] = this.fillReg(reg => f(reg.get))
+        def persist[B](f: Parsley[A] => Parsley[B]): Parsley[B] = new state.StateCombinators(p).persist(f)
     }
 
     /** This class, when in scope, enables a method to create and fill a register with a
@@ -364,7 +510,7 @@ object registers {
       * @param x the value to initialise a register with.
       * @group ext
       */
-    // TODO: make AnyVal
+    @deprecated("This is deprecated for removal in 5.x, it has been renamed to `parsley.state.RefMaker`", "4.5.0")
     implicit final class RegisterMaker[A](x: A) {
         /** This combinator fills a fresh register with the this value.
           *
@@ -378,7 +524,8 @@ object registers {
           * @see [[parsley.registers.RegisterMethods.fillReg `fillReg`]] for a version that uses the result of a parser to fill the register instead.
           * @since 4.0.0
           */
-        def makeReg[B](body: Reg[A] => Parsley[B]): Parsley[B] = pure(x).fillReg(body)
+        @deprecated("This is deprecated for removal in 5.x, it has been renamed to `makeRef`", "4.5.0")
+        def makeReg[B](body: Reg[A] => Parsley[B]): Parsley[B] = new state.RefMaker(x).makeRef(body)
     }
 
     /** This combinator allows for the repeated execution of a parser `body` in a stateful loop, `body` will have access to the current value of the state.
@@ -406,13 +553,8 @@ object registers {
       * @see [[parsley.registers.forYieldP_ `forYieldP_`]] for a version that returns the results of each `body` parse.
       * @group comb
       */
-    def forP_[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: Parsley[A] => Parsley[_]): Parsley[Unit] = {
-        init.fillReg { reg =>
-          lazy val _cond = reg.gets(cond)
-          lazy val _step = reg.modify(step)
-          when(_cond, whileP(body(reg.get) *> _step *> _cond))
-        }
-    }
+    def forP_[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: Parsley[A] => Parsley[_]): Parsley[Unit] =
+        state.forP_(init, cond, step)(body)
 
     /** This combinator allows for the repeated execution of a parser `body` in a stateful loop, `body` will have access to the current value of the state.
       *
@@ -442,13 +584,8 @@ object registers {
       * @see [[parsley.registers.forP_ `forP_`]] for a version that ignores the results of the body.
       * @group comb
       */
-    def forYieldP_[A, B](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: Parsley[A] => Parsley[B]): Parsley[List[B]] = {
-        fresh(mutable.ListBuffer.empty[B]).persist { acc =>
-            forP_(init, cond, step) { x =>
-                (acc, body(x)).zipped(_ += _).impure // we don't want this optimised out, it's a mutable operation in a resultless context
-            } ~> acc.map(_.toList)
-        }
-    }
+    def forYieldP_[A, B](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: Parsley[A] => Parsley[B]): Parsley[List[B]] =
+        state.forYieldP_(init, cond, step)(body)
 
     /** This combinator allows for the repeated execution of a parser in a stateful loop.
       *
@@ -475,12 +612,8 @@ object registers {
       * @see [[parsley.registers.forYieldP `forYieldP`]] for a version that returns the results of each `body` parse.
       * @group comb
       */
-    def forP[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: =>Parsley[_]): Parsley[Unit] = {
-        lazy val _body = body
-        forP_(init, cond, step) { _ =>
-            _body
-        }
-    }
+    def forP[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: =>Parsley[_]): Parsley[Unit] =
+        state.forP(init, cond, step)(body)
 
     /** This combinator allows for the repeated execution of a parser in a stateful loop.
       *
@@ -511,11 +644,7 @@ object registers {
       * @see [[parsley.registers.forP `forP`]] for a version that ignores the results.
       * @group comb
       */
-    def forYieldP[A, B](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: =>Parsley[B]): Parsley[List[B]] = {
-        fresh(mutable.ListBuffer.empty[B]).persist { acc =>
-            forP(init, cond, step) {
-                (acc, body).zipped(_ += _).impure
-            } ~> acc.map(_.toList)
-        }
-    }
+    def forYieldP[A, B](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: =>Parsley[B]): Parsley[List[B]] =
+        state.forYieldP(init, cond, step)(body)
+    // $COVERAGE-ON$
 }

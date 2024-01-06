@@ -9,9 +9,9 @@ import parsley.Parsley, Parsley.{atomic, empty, pure, unit}
 import parsley.character.{bit, digit, hexDigit, octDigit, oneOf}
 import parsley.combinator, combinator.optional
 import parsley.errors.combinator.{amendThenDislodge, entrench}
-import parsley.implicits.character.charLift
 import parsley.lift.lift2
-import parsley.registers.Reg
+import parsley.state.Ref
+import parsley.syntax.character.charLift
 import parsley.token.descriptions.numeric.{BreakCharDesc, ExponentDesc, NumericDesc}
 import parsley.token.errors.{ErrorConfig, LabelConfig}
 
@@ -75,7 +75,7 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
         ofRadix(radix, digit, desc.leadingDotAllowed, endLabel)
     }
     private def ofRadix(radix: Int, digit: Parsley[Char], leadingDotAllowed: Boolean, endLabel: LabelConfig): Parsley[BigDecimal] = {
-        lazy val leadingHappened = Reg.make[Boolean]
+        lazy val leadingHappened = Ref.make[Boolean]
         lazy val _noDoubleDroppedZero = err.preventRealDoubleDroppedZero(leadingHappened.get)
         val expDesc = desc.exponentDescForRadix(radix)
         val whole = radix match {
@@ -123,8 +123,8 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
             <|> requiredExponent.map(e => (w: BigInt) => BigDecimal(w) * BigDecimal(base).pow(e)))
         val configuredWhole =
             if (leadingDotAllowed) (
-                    when(desc.trailingDotAllowed, leadingHappened.put(false)) *> whole
-                <|> when(desc.trailingDotAllowed, leadingHappened.put(true)) *> pure(BigInt(0))
+                    when(desc.trailingDotAllowed, leadingHappened.set(false)) *> whole
+                <|> when(desc.trailingDotAllowed, leadingHappened.set(true)) *> pure(BigInt(0))
             )
             else whole
         configuredWhole <**> fractExponent

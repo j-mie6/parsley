@@ -17,7 +17,7 @@ import parsley.internal.deepembedding.singletons.*
 import parsley.internal.deepembedding.singletons.token.*
 import parsley.internal.errors.{CaretWidth, ExpectDesc, ExpectItem, FlexibleCaret}
 import parsley.internal.machine.errors.DefuncError
-import parsley.registers.Reg
+import parsley.state.Ref
 import parsley.token.descriptions.SpaceDesc
 import parsley.token.descriptions.numeric.PlusSignPresence
 import parsley.token.errors.{ErrorConfig, FilterConfig, LabelConfig, LabelWithExplainConfig, SpecialisedFilterConfig}
@@ -113,8 +113,8 @@ class VisitorTests extends ParsleyTest {
         def testV: Assertion = p.visit(testVisitor, ()) shouldBe CUnit
     }
 
-    private def dummyRegister(): Reg[Unit] =
-        Reg.make[Unit]
+    private def dummyRef(): Ref[Unit] =
+        Ref.make[Unit]
 
     def dontEval: Nothing = fail("Laziness was not maintained.")
     val crash = new PartialFunction[Any, Nothing] {
@@ -125,12 +125,12 @@ class VisitorTests extends ParsleyTest {
     def crash(@unused x: Any, @unused y: Any, @unused z: Any): Nothing = dontEval
 
     they should "maintain laziness of the parsers visited" in {
-        new NewReg(dummyRegister(), dummyParser, dontEval).testV
+        new NewReg(dummyRef(), dummyParser, dontEval).testV
         new Branch(dummyParser, dontEval, dontEval).testV
         new If(dummyParser, dontEval, dontEval).testV
         new Lift2[Nothing, Nothing, Nothing](crash, dummyParser, dontEval).testV
         new Lift3[Nothing, Nothing, Nothing, Nothing](crash, dummyParser, dontEval, dontEval).testV
-        new Local(dummyRegister(), dummyParser, dontEval).testV
+        new Local(dummyRef(), dummyParser, dontEval).testV
         new <*>(dummyParser, dontEval).testV
         new *>(dummyParser, dontEval).testV
         new <*(dummyParser, dontEval).testV
@@ -150,7 +150,7 @@ class VisitorTests extends ParsleyTest {
         Line.testV
         Col.testV
         Offset.testV
-        new Get(dummyRegister()).testV
+        new Get(dummyRef()).testV
         new WhiteSpace(_ => true, SpaceDesc.plain, new ErrorConfig).testV
         new SkipComments(SpaceDesc.plain, new ErrorConfig).testV
         new Comment(SpaceDesc.plain, new ErrorConfig).testV
@@ -161,7 +161,7 @@ class VisitorTests extends ParsleyTest {
         new StringTok("bar", 4, dummyLabelConfig).testV
         Eof.testV
         new UniSatisfy(_ => true, dummyLabelConfig).testV
-        new Modify(dummyRegister(), identity[Unit]).testV
+        new Modify(dummyRef(), identity[Unit]).testV
         Parsley.empty.internal.testV
         new Fail(dummyCaretWidth).testV
         new Unexpected("qux", dummyCaretWidth).testV
@@ -177,8 +177,8 @@ class VisitorTests extends ParsleyTest {
         new Attempt(dummyParser).testV
         new Look(dummyParser).testV
         new NotFollowedBy(dummyParser).testV
-        new Put(dummyRegister(), dummyParser).testV
-        new Debug(dummyParser, "fred", false, FullBreak, Seq.empty).testV
+        new Put(dummyRef(), dummyParser).testV
+        new Debug(dummyParser, "fred", false, FullBreak, Seq.empty: @org.typelevel.scalaccompat.annotation.nowarn3).testV
         new DebugError(dummyParser, "plugh", false, dummyErrorBuilder).testV
         new <|>(dummyParser, dummyParser).testV
         new >>=[Nothing, Nothing](dummyParser, crash).testV

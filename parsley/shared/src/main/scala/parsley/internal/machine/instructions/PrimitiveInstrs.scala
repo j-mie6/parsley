@@ -5,12 +5,14 @@
  */
 package parsley.internal.machine.instructions
 
+import parsley.state.Ref
 import parsley.token.errors.LabelConfig
-import parsley.registers.Reg
 
 import parsley.internal.errors.ExpectDesc
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
+
+import org.typelevel.scalaccompat.annotation.nowarn3
 
 private [internal] final class Satisfies(f: Char => Boolean, expected: Iterable[ExpectDesc]) extends Instr {
     def this(f: Char => Boolean, expected: LabelConfig) = this(f, expected.asExpectDescs)
@@ -155,13 +157,13 @@ private [internal] object Span extends Instr {
 }
 
 // This instruction holds mutate state, but it is safe to do so, because it's always the first instruction of a DynCall.
-private [parsley] final class CalleeSave(var label: Int, localRegs: Set[Reg[_]], reqSize: Int, slots: List[(Int, Int)], saveArray: Array[AnyRef])
+private [parsley] final class CalleeSave(var label: Int, localRegs: Set[Ref[_]] @nowarn3, reqSize: Int, slots: List[(Int, Int)], saveArray: Array[AnyRef])
     extends InstrWithLabel {
-    private def this(label: Int, localRegs: Set[Reg[_]], reqSize: Int, slots: List[Int]) =
+    private def this(label: Int, localRegs: Set[Ref[_]], reqSize: Int, slots: List[Int]) =
         this(label, localRegs, reqSize, slots.zipWithIndex, new Array[AnyRef](slots.length))
     // this filters out the slots to ensure we only do callee-save on registers that might exist in the parent
-    def this(label: Int, localRegs: Set[Reg[_]], reqSize: Int, slots: List[Int], numRegsInContext: Int) =
-        this(label, localRegs, reqSize, slots.takeWhile(_ < numRegsInContext))
+    def this(label: Int, localRefs: Set[Ref[_]], reqSize: Int, slots: List[Int], numRegsInContext: Int) =
+        this(label, localRefs, reqSize, slots.takeWhile(_ < numRegsInContext))
     private var inUse = false
     private var oldRegs: Array[AnyRef] = null
 
@@ -188,7 +190,7 @@ private [parsley] final class CalleeSave(var label: Int, localRegs: Set[Reg[_]],
             saveArray(idx) = null
         }
         // This is the only way to get them reallocated on the next invocation
-        localRegs.foreach(_.deallocate())
+        localRegs.foreach(_.deallocate()): @nowarn3
     }
 
     private def continue(ctx: Context): Unit = {

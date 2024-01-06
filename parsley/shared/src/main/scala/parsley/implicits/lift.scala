@@ -14,7 +14,7 @@ import parsley.lift._
   *
   * @example {{{
   * scala> import parsley.character.char
-  * scala> import parsley.implicits.lift.{Lift2, Lift3}
+  * scala> import parsley.syntax.lift.{Lift2, Lift3}
   * scala> case class Add(x: Int, y: Int)
   * scala> val p = Add.lift(char('a').as(4), char('b').as(5))
   * scala> p.parse("ab")
@@ -44,6 +44,7 @@ import parsley.lift._
   *     of the given parsers fails then the whole combinator fails.
   * @define return a parser that applies this function to the results of all the given parsers.
   */
+@deprecated("This will be removed in 5.x, use parsley.syntax.lift instead", "4.5.0")
 object lift {
     // $COVERAGE-OFF$
     // scalastyle:off parameter.number ensure.single.space.after.token

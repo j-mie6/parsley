@@ -46,7 +46,7 @@ As an example:
 ```scala mdoc:to-string:nest
 import parsley.character.digit
 import parsley.expr.infix
-import parsley.implicits.character.stringLift
+import parsley.syntax.character.stringLift
 
 sealed trait Expr
 case class Add(x: Expr, y: Num) extends Expr

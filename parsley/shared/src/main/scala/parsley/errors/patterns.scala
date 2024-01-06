@@ -81,6 +81,7 @@ object patterns {
           */
         def verifiedUnexpected: Parsley[Nothing] = this.verifiedWithVanillaRaw(_ => None)
 
+        // $COVERAGE-OFF$
         /** Ensures this parser does not succeed, failing with a vanilla error with an unexpected message and caret spanning the parse and a given reason.
           *
           * If this parser succeeds, input is consumed and this combinator will fail, producing an unexpected message the same width as
@@ -92,6 +93,7 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
+        @deprecated("This combinator will be removed in 5.0.0, use `verifiedExplain` instead", "4.5.0")
         def verifiedUnexpected(reason: String): Parsley[Nothing] = this.verifiedWithVanillaRaw(_ => Some(reason))
 
         /** Ensures this parser does not succeed, failing with a vanilla error with an unexpected message and caret spanning the parse and a reason generated
@@ -106,7 +108,36 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
+        @deprecated("This combinator will be removed in 5.0.0, use `verifiedExplain` instead", "4.5.0")
         def verifiedUnexpected(reason: A => String): Parsley[Nothing] = this.verifiedWithVanillaRaw(x => Some(reason(x)))
+        // $COVERAGE-ON$
+
+        /** Ensures this parser does not succeed, failing with a vanilla error with an unexpected message and caret spanning the parse and a given reason.
+          *
+          * If this parser succeeds, input is consumed and this combinator will fail, producing an unexpected message the same width as
+          * the parse along with the given reason. However, if this parser fails, no input is consumed and an empty error is generated.
+          * This parser will produce no labels if it fails.
+          *
+          * @param reason the reason that this parser is illegal.
+          * @since 4.5.0
+          * @note $autoAmend
+          * @note $atomicNonTerminal
+          */
+        def verifiedExplain(reason: String): Parsley[Nothing] = this.verifiedWithVanillaRaw(_ => Some(reason))
+
+        /** Ensures this parser does not succeed, failing with a vanilla error with an unexpected message and caret spanning the parse and a reason generated
+          * from this parser's result.
+          *
+          * If this parser succeeds, input is consumed and this combinator will fail, producing an unexpected message the same width as
+          * the parse along with a reason generated from the successful parse. However, if this parser fails, no input is consumed and an empty error
+          * is generated. This parser will produce no labels if it fails.
+          *
+          * @param reason a function that produces a reason for the error given the parsed result.
+          * @since 4.5.0
+          * @note $autoAmend
+          * @note $atomicNonTerminal
+          */
+        def verifiedExplain(reason: A => String): Parsley[Nothing] = this.verifiedWithVanillaRaw(x => Some(reason(x)))
 
         /** Ensures this parser does not succeed, failing with an error as described by the given `ErrorGen` object.
           *

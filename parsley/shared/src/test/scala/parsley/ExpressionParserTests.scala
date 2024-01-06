@@ -9,11 +9,11 @@ import Predef.{ArrowAssoc => _, _}
 
 import token.{descriptions => desc}
 import parsley.character.digit
-import parsley.implicits.character.{charLift, stringLift}
+import parsley.syntax.character.{charLift, stringLift}
 import parsley.expr.{chain, infix, mixed}
 import parsley.expr.{precedence, Ops, GOps, SOps, InfixL, InfixR, Prefix, Postfix, InfixN, Atoms}
 import parsley.position._
-import parsley.genericbridges._
+import parsley.generic._
 
 class ExpressionParserTests extends ParsleyTest {
     "chain.postfix" must "require an initial value" in {
@@ -302,7 +302,7 @@ class ExpressionParserTests extends ParsleyTest {
         lazy val ops = Seq(
             Ops(InfixR)(Binary <# ".="),
             Ops(InfixL)(Binary <# '.'),
-            Ops(Postfix)(Call(tok.lexeme.enclosing.parens(expr </> Constant(""))))
+            Ops(Postfix)(Call(tok.lexeme.parens(expr </> Constant(""))))
         )
 
         lazy val atom: Parsley[Expr] = Constant(tok.lexeme.names.identifier)

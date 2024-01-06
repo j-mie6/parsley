@@ -301,7 +301,7 @@ write `char` or `string`.
 
 ```scala mdoc:silent
 import parsley.Parsley
-import parsley.implicits.character.charLift
+import parsley.syntax.character.charLift
 
 val aOrB = 'a' <|> 'b'
 ```
@@ -323,7 +323,7 @@ and branching interact:
 
 ```scala mdoc:silent
 import parsley.Parsley
-import parsley.implicits.character.{charLift, stringLift}
+import parsley.syntax.character.{charLift, stringLift}
 
 val p = 'a' ~> ("a" | "bc") <~ 'd'
 
@@ -342,7 +342,7 @@ we put longer strings inside the branches:
 
 ```scala mdoc:silent:nest
 import parsley.Parsley
-import parsley.implicits.character.stringLift
+import parsley.syntax.character.stringLift
 
 val p = "abc" | "def" | "dead"
 ```
@@ -361,7 +361,7 @@ parsley.debug.disableColourRendering()
 ```
 ```scala mdoc:nest:silent
 import parsley.Parsley
-import parsley.implicits.character.stringLift
+import parsley.syntax.character.stringLift
 import parsley.debug._
 
 val p = ("abc".debug("reading abc") |
@@ -392,7 +392,7 @@ to remove the common leading string of the last two alternatives like so:
 
 ```scala mdoc:silent:nest
 import parsley.Parsley
-import parsley.implicits.character.{charLift, stringLift}
+import parsley.syntax.character.{charLift, stringLift}
 
 val p = "abc" | ("de" ~> ('f'.as("def") | "ad".as("dead")))
 ```
@@ -419,7 +419,7 @@ combinator that allows `|` to backtrack in these circumstances, called `atomic`.
 
 ```scala mdoc:nest:to-string
 import parsley.Parsley, Parsley.atomic
-import parsley.implicits.character.stringLift
+import parsley.syntax.character.stringLift
 import parsley.debug._
 
 val p = "abc" | atomic("def") | "dead"
@@ -451,7 +451,7 @@ this, which we'll explore now:
 ```scala mdoc:nest:to-string
 import parsley.Parsley, Parsley.{notFollowedBy, lookAhead}
 import parsley.character.item
-import parsley.implicits.character.stringLift
+import parsley.syntax.character.stringLift
 import parsley.debug._
 
 // def lookAhead[A](p: Parsley[A]): Parsley[A]
@@ -527,9 +527,9 @@ implemented with everything we've seen so far. You can find them all, and many m
 `parsley.combinator`.
 
 ```scala mdoc:silent:reset
-import parsley.Parsley, Parsley.atomic
-import parsley.combinator.{many, some, optional, eof}
-import parsley.implicits.character.{charLift, stringLift}
+import parsley.Parsley, Parsley.{atomic, eof, many, some}
+import parsley.combinator.optional
+import parsley.syntax.character.{charLift, stringLift}
 import parsley.character.{noneOf, oneOf, item}
 
 // regex .at
@@ -587,11 +587,10 @@ with regex:
 comes to mind...):
 
 ```scala mdoc:silent
-import parsley.Parsley
-import parsley.implicits.character.charLift
-import parsley.combinator.{skipMany, eof}
+import parsley.Parsley, Parsley.{eof, many}
+import parsley.syntax.character.charLift
 
-lazy val matching: Parsley[Unit] = skipMany('(' *> matching <* ')')
+lazy val matching: Parsley[Unit] = many('(' *> matching <* ')').void
 val onlyMatching = matching <* eof
 
 onlyMatching.parse("") // succeeds
@@ -653,7 +652,7 @@ Before we move on with a more fleshed out example, I want to annotate the `match
 ```scala mdoc:invisible
 import parsley.debug._
 parsley.debug.disableColourRendering()
-lazy val matchingDebug: Parsley[Unit] = skipMany('('.debug("left") ~> matchingDebug <~ ')'.debug("right")).debug("matching")
+lazy val matchingDebug: Parsley[Unit] = many('('.debug("left") ~> matchingDebug <~ ')'.debug("right")).void.debug("matching")
 val onlyMatchingDebug = matchingDebug <~ eof
 ```
 ```scala mdoc:to-string
@@ -700,9 +699,9 @@ less efficient) and will give a sense of how the solution works out.
 
 ```scala mdoc:silent
 import parsley.Parsley, Parsley.atomic
-import parsley.implicits.character.stringLift
-import parsley.implicits.lift.Lift2
-import parsley.implicits.zipped.Zipped2
+import parsley.syntax.character.stringLift
+import parsley.syntax.lift.Lift2
+import parsley.syntax.zipped.Zipped2
 
 val or = (x: Boolean, y: Boolean) => x || y
 
@@ -747,8 +746,8 @@ said, is to implement the second grammar. This is, as we'll see, a little tricke
 
 ```scala mdoc:silent:reset
 import parsley.Parsley
-import parsley.implicits.character.stringLift
-import parsley.implicits.lift.Lift2
+import parsley.syntax.character.stringLift
+import parsley.syntax.lift.Lift2
 import parsley.combinator.option
 
 val and = (y: Boolean) => (x: Boolean) => x && y

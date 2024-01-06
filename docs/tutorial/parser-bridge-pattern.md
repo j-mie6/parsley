@@ -24,7 +24,7 @@ object lexer {
     private val lexer = new Lexer(desc)
 
     val identifier = lexer.lexeme.names.identifier
-    val number = lexer.lexeme.numeric.natural.decimal
+    val number = lexer.lexeme.natural.decimal
 
     def fully[A](p: Parsley[A]) = lexer.fully(p)
     val implicits = lexer.lexeme.symbol.implicits
@@ -97,7 +97,7 @@ object ast {
 object expressions {
     import parsley.expr.{precedence, Ops, InfixL, Prefix}
     import parsley.combinator.sepEndBy1
-    import parsley.implicits.lift.Lift2
+    import parsley.syntax.lift.Lift2
 
     import lexer.implicits.implicitSymbol
     import lexer.{number, fully, identifier}
@@ -208,7 +208,7 @@ import lexer.implicits._
 val letExpr: Parsley[LetExpr] = empty
 ```
 ```scala mdoc:silent
-import parsley.implicits.zipped.Zipped2
+import parsley.syntax.zipped.Zipped2
 val binding: Parsley[Binding] =
     pos <**> (identifier, "=" ~> letExpr).zipped(Binding(_, _) _)
 ```
@@ -277,7 +277,7 @@ object lexer {
     private val lexer = new Lexer(desc)
 
     val identifier = lexer.lexeme.names.identifier
-    val number = lexer.lexeme.numeric.natural.decimal
+    val number = lexer.lexeme.natural.decimal
 
     def fully[A](p: Parsley[A]) = lexer.fully(p)
     val implicits = lexer.lexeme.symbol.implicits
@@ -286,7 +286,7 @@ object lexer {
 ```scala mdoc
 object ast {
     import parsley.position.pos
-    import parsley.implicits.zipped.Zipped2
+    import parsley.syntax.zipped.Zipped2
 
     sealed trait LetExpr
     case class Let(bindings: List[Binding], x: Expr)(val pos: (Int, Int)) extends LetExpr
@@ -446,7 +446,7 @@ constructors themselves. But there is enough structure here to extract some shin
 template traits:
 
 ```scala mdoc:invisible
-import parsley.implicits.zipped.Zipped2
+import parsley.syntax.zipped.Zipped2
 import parsley.position.pos
 ```
 ```scala mdoc
@@ -467,7 +467,7 @@ trait ParserBridgePos2[-A, -B, +C] {
 These are the two generic bridge traits that provide the implementations of our bridge constructors.
 Obviously, there are many many more possible such traits. At the very least, it is also useful to
 have "plain" versions that do not interact with positions at all also (these are provided by `parsley`
-within `parsley.genericbridges`):
+within `parsley.generic`):
 
 ```scala mdoc
 trait ParserBridge1[-A, +B] {
@@ -632,7 +632,7 @@ the common code:
 
 ```scala mdoc:invisible:reset
 import parsley.Parsley
-import parsley.implicits.zipped.Zipped2
+import parsley.syntax.zipped.Zipped2
 import parsley.position.pos
 ```
 ```scala mdoc
@@ -690,7 +690,7 @@ object lexer {
     private val lexer = new Lexer(desc)
 
     val identifier = lexer.lexeme.names.identifier
-    val number = lexer.lexeme.numeric.natural.decimal
+    val number = lexer.lexeme.natural.decimal
 
     def fully[A](p: Parsley[A]) = lexer.fully(p)
     val implicits = lexer.lexeme.symbol.implicits

@@ -5,7 +5,7 @@
  */
 package parsley.internal.deepembedding.backend
 
-import parsley.registers.Reg
+import parsley.state.Ref
 
 import parsley.internal.deepembedding.ContOps, ContOps.{suspend, ContAdapter}
 import parsley.internal.machine.instructions
@@ -41,19 +41,19 @@ private [deepembedding] final class Lift3[A, B, C, D](private val f: (A, B, C) =
     // $COVERAGE-ON$
 }
 
-private [deepembedding] final class Local[S, A](reg: Reg[S], left: StrictParsley[S], right: StrictParsley[A]) extends StrictParsley[A] {
+private [deepembedding] final class Local[S, A](ref: Ref[S], left: StrictParsley[S], right: StrictParsley[A]) extends StrictParsley[A] {
     def inlinable: Boolean = false
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         suspend(left.codeGen[M, R](producesResults = true)) >> {
-            instrs += new instructions.Get(reg.addr)
-            instrs += new instructions.SwapAndPut(reg.addr)
+            instrs += new instructions.Get(ref.addr)
+            instrs += new instructions.SwapAndPut(ref.addr)
             suspend(right.codeGen[M, R](producesResults)) |> {
-                instrs += (if (producesResults) new instructions.SwapAndPut(reg.addr) else new instructions.Put(reg.addr))
+                instrs += (if (producesResults) new instructions.SwapAndPut(ref.addr) else new instructions.Put(ref.addr))
             }
         }
     }
     // $COVERAGE-OFF$
-    final override def pretty: String = s"local(r${reg.addr}, ${left.pretty}, ${right.pretty})"
+    final override def pretty: String = s"local(r${ref.addr}, ${left.pretty}, ${right.pretty})"
     // $COVERAGE-ON$
 }
 

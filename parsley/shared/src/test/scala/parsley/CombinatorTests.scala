@@ -7,11 +7,11 @@ package parsley
 
 import Predef.{ArrowAssoc => _, _}
 
-import parsley.combinator.{exactly => repeat, _}
+import parsley.combinator.{exactly => repeat, eof => _, many => _, some => _, _}
 import parsley.character.item
 import parsley.Parsley._
-import parsley.registers.{forYieldP, forYieldP_, Reg}
-import parsley.implicits.character.{charLift, stringLift}
+import parsley.state.{forYieldP, forYieldP_, Ref}
+import parsley.syntax.character.{charLift, stringLift}
 
 class CombinatorTests extends ParsleyTest {
     "choice" should "fail if given the empty list" in {
@@ -88,14 +88,6 @@ class CombinatorTests extends ParsleyTest {
         for (n <- 0 to 10) manyN(n/2, 'a').parse("a"*n) should be (Success(("a"*n).toList))
     }
 
-    "skipManyN" must "ensure that n are parsed" in {
-        for (n <- 0 to 10) skipManyN(n, 'a').parse("a"*n) should be (Success(()))
-        for (n <- 0 to 10) skipManyN(n+1, 'a').parse("a"*n) shouldBe a [Failure[_]]
-    }
-    it should "not care if more are present" in {
-        for (n <- 0 to 10) skipManyN(n/2, 'a').parse("a"*n) should be (Success(()))
-    }
-
     "sepBy" must "accept empty input" in cases(sepBy('a', 'b')) (
         "" -> Some(Nil),
     )
@@ -135,7 +127,7 @@ class CombinatorTests extends ParsleyTest {
         "ab" -> None,
     )
     it must "not corrupt the stack on sep hard-fail" in {
-        ('c' <::> atomic(sepEndBy('a', "bb")).getOrElse(List('d'))).parse("cab") should be (Success(List('c', 'd')))
+        ('c' <::> (atomic(sepEndBy('a', "bb")) </> List('d'))).parse("cab") should be (Success(List('c', 'd')))
     }
 
     "sepEndBy1" must "require a p" in {
@@ -167,30 +159,30 @@ class CombinatorTests extends ParsleyTest {
         eof.parse("a") shouldBe a [Failure[_]]
     }
 
-    "manyUntil" must "require an end" in {
-        manyUntil('a', 'b').parse("aa") shouldBe a [Failure[_]]
-        manyUntil('a', 'b').parse("ab") should be (Success(List('a')))
+    "manyTill" must "require an end" in {
+        manyTill('a', 'b').parse("aa") shouldBe a [Failure[_]]
+        manyTill('a', 'b').parse("ab") should be (Success(List('a')))
     }
     it should "parse the end without result" in {
-        manyUntil('a', 'b').parse("b") should be (Success(Nil))
+        manyTill('a', 'b').parse("b") should be (Success(Nil))
     }
     it should "parse p until that end is found" in {
-        manyUntil('a', 'b').parse("aaaaaaaaaaaab") should not be a [Failure[_]]
-        manyUntil("aa", 'b').parse("ab") shouldBe a [Failure[_]]
+        manyTill('a', 'b').parse("aaaaaaaaaaaab") should not be a [Failure[_]]
+        manyTill("aa", 'b').parse("ab") shouldBe a [Failure[_]]
     }
 
-    "someUntil" must "parse at least 1 p" in {
-        someUntil('a', 'b').parse("ab") should be (Success(List('a')))
-        someUntil('a', 'b').parse("b") shouldBe a [Failure[_]]
+    "someTill" must "parse at least 1 p" in {
+        someTill('a', 'b').parse("ab") should be (Success(List('a')))
+        someTill('a', 'b').parse("b") shouldBe a [Failure[_]]
     }
 
     "forYieldP" should "be able to parse context-sensitive grammars" in {
-        val r1 = Reg.make[Int]
+        val r1 = Ref.make[Int]
         def matching[A](p: Parsley[A]) = forYieldP[Int, A](r1.get, pure(_ != 0), pure(_ - 1)) {
             p
         }
-        val abc = r1.put(0) *>
-                  many('a' *> r1.modify(_ + 1)) *>
+        val abc = r1.set(0) *>
+                  many('a' *> r1.update(_ + 1)) *>
                   matching('b') *>
                   matching('c')
         abc.parse("aaabbbccc") should be (Success(List('c', 'c', 'c')))
@@ -198,12 +190,12 @@ class CombinatorTests extends ParsleyTest {
     }
 
     "forYieldP_" should "be able to parse context-sensitive grammars" in {
-        val r1 = Reg.make[Int]
+        val r1 = Ref.make[Int]
         def matching[A](p: Parsley[A]) = forYieldP_[Int, A](r1.get, pure(_ != 0), pure(_ - 1)) { _ =>
             p
         }
-        val abc = r1.put(0) *>
-                  many('a' *> r1.modify(_ + 1)) *>
+        val abc = r1.set(0) *>
+                  many('a' *> r1.update(_ + 1)) *>
                   matching('b') *>
                   matching('c')
         abc.parse("aaabbbccc") should be (Success(List('c', 'c', 'c')))
@@ -211,8 +203,8 @@ class CombinatorTests extends ParsleyTest {
     }
 
     "count" should "report how many successful parses occurred" in {
-        val p = count("ab")
-        val q = count1("ab")
+        val p = countMany("ab")
+        val q = countSome("ab")
         p.parse("") shouldBe Success(0)
         q.parse("") shouldBe a [Failure[_]]
         p.parse("ab") shouldBe Success(1)
@@ -222,7 +214,7 @@ class CombinatorTests extends ParsleyTest {
     }
 
     it should "not allow partial results" in {
-        count("ab").parse("aba") shouldBe a [Failure[_]]
+        countMany("ab").parse("aba") shouldBe a [Failure[_]]
     }
 
     it should "allow for ranges" in {
@@ -251,14 +243,5 @@ class CombinatorTests extends ParsleyTest {
         p.parse("abcd") shouldBe Success(List('a', 'b', 'c', 'd'))
         p.parse("abcde") shouldBe Success(List('a', 'b', 'c', 'd', 'e'))
         p.parse("abcdef") shouldBe Success(List('a', 'b', 'c', 'd', 'e'))
-    }
-
-    "range_" should "perform a range with no results" in {
-        val p = range_(min = 2, max = 5)(item)
-        (p <~ eof).parse("a") shouldBe a [Failure[_]]
-        (p <~ eof).parse("ab") shouldBe Success(())
-        (p <~ eof).parse("abcd") shouldBe Success(())
-        (p <~ eof).parse("abcde") shouldBe Success(())
-        (p <~ 'f').parse("abcdef") shouldBe Success(())
     }
 }

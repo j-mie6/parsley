@@ -176,7 +176,7 @@ import parsley.errors.tokenextractors.LexToken
 
 val builder = new DefaultErrorBuilder with LexToken {
     def tokens = Seq(
-        lexer.nonlexeme.numeric.integer.decimal.map(n => s"integer $n"),
+        lexer.nonlexeme.integer.decimal.map(n => s"integer $n"),
         lexer.nonlexeme.names.identifier.map(v => s"identifier $v")
     ) ++ desc.symbolDesc.hardKeywords.map { k =>
         lexer.nonlexeme.symbol(k).as(s"keyword $k")
