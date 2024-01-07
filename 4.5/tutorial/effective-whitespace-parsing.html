@@ -114,7 +114,7 @@
     <li class="level3 nav-leaf"><a href="../api-guide/errors/patterns.html"><code>patterns</code></a></li>
     <li class="level3 nav-leaf"><a href="../api-guide/errors/ErrorBuilder.html"><code>ErrorBuilder</code></a></li>
     <li class="level3 nav-leaf"><a href="../api-guide/errors/tokenextractors.html"><code>tokenextractors</code></a></li>
-    <li class="level1 nav-node"><a href="../../tutorial/">Parser Combinator Tutorial</a></li>
+    <li class="level1 nav-node"><a href="index.html">Parser Combinator Tutorial</a></li>
     <li class="level2 nav-leaf"><a href="basics-of-combinators.html">Basics of Combinators</a></li>
     <li class="level2 nav-leaf"><a href="building-expression-parsers.html">Building Expression Parsers</a></li>
     <li class="level2 active nav-leaf"><a href="#">Effective Whitespace Parsing</a></li>
@@ -206,7 +206,7 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">expr</span><span>.{</span><span class="identifier">precedence</span><span>, </span><span class="type-name">Ops</span><span>, </span><span class="type-name">InfixL</span><span>}
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">number</span><span> = </span><span class="identifier">token</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">foldLeft1</span><span>[</span><span class="type-name">BigInt</span><span>](</span><span class="number-literal">0</span><span>)((</span><span class="identifier">n</span><span>, </span><span class="identifier">d</span><span>) =&gt; </span><span class="identifier">n</span><span> * </span><span class="number-literal">10</span><span> + </span><span class="identifier">d</span><span>.</span><span class="identifier">asDigit</span><span>))
-</span><span class="comment">// number: Parsley[BigInt] = parsley.Parsley@6b36f434
+</span><span class="comment">// number: Parsley[BigInt] = parsley.Parsley@4eafc8de
 </span><span>
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">atom</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">BigInt</span><span>] = </span><span class="string-literal">&quot;(&quot;</span><span> ~&gt; </span><span class="identifier">expr</span><span> &lt;~ </span><span class="string-literal">&quot;)&quot;</span><span> | </span><span class="identifier">number</span><span>
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span> = </span><span class="identifier">precedence</span><span>[</span><span class="type-name">BigInt</span><span>](</span><span class="identifier">atom</span><span>)(

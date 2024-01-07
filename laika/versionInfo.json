@@ -31,7 +31,7 @@
     { "path": "/tutorial/customising-error-messages.html", "versions": ["4.4","4.5"] },
     { "path": "/tutorial/effective-lexing.html", "versions": ["4.4","4.5"] },
     { "path": "/tutorial/effective-whitespace-parsing.html", "versions": ["4.4","4.5"] },
-    { "path": "/tutorial/index.html", "versions": ["4.4"] },
+    { "path": "/tutorial/index.html", "versions": ["4.4","4.5"] },
     { "path": "/tutorial/interlude-1-haskell.html", "versions": ["4.4","4.5"] },
     { "path": "/tutorial/parser-bridge-pattern.html", "versions": ["4.4","4.5"] }
   ]

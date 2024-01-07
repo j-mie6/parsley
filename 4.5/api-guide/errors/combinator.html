@@ -114,7 +114,7 @@
     <li class="level3 nav-leaf"><a href="patterns.html"><code>patterns</code></a></li>
     <li class="level3 nav-leaf"><a href="ErrorBuilder.html"><code>ErrorBuilder</code></a></li>
     <li class="level3 nav-leaf"><a href="tokenextractors.html"><code>tokenextractors</code></a></li>
-    <li class="level1 nav-node"><a href="../../../tutorial/">Parser Combinator Tutorial</a></li>
+    <li class="level1 nav-node"><a href="../../tutorial/">Parser Combinator Tutorial</a></li>
     <li class="level2 nav-leaf"><a href="../../tutorial/basics-of-combinators.html">Basics of Combinators</a></li>
     <li class="level2 nav-leaf"><a href="../../tutorial/building-expression-parsers.html">Building Expression Parsers</a></li>
     <li class="level2 nav-leaf"><a href="../../tutorial/effective-whitespace-parsing.html">Effective Whitespace Parsing</a></li>
@@ -310,7 +310,7 @@
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="type-name">ErrorMethods</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">digit</span><span> = </span><span class="identifier">satisfy</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">isDigit</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;digit&quot;</span><span>)
-</span><span class="comment">// digit: parsley.Parsley[Char] = parsley.Parsley@7246bcd3
+</span><span class="comment">// digit: parsley.Parsley[Char] = parsley.Parsley@71927e05
 </span><span class="identifier">digit</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;a&quot;</span><span>)
 </span><span class="comment">// res9: parsley.Result[String, Char] = Failure((line 1, column 1):
 //   unexpected &quot;a&quot;
@@ -328,7 +328,7 @@
         error message properly lines up with the point the input was at when it
         entered the combinator - otherwise, the label may be inaccurate. For example:</p>
         <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">twoDigits</span><span> = (</span><span class="identifier">digit</span><span> *&gt; </span><span class="identifier">digit</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;two digits&quot;</span><span>)
-</span><span class="comment">// twoDigits: parsley.Parsley[Char] = parsley.Parsley@14aee46b
+</span><span class="comment">// twoDigits: parsley.Parsley[Char] = parsley.Parsley@35ad83c4
 </span><span class="identifier">twoDigits</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;a&quot;</span><span>)
 </span><span class="comment">// res10: parsley.Result[String, Char] = Failure((line 1, column 1):
 //   unexpected &quot;a&quot;
