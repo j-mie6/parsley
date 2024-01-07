@@ -1,4 +1,5 @@
 {%
+laika.versioned = true
 helium.site.pageNavigation.enabled = false
 laika.site.metadata.description = "Roadmap of the parser combinator tutorial."
 %}
