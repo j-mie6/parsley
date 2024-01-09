@@ -54,7 +54,7 @@ object extension {
           * Equivalent to `ifP`, but in operator form: `ifP(b, p, q)` is the same as `b ?: (p, q)`.
           *
           * @note Scala applies methods ending in `:` right-associatively, and the pair is on the right-hand side of the operator.
-          * @see [[combinator.ifP `ifP`]]
+          * @see [[combinator.ifS `ifP`]]
           */
         def ?:(b: Parsley[Boolean]): Parsley[A] = ifS(b, conP(p), conQ(q))
     }
@@ -77,7 +77,7 @@ object extension {
           * Equivalent to `many`, but as a postfix operator: `many(p)` is the same as `p.*`.
           *
           * @note an alias for `many`.
-          * @see [[combinator.many `many`]] for more details.
+          * @see [[Parsley.many `many`]] for more details.
           */
         def * : Parsley[List[A]] = many(con(p))
         /** This combinator, pronounced "plus", will parse this parser '''one''' or more times returning a list of the parsed results.
@@ -85,7 +85,7 @@ object extension {
           * Equivalent to `some`, but as a postfix operator: `some(p)` is the same as `p.+`.
           *
           * @note an alias for `some`.
-          * @see [[combinator.some `some`]] for more details.
+          * @see [[Parsley.some `some`]] for more details.
           */
         def + : Parsley[List[A]] = some(con(p))
         /** This combinator, pronounced "not", will succeed when this parser fails, and vice-versa, never consuming input.
