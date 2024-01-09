@@ -122,16 +122,16 @@ jobs:
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' doc
 
       - name: Make target directories
-        if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/master')
+        if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/staging/5.0')
         run: mkdir -p parsley-debug/jvm/target parsley-debug/native/target parsley/native/target parsley/jvm/target parsley-debug/js/target parsley/js/target project/target
 
       - name: Compress target directories
-        if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/master')
+        if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/staging/5.0')
         run: tar cf targets.tar parsley-debug/jvm/target parsley-debug/native/target parsley/native/target parsley/jvm/target parsley-debug/js/target parsley/js/target project/target
 
       - name: Upload target directories
-        if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/master')
-        uses: actions/upload-artifact@v3
+        if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/staging/5.0')
+        uses: actions/upload-artifact@v4
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-${{ matrix.scala }}-${{ matrix.project }}
           path: targets.tar
@@ -139,7 +139,7 @@ jobs:
   publish:
     name: Publish Artifacts
     needs: [build]
-    if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/master')
+    if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/staging/5.0')
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -191,7 +191,7 @@ jobs:
         run: sbt +update
 
       - name: Download target directories (2.13, rootJS)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-2.13-rootJS
 
@@ -201,7 +201,7 @@ jobs:
           rm targets.tar
 
       - name: Download target directories (2.13, rootJVM)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-2.13-rootJVM
 
@@ -211,7 +211,7 @@ jobs:
           rm targets.tar
 
       - name: Download target directories (2.13, rootNative)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-2.13-rootNative
 
@@ -221,7 +221,7 @@ jobs:
           rm targets.tar
 
       - name: Download target directories (2.12, rootJS)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-2.12-rootJS
 
@@ -231,7 +231,7 @@ jobs:
           rm targets.tar
 
       - name: Download target directories (2.12, rootJVM)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-2.12-rootJVM
 
@@ -241,7 +241,7 @@ jobs:
           rm targets.tar
 
       - name: Download target directories (2.12, rootNative)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-2.12-rootNative
 
@@ -251,7 +251,7 @@ jobs:
           rm targets.tar
 
       - name: Download target directories (3, rootJS)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-3-rootJS
 
@@ -261,7 +261,7 @@ jobs:
           rm targets.tar
 
       - name: Download target directories (3, rootJVM)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-3-rootJVM
 
@@ -271,7 +271,7 @@ jobs:
           rm targets.tar
 
       - name: Download target directories (3, rootNative)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-3-rootNative
 
@@ -365,7 +365,7 @@ jobs:
 
   coverage:
     name: Run Test Coverage and Upload
-    if: github.ref == 'refs/heads/master' || (github.event_name == 'pull_request' && github.base_ref == 'master')
+    if: github.ref == 'refs/heads/staging/5.0' || (github.event_name == 'pull_request' && github.base_ref == 'staging/5.0')
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -457,7 +457,7 @@ jobs:
         run: sbt docs/tlSite
 
       - name: Publish site
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+        if: github.event_name != 'pull_request' && startsWith(github.ref, 'refs/tags/v')
         uses: peaceiris/actions-gh-pages@v3.9.3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
