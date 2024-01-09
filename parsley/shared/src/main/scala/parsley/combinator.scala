@@ -179,7 +179,7 @@ object combinator {
       * @example {{{
       * // this is an OK implementation for `string`, which is common in Haskell.
       * def string(str: String) = {
-      *     traverse(char, str:  _*).map(_.mkString)
+      *     traverse(str:  _*)(char).map(_.mkString)
       * }
       * }}}
       *
@@ -191,9 +191,7 @@ object combinator {
       * @see [[sequence `sequence`]]
       * @note $strict
       */
-    def traverse[A, B](f: A => Parsley[B], xs: A*): Parsley[List[B]] = sequence(xs.map(f): _*)
-    // TODO: this will be used in future!
-    private [parsley] def traverse5[A, B](xs: A*)(f: A => Parsley[B]): Parsley[List[B]] = traverse(f, xs: _*)
+    def traverse[A, B](xs: A*)(f: A => Parsley[B]): Parsley[List[B]] = sequence(xs.map(f): _*)
 
     /** This combinator tries to parse `p`, wrapping its result in a `Some` if it succeeds, or returns `None` if it fails.
       *
@@ -656,7 +654,7 @@ object combinator {
       * @return a parser that conditionally parses `thenP` after `condP`.
       * @group cond
       */
-    def whenS(condP: Parsley[Boolean], thenP: =>Parsley[Unit]): Parsley[Unit] = ifS(condP, thenP, unit)
+    def whenS(condP: Parsley[Boolean])(thenP: =>Parsley[Unit]): Parsley[Unit] = ifS(condP, thenP, unit)
 
     /** This combinator verfies that the given parser returns `true`, or else fails.
       *
@@ -697,7 +695,7 @@ object combinator {
       * @group cond
       */
     def whileS(p: Parsley[Boolean]): Parsley[Unit] = {
-        lazy val whileP: Parsley[Unit] = whenS(p, whileP)
+        lazy val whileP: Parsley[Unit] = whenS(p)(whileP)
         whileP
     }
 
@@ -725,7 +723,7 @@ object combinator {
       * @group range
       * @since 4.0.0
       */
-    def exactly[A](n: Int, p: Parsley[A]): Parsley[List[A]] = traverse[Int, A](_ => p, (1 to n): _*)
+    def exactly[A](n: Int, p: Parsley[A]): Parsley[List[A]] = traverse((1 to n): _*)(_ => p)
 
     /** This combinator parses between `min` and `max` occurrences of `p`, returning these `n` results in a list.
       *

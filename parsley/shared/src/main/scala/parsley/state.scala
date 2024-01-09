@@ -410,7 +410,9 @@ object state {
         init.fillRef { ref =>
           lazy val _cond = ref.gets(cond)
           lazy val _step = ref.update(step)
-          whenS(_cond, whileS(body(ref.get) *> _step *> _cond))
+          whenS(_cond) {
+            whileS(body(ref.get) *> _step *> _cond)
+          }
         }
     }
 

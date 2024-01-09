@@ -987,7 +987,7 @@ object Parsley extends PlatformSpecific {
           * even if any of `q` to `r` must be lazy, they can go in the strict
           * positions of skip because the `p <::>` provides the required
           * laziness. However, if this isn't possible (for instance, with
-          * the [[implicits.zipped `zipped`]] combinators), then how can
+          * the [[syntax.zipped `zipped`]] combinators), then how can
           * this problem be solved?
           *
           * This is the job of the `~` combinator: very simply it wraps up
