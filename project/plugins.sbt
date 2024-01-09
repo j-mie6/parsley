@@ -16,7 +16,7 @@ libraryDependencySchemes ++= Seq(
   "org.scala-native" % "sbt-scala-native" % VersionScheme.Always,
   "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always,
   // this helps us when parsley-cats is trailing behind us
-  "com.github.j-mie6" % "parsley" % VersionScheme.Always,
+  "com.github.j-mie6" %% "parsley" % VersionScheme.Always,
 )
 
 addSbtPlugin("org.typelevel" % "sbt-typelevel" % sbtTypelevelVersion)
