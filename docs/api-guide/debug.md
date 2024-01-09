@@ -121,7 +121,7 @@ import parsley.combinator.traverse
 import parsley.debug._
 
 def classicString(s: String): Parsley[String] =
-    traverse(char(_), s.toList: _*).map(_.mkString)
+    traverse(s.toList: _*)(char).map(_.mkString)
 
 implicit val profiler: Profiler = new Profiler
 val strings = many(classicString("...").profile("classic string")
