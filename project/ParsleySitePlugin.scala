@@ -190,12 +190,13 @@ object redirects {
 
     private def redirects(latest: String) = {
         // TODO: this can be made less brittle, surely can be derived from the above configuration?
-        val versions = List("latest", "stable", "4.4.x", "4.4", "4.5.x", "4.5")
+        val versions = List("latest", "stable", "4.4.x", "4.4", "4.5.x", "4.5", "5.0.x", "5.0")
         val versionMappings = List(
             "latest" -> latest,
-            "stable" -> "4.4",
+            "stable" -> "4.5",
             "4.4.x" -> "4.4",
             "4.5.x" -> "4.5",
+            "5.0.x" -> "5.0",
         )
 
         val versioned = (
