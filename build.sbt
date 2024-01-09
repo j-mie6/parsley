@@ -86,7 +86,7 @@ lazy val docs = project
     tlSiteApiModule := Some((parsley.jvm / projectID).value),
     libraryDependencies ++= Seq(
         "org.typelevel" %% "cats-core" % "2.10.0",
-        "com.github.j-mie6" %% "parsley-cats" % "1.2.0"
+        "com.github.j-mie6" %% "parsley-cats" % "1.3.0"
     ),
   )
 
