@@ -85,6 +85,10 @@ lazy val docs = project
   .enablePlugins(ParsleySitePlugin)
   .settings(
     tlSiteApiModule := Some((parsley.jvm / projectID).value),
+    libraryDependencySchemes ++= Seq(
+        // this helps us when parsley-cats is trailing behind us
+        "com.github.j-mie6" %% "parsley" % VersionScheme.Always,
+    ),
     libraryDependencies ++= Seq(
         "org.typelevel" %% "cats-core" % "2.10.0",
         "com.github.j-mie6" %% "parsley-cats" % "1.3.0"
