@@ -292,25 +292,6 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @group alt
       */
     def </>[Aʹ >: A](x: Aʹ): Parsley[Aʹ] = this <|> pure(x)
-    /** This combinator $orconst
-      *
-      * $attemptreason
-      *
-      * @example {{{
-      * scala> import parsley.character.string
-      * scala> val p = string("aa").getOrElse("b")
-      * scala> p.parse("aa")
-      * val res0 = Success("a")
-      * scala> p.parse("xyz")
-      * val res1 = Success("b")
-      * scala> p.parse("ab")
-      * val res2 = Failure(..) // first parser consumed an 'a'!
-      * }}}
-      *
-      * @note just an alias for `</>`
-      */
-    @deprecated("This combinator will be removed in 5.x, and `</>` used instead", "4.5.0")
-    def getOrElse[Aʹ >: A](x: Aʹ): Parsley[Aʹ] = this </> x
     /** This combinator, pronounced "sum", wraps this parser's result in `Left` if it succeeds, and parses `q` if it failed '''without''' consuming input,
       * wrapping the result in `Right`.
       *
@@ -843,28 +824,6 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @group monad
       */
     def flatMap[B](f: A => Parsley[B]): Parsley[B] = new Parsley(new frontend.>>=(this.internal, f.andThen(_.internal)))
-    // $COVERAGE-OFF$
-    /** This combinator, pronounced "bind", $bind
-      *
-      * @example {{{
-      * // this is an inefficient implementation, but does work
-      * def filter(pred: A => Boolean): Parsley[A] = {
-      *     this >>= { x =>
-      *         if (pred(x)) pure(x)
-      *         else empty
-      *     }
-      * }
-      * }}}
-      *
-      * @note there is '''significant''' overhead for using `>>=`: if possible try to avoid using it! This
-      *       is because Parsley will need to generate, process, and compile each parser produced by the combinator
-      *       during parse-time.
-      * @param f the function that produces the next parser.
-      * @return a new parser, which sequences this parser with the parser generated from its result.
-      */
-    @deprecated("This combinator will be removed in 5.x, and `.flatMap` used instead", "4.5.0")
-    def >>=[B](f: A => Parsley[B]): Parsley[B] = this.flatMap(f)
-    // $COVERAGE-ON$
     /** This combinator collapses two layers of parsing structure into one.
       *
       * The implicit (compiler-provided) evidence proves that this parser really has type `Parsley[Parsley[B]]`.
@@ -942,16 +901,6 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @group special
       */
     def impure: Parsley[A] = new Parsley(new frontend.Opaque(this.internal))
-    /** This combinator signifies that the parser it is invoked on is impure and any optimisations which assume purity
-      * are disabled.
-      *
-      * @example Any parsers that make use of mutable state may need to use this combinator to control
-      *          parsley's aggressive optimisations that remove results that are not needed: in this case,
-      *          the optimiser cannot see that the result of a parser is mutating some value, and may remove it.
-      * @note old alias for `impure`
-      */
-    @deprecated("This combinator will be removed in 5.x, and `impure` used instead", "4.5.0")
-    def unsafe(): Parsley[A] = impure
 
     /** This is an alias for `p.filter(pred)`. It is needed to support for-comprehension syntax with `if`s.
       *
@@ -1157,39 +1106,6 @@ object Parsley extends PlatformSpecific {
       * @group cond
       */
     def select[A, B](p: Parsley[Either[A, B]], q: =>Parsley[A => B]): Parsley[B] = branch(p, q, pure(identity[B](_)))
-    // $COVERAGE-OFF$
-    /** This combinator collapses two layers of parsing structure into one.
-      *
-      * Just an alias for `_.flatten`, providing a namesake to Haskell.
-      *
-      * @see [[Parsley.flatten `flatten`]] for details and examples.
-      */
-    @deprecated("This combinator will be removed in 5.x, and `.flatten` used instead", "4.5.0")
-    def join[A](p: Parsley[Parsley[A]]): Parsley[A] = p.flatten
-    /** This combinator parses its argument `p`, but rolls back any consumed input on failure.
-      *
-      * If the parser `p` succeeds, then `attempt(p)` has no effect. However, if `p` failed,
-      * then any input that it consumed is rolled back. This has two uses: it ensures that
-      * the parser `p` is all-or-nothing when consuming input (atomic), and it allows for
-      * parsers that consume input to backtrack when they fail (with `<|>`). It should be
-      * used for the latter purpose sparingly, however, since excessive backtracking in a
-      * parser can result in much lower efficiency.
-      *
-      * @example {{{
-      * scala> import parsley.character.string, parsley.Parsley.attempt
-      * scala> (string("abc") <|> string("abd")).parse("abd")
-      * val res0 = Failure(..) // first parser consumed a, so no backtrack
-      * scala> (attempt(string("abc")) <|> string("abd")).parse("abd")
-      * val res1 = Success("abd") // first parser does not consume input on failure now
-      * }}}
-      *
-      * @param p the parser to execute, if it fails, it will not have consumed input.
-      * @return a parser that tries `p`, but never consumes input if it fails.
-      * @note `atomic` should be used instead.
-      */
-    @deprecated("This combinator will be removed in 5.x, and `atomic` used instead", "4.5.0")
-    def attempt[A](p: Parsley[A]): Parsley[A] = atomic(p)
-    // $COVERAGE-ON$
     /** This combinator parses its argument `p`, but rolls back any consumed input on failure.
       *
       * If the parser `p` succeeds, then `atomic(p)` has no effect. However, if `p` failed,
@@ -1377,27 +1293,4 @@ object Parsley extends PlatformSpecific {
       * @group iter
       */
     def some[A](p: Parsley[A]): Parsley[List[A]] = combinator.manyN(1, p)
-
-    // $COVERAGE-OFF$
-    /** This parser returns the current line number of the input without having any other effect.
-      *
-      * @deprecated Moved to [[position.line `position.line`]], due for removal in 5.0.0
-      */
-    @deprecated("Position parsing functionality was moved to `parsley.position`; use `position.line` instead as this will be removed in 5.0.0", "4.2.0")
-    def line: Parsley[Int] = position.line
-    /** This parser returns the current column number of the input without having any other effect.
-      *
-      * @note in the presence of wide unicode characters, the column value returned may be inaccurate.
-      * @deprecated Moved to [[position.col `position.col`]], due for removal in 5.0.0
-      */
-    @deprecated("Position parsing functionality was moved to `parsley.position`; use `position.col` instead as this will be removed in 5.0.0", "4.2.0")
-    def col: Parsley[Int] = position.col
-    /** This parser returns the current line and column numbers of the input without having any other effect.
-      *
-      * @note in the presence of wide unicode characters, the column value returned may be inaccurate.
-      * @deprecated Moved to [[position.pos `position.pos`]], due for removal in 5.0.0
-      */
-    @deprecated("Position parsing functionality was moved to `parsley.position`; use `position.pos` instead as this will be removed in 5.0.0", "4.2.0")
-    def pos: Parsley[(Int, Int)] = position.pos
-    // $COVERAGE-ON$
 }

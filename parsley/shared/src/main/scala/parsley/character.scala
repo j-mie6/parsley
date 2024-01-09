@@ -105,31 +105,6 @@ object character {
     private def char(c: Char, label: String): Parsley[Char] = char(c, Label(label))
     private def char(c: Char, label: LabelConfig): Parsley[Char] = new Parsley(new singletons.CharTok(c, c, label))
 
-    // $COVERAGE-OFF$
-    /** This combinator tries to parse a single specific codepoint `c` from the input.
-      *
-      * Like [[char `char`]], except it may consume two characters from the input,
-      * in the case where the code-point is greater than `0xffff`. This is parsed ''atomically''
-      * so that no input is consumed if the first half of the codepoint is parsed and the second
-      * is not.
-      *
-      * @example {{{
-      * scala> import parsley.character.codePoint
-      * scala> codePoint(0x1f642).parse("")
-      * val res0 = Failure(..)
-      * scala> codePoint(0x1f642).parse("🙂")
-      * val res1 = Success(0x1f642)
-      * scala> codePoint(0x1f642).parse("b🙂")
-      * val res2 = Failure(..)
-      * }}}
-      *
-      * @param c the code-point to parse
-      * @return
-      */
-    @deprecated("This combinator will be removed in 5.x, and `unicode.char` used instead", "4.5.0")
-    def codePoint(c: Int): Parsley[Int] = unicode.char(c)
-    // $COVERAGE-ON$
-
     /** This combinator tries to parse a single character from the input that matches the given predicate.
       *
       * Attempts to read a character from the input and tests it against the predicate `pred`. If a character `c`
@@ -763,23 +738,6 @@ object character {
     val bit: Parsley[Char] = satisfy(c => Character.digit(c, 2) != -1, "bit")
 
     // Functions
-    // $COVERAGE-OFF$
-    /** This function returns true if a character is a whitespace character.
-      *
-      * A whitespace character is one of:
-      *   1. a space (`' '`)
-      *   1. a tab (`'\t'`)
-      *   1. a line feed (`'\n'`)
-      *   1. a carriage return (`'\r'`)
-      *   1. a form feed (`'\f'`)
-      *   1. a vertical tab (`'\u000b'`)
-      *
-      * @see [[whitespace `whitespace`]]
-      */
-    @deprecated("This combinator will be removed in 5.x, use _.isWhitespace instead", "4.5.0")
-    def isWhitespace(c: Char): Boolean = c.isWhitespace
-    // $COVERAGE-ON$
-
     /** This function returns true if a character is a hexadecimal digit.
       *
       * A hexadecimal digit is one of (all inclusive ranges):
@@ -811,17 +769,4 @@ object character {
 
     // Sue me.
     private def renderChar(c: Char): String = parsley.errors.helpers.renderRawString(s"$c")
-
-    // $COVERAGE-OFF$
-    @deprecated("this is an old naming, which I believe was never exposed but to be safe it'll remain till 5.0.0", "4.3.0")
-    private [parsley] def charUtf16(c: Int): Parsley[Int] = unicode.char(c)
-    @deprecated("this is an old naming, which I believe was never exposed but to be safe it'll remain till 5.0.0", "4.3.0")
-    private [parsley] def satisfyUtf16(f: Int => Boolean): Parsley[Int] = unicode.satisfy(f)
-    @deprecated("this is an old naming, which I believe was never exposed but to be safe it'll remain till 5.0.0", "4.3.0")
-    private [parsley] def stringOfManyUtf16(pc: Parsley[Int]): Parsley[String] = unicode.stringOfMany(pc)
-    @deprecated("this is an old naming, which I believe was never exposed but to be safe it'll remain till 5.0.0", "4.3.0")
-    private [parsley] def stringOfSomeUtf16(pc: Parsley[Int]): Parsley[String] = unicode.stringOfSome(pc)
-    @deprecated("this is an old naming, which I believe was never exposed but to be safe it'll remain till 5.0.0", "4.3.0")
-    private [parsley] def addCodepoint(sb: StringBuilder, codepoint: Int): StringBuilder = unicode.addCodepoint(sb, codepoint)
-    // $COVERAGE-ON$
 }

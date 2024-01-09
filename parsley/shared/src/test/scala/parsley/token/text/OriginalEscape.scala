@@ -7,7 +7,7 @@ package parsley.token.text
 
 import parsley.Parsley, Parsley.{atomic, empty, pure}
 import parsley.character.{bit, char, digit, hexDigit, octDigit, strings}
-import parsley.combinator.ensure
+import parsley.combinator.guardS
 import parsley.syntax.zipped.Zipped3
 import parsley.token.descriptions.text.{EscapeDesc, NumberOfDigits, NumericEscape}
 import parsley.token.errors.{ErrorConfig, NotConfigured}
@@ -41,8 +41,8 @@ private [token] class OriginalEscape(desc: EscapeDesc, err: ErrorConfig, generic
     // this is a really neat trick :)
     private lazy val atMostReg = parsley.state.Ref.make[Int]
     private def atMost(n: Int, radix: Int, digit: Parsley[Char]): Parsley[BigInt] = {
-        atMostReg.set(n) *> ensure(atMostReg.gets(_ > 0),
-                                   digit <* atMostReg.update(_ - 1)).foldLeft1[BigInt](0)((n, d) => n * radix + d.asDigit)
+        atMostReg.set(n) *>
+        (guardS(atMostReg.gets(_ > 0)) *> digit <* atMostReg.update(_ - 1)).foldLeft1[BigInt](0)((n, d) => n * radix + d.asDigit)
     }
 
     private def exactly(n: Int, full: Int, radix: Int, digit: Parsley[Char], reqDigits: Seq[Int]): Parsley[BigInt] = {

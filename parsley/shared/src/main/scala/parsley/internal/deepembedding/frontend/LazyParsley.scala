@@ -16,8 +16,6 @@ import parsley.internal.deepembedding.{Cont, ContOps, Id}, ContOps.{perform, res
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 import parsley.internal.machine.instructions, instructions.Instr
 
-import org.typelevel.scalaccompat.annotation.nowarn3
-
 /** This is the root type of the parsley "frontend": it represents a combinator tree
   * where the join-points in the tree (recursive or otherwise) have not been identified
   * or factored. As such, it is a potentially cyclic graph (though finite), and must be handled with
@@ -29,9 +27,6 @@ import org.typelevel.scalaccompat.annotation.nowarn3
 private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     // Public API
     // $COVERAGE-OFF$
-    // TODO: remove in 5.0
-    /** Denotes this parser is unsafe, which will disable certain law-based optimisations that assume purity. */
-    private [parsley] final def unsafe(): Unit = ()
     /** Force the parser, which eagerly computes its instructions immediately */
     private [parsley] final def force(): Unit = instrs: @nowarn
     /** Denote that this parser is large enough that it might stack-overflow during
@@ -214,7 +209,7 @@ private [deepembedding] trait UsesRef {
 private [deepembedding] class LetFinderState {
     private val _recs = mutable.Set.empty[LazyParsley[_]]
     private val _preds = mutable.Map.empty[LazyParsley[_], Int]
-    private val _usedRefs: mutable.Set[Ref[_]] @nowarn3 = mutable.Set.empty[Ref[_]]: @nowarn3
+    private val _usedRefs = mutable.Set.empty[Ref[_]]
 
     /** Adds a "predecessor" to a given parser, which means that it is referenced by another parser.
       *
@@ -244,7 +239,7 @@ private [deepembedding] class LetFinderState {
     /** Returns all the recursive parsers in the tree */
     private [frontend] lazy val recs: Set[LazyParsley[_]] = _recs.toSet
     /** Returns all the registers used by the parser */
-    private [frontend] def usedRefs: Set[Ref[_]] @nowarn3 = _usedRefs.toSet: @nowarn3
+    private [frontend] def usedRefs: Set[Ref[_]] = _usedRefs.toSet
     /** Returns the number of registers used by the parser */
     private [frontend] def numRegs: Int = _usedRefs.size
 }

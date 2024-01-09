@@ -8,7 +8,7 @@ package parsley
 import scala.annotation.tailrec
 import scala.collection.mutable
 
-import parsley.Parsley.{atomic, empty, fresh, notFollowedBy, pure, select, unit}
+import parsley.Parsley.{atomic, empty, fresh, notFollowedBy, pure, select, unit, many}
 import parsley.state.{RefMaker, StateCombinators}
 import parsley.syntax.zipped.{Zipped2, Zipped3}
 
@@ -107,38 +107,6 @@ object combinator {
       */
     def choice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceRightOption(_ <|> _).getOrElse(empty)
 
-    // $COVERAGE-OFF$
-    /** This combinator tries to parse each of the parsers `ps` in order, until one of them succeeds.
-      *
-      * Finds the first parser in `ps` which succeeds, returning its result. If none of the parsers
-      * succeed, then this combinator fails. This combinator will always try and parse each of the
-      * combinators until one succeeds, regardless of how they fail. The last argument will '''not'''
-      * be wrapped in `attempt`, as this is not necessary.
-      *
-      * @example {{{
-      * scala> import parsley.combinator.attemptChoice
-      * scala> import parsley.character.string
-      * scala> val p = attemptChoice(string("abc"), string("ab"), string("bc"), string("d"))
-      * scala> p.parse("abc")
-      * val res0 = Success("abc")
-      * scala> p.parse("ab")
-      * val res1 = Success("ab")
-      * scala> p.parse("bc")
-      * val res2 = Success("bc")
-      * scala> p.parse("x")
-      * val res3 = Failure(..)
-      * }}}
-      *
-      * @param ps the parsers to try, in order.
-      * @return a parser that tries to parse one of `ps`.
-      * @see [[parsley.Parsley.<|> `<|>`]]
-      * @see [[parsley.Parsley$.attempt `attempt`]]
-      * @note this combinator is not particularly efficient, because it may unnecessarily backtrack for each alternative.
-      */
-    @deprecated("This combinator will be removed in 5.x, and `atomicChoice` used instead", "4.5.0")
-    def attemptChoice[A](ps: Parsley[A]*): Parsley[A] = atomicChoice(ps: _*)
-    // $COVERAGE-ON$
-
     /** This combinator tries to parse each of the parsers `ps` in order, until one of them succeeds.
       *
       * Finds the first parser in `ps` which succeeds, returning its result. If none of the parsers
@@ -226,34 +194,6 @@ object combinator {
     def traverse[A, B](f: A => Parsley[B], xs: A*): Parsley[List[B]] = sequence(xs.map(f): _*)
     // TODO: this will be used in future!
     private [parsley] def traverse5[A, B](xs: A*)(f: A => Parsley[B]): Parsley[List[B]] = traverse(f, xs: _*)
-    private [parsley] def traverse_[A](xs: A*)(f: A => Parsley[_]): Parsley[Unit] = traverse5[A, Any](xs: _*)(f).void // TODO: drop in 5.0.0
-
-    // $COVERAGE-OFF$
-    /** This combinator will parse each of `ps` in order, discarding the results.
-      *
-      * Given the parsers `ps`, consisting of `p,,1,,` through `p,,n,,`, parses
-      * each in order. If they all succeed, this combinator succeeds. If any of
-      * the parsers fail, then the whole combinator fails.
-      *
-      * @example {{{
-      * scala> import parsley.combinator.skip
-      * scala> import parsley.character.{char, item}
-      * scala> val p = skip(char('a'), item, char('c'))
-      * scala> p.parse("abc")
-      * val res0 = Success(())
-      * scala> p.parse("ab")
-      * val res1 = Failure(..)
-      * }}}
-      *
-      * @param p first parser to be sequenced
-      * @param ps parsers to be sequenced.
-      * @return a parser that parses each of `ps`, returning `()`.
-      * @see [[parsley.Parsley.*> `*>`]]
-      * @note $strict
-      */
-    @deprecated("This combinator will be removed in 5.0.0, use `sequence((p +: ps): _*).void` instead", "4.5.0")
-    def skip(p: Parsley[_], ps: Parsley[_]*): Parsley[Unit] = sequence((p +: ps): _*).void
-    // $COVERAGE-ON$
 
     /** This combinator tries to parse `p`, wrapping its result in a `Some` if it succeeds, or returns `None` if it fails.
       *
@@ -360,80 +300,6 @@ object combinator {
       */
     def decide[A](p: Parsley[Option[A]], q: =>Parsley[A]): Parsley[A] = select(p.map(_.toRight(())), q.map(x => (_: Unit) => x))
 
-    // $COVERAGE-OFF$
-    /** This combinator parses `open`, followed by `p`, and then `close`.
-      *
-      * First parse `open`, ignore its result, then parse, `p`, producing `x`. Finally, parse `close`, ignoring its result.
-      * If `open`, `p`, and `close` all succeeded, then return `x`. If any of them failed, this combinator fails.
-      *
-      * @example {{{
-      * def braces[A](p: Parsley[A]) = between(char('{'), char('}'), p)
-      * }}}
-      *
-      * @param open the first parser to parse.
-      * @param close the last parser to parse.
-      * @param p the parser to parse between the other two.
-      * @return a parser that reads `open`, then `p`, then `close` and returns the result of `p`.
-      */
-    @deprecated("This combinator will be removed in 5.x", "4.5.0")
-    def between[A](open: Parsley[_], close: =>Parsley[_], p: =>Parsley[A]): Parsley[A] = open *> p <* close
-
-    /** This combinator repeatedly parses a given parser '''zero''' or more times, collecting the results into a list.
-      *
-      * Parses a given parser, `p`, repeatedly until it fails. If `p` failed having consumed input,
-      * this combinator fails. Otherwise when `p` fails '''without consuming input''', this combinator
-      * will return all of the results, `x,,1,,` through `x,,n,,` (with `n >= 0`), in a list: `List(x,,1,,, .., x,,n,,)`.
-      * If `p` was never successful, the empty list is returned.
-      *
-      * @example {{{
-      * scala> import parsley.character.string
-      * scala> import parsley.combinator.many
-      * scala> val p = many(string("ab"))
-      * scala> p.parse("")
-      * val res0 = Success(Nil)
-      * scala> p.parse("ab")
-      * val res1 = Success(List("ab"))
-      * scala> p.parse("abababab")
-      * val res2 = Success(List("ab", "ab", "ab", "ab"))
-      * scala> p.parse("aba")
-      * val res3 = Failure(..)
-      * }}}
-      *
-      * @param p the parser to execute multiple times.
-      * @return a parser that parses `p` until it fails, returning the list of all the successful results.
-      * @since 2.2.0
-      */
-    @deprecated("This combinator will be removed in 5.0.0, use `Parsley.many` instead", "4.5.0")
-    def many[A](p: Parsley[A]): Parsley[List[A]] = new Parsley(new frontend.Many(p.internal))
-
-    /** This combinator repeatedly parses a given parser '''one''' or more times, collecting the results into a list.
-      *
-      * Parses a given parser, `p`, repeatedly until it fails. If `p` failed having consumed input,
-      * this combinator fails. Otherwise when `p` fails '''without consuming input''', this combinator
-      * will return all of the results, `x,,1,,` through `x,,n,,` (with `n >= 1`), in a list: `List(x,,1,,, .., x,,n,,)`.
-      * If `p` was not successful at least one time, this combinator fails.
-      *
-      * @example {{{
-      * scala> import parsley.character.string
-      * scala> import parsley.combinator.some
-      * scala> val p = some(string("ab"))
-      * scala> p.parse("")
-      * val res0 = Failure(..)
-      * scala> p.parse("ab")
-      * val res1 = Success(List("ab"))
-      * scala> p.parse("abababab")
-      * val res2 = Success(List("ab", "ab", "ab", "ab"))
-      * scala> p.parse("aba")
-      * val res3 = Failure(..)
-      * }}}
-      *
-      * @param p the parser to execute multiple times.
-      * @return a parser that parses `p` until it fails, returning the list of all the successful results.
-      */
-    @deprecated("This combinator will be removed in 5.0.0, use `Parsley.many` instead", "4.5.0")
-    def some[A](p: Parsley[A]): Parsley[List[A]] = manyN(1, p)
-    // $COVERAGE-ON$
-
     /** This combinator repeatedly parses a given parser '''`n`''' or more times, collecting the results into a list.
       *
       * Parses a given parser, `p`, repeatedly until it fails. If `p` failed having consumed input,
@@ -463,147 +329,12 @@ object combinator {
       */
     def manyN[A](n: Int, p: Parsley[A]): Parsley[List[A]] = {
         require(n >= 0, "cannot pass negative integer to `manyN`")
-        @tailrec def go(n: Int, acc: Parsley[List[A]] = Parsley.many(p)): Parsley[List[A]] = {
+        @tailrec def go(n: Int, acc: Parsley[List[A]] = many(p)): Parsley[List[A]] = {
             if (n == 0) acc
             else go(n-1, p <::> acc)
         }
         go(n)
     }
-
-    // $COVERAGE-OFF$
-    /** This combinator repeatedly parses a given parser '''zero''' or more times, ignoring the results.
-      *
-      * Parses a given parser, `p`, repeatedly until it fails. If `p` failed having consumed input,
-      * this combinator fails. Otherwise when `p` fails '''without consuming input''', this combinator
-      * will succeed.
-      *
-      * @example {{{
-      * scala> import parsley.character.string
-      * scala> import parsley.combinator.skipMany
-      * scala> val p = skipMany(string("ab"))
-      * scala> p.parse("")
-      * val res0 = Success(())
-      * scala> p.parse("ab")
-      * val res1 = Success(())
-      * scala> p.parse("abababab")
-      * val res2 = Success(())
-      * scala> p.parse("aba")
-      * val res3 = Failure(..)
-      * }}}
-      *
-      * @param p the parser to execute multiple times.
-      * @return a parser that parses `p` until it fails, returning unit.
-      * @since 2.2.0
-      */
-    @deprecated("This combinator will be removed in 5.0.0, use `many(p).void` instead", "4.5.0")
-    def skipMany(p: Parsley[_]): Parsley[Unit] = many(p).void
-
-    /** This combinator repeatedly parses a given parser '''one''' or more times, ignoring the results.
-      *
-      * Parses a given parser, `p`, repeatedly until it fails. If `p` failed having consumed input,
-      * this combinator fails. Otherwise when `p` fails '''without consuming input''', this combinator
-      * will succeed. The parser `p` must succeed at least once.
-      *
-      * @example {{{
-      * scala> import parsley.character.string
-      * scala> import parsley.combinator.skipSome
-      * scala> val p = skipSome(string("ab"))
-      * scala> p.parse("")
-      * val res0 = Failure(..)
-      * scala> p.parse("ab")
-      * val res1 = Success(())
-      * scala> p.parse("abababab")
-      * val res2 = Success(())
-      * scala> p.parse("aba")
-      * val res3 = Failure(..)
-      * }}}
-      *
-      * @param p the parser to execute multiple times.
-      * @return a parser that parses `p` until it fails, returning unit.
-      */
-    @deprecated("This combinator will be removed in 5.0.0, use `some(p).void` instead", "4.5.0")
-    def skipSome(p: Parsley[_]): Parsley[Unit] = some(p).void
-
-    /** This combinator repeatedly parses a given parser '''`n`''' or more times, ignoring the results.
-      *
-      * Parses a given parser, `p`, repeatedly until it fails. If `p` failed having consumed input,
-      * this combinator fails. Otherwise when `p` fails '''without consuming input''', this combinator
-      * will succeed. The parser `p` must succeed at least `n` times.
-      *
-      * @example {{{
-      * scala> import parsley.character.string
-      * scala> import parsley.combinator.skipManyN
-      * scala> val p = skipManyN(2, string("ab"))
-      * scala> p.parse("")
-      * val res0 = Failure(..)
-      * scala> p.parse("ab")
-      * val res1 = Failure(..)
-      * scala> p.parse("abababab")
-      * val res2 = Success(())
-      * scala> p.parse("aba")
-      * val res3 = Failure(..)
-      * }}}
-      *
-      * @param p the parser to execute multiple times.
-      * @return a parser that parses `p` until it fails, returning unit.
-      */
-    @deprecated("This combinator will be removed in 5.0.0, use `manyN(n, p).void` instead", "4.5.0")
-    def skipManyN(n: Int, p: Parsley[_]): Parsley[Unit] = manyN(n, p).void
-
-    /** This combinator repeatedly parses a given parser '''zero''' or more times, returning how many times it succeeded.
-      *
-      * Parses a given parser, `p`, repeatedly until it fails. If `p` failed having consumed input,
-      * this combinator fails. Otherwise when `p` fails '''without consuming input''', this combinator
-      * will succeed. The number of times `p` succeeded is returned as the result.
-      *
-      * @example {{{
-      * scala> import parsley.character.string
-      * scala> import parsley.combinator.count
-      * scala> val p = count(string("ab"))
-      * scala> p.parse("")
-      * val res0 = Success(0)
-      * scala> p.parse("ab")
-      * val res1 = Success(1)
-      * scala> p.parse("abababab")
-      * val res2 = Success(4)
-      * scala> p.parse("aba")
-      * val res3 = Failure(..)
-      * }}}
-      *
-      * @param p the parser to execute multiple times.
-      * @return the number of times `p` successfully parses
-      * @since 4.4.0
-      */
-    @deprecated("This combinator will be removed in 5.0.0, use `countMany` instead", "4.5.0")
-    def count(p: Parsley[_]): Parsley[Int] = p.foldLeft(0)((n, _) => n + 1)
-
-    /** This combinator repeatedly parses a given parser '''one''' or more times, returning how many times it succeeded.
-      *
-      * Parses a given parser, `p`, repeatedly until it fails. If `p` failed having consumed input,
-      * this combinator fails. Otherwise when `p` fails '''without consuming input''', this combinator
-      * will succeed. The parser `p` must succeed at least once. The number of times `p` succeeded is returned as the result.
-      *
-      * @example {{{
-      * scala> import parsley.character.string
-      * scala> import parsley.combinator.count1
-      * scala> val p = count1(string("ab"))
-      * scala> p.parse("")
-      * val res0 = Failure(..)
-      * scala> p.parse("ab")
-      * val res1 = Success(1)
-      * scala> p.parse("abababab")
-      * val res2 = Success(4)
-      * scala> p.parse("aba")
-      * val res3 = Failure(..)
-      * }}}
-      *
-      * @param p the parser to execute multiple times.
-      * @return the number of times `p` successfully parses
-      * @since 4.4.0
-      */
-    @deprecated("This combinator will be removed in 5.0.0, use `countSome` instead", "4.5.0")
-    def count1(p: Parsley[_]): Parsley[Int] = p.foldLeft1(0)((n, _) => n + 1)
-    // $COVERAGE-ON$
 
     /** This combinator repeatedly parses a given parser '''zero''' or more times, returning how many times it succeeded.
       *
@@ -813,63 +544,6 @@ object combinator {
       */
     def endBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = Parsley.some(p <* sep)
 
-    // $COVERAGE-OFF$
-    /** This parser only succeeds at the end of the input.
-      *
-      * Equivalent to `notFollowedBy(item)`.
-      *
-      * @example {{{
-      * scala> import parsley.combinator.eof
-      * scala> eof.parse("a")
-      * val res0 = Failure(..)
-      * scala> eof.parse("")
-      * val res1 = Success(())
-      * }}}
-      */
-    @deprecated("This combinator will be removed in 5.x, use Parsley.eof instead", "4.5.0")
-    val eof: Parsley[Unit] = Parsley.eof
-
-    /** This parser only succeeds if there is still more input.
-      *
-      * Equivalent to `lookAhead(item).void`.
-      *
-      * @example {{{
-      * scala> import parsley.combinator.more
-      * scala> more.parse("")
-      * val res0 = Failure(..)
-      * scala> more.parse("a")
-      * val res1 = Success(())
-      * }}}
-      */
-    @deprecated("This combinator will be removed in 5.x", "4.5.0")
-    val more: Parsley[Unit] = notFollowedBy(eof)
-
-    /** This combinator repeatedly parses a given parser '''zero''' or more times, until the `end` parser succeeds, collecting the results into a list.
-      *
-      * First tries to parse `end`, if it fails '''without consuming input''', then parses `p`, which must succeed. This repeats until `end` succeeds.
-      * When `end` does succeed, this combinator will return all of the results generated by `p`, `x,,1,,` through `x,,n,,` (with `n >= 0`), in a
-      * list: `List(x,,1,,, .., x,,n,,)`. If `end` could be parsed immediately, the empty list is returned.
-      *
-      * @example This can be useful for scanning comments: {{{
-      * scala> import parsley.character.{string, item, endOfLine}
-      * scala> import parsley.combinator.many
-      * scala> val comment = string("//") *> manyUntil(item, endOfLine)
-      * scala> p.parse("//hello world")
-      * val res0 = Failure(..)
-      * scala> p.parse("//hello world\n")
-      * val res1 = Success(List('h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'))
-      * scala> p.parse("//\n")
-      * val res2 = Success(Nil)
-      * }}}
-      *
-      * @param p the parser to execute multiple times.
-      * @param end the parser that stops the parsing of `p`.
-      * @return a parser that parses `p` until `end` succeeds, returning the list of all the successful results.
-      */
-    @deprecated("This combinator will be removed in 5.0.0, use `manyTill` instead", "4.5.0")
-    def manyUntil[A](p: Parsley[A], end: Parsley[_]): Parsley[List[A]] = manyTill(p, end)
-    // $COVERAGE-ON$
-
     /** This combinator repeatedly parses a given parser '''zero''' or more times, until the `end` parser succeeds, collecting the results into a list.
       *
       * First tries to parse `end`, if it fails '''without consuming input''', then parses `p`, which must succeed. This repeats until `end` succeeds.
@@ -907,36 +581,6 @@ object combinator {
         object Stop
     }
 
-    // $COVERAGE-OFF$
-    /** This combinator repeatedly parses a given parser '''one''' or more times, until the `end` parser succeeds, collecting the results into a list.
-      *
-      * First ensures that trying to parse `end` fails, then tries to parse `p`. If it succeed then it will repeatedly: try to parse `end`, if it fails
-      * '''without consuming input''', then parses `p`, which must succeed. When `end` does succeed, this combinator will return all of the results
-      * generated by `p`, `x,,1,,` through `x,,n,,` (with `n >= 1`), in a list: `List(x,,1,,, .., x,,n,,)`. The parser `p` must succeed at least once
-      * before `end` succeeds.
-      *
-      * @example This can be useful for scanning comments: {{{
-      * scala> import parsley.character.{string, item, endOfLine}
-      * scala> import parsley.combinator.someTill
-      * scala> val comment = string("//") *> someTill(item, endOfLine)
-      * scala> p.parse("//hello world")
-      * val res0 = Failure(..)
-      * scala> p.parse("//hello world\n")
-      * val res1 = Success(List('h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'))
-      * scala> p.parse("//\n")
-      * val res2 = Failure(..)
-      * scala> p.parse("//a\n")
-      * val res3 = Success(List('a'))
-      * }}}
-      *
-      * @param p the parser to execute multiple times.
-      * @param end the parser that stops the parsing of `p`.
-      * @return a parser that parses `p` until `end` succeeds, returning the list of all the successful results.
-      */
-    @deprecated("This combinator will be removed in 5.0.0, use `someTill` instead", "4.5.0")
-    def someUntil[A](p: Parsley[A], end: Parsley[_]): Parsley[List[A]] = someTill(p, end)
-    // $COVERAGE-ON$
-
     /** This combinator repeatedly parses a given parser '''one''' or more times, until the `end` parser succeeds, collecting the results into a list.
       *
       * First ensures that trying to parse `end` fails, then tries to parse `p`. If it succeed then it will repeatedly: try to parse `end`, if it fails
@@ -968,34 +612,6 @@ object combinator {
         notFollowedBy(end) *> (p <::> manyTill(p, end))
     }
 
-    // TODO: remove
-    // $COVERAGE-OFF$
-    private [parsley] def skipSomeUntil(p: Parsley[_], end: Parsley[_]): Parsley[Unit] = notFollowedBy(end) *> (p *> skipManyUntil(p, end))
-
-    /** This combinator parses one of `thenP` or `elseP` depending on the result of parsing `condP`.
-      *
-      * This is a lifted `if`-statement. First, parse `condP`: if it is successful and returns
-      * `true`, then parse `thenP`; else, if it returned `false`, parse `elseP`; or, if `condP` failed
-      * then fail. If either of `thenP` or `elseP` fail, then this combinator also fails.
-      *
-      * Most useful in conjunction with ''Registers'', as this allows for decisions to be made
-      * based on state.
-      *
-      * @example {{{
-      * ifP(pure(true), p, _) == p
-      * ifP(pure(false), _, p) == p
-      * }}}
-      *
-      * @param condP the parser that yields the condition value.
-      * @param thenP the parser to execute if the condition is `true`.
-      * @param elseP the parser to execute if the condition is `false.
-      * @return a parser that conditionally parses `thenP` or `elseP` after `condP`.
-      * @since 4.0.0
-      */
-    @deprecated("This will be removed in 5.x, use ifS instead", "4.5.0")
-    def ifP[A](condP: Parsley[Boolean], thenP: =>Parsley[A], elseP: =>Parsley[A]): Parsley[A] = ifS(condP, thenP, elseP)
-    // $COVERAGE-ON$
-
     /** This combinator parses one of `thenP` or `elseP` depending on the result of parsing `condP`.
       *
       * This is a lifted `if`-statement. First, parse `condP`: if it is successful and returns
@@ -1021,29 +637,6 @@ object combinator {
         new Parsley(new frontend.If(condP.internal, thenP.internal, elseP.internal))
     }
 
-    // $COVERAGE-OFF$
-    /** This combinator conditionally parses `thenP` depending on the result of parsing `condP`.
-      *
-      * This is a lifted `if`-statement. First, parse `condP`: if it is successful and returns
-      * `true`, then parse `thenP`; else, if it returned `false` do nothing; or, if `condP` failed
-      * then fail. If `thenP` fails, then this combinator also fails.
-      *
-      * Most useful in conjunction with ''Registers'', as this allows for decisions to be made
-      * based on state.
-      *
-      * @example {{{
-      * when(pure(true), p) == p
-      * when(pure(false), _) == unit
-      * }}}
-      *
-      * @param condP the parser that yields the condition value.
-      * @param thenP the parser to execute if the condition is `true`.
-      * @return a parser that conditionally parses `thenP` after `condP`.
-      */
-    @deprecated("This will be removed in 5.x, use whenS instead", "4.5.0")
-    def when(condP: Parsley[Boolean], thenP: =>Parsley[Unit]): Parsley[Unit] = ifS(condP, thenP, unit)
-    // $COVERAGE-ON$
-
     /** This combinator conditionally parses `thenP` depending on the result of parsing `condP`.
       *
       * This is a lifted `if`-statement. First, parse `condP`: if it is successful and returns
@@ -1065,24 +658,6 @@ object combinator {
       */
     def whenS(condP: Parsley[Boolean], thenP: =>Parsley[Unit]): Parsley[Unit] = ifS(condP, thenP, unit)
 
-    // $COVERAGE-OFF$
-    /** This combinator verfies that the given parser returns `true`, or else fails.
-      *
-      * First, parse `p`; if it succeeds then, so long at returns `true`, this `guard(p)` succeeds. Otherwise,
-      * if `p` either fails, or returns `false`, `guard(p)` will fail.
-      *
-      * @example {{{
-      * guard(pure(true)) == unit
-      * guard(pure(false)) == empty
-      * when(p.map(!_), empty) == guard(p)
-      * }}}
-      *
-      * @param p the parser that yields the condition value.
-      */
-    @deprecated("This will be removed in 5.x, use guardS instead", "4.5.0")
-    def guard(p: Parsley[Boolean]): Parsley[Unit] = ifS(p, unit, empty)
-    // $COVERAGE-ON$
-
     /** This combinator verfies that the given parser returns `true`, or else fails.
       *
       * First, parse `p`; if it succeeds then, so long at returns `true`, this `guard(p)` succeeds. Otherwise,
@@ -1098,38 +673,6 @@ object combinator {
       * @group cond
       */
     def guardS(p: Parsley[Boolean]): Parsley[Unit] = ifS(p, unit, empty)
-
-    // $COVERAGE-OFF$
-    // TODO: remove
-    private [parsley] def ensure[A](condP: Parsley[Boolean], beforeP: =>Parsley[A]): Parsley[A] = guardS(condP) *> beforeP
-
-    /** This combinator repeatedly parses `p` so long as it returns `true`.
-      *
-      * This is a lifted `while`-loop. First, parse `p`: if it is successful and
-      * returns `true`, then repeat; else if it returned `false` stop; or, if it
-      * failed then this combinator fails.
-      *
-      * Most useful in conjunction with ''Registers'', as this allows for decisions to be made
-      * based on state. In particular, this can be used to define the `forP` combinator.
-      *
-      * @example {{{
-      * def forP[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: =>Parsley[_]): Parsley[Unit] = {
-      *     val reg = Reg.make[A]
-      *     lazy val _cond = reg.gets(cond)
-      *     lazy val _step = reg.modify(step)
-      *     reg.put(init) *> when(_cond, whileP(body *> _step *> _cond))
-      * }
-      * }}}
-      *
-      * @param p the parser to repeatedly parse.
-      * @return a parser that continues to parse `p` until it returns `false`.
-      */
-    @deprecated("This will be removed in 5.x, use whileS instead", "4.5.0")
-    def whileP(p: Parsley[Boolean]): Parsley[Unit] = {
-        lazy val whilePP: Parsley[Unit] = when(p, whilePP)
-        whilePP
-    }
-    // $COVERAGE-ON$
 
     /** This combinator repeatedly parses `p` so long as it returns `true`.
       *
@@ -1183,7 +726,6 @@ object combinator {
       * @since 4.0.0
       */
     def exactly[A](n: Int, p: Parsley[A]): Parsley[List[A]] = traverse[Int, A](_ => p, (1 to n): _*)
-    private def skipExactly(n: Int, p: Parsley[_]): Parsley[Unit] = traverse_[Int](1 to n: _*)(_ => p)
 
     /** This combinator parses between `min` and `max` occurrences of `p`, returning these `n` results in a list.
       *
@@ -1219,38 +761,6 @@ object combinator {
         xs.map(_.toList)
     }
 
-    // $COVERAGE-OFF$
-    /** This combinator parses between `min` and `max` occurrences of `p` but ignoring the results.
-      *
-      * Parses `p` repeatedly a minimum of `min` times and up to `max` times both inclusive. If `p` fails before
-      * `min` is reached, then this combinator fails. It is not required for `p` to fail after the `max`^th^ parse.
-      * The results are discarded and `()` is returned instead.
-      *
-      * @example {{{
-      * scala> import parsley.character.item
-      * scala> import parsley.combinator.range_
-      * scala> val p = range_(min=3, max=5)(item)
-      * scala> p.parse("ab")
-      * val res0 = Failure(..)
-      * scala> p.parse("abc")
-      * val res1 = Success(())
-      * scala> p.parse("abcd")
-      * val res2 = Success(())
-      * scala> p.parse("abcde")
-      * val res2 = Success(())
-      * scala> p.parse("abcdef")
-      * val res2 = Success(())
-      * }}}
-      *
-      * @param min the minimum number of times to repeat `p`, inclusive.
-      * @param max the maximum number of times to repeat `p`, inclusive.
-      * @param p the parser to repeat.
-      * @since 4.4.0
-      */
-    @deprecated("This combinator will be removed in 5.0.0, use `count(min, max)(p).void` instead", "4.5.0")
-    def range_(min: Int, max: Int)(p: Parsley[_]): Parsley[Unit] = count(min, max)(p).void
-    // $COVERAGE-ON$
-
     /** This combinator parses between `min` and `max` occurrences of `p`, returning the number of successes.
       *
       * Parses `p` repeatedly a minimum of `min` times and up to `max` times both inclusive. If `p` fails before
@@ -1282,8 +792,8 @@ object combinator {
       * @since 4.4.0
       */
     def count(min: Int, max: Int)(p: Parsley[_]): Parsley[Int] = min.makeRef { i =>
-        skipExactly(min, p) ~>
-        Parsley.many(ensure(i.gets(_ < max), p) ~> i.update(_ + 1)) ~>
+        exactly(min, p) ~>
+        Parsley.many(guardS(i.gets(_ < max)) ~> p ~> i.update(_ + 1)) ~>
         i.get
     }
 }
