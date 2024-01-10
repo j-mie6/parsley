@@ -6,7 +6,7 @@
 package parsley
 
 import scala.annotation.tailrec
-import scala.collection.mutable
+import scala.collection.{Factory, mutable}
 
 import parsley.Parsley.{atomic, empty, fresh, notFollowedBy, pure, select, unit, many}
 import parsley.state.{RefMaker, StateCombinators}
@@ -438,7 +438,7 @@ object combinator {
       * @group sep
       */
     def sepBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = {
-        p <::> Parsley.many(sep *> p)
+        p <::> many(sep *> p)
     }
 
     /** This combinator parses '''zero''' or more occurrences of `p`, separated and optionally ended by `sep`.
@@ -490,7 +490,9 @@ object combinator {
       * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
-    def sepEndBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = new Parsley(new frontend.SepEndBy1(p.internal, sep.internal, List))
+    def sepEndBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepEndBy1(p, sep, List)
+    private [parsley] def sepEndBy1[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] =
+        new Parsley(new frontend.SepEndBy1(p.internal, sep.internal, factory))
 
     /** This combinator parses '''zero''' or more occurrences of `p`, separated and ended by `sep`.
       *
@@ -514,7 +516,8 @@ object combinator {
       * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
-    def endBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = Parsley.many(p <* sep)
+    def endBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = many(p <* sep)
+    private [parsley] def endBy[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = many(p <* sep, factory)
 
     /** This combinator parses '''one''' or more occurrences of `p`, separated and ended by `sep`.
       *
@@ -566,8 +569,9 @@ object combinator {
       * @group iter
       * @since 4.5.0
       */
-    def manyTill[A](p: Parsley[A], end: Parsley[_]): Parsley[List[A]] = {
-        new Parsley(new frontend.ManyUntil((end.as(ManyUntil.Stop) <|> p: Parsley[Any]).internal, List))
+    def manyTill[A](p: Parsley[A], end: Parsley[_]): Parsley[List[A]] = manyTill(p, end, List)
+    private [parsley] def manyTill[A, C](p: Parsley[A], end: Parsley[_], factory: Factory[A, C]): Parsley[C] = {
+        new Parsley(new frontend.ManyUntil((end.as(ManyUntil.Stop) <|> p: Parsley[Any]).internal, factory))
     }
 
     // TODO: find a way to make this redundant

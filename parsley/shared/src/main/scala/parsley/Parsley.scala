@@ -5,6 +5,8 @@
  */
 package parsley
 
+import scala.collection.Factory
+
 import parsley.combinator.option
 import parsley.errors.ErrorBuilder
 import parsley.expr.{chain, infix}
@@ -1264,7 +1266,9 @@ object Parsley extends PlatformSpecific {
       * @since 4.5.0
       * @group iter
       */
-    def many[A](p: Parsley[A]): Parsley[List[A]] = new Parsley(new frontend.Many(p.internal, List))
+    def many[A](p: Parsley[A]): Parsley[List[A]] = many(p, List)
+    private [parsley] def many[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] =
+        new Parsley(new frontend.Many(p.internal, factory))
 
     /** This combinator repeatedly parses a given parser '''one''' or more times, collecting the results into a list.
       *
