@@ -238,8 +238,8 @@ private [backend] object Choice {
         case t@token.SoftKeyword(s) if t.caseSensitive => Some((s.head, t.expected.asExpectDescs(s), s.codePointCount(0, s.length), backtracks))
         case t@token.SoftOperator(s)             => Some((s.head, t.expected.asExpectDescs(s), s.codePointCount(0, s.length), backtracks))
         case Attempt(t)                          => tablable(t, backtracks = true)
-        case ErrorLabel(t, labels)               => tablable(t, backtracks).map {
-            case (c, _, width, backtracks) => (c, labels.map(new ExpectDesc(_)), width, backtracks)
+        case ErrorLabel(t, label, labels)        => tablable(t, backtracks).map {
+            case (c, _, width, backtracks) => (c, (label +: labels).map(new ExpectDesc(_)), width, backtracks)
         }
         case ErrorHide(t)                        => tablable(t, backtracks).map {
             case (c, _, _, backtracks) => (c, None, 0, backtracks)

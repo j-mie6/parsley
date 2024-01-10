@@ -38,7 +38,7 @@ private [token] class Generic(err: ErrorConfig) {
     private def nonZeroOctDigit = satisfy(c => isOctDigit(c) && c != '0').label("octal digit")
     private def nonZeroBit = '1'.label("bit")
     // why secret? so that the above digits can be marked as digits without "non-zero or zero digit" nonsense
-    private def secretZero = '0'.newHide.as(BigInt(0))
+    private def secretZero = '0'.hide.as(BigInt(0))
 
     private def digit = character.digit
     private def hexDigit = character.hexDigit

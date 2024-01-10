@@ -118,7 +118,7 @@ private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle
     def visit(self: SkipManyUntil, context: T)(body: LazyParsley[Any]): U[Unit]
 
     // Error parser visitors.
-    def visit[A](self: ErrorLabel[A], context: T)(p: LazyParsley[A], labels: Seq[String]): U[A]
+    def visit[A](self: ErrorLabel[A], context: T)(p: LazyParsley[A], label: String, labels: Seq[String]): U[A]
     def visit[A](self: ErrorHide[A], context: T)(p: LazyParsley[A]): U[A]
     def visit[A](self: ErrorExplain[A], context: T)(p: LazyParsley[A], reason: String): U[A]
     def visit[A](self: ErrorAmend[A], context: T)(p: LazyParsley[A], partial: Boolean): U[A]
@@ -283,7 +283,7 @@ private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
     override def visit(self: SkipManyUntil, context: T)(body: LazyParsley[Any]): U[Unit] = visitUnary[Any, Unit](self, context)(body)
 
     // Error overrides.
-    override def visit[A](self: ErrorLabel[A], context: T)(p: LazyParsley[A], labels: Seq[String]): U[A] = visitUnary(self, context)(p)
+    override def visit[A](self: ErrorLabel[A], context: T)(p: LazyParsley[A], label: String, labels: Seq[String]): U[A] = visitUnary(self, context)(p)
     override def visit[A](self: ErrorHide[A], context: T)(p: LazyParsley[A]): U[A] = visitUnary(self, context)(p)
     override def visit[A](self: ErrorExplain[A], context: T)(p: LazyParsley[A], reason: String): U[A] = visitUnary(self, context)(p)
     override def visit[A](self: ErrorAmend[A], context: T)(p: LazyParsley[A], partial: Boolean): U[A] = visitUnary(self, context)(p)

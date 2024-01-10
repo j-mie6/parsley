@@ -7,11 +7,11 @@ package parsley.internal.deepembedding.frontend
 
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 
-private [parsley] final class ErrorLabel[A](p: LazyParsley[A], labels: Seq[String]) extends Unary[A, A](p) {
-    override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.ErrorLabel(p, labels)
+private [parsley] final class ErrorLabel[A](p: LazyParsley[A], label: String, labels: Seq[String]) extends Unary[A, A](p) {
+    override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.ErrorLabel(p, label, labels)
 
     // $COVERAGE-OFF$
-    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p, labels)
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p, label, labels)
 
     override private [parsley] def prettyName = "label"
     // $COVERAGE-ON$

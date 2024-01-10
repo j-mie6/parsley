@@ -45,7 +45,7 @@ private [token] final class ConcreteString(ends: Set[ScalaString], stringChar: S
         openLabel(allowsAllSpace, stringChar.isRaw)(terminal) *>
         // then only one string builder needs allocation
         sbReg.set(fresh(new StringBuilder)) *>
-        skipManyUntil(sbReg.update(char(terminalInit).newHide.as((sb: StringBuilder) => sb += terminalInit)) <|> content,
+        skipManyUntil(sbReg.update(char(terminalInit).hide.as((sb: StringBuilder) => sb += terminalInit)) <|> content,
                       closeLabel(allowsAllSpace, stringChar.isRaw)(atomic(terminal))) //is the atomic needed here? not sure
     }
 }

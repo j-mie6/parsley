@@ -184,26 +184,14 @@ class ErrorTests extends ParsleyTest {
 
     "hide" should "not produce any visible output" in {
         inside('a'.hide.parse("")) {
-            case Failure(TestError((1, 1), VanillaError(_, exs, _, 1))) =>
+            case Failure(TestError((1, 1), VanillaError(_, exs, _, 0))) =>
                 exs shouldBe empty
         }
         inside("a".hide.parse("")) {
-            case Failure(TestError((1, 1), VanillaError(_, exs, _, 1))) =>
+            case Failure(TestError((1, 1), VanillaError(_, exs, _, 0))) =>
                 exs shouldBe empty
         }
         inside(digit.hide.parse("")) {
-            case Failure(TestError((1, 1), VanillaError(_, exs, _, 1))) =>
-                exs shouldBe empty
-        }
-        inside('a'.newHide.parse("")) {
-            case Failure(TestError((1, 1), VanillaError(_, exs, _, 0))) =>
-                exs shouldBe empty
-        }
-        inside("a".newHide.parse("")) {
-            case Failure(TestError((1, 1), VanillaError(_, exs, _, 0))) =>
-                exs shouldBe empty
-        }
-        inside(digit.newHide.parse("")) {
             case Failure(TestError((1, 1), VanillaError(_, exs, _, 0))) =>
                 exs shouldBe empty
         }
@@ -216,22 +204,10 @@ class ErrorTests extends ParsleyTest {
                 exs should contain only EndOfInput
                 rs shouldBe empty
         }
-        inside((many(digit).newHide <* eof).parse("1e")) {
-            case Failure(TestError((1, 2), VanillaError(unex, exs, rs, 1))) =>
-                unex should contain (Raw("e"))
-                exs should contain only EndOfInput
-                rs shouldBe empty
-        }
     }
 
     it should "not allow hints to be unsuppressed by another label" in {
         inside((many(digit).hide.label("hey") <* eof).parse("1e")) {
-            case Failure(TestError((1, 2), VanillaError(unex, exs, rs, 1))) =>
-                unex should contain (Raw("e"))
-                exs should contain only EndOfInput
-                rs shouldBe empty
-        }
-        inside((many(digit).newHide.label("hey") <* eof).parse("1e")) {
             case Failure(TestError((1, 2), VanillaError(unex, exs, rs, 1))) =>
                 unex should contain (Raw("e"))
                 exs should contain only EndOfInput
