@@ -35,7 +35,7 @@ class StringTests extends ParsleyTest {
 
     val plain = TextDesc.plain.copy(
         graphicCharacter = Unicode(_ >= ' '),
-        escapeSequences = EscapeDesc.plain.copy(multiMap = Map(("lf", '\n'), ("lam", 'λ'), ("pound", '£'), ("smile", 0x1F642 /*🙂*/))),
+        escapeSequences = EscapeDesc.plain.copy(mapping = Map(("lf", '\n'), ("lam", 'λ'), ("pound", '£'), ("smile", 0x1F642 /*🙂*/))),
         multiStringEnds = Set("\""),
     )
     val plainStr = makeString(plain)

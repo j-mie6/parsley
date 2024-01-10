@@ -89,33 +89,25 @@ class DescriptionRequireTests extends ParsleyTest {
     }
 
     "EscapeDesc" should "not allow for empty string escapes" in {
-        an [IllegalArgumentException] should be thrownBy EscapeDesc.plain.copy(multiMap = Map(("", 0)))
+        an [IllegalArgumentException] should be thrownBy EscapeDesc.plain.copy(mapping = Map(("", 0)))
     }
 
     it should "not permit ambiguity with the different mappings" in {
         an [IllegalArgumentException] should be thrownBy EscapeDesc.plain.copy(
             literals = Set('a'),
-            singleMap = Map(('a', 0))
-        )
-        an [IllegalArgumentException] should be thrownBy EscapeDesc.plain.copy(
-            literals = Set('a'),
-            multiMap = Map(("a", 0))
-        )
-        an [IllegalArgumentException] should be thrownBy EscapeDesc.plain.copy(
-            singleMap = Map(('a', 0)),
-            multiMap = Map(("a", 0))
+            mapping = Map(("a", 0))
         )
     }
 
     it should "not allow for constant escapes that aren't valid characters" in {
         noException should be thrownBy EscapeDesc.plain.copy(
-            singleMap = Map(('a', 0x10ffff))
+            mapping = Map(("a", 0x10ffff))
         )
         an [IllegalArgumentException] should be thrownBy EscapeDesc.plain.copy(
-            singleMap = Map(('a', 0x10ffff+1))
+            mapping = Map(("a", 0x10ffff+1))
         )
         an [IllegalArgumentException] should be thrownBy EscapeDesc.plain.copy(
-            singleMap = Map(('a', -10))
+            mapping = Map(("a", -10))
         )
     }
 

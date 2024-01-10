@@ -315,23 +315,18 @@ they represent. Parsley supports three different kinds of denotative escape char
   examples would be `\"` or `\\`, which are an escaped double quote and backslash,
   respectively. The literal set for these would be `Set('"', '\\')`
 
-* `EscapeDesc.singleMap`: these are a mapping of specific single characters to the underlying
+* `EscapeDesc.mapping`: these are a mapping of specific sequences of characters to the underlying
   characters they represent. Commonly, this might be something like `\n`, which would be
-  represented in the map by an entry `'n' -> 0xa`.
+  represented in the map by an entry `"n" -> 0xa`, or `"NULL" -> 0x0` for `'\NULL'`.
 
-* `EscapeDesc.multiMap`: these generalise the single map by allowing a multiple character
-  sequence to represent a specific escape character. These are less common in "the wild",
-  but a good example is Haskell, where `'\NULL'` is a valid character, represented by an
-  entry `"NULL" -> 0x0` in the `multiMap`.
-
-Of course, all denotative escape sequences can be represented by the `multiMap` on its own,
+Of course, all denotative escape sequences can be represented by the `mapping` on its own,
 and all the above examples could be represented by
 `Map("\"" -> '"', "\\" -> '\\', "n" -> 0xa, "NULL" -> 0x0)`. For `literals` in particular, the
 `Set` is more ergonomic than the `Map`.
 
 @:callout(error)
-Note that the `literals` set, along with the keys of `singleMap` and `multiMap`, must all be
-distinct from each other. Furthermore, no empty sequences may be placed in `multiMap`.
+Note that the `literals` set, along with the keys of `mapping`, must all be
+distinct from each other. Furthermore, no empty sequences may be placed in `mapping`.
 Violating any of these requirements will result in an error.
 @:@
 
