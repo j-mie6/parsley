@@ -357,7 +357,7 @@ to this is fairly simple, but I want to illustrate how we can make steps towards
 problem ourselves using the combinators found in `parsley.debug`:
 
 ```scala mdoc:invisible
-parsley.debug.disableColourRendering()
+parsley.debug.disableColorRendering()
 ```
 ```scala mdoc:nest:silent
 import parsley.Parsley
@@ -651,7 +651,7 @@ Before we move on with a more fleshed out example, I want to annotate the `match
 
 ```scala mdoc:invisible
 import parsley.debug._
-parsley.debug.disableColourRendering()
+parsley.debug.disableColorRendering()
 lazy val matchingDebug: Parsley[Unit] = many('('.debug("left") ~> matchingDebug <~ ')'.debug("right")).void.debug("matching")
 val onlyMatchingDebug = matchingDebug <~ eof
 ```

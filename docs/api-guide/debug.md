@@ -29,7 +29,7 @@ val hello = ( atomic(string("hello").debug("hello")).debug("atomic1")
             | string("hi").debug("hi")
             )
 
-debug.disableColourRendering()
+debug.disableColorRendering()
 
 hello.parse("hey")
 
@@ -42,7 +42,7 @@ us to see the control flow of the parser as it executes, as well as where the in
 In this case, we can see that `atomic` has undone input consumption, but that doesn't apply to `hey`.
 In other words, there is another `atomic` missing! We could have added `debug` to the `|` combinator
 as well to make it even clearer, of course. Though not visible above, the output is usually coloured.
-If this causes problems, `debug.disableColourRendering()` will disable it, or the `coloured` parameter
+If this causes problems, `debug.disableColorRendering()` will disable it, or the `colored` parameter
 can be set to `false` on the combinator.
 
 ### Breakpoints
