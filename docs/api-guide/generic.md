@@ -131,7 +131,7 @@ like in [chain](expr/chain.md) or [precedence](expr/precedence.md) combinators:
 import parsley.expr.chain
 import parsley.syntax.character.stringLift
 
-val term = chain.left1(px, Add.from("+")) // or `Add <# "+"`
+val term = chain.left1(px)(Add.from("+")) // or `Add <# "+"`
 ```
 
 They are analogous to the `as` and `#>` combinators respectively.

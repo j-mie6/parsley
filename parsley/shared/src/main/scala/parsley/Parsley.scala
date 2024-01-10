@@ -668,7 +668,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @return a parser which parses this parser many times and folds the results together with `f` and `k` right-associatively.
       * @group fold
       */
-    def foldRight[B](k: B)(f: (A, B) => B): Parsley[B] = chain.prefix(this.map(f.curried), pure(k))
+    def foldRight[B](k: B)(f: (A, B) => B): Parsley[B] = chain.prefix(pure(k))(this.map(f.curried))
     /** This combinator will parse this parser '''zero''' or more times combining the results with the function `f` and base value `k` from the left.
       *
       * This parser will continue to be parsed until it fails having '''not consumed''' input.
@@ -781,7 +781,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @since 2.3.0
       * @group fold
       */
-    def reduceLeft[B >: A](op: (B, A) => B): Parsley[B] = infix.left1(this, pure(op))
+    def reduceLeft[B >: A](op: (B, A) => B): Parsley[B] = infix.left1(this)(pure(op))
     /** This combinator will parse this parser '''zero''' or more times combining the results left-associatively with the function `op`.
       *
       * This parser will continue to be parsed until it fails having '''not consumed''' input.

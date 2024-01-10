@@ -475,7 +475,7 @@ lazy val `<pat-naked>`: Parsley[PatNaked] =
     | PatTuple("(" ~> sepBy1(`<pat>`, ",") <~ ")")
     | PatList("[" ~> sepBy(`<pat>`, ",") <~ "]")
     )
-lazy val `<pat>` = infix.right1(`<pat-paren>`, PatCons from ":")
+lazy val `<pat>` = infix.right1(`<pat-paren>`)(PatCons from ":")
 lazy val `<pat-paren>` = atomic(`<pat-app>`) | `<pat-naked>`
 lazy val `<pat-app>` = PatApp(`<pat-con>`, some(`<pat-naked>`))
 lazy val `<pat-con>` = ( atomic("(" ~> (ConsCon from ":") <~ ")")
@@ -503,7 +503,7 @@ cases: there isn't much more to say until we try and deal with much more complex
 features.
 
 ```scala mdoc
-lazy val `<type>`: Parsley[Type] = infix.right1(`<type-app>`, FunTy from "->")
+lazy val `<type>`: Parsley[Type] = infix.right1(`<type-app>`)(FunTy from "->")
 lazy val `<type-app>` = `<type-atom>`.reduceLeft(TyApp)
 lazy val `<type-atom>` = ( `<type-con>` | `<var-id>` | (UnitTy from "()")
                          | ListTy("[" ~> `<type>` <~ "]")
