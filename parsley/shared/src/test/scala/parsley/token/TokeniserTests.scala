@@ -27,16 +27,16 @@ class TokeniserTests extends ParsleyTest {
                             caseSensitive = true),
             desc.numeric.NumericDesc.plain,
             desc.text.TextDesc.plain,
-            desc.SpaceDesc(commentStart = "/*",
-                           commentEnd = "*/",
-                           commentLine = "//",
-                           commentLineAllowsEOF = true,
-                           nestedComments = true,
+            desc.SpaceDesc(multiLineCommentStart = "/*",
+                           multiLineCommentEnd = "*/",
+                           lineCommentStart = "//",
+                           lineCommentAllowsEOF = true,
+                           multiLineNestedComments = true,
                            space = token.predicate.Basic(_.isWhitespace),
                            whitespaceIsContextDependent = false))
     val scala_ =
         scala.copy(
-            spaceDesc = scala.spaceDesc.copy(nestedComments = false)
+            spaceDesc = scala.spaceDesc.copy(multiLineNestedComments = false)
         )
     val tokeniser = new token.Lexer(scala)
     val tokeniser_ = new token.Lexer(scala_)

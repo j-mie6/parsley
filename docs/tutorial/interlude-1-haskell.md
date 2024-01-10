@@ -105,10 +105,10 @@ object lexer {
             escapeSequences = text.EscapeDesc.haskell,
         ),
         SpaceDesc.plain.copy(
-            commentStart = "{-",
-            commentEnd = "-}",
-            commentLine = "--",
-            nestedComments = true,
+            lineCommentStart = "--",
+            multiLineCommentStart = "{-",
+            multiLineCommentEnd = "-}",
+            multiLineNestedComments = true,
             space = Basic(c => c == ' ' || c == '\t'),
         )
     )
