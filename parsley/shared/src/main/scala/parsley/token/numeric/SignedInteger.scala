@@ -12,7 +12,7 @@ import parsley.token.errors.{ErrorConfig, LabelWithExplainConfig}
 import parsley.internal.deepembedding.Sign.IntType
 import parsley.internal.deepembedding.singletons
 
-private [token] final class SignedInteger(desc: NumericDesc, unsigned: UnsignedInteger, err: ErrorConfig) extends Integer(desc) {
+private [token] final class SignedInteger(desc: NumericDesc, unsigned: UnsignedInteger, err: ErrorConfig) extends IntegerParsers(desc) {
     private val sign = new Parsley(new singletons.Sign[IntType.resultType](IntType, desc.positiveSign))
 
     override lazy val _decimal: Parsley[BigInt] = atomic(sign <*> err.labelIntegerDecimalEnd(unsigned._decimal))

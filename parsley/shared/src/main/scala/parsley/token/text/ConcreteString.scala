@@ -5,8 +5,6 @@
  */
 package parsley.token.text
 
-import scala.Predef.{String => ScalaString, _}
-
 import parsley.Parsley, Parsley.{atomic, fresh, pure}
 import parsley.character.{char, string}
 import parsley.combinator.{choice, skipManyUntil}
@@ -15,24 +13,24 @@ import parsley.syntax.zipped.Zipped2
 import parsley.token.errors.{ErrorConfig, LabelConfig, LabelWithExplainConfig}
 import parsley.token.predicate.CharPredicate
 
-private [token] final class ConcreteString(ends: Set[ScalaString], stringChar: StringCharacter, isGraphic: CharPredicate,
-                                           allowsAllSpace: Boolean, err: ErrorConfig) extends String {
+private [token] final class ConcreteString(ends: Set[String], stringChar: StringCharacter, isGraphic: CharPredicate,
+                                           allowsAllSpace: Boolean, err: ErrorConfig) extends StringParsers {
 
     private def stringLiteral(valid: Parsley[StringBuilder] => Parsley[StringBuilder],
                               openLabel: (Boolean, Boolean) => LabelWithExplainConfig, closeLabel: (Boolean, Boolean) => LabelConfig) = {
         choice(ends.view.map(makeStringParser(valid, openLabel, closeLabel)).toSeq: _*) *> sbReg.gets(_.toString)
     }
-    override lazy val fullUtf16: Parsley[ScalaString] = stringLiteral(identity, err.labelStringUtf16, err.labelStringUtf16End)
-    override lazy val ascii: Parsley[ScalaString] = stringLiteral(String.ensureAscii(err), err.labelStringAscii, err.labelStringAsciiEnd)
-    override lazy val latin1: Parsley[ScalaString] = stringLiteral(String.ensureExtendedAscii(err), err.labelStringLatin1, err.labelStringLatin1End)
+    override lazy val fullUtf16: Parsley[String] = stringLiteral(identity, err.labelStringUtf16, err.labelStringUtf16End)
+    override lazy val ascii: Parsley[String] = stringLiteral(StringParsers.ensureAscii(err), err.labelStringAscii, err.labelStringAsciiEnd)
+    override lazy val latin1: Parsley[String] = stringLiteral(StringParsers.ensureExtendedAscii(err), err.labelStringLatin1, err.labelStringLatin1End)
 
     private val sbReg = parsley.state.Ref.make[StringBuilder]
 
     private def makeStringParser(valid: Parsley[StringBuilder] => Parsley[StringBuilder],
                                  openLabel: (Boolean, Boolean) => LabelWithExplainConfig, closeLabel: (Boolean, Boolean) => LabelConfig)
-                                (terminalStr: ScalaString) = {
+                                (terminalStr: String) = {
         val terminalInit = terminalStr.charAt(0)
-        val strChar = stringChar(Character.letter(terminalInit, allowsAllSpace, isGraphic))
+        val strChar = stringChar(CharacterParsers.letter(terminalInit, allowsAllSpace, isGraphic))
         val pf = (sb: StringBuilder, cpo: Option[Int]) => {
             for (cp <- cpo) parsley.unicode.addCodepoint(sb, cp)
             sb

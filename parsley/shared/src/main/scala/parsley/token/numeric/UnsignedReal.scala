@@ -15,7 +15,7 @@ import parsley.syntax.character.charLift
 import parsley.token.descriptions.numeric.{BreakCharDesc, ExponentDesc, NumericDesc}
 import parsley.token.errors.{ErrorConfig, LabelConfig}
 
-private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInteger, err: ErrorConfig, generic: Generic) extends Real(err) {
+private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInteger, err: ErrorConfig, generic: Generic) extends RealParsers(err) {
     override lazy val _decimal: Parsley[BigDecimal] = atomic(ofRadix(10, digit, err.labelRealDecimalEnd))
     override lazy val _hexadecimal: Parsley[BigDecimal] = atomic('0' *> noZeroHexadecimal)
     override lazy val _octal: Parsley[BigDecimal] = atomic('0' *> noZeroOctal)

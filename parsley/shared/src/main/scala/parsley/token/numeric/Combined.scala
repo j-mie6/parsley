@@ -33,7 +33,7 @@ import parsley.token.errors.ErrorConfig
   * @define multibase
   *   Depending on the configuration this may be able to handle different bases for each type of number.
   */
-abstract class Combined private[numeric] (err: ErrorConfig) { // scalastyle:ignore number.of.methods
+abstract class CombinedParsers private[numeric] (err: ErrorConfig) { // scalastyle:ignore number.of.methods
     /** $base1 decimal number, $base2.
       *
       * @since 4.0.0
@@ -523,14 +523,14 @@ abstract class Combined private[numeric] (err: ErrorConfig) { // scalastyle:igno
     protected [numeric] def ensureFloat[T](number: Parsley[Either[T, BigDecimal]]): Parsley[Either[T, Float]] = {
         err.filterRealOutOfBounds(err.floatName, BigDecimal(Float.MinValue.toDouble), BigDecimal(Float.MaxValue.toDouble)).injectRight.collect(number) {
             case Left(n) => Left(n)
-            case Right(n) if Real.isFloat(n) => Right(n.toFloat)
+            case Right(n) if RealParsers.isFloat(n) => Right(n.toFloat)
         }
     }
 
     protected [numeric] def ensureDouble[T](number: Parsley[Either[T, BigDecimal]]): Parsley[Either[T, Double]] = {
         err.filterRealOutOfBounds(err.doubleName, BigDecimal(Double.MinValue), BigDecimal(Double.MaxValue)).injectRight.collect(number) {
             case Left(n) => Left(n)
-            case Right(n) if Real.isDouble(n) => Right(n.toDouble)
+            case Right(n) if RealParsers.isDouble(n) => Right(n.toDouble)
         }
     }
 }

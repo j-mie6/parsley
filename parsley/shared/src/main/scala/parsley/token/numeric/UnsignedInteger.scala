@@ -13,7 +13,7 @@ import parsley.syntax.character.charLift
 import parsley.token.descriptions.numeric.{BreakCharDesc, NumericDesc}
 import parsley.token.errors.{ErrorConfig, LabelWithExplainConfig}
 
-private [token] final class UnsignedInteger(desc: NumericDesc, err: ErrorConfig, generic: Generic) extends Integer(desc) {
+private [token] final class UnsignedInteger(desc: NumericDesc, err: ErrorConfig, generic: Generic) extends IntegerParsers(desc) {
 
     // labelless versions
     protected [numeric] override lazy val _decimal: Parsley[BigInt] = generic.plainDecimal(desc, err.labelIntegerDecimalEnd)

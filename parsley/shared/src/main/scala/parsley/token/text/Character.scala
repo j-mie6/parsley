@@ -20,7 +20,7 @@ import parsley.token.predicate.{Basic, CharPredicate, NotRequired, Unicode}
   *   `Lexer`, which will depend on user-defined configuration. Please see the
   *   relevant documentation of these specific objects.
   */
-abstract class Character private[text] {
+abstract class CharacterParsers private[text] {
     /** This parser will parse a single character literal, which may contain
       * any unicode graphic character as defined by up to two UTF-16 codepoints.
       * It may also contain escape sequences.
@@ -103,7 +103,7 @@ abstract class Character private[text] {
     def latin1: Parsley[Char]
 }
 
-private [text] object Character {
+private [text] object CharacterParsers {
     final val MaxAscii: Int = 0x7f
     final val MaxLatin1: Int = 0xff
 

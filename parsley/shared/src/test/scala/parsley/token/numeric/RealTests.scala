@@ -37,11 +37,11 @@ class RealTests extends ParsleyTest {
     val withTrailingDotBreak = makeReal(withTrailingDotBreakDesc)
     val withExtremeDotBreak = makeReal(withExtremeDotBreakDesc)
 
-    private def decimalCases(real: Real)(tests: (String, Option[BigDecimal], Position)*): Unit = cases(real.decimal)(tests: _*)
-    private def hexadecimalCases(real: Real)(tests: (String, Option[BigDecimal], Position)*): Unit = cases(real.hexadecimal)(tests: _*)
-    private def octalCases(real: Real)(tests: (String, Option[BigDecimal], Position)*): Unit = cases(real.octal)(tests: _*)
-    private def binaryCases(real: Real)(tests: (String, Option[BigDecimal], Position)*): Unit = cases(real.binary)(tests: _*)
-    private def numberCases(real: Real)(tests: (String, Option[BigDecimal], Position)*): Unit = cases(real.number)(tests: _*)
+    private def decimalCases(real: RealParsers)(tests: (String, Option[BigDecimal], Position)*): Unit = cases(real.decimal)(tests: _*)
+    private def hexadecimalCases(real: RealParsers)(tests: (String, Option[BigDecimal], Position)*): Unit = cases(real.hexadecimal)(tests: _*)
+    private def octalCases(real: RealParsers)(tests: (String, Option[BigDecimal], Position)*): Unit = cases(real.octal)(tests: _*)
+    private def binaryCases(real: RealParsers)(tests: (String, Option[BigDecimal], Position)*): Unit = cases(real.binary)(tests: _*)
+    private def numberCases(real: RealParsers)(tests: (String, Option[BigDecimal], Position)*): Unit = cases(real.number)(tests: _*)
 
     private def decimalCases(desc: NumericDesc)(tests: (String, Option[BigDecimal], Position)*): Unit = decimalCases(makeReal(desc))(tests: _*)
     private def hexadecimalCases(desc: NumericDesc)(tests: (String, Option[BigDecimal], Position)*): Unit = hexadecimalCases(makeReal(desc))(tests: _*)
