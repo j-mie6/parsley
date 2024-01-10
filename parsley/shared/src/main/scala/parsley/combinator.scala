@@ -8,7 +8,7 @@ package parsley
 import scala.annotation.tailrec
 import scala.collection.{Factory, mutable}
 
-import parsley.Parsley.{atomic, empty, fresh, notFollowedBy, pure, select, unit, many}
+import parsley.Parsley.{atomic, empty, fresh, many, notFollowedBy, pure, select, some, unit}
 import parsley.state.{RefMaker, StateCombinators}
 import parsley.syntax.zipped.{Zipped2, Zipped3}
 
@@ -543,7 +543,7 @@ object combinator {
       * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
-    def endBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = Parsley.some(p <* sep)
+    def endBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = some(p <* sep)
 
     /** This combinator repeatedly parses a given parser '''zero''' or more times, until the `end` parser succeeds, collecting the results into a list.
       *
