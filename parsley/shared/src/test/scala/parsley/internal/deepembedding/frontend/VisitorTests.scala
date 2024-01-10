@@ -166,7 +166,7 @@ class VisitorTests extends ParsleyTest {
         new Fail(dummyCaretWidth).testV
         new Unexpected("qux", dummyCaretWidth).testV
         new VanillaGen(new errors.VanillaGen).testV
-        new SpecialisedGen[Any](new errors.SpecialisedGen[Any] {
+        new SpecializedGen[Any](new errors.SpecializedGen[Any] {
             def messages(x: Any) = Seq.empty
         }).testV
         new EscapeMapped(Trie.empty[Int], Set("quux")).testV

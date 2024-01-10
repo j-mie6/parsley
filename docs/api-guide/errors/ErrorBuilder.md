@@ -188,7 +188,7 @@ val builder = implicitly[ErrorBuilder[String]]
 builder.format (
     builder.pos(2, 6),
     builder.source(Some("foo.txt")),
-    builder.specialisedError (
+    builder.specializedError (
         builder.combineMessages(List(
             builder.message("first message"),
             builder.message("second message"),
@@ -214,7 +214,7 @@ case class VanillaError(
     unexpected: Option[TestErrorItem],
     expecteds: Set[TestErrorItem],
     reasons: Set[String]) extends TestErrorLines
-case class SpecialisedError(msgs: Set[String]) extends TestErrorLines
+case class SpecializedError(msgs: Set[String]) extends TestErrorLines
 
 sealed trait TestErrorItem
 case class TestRaw(item: String) extends TestErrorItem
@@ -265,10 +265,10 @@ class TestErrorBuilder extends ErrorBuilder[TestError] {
         reasons: Set[String],
         line: Unit
       ): TestErrorLines = VanillaError(unexpected, expected, reasons)
-    def specialisedError(
+    def specializedError(
         msgs: Set[String],
         line: Unit
-      ): TestErrorLines = SpecialisedError(msgs)
+      ): TestErrorLines = SpecializedError(msgs)
     def pos(line: Int, col: Int): (Int, Int) = (line, col)
     def source(sourceName: Option[String]): Unit = ()
     def combineExpectedItems(alts: Set[TestErrorItem]): Set[TestErrorItem] = alts

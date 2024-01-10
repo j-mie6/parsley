@@ -50,7 +50,7 @@ object patterns {
           * @note $atomicNonTerminal
           */
         def verifiedFail(msggen: A => Seq[String]): Parsley[Nothing] = this.verifiedWith {
-            new SpecialisedGen[A] {
+            new SpecializedGen[A] {
                 override def messages(x: A) = msggen(x)
             }
         }
@@ -163,7 +163,7 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
-        def preventativeFail(msggen: A => Seq[String]): Parsley[Unit] = this.preventWith(new SpecialisedGen[A] {
+        def preventativeFail(msggen: A => Seq[String]): Parsley[Unit] = this.preventWith(new SpecializedGen[A] {
             override def messages(x: A) = msggen(x)
         })
 

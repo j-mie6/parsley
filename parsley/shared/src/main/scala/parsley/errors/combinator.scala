@@ -436,7 +436,7 @@ object combinator {
           * @group filter
           */
         def guardAgainst(pred: PartialFunction[A, Seq[String]]): Parsley[A] = {
-            this.filterWith(new SpecialisedGen[A] {
+            this.filterWith(new SpecializedGen[A] {
                 override def messages(x: A) = pred(x)
             })(!pred.isDefinedAt(_))
         }
@@ -499,7 +499,7 @@ object combinator {
           * @group filter
           */
         def collectMsg[B](msggen: A => Seq[String])(pf: PartialFunction[A, B]): Parsley[B] = {
-            this.collectWith(new SpecialisedGen[A] {
+            this.collectWith(new SpecializedGen[A] {
                 override def messages(x: A) = msggen(x)
             })(pf)
         }

@@ -48,7 +48,7 @@ abstract class DefaultErrorBuilder extends ErrorBuilder[String] {
         DefaultErrorBuilder.vanillaError(unexpected, expected, reasons, lines)
     }
     /** @inheritdoc */
-    override def specialisedError(msgs: Messages, lines: LineInfo): ErrorInfoLines = DefaultErrorBuilder.specialisedError(msgs, lines)
+    override def specializedError(msgs: Messages, lines: LineInfo): ErrorInfoLines = DefaultErrorBuilder.specializedError(msgs, lines)
 
     /** @inheritdoc */
     type ExpectedItems = Option[String]
@@ -133,12 +133,12 @@ object DefaultErrorBuilder {
     def vanillaError(unexpected: Option[String], expected: Option[String], reasons: Iterable[String], lines: Seq[String]): Seq[String] = {
         DefaultErrorBuilder.combineInfoWithLines(Seq.concat(unexpected, expected, reasons), lines)
     }
-    /** Forms a specialised error by combining all components in sequence, if there are no `msgs`, then
+    /** Forms a specialized error by combining all components in sequence, if there are no `msgs`, then
       * [[Unknown `Unknown`]] is used instead.
       *
       * @since 4.3.0
       */
-    def specialisedError(msgs: Seq[String], lines: Seq[String]): Seq[String] = DefaultErrorBuilder.combineInfoWithLines(msgs, lines)
+    def specializedError(msgs: Seq[String], lines: Seq[String]): Seq[String] = DefaultErrorBuilder.combineInfoWithLines(msgs, lines)
 
     /** Forms an error with the given `header` followed by a colon, a newline, then the remainder of the lines indented.
       *
