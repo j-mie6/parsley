@@ -127,7 +127,7 @@ this includes both integers and floating point numbers. The configuration for al
 is managed by [`LexicalDesc.numericDesc`](@:api(parsley.token.descriptions.numeric.NumericDesc)).
 The members are split into three kinds:
 
-* [`parsley.token.numeric.Integer`](@:api(parsley.token.numeric.Integer)): values with this type
+* [`parsley.token.numeric.IntegerParsers`](@:api(parsley.token.numeric.IntegerParsers)): values with this type
   deal with whole numbers, and this interface in particular has support for different bases of
   number as well as various bit-widths of parsed data. When the bit-width of the parser is restricted,
   the generated result can be any numeric type that is wide enough to accommodate those values. If
@@ -141,7 +141,7 @@ The members are split into three kinds:
 
   Currently, there is no way of adding new bit-widths or defining custom numeric container types.
 
-* [`parsley.token.numeric.Real`](@:api(parsley.token.numeric.Real)): values with this type
+* [`parsley.token.numeric.RealParsers`](@:api(parsley.token.numeric.RealParsers)): values with this type
   deal with floating-point numbers **only**: values without a point or an exponent (if allowed)
   will not be parsed by these parsers. Like `Integer`, different bases can be specified: in this
   case the meaning of exponents can be controlled within the configuration, for instance, a
@@ -149,13 +149,13 @@ The members are split into three kinds:
   because `p` represents an exponent delimiter and hexadecimal exponents are normally base 2 (but
   this is fully configurable in `parsley`).
 
-  Compared to `Integer`, different precisions can be chosen for `Real`, allowing for
+  Compared to `IntegerParsers`, different precisions can be chosen for `RealParsers`, allowing for
   arbitrary-precision floats, `Float`, and `Double` results. For the stricter representations,
   there is a `doubleRounded`/`floatRounded` that just gives the nearest valid value (with no parse
   errors), and a `double`/`float` which demands that the parsed literal must at least be
   between the smallest and largest numbers of the type.
 
-* [`parsley.token.numeric.Combined`](@:api(parsley.token.numeric.Combined)): values with this type
+* [`parsley.token.numeric.CombinedParsers`](@:api(parsley.token.numeric.CombinedParsers)): values with this type
   can deal with both integers and floating-point numbers. This is done by returning one or the other
   as part of an `Either`. A *slightly* limited selection of bit-widths and precisions are available
   for both parts. The draw of these combinators is that they may remove the ambiguity between the
@@ -241,7 +241,7 @@ floats: `0x0.Bp0` is the same as `0b0.1011p0`, both of which are `0.6875` in dec
 This [object](@:api(parsley.token.Lexer$lexeme$$text$)) deals with the parsing of both string
 literals and character literals, configured broadby by [`LexicalDesc.textDesc`](@:api(parsley.token.descriptions.text.TextDesc)):
 
-* [`parsley.token.text.String`](@:api(parsley.token.text.String)): values with this type
+* [`parsley.token.text.StringParsers`](@:api(parsley.token.text.StringParsers)): values with this type
   deal with multi-character/codepoint strings. Specifically, the interface provides ways
   of dealing with different levels of character encodings.
 
@@ -263,7 +263,7 @@ literals and character literals, configured broadby by [`LexicalDesc.textDesc`](
   exact same sequence.
   @:@
 
-* [`parsley.token.text.Character`](@:api(parsley.token.text.Character)): like `String`,
+* [`parsley.token.text.CharacterParsers`](@:api(parsley.token.text.CharacterParsers)): like `StringParsers`,
   the `text.character` object can handle different kinds of text encoding. However, unlike
   `String`, there is only one kind of character available, which has escape codes and can only
   contain a single graphic character (or, if applicable, single unicode codepoint).
