@@ -490,7 +490,7 @@ object combinator {
       * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
-    def sepEndBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = new Parsley(new frontend.SepEndBy1(p.internal, sep.internal))
+    def sepEndBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = new Parsley(new frontend.SepEndBy1(p.internal, sep.internal, List))
 
     /** This combinator parses '''zero''' or more occurrences of `p`, separated and ended by `sep`.
       *
@@ -567,7 +567,7 @@ object combinator {
       * @since 4.5.0
       */
     def manyTill[A](p: Parsley[A], end: Parsley[_]): Parsley[List[A]] = {
-        new Parsley(new frontend.ManyUntil((end.as(ManyUntil.Stop) <|> p: Parsley[Any]).internal))
+        new Parsley(new frontend.ManyUntil((end.as(ManyUntil.Stop) <|> p: Parsley[Any]).internal, List))
     }
 
     // TODO: find a way to make this redundant

@@ -1264,7 +1264,7 @@ object Parsley extends PlatformSpecific {
       * @since 4.5.0
       * @group iter
       */
-    def many[A](p: Parsley[A]): Parsley[List[A]] = new Parsley(new frontend.Many(p.internal))
+    def many[A](p: Parsley[A]): Parsley[List[A]] = new Parsley(new frontend.Many(p.internal, List))
 
     /** This combinator repeatedly parses a given parser '''one''' or more times, collecting the results into a list.
       *

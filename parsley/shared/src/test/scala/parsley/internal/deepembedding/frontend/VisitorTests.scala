@@ -137,7 +137,7 @@ class VisitorTests extends ParsleyTest {
         new ChainPost(dummyParser, dontEval).testV
         new Chainl(dummyParser, dontEval, dontEval).testV
         new Chainr[Nothing, Nothing](dummyParser, dontEval, crash).testV
-        new SepEndBy1(dummyParser, dontEval).testV
+        new SepEndBy1(dummyParser, dontEval, null).testV
         new Filter[Any](dummyParser, _ => false, dontEval).testV
         new MapFilter[Any, Nothing](dummyParser, _ => None, dontEval).testV
     }
@@ -182,11 +182,11 @@ class VisitorTests extends ParsleyTest {
         new DebugError(dummyParser, "plugh", false, dummyErrorBuilder).testV
         new <|>(dummyParser, dummyParser).testV
         new >>=[Nothing, Nothing](dummyParser, crash).testV
-        new Many(dummyParser).testV
+        new Many(dummyParser, null).testV
         new ChainPre(dummyParser, dummyParser).testV
         new Span(dummyParser).testV
         new Profile(dummyParser, "", null).testV
-        new ManyUntil(dummyParser).testV
+        new ManyUntil(dummyParser, null).testV
         new SkipManyUntil(dummyParser).testV
         new ErrorLabel(dummyParser, "test", Seq("bazola")).testV
         new ErrorHide(dummyParser).testV
