@@ -30,7 +30,7 @@ private [internal] case class TrivialError(offset: Int, line: Int, col: Int,
         val unexpectedTok = unexpected.map(_.formatUnexpect(lexicalError))
         // TODO: could we support multi-line carets?
         // FIXME: This should probably use the number of codepoints and not length
-        val caretSize = unexpectedTok.fold(identity[Int], _._2.toCaretLength(this.col, line.length, afterLines.map(_.length)))
+        val caretSize = unexpectedTok.fold(identity[Int], _._2)
         builder.vanillaError(
             builder.unexpected(unexpectedTok.toOption.map(_._1)),
             builder.expected(builder.combineExpectedItems(expecteds.map(_.formatExpect))),
