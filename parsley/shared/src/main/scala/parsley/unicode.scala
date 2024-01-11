@@ -5,7 +5,7 @@
  */
 package parsley
 
-import parsley.Parsley.{empty, fresh, many, pure, some}
+import parsley.Parsley.{empty, many, some}
 import parsley.errors.combinator.ErrorMethods
 import parsley.token.errors.{Label, LabelConfig, NotConfigured}
 
@@ -385,11 +385,7 @@ object unicode {
       * @since 4.4.0
       * @group string
       */
-    def stringOfMany(pc: Parsley[Int]): Parsley[String] = {
-        val pf = pure(addCodepoint(_, _))
-        // Can't use the regular foldLeft here, because we need a fresh StringBuilder each time.
-        expr.infix.secretLeft1(fresh(new StringBuilder), pc, pf).map(_.toString)
-    }
+    def stringOfMany(pc: Parsley[Int]): Parsley[String] = many(pc, StringFactories.intFactory)
 
     // TODO: test
     /** This combinator parses codepoints matching the given predicate '''zero''' or more times, collecting
@@ -442,11 +438,7 @@ object unicode {
       * @since 4.4.0
       * @group string
       */
-    def stringOfSome(pc: Parsley[Int]): Parsley[String] = {
-        val pf = pure(addCodepoint(_, _))
-        // Can't use the regular foldLeft1 here, because we need a fresh StringBuilder each time.
-        expr.infix.secretLeft1(pc.map(addCodepoint(new StringBuilder, _)), pc, pf).map(_.toString)
-    }
+    def stringOfSome(pc: Parsley[Int]): Parsley[String] = some(pc, StringFactories.intFactory)
 
     // TODO: test
     /** This combinator parses codepoints matching the given predicate '''one''' or more times, collecting

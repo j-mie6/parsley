@@ -8,7 +8,7 @@ package parsley
 import scala.annotation.tailrec
 import scala.collection.{Factory, mutable}
 
-import parsley.Parsley.{atomic, empty, fresh, many, notFollowedBy, pure, select, some, unit}
+import parsley.Parsley.{atomic, empty, fresh, many, notFollowedBy, pure, secretSome, select, some, unit}
 import parsley.state.{RefMaker, StateCombinators}
 import parsley.syntax.zipped.{Zipped2, Zipped3}
 
@@ -411,6 +411,9 @@ object combinator {
       * @group sep
       */
     def sepBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepBy1(p, sep) </> Nil
+    private [parsley] def sepBy[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
+        sepBy1(p, sep, factory) <|> fresh(factory.newBuilder.result())
+    }
 
     /** This combinator parses '''one''' or more occurrences of `p`, separated by `sep`.
       *
@@ -437,8 +440,9 @@ object combinator {
       * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
-    def sepBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = {
-        p <::> many(sep *> p)
+    def sepBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = p <::> many(sep *> p)
+    private [parsley] def sepBy1[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
+        secretSome(p, sep *> p, factory)
     }
 
     /** This combinator parses '''zero''' or more occurrences of `p`, separated and optionally ended by `sep`.
@@ -463,7 +467,10 @@ object combinator {
       * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
-    def sepEndBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepEndBy1(p, sep) </> Nil
+    def sepEndBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepEndBy(p, sep, List)
+    private [parsley] def sepEndBy[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
+        sepEndBy1(p, sep, factory) <|> fresh(factory.newBuilder.result())
+    }
 
     /** This combinator parses '''one''' or more occurrences of `p`, separated and optionally ended by `sep`.
       *
@@ -516,8 +523,10 @@ object combinator {
       * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
-    def endBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = many(p <* sep)
-    private [parsley] def endBy[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = many(p <* sep, factory)
+    def endBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = endBy(p, sep, List)
+    private [parsley] def endBy[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
+        many(p <* sep, factory)
+    }
 
     /** This combinator parses '''one''' or more occurrences of `p`, separated and ended by `sep`.
       *
@@ -544,6 +553,9 @@ object combinator {
       * @group sep
       */
     def endBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = some(p <* sep)
+    private [parsley] def endBy1[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
+        some(p <* sep, factory)
+    }
 
     /** This combinator repeatedly parses a given parser '''zero''' or more times, until the `end` parser succeeds, collecting the results into a list.
       *
@@ -611,6 +623,7 @@ object combinator {
       * @since 4.5.0
       */
     def someTill[A](p: Parsley[A], end: Parsley[_]): Parsley[List[A]] = {
+        // similar to some, I think a someTill(init, p, end) could generalise both manyTill and someTill
         notFollowedBy(end) *> (p <::> manyTill(p, end))
     }
 

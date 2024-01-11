@@ -7,7 +7,7 @@ package parsley
 
 import scala.collection.immutable.NumericRange
 
-import parsley.Parsley.{atomic, empty, fresh, many, pure, some}
+import parsley.Parsley.{atomic, empty, many, pure, some}
 import parsley.combinator.choice
 import parsley.errors.combinator.ErrorMethods
 import parsley.token.errors.{Label, LabelConfig, NotConfigured}
@@ -395,11 +395,7 @@ object character {
       * @since 4.0.0
       * @group string
       */
-    def stringOfMany(pc: Parsley[Char]): Parsley[String] = {
-        val pf = pure[(StringBuilder, Char) => StringBuilder](_ += _)
-        // Can't use the regular foldLeft here, because we need a fresh StringBuilder each time.
-        expr.infix.secretLeft1(fresh(new StringBuilder), pc, pf).map(_.toString)
-    }
+    def stringOfMany(pc: Parsley[Char]): Parsley[String] = many(pc, StringFactories.charFactory)
 
     // TODO: optimise, this can be _really_ tightly implemented with a substring on the input
     /** This combinator parses characters matching the given predicate '''zero''' or more times, collecting
@@ -451,11 +447,7 @@ object character {
       * @since 4.0.0
       * @group string
       */
-    def stringOfSome(pc: Parsley[Char]): Parsley[String] = {
-        val pf = pure[(StringBuilder, Char) => StringBuilder](_ += _)
-        // Can't use the regular foldLeft1 here, because we need a fresh StringBuilder each time.
-        expr.infix.secretLeft1(pc.map(new StringBuilder += _), pc, pf).map(_.toString)
-    }
+    def stringOfSome(pc: Parsley[Char]): Parsley[String] = some(pc, StringFactories.charFactory)
 
     // TODO: optimise, this can be _really_ tightly implemented with a substring on the input
     /** This combinator parses characters matching the given predicate '''one''' or more times, collecting

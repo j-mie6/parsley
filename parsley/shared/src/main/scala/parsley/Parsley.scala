@@ -5,7 +5,7 @@
  */
 package parsley
 
-import scala.collection.Factory
+import scala.collection.{Factory, mutable}
 
 import parsley.combinator.option
 import parsley.errors.ErrorBuilder
@@ -1267,8 +1267,9 @@ object Parsley extends PlatformSpecific {
       * @group iter
       */
     def many[A](p: Parsley[A]): Parsley[List[A]] = many(p, List)
-    private [parsley] def many[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] =
+    private [parsley] def many[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = {
         new Parsley(new frontend.Many(p.internal, factory))
+    }
 
     /** This combinator repeatedly parses a given parser '''one''' or more times, collecting the results into a list.
       *
@@ -1296,5 +1297,12 @@ object Parsley extends PlatformSpecific {
       * @since 4.5.0
       * @group iter
       */
-    def some[A](p: Parsley[A]): Parsley[List[A]] = combinator.manyN(1, p)
+    def some[A](p: Parsley[A]): Parsley[List[A]] = p <::> many(p)
+    private [parsley] def some[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = secretSome(p, p, factory)
+    // This could be generalised to be the new many, where many(p, factory) = secretSome(fresh(factory.newBuilder), p, factory)
+    private [parsley] def secretSome[A, C](init: Parsley[A], p: Parsley[A], factory: Factory[A, C]): Parsley[C] = {
+        val pf = pure[(mutable.Builder[A, C], A) => mutable.Builder[A, C]](_ += _)
+        // Can't use the regular foldLeft1 here, because we need a fresh Builder each time.
+        expr.infix.secretLeft1(init.map(factory.newBuilder += _), p, pf).map(_.result())
+    }
 }
