@@ -219,11 +219,11 @@ object EscapeDesc {
   */
 final case class TextDesc (escapeSequences: EscapeDesc,
                            characterLiteralEnd: Char,
-                           stringEnds: Set[String],
-                           multiStringEnds: Set[String],
+                           stringEnds: Set[(String, String)],
+                           multiStringEnds: Set[(String, String)],
                            graphicCharacter: CharPredicate) {
-    require(stringEnds.forall(_.nonEmpty), "string ends cannot be empty")
-    require(multiStringEnds.forall(_.nonEmpty), "multiline string ends cannot be empty")
+    require(stringEnds.forall { case (begin, end) => begin.nonEmpty && end.nonEmpty }, "string ends cannot be empty")
+    require(multiStringEnds.forall { case (begin, end) => begin.nonEmpty && end.nonEmpty }, "multiline string ends cannot be empty")
 }
 
 /** This object contains any preconfigured text definitions.
@@ -236,7 +236,7 @@ object TextDesc {
       * {{{
       * escapeSequences = EscapeDesc.plain
       * characterLiteralEnd = '\''
-      * stringEnds = Set("\"")
+      * stringEnds = Set(("\"", "\""))
       * multiStringEnds = Set.empty
       * graphicCharacter = Unicode(_ >= ' '.toInt)
       * }}}
@@ -245,7 +245,7 @@ object TextDesc {
       */
     val plain = TextDesc(escapeSequences = EscapeDesc.plain,
                          characterLiteralEnd = '\'',
-                         stringEnds = Set("\""),
+                         stringEnds = Set(("\"", "\"")),
                          multiStringEnds = Set.empty,
                          graphicCharacter = Unicode(_ >= ' '.toInt))
 }

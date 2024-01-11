@@ -36,7 +36,7 @@ class StringTests extends ParsleyTest {
     val plain = TextDesc.plain.copy(
         graphicCharacter = Unicode(_ >= ' '),
         escapeSequences = EscapeDesc.plain.copy(mapping = Map(("lf", '\n'), ("lam", 'λ'), ("pound", '£'), ("smile", 0x1F642 /*🙂*/))),
-        multiStringEnds = Set("\""),
+        multiStringEnds = Set(("\"", "\"")),
     )
     val plainStr = makeString(plain)
     val plainMultiStr = makeMultiString(plain)
@@ -64,10 +64,10 @@ class StringTests extends ParsleyTest {
         "\"abc\"" -> None,
     )
 
-    they should "allow for change in literal end" in unicodeCases(makeString(plain.copy(stringEnds = Set("@@"))))(
-        "@@@@" -> Some(""),
-        "@@abc@@" -> Some("abc"),
-        "@@" -> None,
+    they should "allow for change in literal end" in unicodeCases(makeString(plain.copy(stringEnds = Set(("@-", "-@")))))(
+        "@--@" -> Some(""),
+        "@-a-c-@" -> Some("a-c"),
+        "@-" -> None,
         "\"\"" -> None,
     )
 

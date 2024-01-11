@@ -113,10 +113,10 @@ class DescriptionRequireTests extends ParsleyTest {
 
     "TextDesc" should "not allow for string literals without ends" in {
         an [IllegalArgumentException] should be thrownBy TextDesc.plain.copy(
-            stringEnds = Set("", "'"),
+            stringEnds = Set(("", "'")),
         )
         an [IllegalArgumentException] should be thrownBy TextDesc.plain.copy(
-            multiStringEnds = Set("", "'"),
+            multiStringEnds = Set(("", "'")),
         )
     }
 }

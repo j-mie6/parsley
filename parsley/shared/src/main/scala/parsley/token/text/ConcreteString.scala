@@ -13,7 +13,7 @@ import parsley.syntax.zipped.Zipped2
 import parsley.token.errors.{ErrorConfig, LabelConfig, LabelWithExplainConfig}
 import parsley.token.predicate.CharPredicate
 
-private [token] final class ConcreteString(ends: Set[String], stringChar: StringCharacter, isGraphic: CharPredicate,
+private [token] final class ConcreteString(ends: Set[(String, String)], stringChar: StringCharacter, isGraphic: CharPredicate,
                                            allowsAllSpace: Boolean, err: ErrorConfig) extends StringParsers {
 
     private def stringLiteral(valid: Parsley[StringBuilder] => Parsley[StringBuilder],
@@ -28,8 +28,9 @@ private [token] final class ConcreteString(ends: Set[String], stringChar: String
 
     private def makeStringParser(valid: Parsley[StringBuilder] => Parsley[StringBuilder],
                                  openLabel: (Boolean, Boolean) => LabelWithExplainConfig, closeLabel: (Boolean, Boolean) => LabelConfig)
-                                (terminalStr: String) = {
-        val terminalInit = terminalStr.charAt(0)
+                                (terminalStr: (String, String)) = {
+        val (begin, end) = terminalStr
+        val terminalInit = end.charAt(0)
         val strChar = stringChar(CharacterParsers.letter(terminalInit, allowsAllSpace, isGraphic))
         val pf = (sb: StringBuilder, cpo: Option[Int]) => {
             for (cp <- cpo) parsley.unicode.addCodepoint(sb, cp)
@@ -38,12 +39,11 @@ private [token] final class ConcreteString(ends: Set[String], stringChar: String
         // `content` is in a dropped position, so needs the unsafe to avoid the mutation
         // TODO: this could be fixed better with registers and skipMany?
         val content = valid(parsley.expr.infix.secretLeft1((sbReg.get, strChar).zipped(pf), strChar, pure(pf)).impure)
-        val terminal = string(terminalStr)
-        // terminal should be first, to allow for a jump table on the main choice
-        openLabel(allowsAllSpace, stringChar.isRaw)(terminal) *>
+        // open should be first, to allow for a jump table on the main choice
+        openLabel(allowsAllSpace, stringChar.isRaw)(string(begin)) *>
         // then only one string builder needs allocation
         sbReg.set(fresh(new StringBuilder)) *>
         skipManyUntil(sbReg.update(char(terminalInit).hide.as((sb: StringBuilder) => sb += terminalInit)) <|> content,
-                      closeLabel(allowsAllSpace, stringChar.isRaw)(atomic(terminal))) //is the atomic needed here? not sure
+                      closeLabel(allowsAllSpace, stringChar.isRaw)(atomic(string(end)))) //is the atomic needed here? not sure
     }
 }
