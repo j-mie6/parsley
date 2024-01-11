@@ -1301,8 +1301,11 @@ object Parsley extends PlatformSpecific {
     private [parsley] def some[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = secretSome(p, p, factory)
     // This could be generalised to be the new many, where many(p, factory) = secretSome(fresh(factory.newBuilder), p, factory)
     private [parsley] def secretSome[A, C](init: Parsley[A], p: Parsley[A], factory: Factory[A, C]): Parsley[C] = {
+        secretSome(init.map(factory.newBuilder += _), p)
+    }
+    private [parsley] def secretSome[A, C](init: Parsley[mutable.Builder[A, C]], p: Parsley[A]): Parsley[C] = {
         val pf = pure[(mutable.Builder[A, C], A) => mutable.Builder[A, C]](_ += _)
         // Can't use the regular foldLeft1 here, because we need a fresh Builder each time.
-        expr.infix.secretLeft1(init.map(factory.newBuilder += _), p, pf).map(_.result())
+        expr.infix.secretLeft1(init, p, pf).map(_.result())
     }
 }

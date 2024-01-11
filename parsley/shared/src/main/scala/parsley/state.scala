@@ -5,7 +5,7 @@
  */
 package parsley
 
-import scala.collection.mutable
+import scala.collection.Factory
 
 import parsley.XAssert._
 import parsley.combinator.{whenS, whileS}
@@ -445,10 +445,14 @@ object state {
       * @group comb
       */
     def forYieldP_[A, B](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: Parsley[A] => Parsley[B]): Parsley[List[B]] = {
-        fresh(mutable.ListBuffer.empty[B]).persist { acc =>
+        forYieldPGen_(init, cond, step)(body, List)
+    }
+    private [parsley] def forYieldPGen_[A, B, C](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])
+                                                (body: Parsley[A] => Parsley[B], factory: Factory[B, C]): Parsley[C] = {
+        fresh(factory.newBuilder).persist { acc =>
             forP_(init, cond, step) { x =>
                 (acc, body(x)).zipped(_ += _).impure // we don't want this optimised out, it's a mutable operation in a resultless context
-            } ~> acc.map(_.toList)
+            } ~> acc.map(_.result())
         }
     }
 
@@ -514,10 +518,10 @@ object state {
       * @group comb
       */
     def forYieldP[A, B](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: =>Parsley[B]): Parsley[List[B]] = {
-        fresh(mutable.ListBuffer.empty[B]).persist { acc =>
-            forP(init, cond, step) {
-                (acc, body).zipped(_ += _).impure
-            } ~> acc.map(_.toList)
-        }
+        forYieldPGen(init, cond, step)(body, List)
+    }
+    private [parsley] def forYieldPGen[A, B, C](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])
+                                               (body: =>Parsley[B], factory: Factory[B, C]): Parsley[C] = {
+        forYieldPGen_(init, cond, step)(_ => body, factory)
     }
 }
