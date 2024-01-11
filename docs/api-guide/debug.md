@@ -115,13 +115,15 @@ can be cleared using `clear()`.
 @:@
 
 ```scala mdoc:height=0
-import parsley.Parsley
+import parsley.Parsley, Parsley.pure
 import parsley.character.{string, char}
 import parsley.combinator.traverse
 import parsley.debug._
 
-def classicString(s: String): Parsley[String] =
-    traverse(s.toList: _*)(char).map(_.mkString)
+def classicString(s: String): Parsley[String] = s.toList match {
+    case Nil => pure("")
+    case c :: cs => traverse(c, cs: _*)(char).map(_.mkString)
+}
 
 implicit val profiler: Profiler = new Profiler
 val strings = many(classicString("...").profile("classic string")
