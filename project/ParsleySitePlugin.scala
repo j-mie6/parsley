@@ -39,7 +39,7 @@ object ParsleySitePlugin extends AutoPlugin {
             mdocVariables.value ++ Map("STABLE_VERSION" -> "4.5.0"),
         },
         tlSiteHelium := {
-            val notBackport = true || !githubIsWorkflowBuild.value
+            val notBackport = false || !githubIsWorkflowBuild.value
             val githubLink = GenericSiteSettings.githubLink.value
             val apiLink = tlSiteApiUrl.value.map(url => TextLink.external(url.toString, "API"))
             val redirections = redirects.theme(tlBaseVersion.value, githubIsWorkflowBuild.value)
