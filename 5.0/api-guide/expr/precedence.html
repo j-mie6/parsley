@@ -143,7 +143,7 @@
     <li class="level2 nav-leaf"><a href="#heterogeneous-precedence">Heterogeneous Precedence</a></li>
   </ul>
 
-  <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/18428c686e24955f578cebb9bf1cbca0dca3f649/docs/api-guide/expr/precedence.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
+  <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/staging/5.0/docs/api-guide/expr/precedence.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
 </nav>
 
 
@@ -214,7 +214,7 @@
         </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Mul</span><span>),
         </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Add</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Sub</span><span>)
     )
-</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@793b364e
+</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@36cbf73d
 </span><span>
 </span><span class="identifier">expr</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;x+5*y&quot;</span><span>)
 </span><span class="comment">// res0: parsley.Result[String, Expr] = Success(Add(Var(x),Mul(Num(5),Var(y))))</span></code></pre>
@@ -294,7 +294,7 @@
         </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Mul</span><span>) :+
         </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span class="identifier">as</span><span> </span><span class="type-name">Add</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Sub</span><span>)
     }
-</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@2d52cd69
+</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@423800a3
 </span><span>
 </span><span class="identifier">expr</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;x+5*y&quot;</span><span>)
 </span><span class="comment">// res1: parsley.Result[String, Expr] = Success(Add(Var(x),Mul(Num(5),Var(y))))</span></code></pre>

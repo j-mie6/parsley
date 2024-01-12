@@ -153,7 +153,7 @@
     <li class="level1 nav-leaf"><a href="#what-next"><span class="section-number">5 </span>What Next?</a></li>
   </ul>
 
-  <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/18428c686e24955f578cebb9bf1cbca0dca3f649/docs/tutorial/basics-of-combinators.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
+  <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/staging/5.0/docs/tutorial/basics-of-combinators.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
 </nav>
 
 
@@ -536,10 +536,10 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">debug</span><span>.</span><span class="identifier">_</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> | </span><span class="identifier">atomic</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>) | </span><span class="string-literal">&quot;dead&quot;</span><span>
-</span><span class="comment">// p: Parsley[String] = parsley.Parsley@49a8f7c0
+</span><span class="comment">// p: Parsley[String] = parsley.Parsley@2ea0edef
 </span><span class="keyword">val</span><span> </span><span class="identifier">q</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> | (</span><span class="identifier">atomic</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading def&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;backtrack!&quot;</span><span>) |
                    </span><span class="string-literal">&quot;dead&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading dead&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;branch&quot;</span><span>)
-</span><span class="comment">// q: Parsley[String] = parsley.Parsley@16d5c05a
+</span><span class="comment">// q: Parsley[String] = parsley.Parsley@4ea943dc
 </span><span>
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;dead&quot;</span><span>)
 </span><span class="comment">// res37: parsley.Result[String, String] = Success(dead)
@@ -587,9 +587,9 @@
 // def notFollowedBy(p: Parsley[_]): Parsley[Unit]
 </span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">eof</span><span> = </span><span class="identifier">notFollowedBy</span><span>(</span><span class="identifier">item</span><span>)
-</span><span class="comment">// eof: Parsley[Unit] = parsley.Parsley@46e74c1e
+</span><span class="comment">// eof: Parsley[Unit] = parsley.Parsley@3487e7d2
 </span><span class="keyword">val</span><span> </span><span class="identifier">abcOnly</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> &lt;~ </span><span class="identifier">eof</span><span>
-</span><span class="comment">// abcOnly: Parsley[String] = parsley.Parsley@56e12fcb
+</span><span class="comment">// abcOnly: Parsley[String] = parsley.Parsley@783b38fb
 </span><span>
 </span><span class="identifier">abcOnly</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>)
 </span><span class="comment">// res39: parsley.Result[String, String] = Success(abc)
@@ -600,7 +600,7 @@
 //       ^)
 </span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>) &lt;~ </span><span class="identifier">lookAhead</span><span>(</span><span class="string-literal">&quot;!!&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;!!&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;lookahead&quot;</span><span>)
-</span><span class="comment">// p: Parsley[String] = parsley.Parsley@50b39e1
+</span><span class="comment">// p: Parsley[String] = parsley.Parsley@93c2d2
 </span><span>
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc!!&quot;</span><span>)
 </span><span class="comment">// &gt;abc&gt; (1, 1): abc!!•
