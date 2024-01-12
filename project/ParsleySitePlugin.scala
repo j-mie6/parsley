@@ -36,10 +36,10 @@ object ParsleySitePlugin extends AutoPlugin {
             )
             .withRawContent,  // enable usage of raw HTML,
         mdocVariables := {
-            mdocVariables.value ++ Map("STABLE_VERSION" -> "4.5.0"),
+            mdocVariables.value ++ Map("STABLE_VERSION" -> "4.5.1"),
         },
         tlSiteHelium := {
-            val notBackport = false || !githubIsWorkflowBuild.value
+            val notBackport = true || !githubIsWorkflowBuild.value
             val githubLink = GenericSiteSettings.githubLink.value
             val apiLink = tlSiteApiUrl.value.map(url => TextLink.external(url.toString, "API"))
             val redirections = redirects.theme(tlBaseVersion.value, githubIsWorkflowBuild.value)
