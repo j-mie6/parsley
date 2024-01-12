@@ -125,6 +125,13 @@ class ErrorTests extends ParsleyTest {
     }
 
     it should "replace everything under the label" in {
+        val p = (optional('a') *> 'b').label("hi")
+        inside(p.parse("e")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs, 1))) =>
+                unex should contain (Raw("e"))
+                exs should contain.only(Named("hi"))
+                rs shouldBe empty
+        }
         val s = (optional('a') *> optional('b')).label("hi") *> 'c'
         inside(s.parse("e")) {
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs, 1))) =>

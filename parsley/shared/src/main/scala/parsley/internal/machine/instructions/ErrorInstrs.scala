@@ -35,7 +35,8 @@ private [internal] final class RelabelHints(labels: Iterable[String]) extends In
 private [internal] final class RelabelErrorAndFail(labels: Iterable[String]) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
-        //ctx.restoreHints() //FIXME: I'm not sure this was meant to be there in the first place
+        // this has the effect of relabelling all hints since the start of the label combinator
+        ctx.restoreHints()
         ctx.errs.error = ctx.useHints {
             // only use the label if the error message is generated at the same offset
             // as the check stack saved for the start of the `label` combinator.
