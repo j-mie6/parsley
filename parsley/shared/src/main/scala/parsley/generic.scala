@@ -6,6 +6,7 @@
 package parsley
 
 import lift._
+import parsley.errors.combinator._
 
 /** This module contains the definition of 23 basic ''generic parser bridge traits'', which
   * are used to implement the ''Parser Bridge'' pattern for types that do not require metadata.
@@ -25,13 +26,43 @@ import lift._
 object generic {
     // $COVERAGE-OFF$
     // scalastyle:off parameter.number ensure.single.space.after.token
+    /** This generically allows for the tagging of parsers via its `error` combinator:
+      * as it happens, both labels and reasons are very often attached to bridges.
+      *
+      * @since 5.0.0
+      */
+    trait ErrorBridge {
+        /** The labels that should be associated with a failure to parse this bridge.
+          *
+          * The default, `Nil`, will not affect the labelling of the original error.
+          */
+        def labels: List[String] = Nil
+        /** The reason that should be associated with a failure to parse this bridge.
+          *
+          * The default, `None`, will not add any reasons.
+          */
+        def reason: Option[String] = None
+
+        /** Applies the error components described by `labels` and `reason` to the given
+          * parser.
+          *
+          * @note this should be used within a bridge's apply and the `from` combinator.
+          */
+        protected final def error[T](p: Parsley[T]): Parsley[T] = applyReason(applyLabels(p))
+        private def applyLabels[T](p: Parsley[T]): Parsley[T] = labels match {
+            case Nil => p
+            case l0 :: ls => p.label(l0, ls: _*)
+        }
+        private def applyReason[T](p: Parsley[T]): Parsley[T] = reason.foldLeft(p)(_.explain(_))
+    }
+
     /** Generic bridge trait enabling the `<#`/`from` combinator on this type:
       * this is useful when the constructor is not applied immediately,
       * like when using `precedence`. It does not track any metadata.
       *
       * @since 4.0.0
       */
-    trait ParserSingletonBridge[+A] {
+    trait ParserSingletonBridge[+A] extends ErrorBridge {
         /** The abstract hook method: what value is the singleton representing?
           * @since 4.0.0
           */
@@ -48,7 +79,7 @@ object generic {
           *
           * @param op the parser that should be parsed before returning `con`.
           */
-        final def from(op: Parsley[_]): Parsley[A] = op.as(con)
+        final def from(op: Parsley[_]): Parsley[A] = error(op.as(con))
     }
 
     /** Generic bridge trait for singleton objects that simply return themselves
@@ -69,7 +100,7 @@ object generic {
         def apply(x1: T1): R
         /** The template method: this is the method that can be used to
           * sequence and combine the results of all the parsers. */
-        def apply(x1: Parsley[T1]): Parsley[R] = lift1(this.con, x1)
+        def apply(x1: Parsley[T1]): Parsley[R] = error(lift1(this.con, x1))
         /** @inheritdoc */
         override final def con: T1 => R = this.apply(_)
     }
@@ -82,7 +113,7 @@ object generic {
         def apply(x1: T1, x2: T2): R
         /** The template method: this is the method that can be used to
           * sequence and combine the results of all the parsers. */
-        def apply(x1: Parsley[T1], x2: =>Parsley[T2]): Parsley[R] = lift2(this.con, x1, x2)
+        def apply(x1: Parsley[T1], x2: =>Parsley[T2]): Parsley[R] = error(lift2(this.con, x1, x2))
         /** @inheritdoc */
         override final def con: (T1, T2) => R = this.apply(_, _)
     }
@@ -95,7 +126,7 @@ object generic {
         def apply(x1: T1, x2: T2, x3: T3): R
         /** The template method: this is the method that can be used to
           * sequence and combine the results of all the parsers. */
-        def apply(x1: Parsley[T1], x2: =>Parsley[T2], x3: =>Parsley[T3]): Parsley[R] = lift3(this.con, x1, x2, x3)
+        def apply(x1: Parsley[T1], x2: =>Parsley[T2], x3: =>Parsley[T3]): Parsley[R] = error(lift3(this.con, x1, x2, x3))
         /** @inheritdoc */
         override final def con: (T1, T2, T3) => R = this.apply(_, _, _)
     }
@@ -108,7 +139,7 @@ object generic {
         def apply(x1: T1, x2: T2, x3: T3, x4: T4): R
         /** The template method: this is the method that can be used to
           * sequence and combine the results of all the parsers. */
-        def apply(x1: Parsley[T1], x2: =>Parsley[T2], x3: =>Parsley[T3], x4: =>Parsley[T4]): Parsley[R] = lift4(this.con, x1, x2, x3, x4)
+        def apply(x1: Parsley[T1], x2: =>Parsley[T2], x3: =>Parsley[T3], x4: =>Parsley[T4]): Parsley[R] = error(lift4(this.con, x1, x2, x3, x4))
         /** @inheritdoc */
         override final def con: (T1, T2, T3, T4) => R = this.apply(_, _, _, _)
     }
@@ -121,7 +152,9 @@ object generic {
         def apply(x1: T1, x2: T2, x3: T3, x4: T4, x5: T5): R
         /** The template method: this is the method that can be used to
           * sequence and combine the results of all the parsers. */
-        def apply(x1: Parsley[T1], x2: =>Parsley[T2], x3: =>Parsley[T3], x4: =>Parsley[T4], x5: =>Parsley[T5]): Parsley[R] = lift5(this.con, x1, x2, x3, x4, x5)
+        def apply(x1: Parsley[T1], x2: =>Parsley[T2], x3: =>Parsley[T3], x4: =>Parsley[T4], x5: =>Parsley[T5]): Parsley[R] = error {
+            lift5(this.con, x1, x2, x3, x4, x5)
+        }
         /** @inheritdoc */
         override final def con: (T1, T2, T3, T4, T5) => R = this.apply(_, _, _, _, _)
     }
@@ -134,8 +167,9 @@ object generic {
         def apply(x1: T1, x2: T2, x3: T3, x4: T4, x5: T5, x6: T6): R
         /** The template method: this is the method that can be used to
           * sequence and combine the results of all the parsers. */
-        def apply(x1: Parsley[T1], x2: =>Parsley[T2], x3: =>Parsley[T3], x4: =>Parsley[T4], x5: =>Parsley[T5], x6: =>Parsley[T6]): Parsley[R] =
+        def apply(x1: Parsley[T1], x2: =>Parsley[T2], x3: =>Parsley[T3], x4: =>Parsley[T4], x5: =>Parsley[T5], x6: =>Parsley[T6]): Parsley[R] = error {
             lift6(this.con, x1, x2, x3, x4, x5, x6)
+        }
         /** @inheritdoc */
         override final def con: (T1, T2, T3, T4, T5, T6) => R = this.apply(_, _, _, _, _, _)
     }
@@ -149,8 +183,9 @@ object generic {
         /** The template method: this is the method that can be used to
           * sequence and combine the results of all the parsers. */
         def apply(x1:   Parsley[T1], x2: =>Parsley[T2], x3: =>Parsley[T3], x4: =>Parsley[T4], x5: =>Parsley[T5], x6: =>Parsley[T6],
-                  x7: =>Parsley[T7]): Parsley[R] =
+                  x7: =>Parsley[T7]): Parsley[R] = error {
             lift7(this.con, x1, x2, x3, x4, x5, x6, x7)
+        }
         /** @inheritdoc */
         override final def con: (T1, T2, T3, T4, T5, T6, T7) => R = this.apply(_, _, _, _, _, _, _)
     }
@@ -164,8 +199,9 @@ object generic {
         /** The template method: this is the method that can be used to
           * sequence and combine the results of all the parsers. */
         def apply(x1:   Parsley[T1], x2: =>Parsley[T2], x3: =>Parsley[T3], x4: =>Parsley[T4], x5: =>Parsley[T5], x6: =>Parsley[T6],
-                  x7: =>Parsley[T7], x8: =>Parsley[T8]): Parsley[R] =
+                  x7: =>Parsley[T7], x8: =>Parsley[T8]): Parsley[R] = error {
             lift8(this.con, x1, x2, x3, x4, x5, x6, x7, x8)
+        }
         /** @inheritdoc */
         override final def con: (T1, T2, T3, T4, T5, T6, T7, T8) => R = this.apply(_, _, _, _, _, _, _, _)
     }
@@ -179,8 +215,9 @@ object generic {
         /** The template method: this is the method that can be used to
           * sequence and combine the results of all the parsers. */
         def apply(x1:   Parsley[T1], x2: =>Parsley[T2], x3: =>Parsley[T3], x4: =>Parsley[T4], x5: =>Parsley[T5], x6: =>Parsley[T6],
-                  x7: =>Parsley[T7], x8: =>Parsley[T8], x9: =>Parsley[T9]): Parsley[R] =
+                  x7: =>Parsley[T7], x8: =>Parsley[T8], x9: =>Parsley[T9]): Parsley[R] = error {
             lift9(this.con, x1, x2, x3, x4, x5, x6, x7, x8, x9)
+        }
         /** @inheritdoc */
         override final def con: (T1, T2, T3, T4, T5, T6, T7, T8, T9) => R = this.apply(_, _, _, _, _, _, _, _, _)
     }
@@ -194,8 +231,9 @@ object generic {
         /** The template method: this is the method that can be used to
           * sequence and combine the results of all the parsers. */
         def apply(x1:   Parsley[T1], x2: =>Parsley[T2], x3: =>Parsley[T3], x4:  =>Parsley[T4], x5: =>Parsley[T5], x6: =>Parsley[T6],
-                  x7: =>Parsley[T7], x8: =>Parsley[T8], x9: =>Parsley[T9], x10: =>Parsley[T10]): Parsley[R] =
+                  x7: =>Parsley[T7], x8: =>Parsley[T8], x9: =>Parsley[T9], x10: =>Parsley[T10]): Parsley[R] = error {
             lift10(this.con, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10)
+        }
         /** @inheritdoc */
         override final def con: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10) => R = this.apply(_, _, _, _, _, _, _, _, _, _)
     }
@@ -210,8 +248,9 @@ object generic {
         /** The template method: this is the method that can be used to
           * sequence and combine the results of all the parsers. */
         def apply(x1:   Parsley[T1], x2: =>Parsley[T2], x3: =>Parsley[T3], x4:  =>Parsley[T4],  x5: =>Parsley[T5], x6: =>Parsley[T6],
-                  x7: =>Parsley[T7], x8: =>Parsley[T8], x9: =>Parsley[T9], x10: =>Parsley[T10], x11: =>Parsley[T11]): Parsley[R] =
+                  x7: =>Parsley[T7], x8: =>Parsley[T8], x9: =>Parsley[T9], x10: =>Parsley[T10], x11: =>Parsley[T11]): Parsley[R] = error {
             lift11(this.con, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11)
+        }
         /** @inheritdoc */
         override final def con: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11) => R = this.apply(_, _, _, _, _, _, _, _, _, _, _)
     }
@@ -226,8 +265,9 @@ object generic {
         /** The template method: this is the method that can be used to
           * sequence and combine the results of all the parsers. */
         def apply(x1:   Parsley[T1], x2: =>Parsley[T2], x3: =>Parsley[T3], x4:  =>Parsley[T4],  x5: =>Parsley[T5],   x6:  =>Parsley[T6],
-                  x7: =>Parsley[T7], x8: =>Parsley[T8], x9: =>Parsley[T9], x10: =>Parsley[T10], x11: =>Parsley[T11], x12: =>Parsley[T12]): Parsley[R] =
+                  x7: =>Parsley[T7], x8: =>Parsley[T8], x9: =>Parsley[T9], x10: =>Parsley[T10], x11: =>Parsley[T11], x12: =>Parsley[T12]): Parsley[R] = error {
             lift12(this.con, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12)
+        }
         /** @inheritdoc */
         override final def con: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12) => R = this.apply(_, _, _, _, _, _, _, _, _, _, _, _)
     }
@@ -243,8 +283,9 @@ object generic {
           * sequence and combine the results of all the parsers. */
         def apply(x1:    Parsley[T1], x2: =>Parsley[T2], x3: =>Parsley[T3], x4:  =>Parsley[T4],  x5: =>Parsley[T5],   x6:  =>Parsley[T6],
                   x7:  =>Parsley[T7], x8: =>Parsley[T8], x9: =>Parsley[T9], x10: =>Parsley[T10], x11: =>Parsley[T11], x12: =>Parsley[T12],
-                  x13: =>Parsley[T13]): Parsley[R] =
+                  x13: =>Parsley[T13]): Parsley[R] = error {
             lift13(this.con, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13)
+        }
         /** @inheritdoc */
         override final def con: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13) => R = this.apply(_, _, _, _, _, _, _, _, _, _, _, _, _)
     }
@@ -260,8 +301,9 @@ object generic {
           * sequence and combine the results of all the parsers. */
         def apply(x1:    Parsley[T1],  x2:  =>Parsley[T2], x3: =>Parsley[T3], x4:  =>Parsley[T4],  x5:  =>Parsley[T5],  x6:  =>Parsley[T6],
                   x7:  =>Parsley[T7],  x8:  =>Parsley[T8], x9: =>Parsley[T9], x10: =>Parsley[T10], x11: =>Parsley[T11], x12: =>Parsley[T12],
-                  x13: =>Parsley[T13], x14: =>Parsley[T14]): Parsley[R] =
+                  x13: =>Parsley[T13], x14: =>Parsley[T14]): Parsley[R] = error {
             lift14(this.con, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14)
+        }
         /** @inheritdoc */
         override final def con: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14) => R = this.apply(_, _, _, _, _, _, _, _, _, _, _, _, _, _)
     }
@@ -277,8 +319,9 @@ object generic {
           * sequence and combine the results of all the parsers. */
         def apply(x1:    Parsley[T1],  x2:  =>Parsley[T2],  x3:  =>Parsley[T3], x4:  =>Parsley[T4],  x5:  =>Parsley[T5],  x6:  =>Parsley[T6],
                   x7:  =>Parsley[T7],  x8:  =>Parsley[T8],  x9:  =>Parsley[T9], x10: =>Parsley[T10], x11: =>Parsley[T11], x12: =>Parsley[T12],
-                  x13: =>Parsley[T13], x14: =>Parsley[T14], x15: =>Parsley[T15]): Parsley[R] =
+                  x13: =>Parsley[T13], x14: =>Parsley[T14], x15: =>Parsley[T15]): Parsley[R] = error {
             lift15(this.con, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15)
+        }
         /** @inheritdoc */
         override final def con: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15) => R =
             this.apply(_, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
@@ -296,8 +339,9 @@ object generic {
           * sequence and combine the results of all the parsers. */
         def apply(x1:    Parsley[T1],  x2:  =>Parsley[T2],  x3:  =>Parsley[T3],  x4:  =>Parsley[T4],  x5: =>Parsley[T5],   x6:  =>Parsley[T6],
                   x7:  =>Parsley[T7],  x8:  =>Parsley[T8],  x9:  =>Parsley[T9],  x10: =>Parsley[T10], x11: =>Parsley[T11], x12: =>Parsley[T12],
-                  x13: =>Parsley[T13], x14: =>Parsley[T14], x15: =>Parsley[T15], x16: =>Parsley[T16]): Parsley[R] =
+                  x13: =>Parsley[T13], x14: =>Parsley[T14], x15: =>Parsley[T15], x16: =>Parsley[T16]): Parsley[R] = error {
             lift16(this.con, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16)
+        }
         /** @inheritdoc */
         override final def con: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16) => R =
             this.apply(_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
@@ -315,8 +359,9 @@ object generic {
           * sequence and combine the results of all the parsers. */
         def apply(x1:    Parsley[T1],  x2:  =>Parsley[T2],  x3:  =>Parsley[T3],  x4:  =>Parsley[T4],  x5:  =>Parsley[T5],  x6:  =>Parsley[T6],
                   x7:  =>Parsley[T7],  x8:  =>Parsley[T8],  x9:  =>Parsley[T9],  x10: =>Parsley[T10], x11: =>Parsley[T11], x12: =>Parsley[T12],
-                  x13: =>Parsley[T13], x14: =>Parsley[T14], x15: =>Parsley[T15], x16: =>Parsley[T16], x17: =>Parsley[T17]): Parsley[R] =
+                  x13: =>Parsley[T13], x14: =>Parsley[T14], x15: =>Parsley[T15], x16: =>Parsley[T16], x17: =>Parsley[T17]): Parsley[R] = error {
             lift17(this.con, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17)
+        }
         /** @inheritdoc */
         override final def con: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17) => R =
             this.apply(_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
@@ -335,7 +380,7 @@ object generic {
         def apply(x1:    Parsley[T1],  x2:  =>Parsley[T2],  x3:  =>Parsley[T3],  x4:  =>Parsley[T4],  x5:  =>Parsley[T5],  x6:  =>Parsley[T6],
                   x7:  =>Parsley[T7],  x8:  =>Parsley[T8],  x9:  =>Parsley[T9],  x10: =>Parsley[T10], x11: =>Parsley[T11], x12: =>Parsley[T12],
                   x13: =>Parsley[T13], x14: =>Parsley[T14], x15: =>Parsley[T15], x16: =>Parsley[T16], x17: =>Parsley[T17], x18: =>Parsley[T18]): Parsley[R] =
-            lift18(this.con, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18)
+            error(lift18(this.con, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18))
         /** @inheritdoc */
         override final def con: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18) => R =
             this.apply(_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
@@ -354,8 +399,9 @@ object generic {
         def apply(x1:    Parsley[T1],  x2:  =>Parsley[T2],  x3:  =>Parsley[T3],  x4:  =>Parsley[T4],  x5:  =>Parsley[T5],  x6:  =>Parsley[T6],
                   x7:  =>Parsley[T7],  x8:  =>Parsley[T8],  x9:  =>Parsley[T9],  x10: =>Parsley[T10], x11: =>Parsley[T11], x12: =>Parsley[T12],
                   x13: =>Parsley[T13], x14: =>Parsley[T14], x15: =>Parsley[T15], x16: =>Parsley[T16], x17: =>Parsley[T17], x18: =>Parsley[T18],
-                  x19: =>Parsley[T19]): Parsley[R] =
+                  x19: =>Parsley[T19]): Parsley[R] = error {
             lift19(this.con, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19)
+        }
         /** @inheritdoc */
         override final def con: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19) => R =
             this.apply(_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
@@ -374,8 +420,9 @@ object generic {
         def apply(x1:    Parsley[T1],  x2:  =>Parsley[T2],  x3:  =>Parsley[T3],  x4:  =>Parsley[T4],  x5:  =>Parsley[T5],  x6:  =>Parsley[T6],
                   x7:  =>Parsley[T7],  x8:  =>Parsley[T8],  x9:  =>Parsley[T9],  x10: =>Parsley[T10], x11: =>Parsley[T11], x12: =>Parsley[T12],
                   x13: =>Parsley[T13], x14: =>Parsley[T14], x15: =>Parsley[T15], x16: =>Parsley[T16], x17: =>Parsley[T17], x18: =>Parsley[T18],
-                  x19: =>Parsley[T19], x20: =>Parsley[T20]): Parsley[R] =
+                  x19: =>Parsley[T19], x20: =>Parsley[T20]): Parsley[R] = error {
             lift20(this.con, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20)
+        }
         /** @inheritdoc */
         override final def con: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20) => R =
             this.apply(_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
@@ -394,8 +441,9 @@ object generic {
         def apply(x1:    Parsley[T1],  x2:  =>Parsley[T2],  x3:  =>Parsley[T3],  x4:  =>Parsley[T4],  x5:  =>Parsley[T5],  x6:  =>Parsley[T6],
                   x7:  =>Parsley[T7],  x8:  =>Parsley[T8],  x9:  =>Parsley[T9],  x10: =>Parsley[T10], x11: =>Parsley[T11], x12: =>Parsley[T12],
                   x13: =>Parsley[T13], x14: =>Parsley[T14], x15: =>Parsley[T15], x16: =>Parsley[T16], x17: =>Parsley[T17], x18: =>Parsley[T18],
-                  x19: =>Parsley[T19], x20: =>Parsley[T20], x21: =>Parsley[T21]): Parsley[R] =
+                  x19: =>Parsley[T19], x20: =>Parsley[T20], x21: =>Parsley[T21]): Parsley[R] = error {
             lift21(this.con, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21)
+        }
         /** @inheritdoc */
         override final def con: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21) => R =
             this.apply(_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
@@ -414,8 +462,9 @@ object generic {
         def apply(x1:    Parsley[T1],  x2:  =>Parsley[T2],  x3:  =>Parsley[T3],  x4:  =>Parsley[T4],  x5:  =>Parsley[T5],  x6:  =>Parsley[T6],
                   x7:  =>Parsley[T7],  x8:  =>Parsley[T8],  x9:  =>Parsley[T9],  x10: =>Parsley[T10], x11: =>Parsley[T11], x12: =>Parsley[T12],
                   x13: =>Parsley[T13], x14: =>Parsley[T14], x15: =>Parsley[T15], x16: =>Parsley[T16], x17: =>Parsley[T17], x18: =>Parsley[T18],
-                  x19: =>Parsley[T19], x20: =>Parsley[T20], x21: =>Parsley[T21], x22: =>Parsley[T22]): Parsley[R] =
+                  x19: =>Parsley[T19], x20: =>Parsley[T20], x21: =>Parsley[T21], x22: =>Parsley[T22]): Parsley[R] = error {
             lift22(this.con, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22)
+        }
         /** @inheritdoc */
         override final def con: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22) => R =
             this.apply(_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
