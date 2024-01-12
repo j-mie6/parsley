@@ -35,6 +35,9 @@ object ParsleySitePlugin extends AutoPlugin {
                                 SourceLinks(baseUri = s"${scm.browseUrl.toExternalForm}/tree/master/parsley/shared/src/main/scala/", suffix = "scala")).toSeq: _*)
             )
             .withRawContent,  // enable usage of raw HTML,
+        mdocVariables := {
+            mdocVariables.value ++ Map("STABLE_VERSION" -> "4.5.0"),
+        },
         tlSiteHelium := {
             val notBackport = true || !githubIsWorkflowBuild.value
             val githubLink = GenericSiteSettings.githubLink.value
@@ -69,7 +72,7 @@ object ParsleySitePlugin extends AutoPlugin {
                 title = Some("Parsley"),
                 subtitle = Some("A fast and modern parser combinator library for Scala"),
                 latestReleases = Seq(
-                    ReleaseInfo("Latest Stable Release", mdocVariables.value("VERSION")),
+                    ReleaseInfo("Latest Stable Release", mdocVariables.value("STABLE_VERSION")),
                     ReleaseInfo("Latest Dev Pre-Release", mdocVariables.value("PRERELEASE_VERSION")),
                 ),
                 license = Some(licenses.value.head._1),
