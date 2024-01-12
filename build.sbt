@@ -33,8 +33,7 @@ inThisBuild(List(
   githubWorkflowAddedJobs += testCoverageJob(githubWorkflowGeneratedCacheSteps.value.toList),
   //githubWorkflowConcurrency := None,
   // Website Configuration
-  // TODO: I'm holding this back until we are ready for 5.0.0-M1
-  tlSitePublishBranch := None, //Some(mainBranch),
+  tlSitePublishBranch := Some(mainBranch),
 ))
 
 lazy val root = tlCrossRootProject.aggregate(parsley, parsleyDebug)
