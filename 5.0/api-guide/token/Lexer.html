@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+  
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Typelevel Laika + Parsley Theme" />
+    
+    <title>Lexer (parsley.token.Lexer)</title>
+    
+    
+    <meta name="author" content="parsley contributors"/>
+    
+    
+    <meta name="description" content="This page describes how Parsley's lexer works."/>
+    
+    
+    
+    <link rel="icon" sizes="32x32" type="image/svg+xml" href="../../../icons/greenLeaf.svg"/>
+    
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700">
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Fira+Mono:500">
+    
+    <link rel="stylesheet" type="text/css" href="../../../helium/site/icofont.min.css" />
+    <link rel="stylesheet" type="text/css" href="../../../helium/site/laika-helium.css" />
+    <link rel="stylesheet" type="text/css" href="../../../css/parsley-style.css" />
+    <script src="../../../helium/site/laika-helium.js"></script>
+    <script src="../../../helium/site/laika-versions.js"></script>
+    <script>initVersions("../../../", "/api-guide/token/Lexer.html", "5.0", null);</script>
+    
+    <script> /* for avoiding page load transitions */ </script>
+  </head>
+
+
+  <body>
+
+    <header id="top-bar" class="light-default dark-default">
+
+  <div class="row">
+    <a id="nav-icon">
+      <i class="icofont-laika navigationMenu" title="Navigation">&#xefa2;</i>
+    </a>
+    
+    <div class="menu-container version-menu">
+      <a class="text-link menu-toggle" href="#">Version 5.0.x</a>
+      <nav class="menu-content">
+        <ul class="nav-list">
+        </ul>
+      </nav>
+    </div>
+  </div>
+
+  <a class="icon-link svg-link" href="../../../"><span class="leaf" title="Home"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 128 128" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M101.39,86.21c-14.25-5.91-22.34-4.3-28.47-2.5c-6.5,1.91-12.31,8.58-12.31,8.58s-1.93-0.58-5.04-0.51 c-1.49,0.04-2.67,0.28-3.54,0.54c2.64-5.99,4.51-12.08,7.57-18.76c1.95-0.81,4.63-1.86,6.35-2.23c2.96-0.64,6.45-0.84,6.45-0.84 c0.82,0.64,2,1.39,3.69,2.23c9.56,4.78,21.5,2.16,27.35-0.16c8.13-3.23,20.21-12.95,20.21-13.69s-5.5-3.38-13.32-5.71 c-7.82-2.33-18.27-2.44-26.21,0.95c-7.28,3.11-10.67,8.58-12.54,11.86c0,0-2.9,0.46-5,0.82c-1.56,0.27-2.96,0.64-4.07,0.99 c0.22-0.4,0.45-0.81,0.68-1.21C67.77,58.61,72.83,52.5,77,48.2c5.87,0.55,17.89,0.35,27.62-8.46 c15.64-14.15,18.46-35.92,18.07-36.35S97.35,3.34,84.54,14.91c-12.19,11.01-11.97,25.4-11.4,30.69c-3.97,3.71-8.81,9.17-14.2,17.12 c-0.04-2.12-0.29-4.73-0.29-4.73s7.19-6.73,7.72-17.18c0.42-8.24-0.46-15.89-5-24.14c-3.56-6.43-6.53-8.03-7.06-7.93 c-0.93,0.19-5.33,7.06-8.03,13.63c-2.13,5.17-4.26,18.38-0.45,26.52s8.22,9.68,8.22,9.68s0.54,2.37,0.48,5.55 c-0.02,1.36-0.13,4.51-0.18,5.98c-3.57,6.32-5.96,12.07-8.23,17.22c-0.34-0.99-0.73-1.96-1.11-2.65c-1.16-2.11-1.59-2.85-1.59-2.85 s2.57-15.99-1.8-29.17C36.45,37,27.57,31.08,19.33,27.59C11.09,24.1,6.54,24.11,5.8,24.95c-1.08,1.23,1.37,4.33,1.59,11.31 c0.17,5.71,1.16,25.05,6.87,34.98s13.63,12.37,16.17,13.21c2.54,0.85,8.03,0.95,8.03,0.95s2.33,2.01,3.17,4.86 c0.39,1.31,0.78,2.92,1.09,4.27c-1.95,3.71-4.17,7-7.21,9.86c-5.01,4.71-13.09,7.94-13.09,7.94s-6.47-0.15-6.91,0.15 c-0.44,0.29-1.73,3.53,0.69,7.51c2,3.29,5.05,4.12,6.08,4.26c1.03,0.15,2.94-4.27,3.68-4.86c0.74-0.59,9.43-3.93,15.6-10.74 c2.83-3.13,5.02-6.16,6.81-9.17c1.65-1.01,4.07-2.17,6.72-2.31c2.64-0.15,4.94,1.12,4.94,1.12s2.22,9.16,12.15,13 c12.5,4.83,25.83,0.61,31.64-1.4c5.81-2,19.83-8.42,19.94-10.22C123.86,97.87,115.66,92.13,101.39,86.21z"/>
+  </g>
+</svg></span></a>
+
+  <div class="row links">
+    
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M1/">API</a>
+    
+    <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M49.995,1c-27.609,-0 -49.995,22.386 -49.995,50.002c-0,22.09 14.325,40.83 34.194,47.444c2.501,0.458 3.413,-1.086 3.413,-2.412c0,-1.185 -0.043,-4.331 -0.067,-8.503c-13.908,3.021 -16.843,-6.704 -16.843,-6.704c-2.274,-5.773 -5.552,-7.311 -5.552,-7.311c-4.54,-3.103 0.344,-3.042 0.344,-3.042c5.018,0.356 7.658,5.154 7.658,5.154c4.46,7.64 11.704,5.433 14.552,4.156c0.454,-3.232 1.744,-5.436 3.174,-6.685c-11.102,-1.262 -22.775,-5.553 -22.775,-24.713c-0,-5.457 1.949,-9.92 5.147,-13.416c-0.516,-1.265 -2.231,-6.348 0.488,-13.233c0,0 4.199,-1.344 13.751,5.126c3.988,-1.108 8.266,-1.663 12.518,-1.682c4.245,0.019 8.523,0.574 12.517,1.682c9.546,-6.47 13.736,-5.126 13.736,-5.126c2.728,6.885 1.013,11.968 0.497,13.233c3.204,3.496 5.141,7.959 5.141,13.416c0,19.209 -11.691,23.436 -22.83,24.673c1.795,1.544 3.394,4.595 3.394,9.26c0,6.682 -0.061,12.076 -0.061,13.715c0,1.338 0.899,2.894 3.438,2.406c19.853,-6.627 34.166,-25.354 34.166,-47.438c-0,-27.616 -22.389,-50.002 -50.005,-50.002"/>
+  </g>
+</svg></span></a>
+    
+  </div>  
+
+</header>
+    
+    <nav id="sidebar">
+
+  <div class="row">
+    
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M1/">API</a>
+    
+    <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M49.995,1c-27.609,-0 -49.995,22.386 -49.995,50.002c-0,22.09 14.325,40.83 34.194,47.444c2.501,0.458 3.413,-1.086 3.413,-2.412c0,-1.185 -0.043,-4.331 -0.067,-8.503c-13.908,3.021 -16.843,-6.704 -16.843,-6.704c-2.274,-5.773 -5.552,-7.311 -5.552,-7.311c-4.54,-3.103 0.344,-3.042 0.344,-3.042c5.018,0.356 7.658,5.154 7.658,5.154c4.46,7.64 11.704,5.433 14.552,4.156c0.454,-3.232 1.744,-5.436 3.174,-6.685c-11.102,-1.262 -22.775,-5.553 -22.775,-24.713c-0,-5.457 1.949,-9.92 5.147,-13.416c-0.516,-1.265 -2.231,-6.348 0.488,-13.233c0,0 4.199,-1.344 13.751,5.126c3.988,-1.108 8.266,-1.663 12.518,-1.682c4.245,0.019 8.523,0.574 12.517,1.682c9.546,-6.47 13.736,-5.126 13.736,-5.126c2.728,6.885 1.013,11.968 0.497,13.233c3.204,3.496 5.141,7.959 5.141,13.416c0,19.209 -11.691,23.436 -22.83,24.673c1.795,1.544 3.394,4.595 3.394,9.26c0,6.682 -0.061,12.076 -0.061,13.715c0,1.338 0.899,2.894 3.438,2.406c19.853,-6.627 34.166,-25.354 34.166,-47.438c-0,-27.616 -22.389,-50.002 -50.005,-50.002"/>
+  </g>
+</svg></span></a>
+    
+  </div>
+
+  <ul class="nav-list">
+    <li class="level1 nav-leaf"><a href="../../../downloads.html">Documentation Downloads</a></li>
+    <li class="level1 nav-leaf"><a href="../../../home.html">Home</a></li>
+    <li class="level1 nav-leaf"><a href="../../faq.html">FAQ</a></li>
+    <li class="level1 nav-leaf"><a href="../../cheatsheet.html">Cheatsheet</a></li>
+    <li class="level1 nav-node"><a href="../">Understanding the API</a></li>
+    <li class="level2 nav-leaf"><a href="../Parsley.html"><code>parsley.Parsley</code></a></li>
+    <li class="level2 nav-leaf"><a href="../character.html"><code>parsley.character</code></a></li>
+    <li class="level2 nav-leaf"><a href="../combinator.html"><code>parsley.combinator</code></a></li>
+    <li class="level2 nav-leaf"><a href="../generic.html"><code>parsley.generic</code></a></li>
+    <li class="level2 nav-leaf"><a href="../syntax.html"><code>parsley.syntax</code></a></li>
+    <li class="level2 nav-leaf"><a href="../position.html"><code>parsley.position</code></a></li>
+    <li class="level2 nav-leaf"><a href="../state.html"><code>parsley.state</code></a></li>
+    <li class="level2 nav-leaf"><a href="../debug.html"><code>parsley.debug</code></a></li>
+    <li class="level2 nav-header"><code>parsley.expr</code></li>
+    <li class="level3 nav-leaf"><a href="../expr/chain.html"><code>chain</code></a></li>
+    <li class="level3 nav-leaf"><a href="../expr/infix.html"><code>infix</code></a></li>
+    <li class="level3 nav-leaf"><a href="../expr/precedence.html"><code>precedence</code></a></li>
+    <li class="level2 nav-header"><code>parsley.token</code></li>
+    <li class="level3 active nav-leaf"><a href="#"><code>Lexer</code></a></li>
+    <li class="level3 nav-leaf"><a href="descriptions.html"><code>descriptions</code></a></li>
+    <li class="level3 nav-leaf"><a href="errors.html"><code>errors</code></a></li>
+    <li class="level2 nav-header"><code>parsley.errors</code></li>
+    <li class="level3 nav-leaf"><a href="../errors/combinator.html"><code>combinator</code></a></li>
+    <li class="level3 nav-leaf"><a href="../errors/patterns.html"><code>patterns</code></a></li>
+    <li class="level3 nav-leaf"><a href="../errors/ErrorBuilder.html"><code>ErrorBuilder</code></a></li>
+    <li class="level3 nav-leaf"><a href="../errors/tokenextractors.html"><code>tokenextractors</code></a></li>
+    <li class="level1 nav-node"><a href="../../tutorial/">Parser Combinator Tutorial</a></li>
+    <li class="level2 nav-leaf"><a href="../../tutorial/basics-of-combinators.html">Basics of Combinators</a></li>
+    <li class="level2 nav-leaf"><a href="../../tutorial/building-expression-parsers.html">Building Expression Parsers</a></li>
+    <li class="level2 nav-leaf"><a href="../../tutorial/effective-whitespace-parsing.html">Effective Whitespace Parsing</a></li>
+    <li class="level2 nav-leaf"><a href="../../tutorial/effective-lexing.html">Effective Lexing</a></li>
+    <li class="level2 nav-leaf"><a href="../../tutorial/parser-bridge-pattern.html">The Parser Bridge Pattern</a></li>
+    <li class="level2 nav-leaf"><a href="../../tutorial/interlude-1-haskell.html">Interlude 1: Building a Parser for Haskell</a></li>
+    <li class="level2 nav-leaf"><a href="../../tutorial/customising-error-messages.html">Customising Error Messages</a></li>
+    <li class="level2 nav-leaf"><a href="../../tutorial/advanced-error-messages.html">Advanced Error Messages</a></li>
+    <li class="level1 nav-header">Related Projects</li>
+    <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/parsley-cats">parsley-cats</a></li>
+    <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/gigaparsec">gigaparsec (Haskell)</a></li>
+  </ul>
+
+</nav>
+
+    <div id="container">
+
+      
+<nav id="page-nav">
+  <p class="header"><a href="#"><code>Lexer</code></a></p>
+
+  <ul class="nav-list">
+    <li class="level1 nav-leaf"><a href="#distinguishing-between-lexeme-and-non-lexeme">Distinguishing Between &quot;Lexeme&quot; and &quot;Non-Lexeme&quot;</a></li>
+    <li class="level1 nav-node"><a href="#names-and-symbols">Names and Symbols</a></li>
+    <li class="level2 nav-leaf"><a href="#lexer-lexeme-nonlexeme-names"><code>Lexer.{lexeme, nonlexeme}.names</code></a></li>
+    <li class="level2 nav-leaf"><a href="#lexer-lexeme-nonlexeme-symbol"><code>Lexer.{lexeme, nonlexeme}.symbol</code></a></li>
+    <li class="level1 nav-node"><a href="#lexer-lexeme-nonlexeme-numeric-parsers"><code>Lexer.{lexeme, nonlexeme}</code> Numeric Parsers</a></li>
+    <li class="level2 nav-leaf"><a href="#examples-of-configuration-and-valid-literals-1">Examples of Configuration and Valid Literals</a></li>
+    <li class="level1 nav-node"><a href="#lexer-lexeme-nonlexeme-text-parsers"><code>Lexer.{lexeme, nonlexeme}</code> Text Parsers</a></li>
+    <li class="level2 nav-leaf"><a href="#examples-of-configuration-and-valid-literals-2">Examples of Configuration and Valid Literals</a></li>
+    <li class="level1 nav-leaf"><a href="#lexer-lexeme-enclosing-separators"><code>Lexer.lexeme.{enclosing, separators}</code></a></li>
+    <li class="level1 nav-leaf"><a href="#whitespace-sensitive-languages-and-lexer-space">Whitespace-Sensitive Languages and <code>Lexer.space</code></a></li>
+  </ul>
+
+  <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/18428c686e24955f578cebb9bf1cbca0dca3f649/docs/api-guide/token/Lexer.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
+</nav>
+
+
+      <main class="content">
+
+        <h1 id="lexer-parsley-token-lexer" class="title">Lexer (<code>parsley.token.Lexer</code>)</h1>
+        <p>The <code>Lexer</code> class is the main-entry point to the combinator-based functionality of the <code>parsley.token</code>
+        package. It is given configuration in the form of a <a href="descriptions.html#configuring-the-lexer-parsley-token-descriptions"><code>LexicalDesc</code></a>
+        and an optional <a href="errors.html#errors-errorconfig"><code>ErrorConfig</code></a>. The internal structure is then a collection
+        of objects that contain various forms of functionality: these are explored in more detail in this
+        page.</p>
+        <p>It is worth noting the highest-level structure:</p>
+        <ul>
+          <li><code>lexeme</code> and <code>nonlexeme</code> are the top level categorisation of functionality, accounting for
+          whitespace</li>
+          <li><code>fully</code> is a combinator designed to be used around the <strong>outer-most</strong> parser, ran <strong>at most once</strong>
+          during a parse, to consume leading whitespace and ensure all input is consumed.</li>
+          <li><code>space</code> is an object that allows for explicit interaction with whitespace parsing: this is
+          really only important for whitespace-sensitive languages, and <code>lexeme</code> should be used for
+          almost all other applications.</li>
+        </ul>
+        <div class="callout info">
+          <i class="icofont-laika info">&#xef4e;</i>
+          <p><em>The Scaladoc for this page can be found at <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M1/parsley/token/Lexer.html"><code>parsley.token.Lexer</code></a>.</em></p>
+        </div>
+        
+        <h2 id="distinguishing-between-lexeme-and-non-lexeme" class="section"><a class="anchor-link left" href="#distinguishing-between-lexeme-and-non-lexeme"><i class="icofont-laika link">&#xef71;</i></a>Distinguishing Between &quot;Lexeme&quot; and &quot;Non-Lexeme&quot;</h2>
+        <p>Broadly, the <code>Lexer</code> duplicates the vast majority of its functionality between two different
+        objects: <code>lexeme</code> and <code>nonlexeme</code>. Broadly speaking, everything within <code>nonlexeme</code> can be
+        found inside <code>lexeme</code>, but not the other way around. The name &quot;lexeme&quot; is not an amazing one
+        terminology wise, but there is a historical precedent set by <code>parsec</code>.</p>
+        <p><span class="paragraph"> Non-lexeme things </span>
+        A non-lexeme thing does not care about whitespace: these are raw tokens. It is highly likely that
+        you wouldn&#39;t want to use these in a regular parser, but they may be handy for <strong>custom error handling</strong>
+        or <a href="../errors/tokenextractors.html"><strong>building composite tokens</strong></a>.</p>
+        <p><span class="paragraph"> Lexeme things </span>
+        These do account for whitespace that occurs <em>after</em> a token, consuming everything up until the
+        next token. This means there are some extra pieces of functionality available that don&#39;t make much
+        sense for non-lexeme handling. The <code>lexeme</code> object can also be used as a function
+        via its <code>apply</code> method, allowing it to make any parser into one that handles whitespace: this should
+        be done for any composite tokens made with <code>nonlexeme</code>.</p>
+        <div class="callout warning">
+          <i class="icofont-laika warning">&#xf026;</i>
+          <p>Whitespace handling should ideally be handled <em>uniformly</em> by <code>lexeme</code>: it establishes a convention
+          of only consuming <strong>trailing</strong> whitespace, which is <strong>important</strong> for avoiding ambiguity in a parser.
+          If you cannot use <code>lexeme.apply</code>, you <em>must</em> adhere to this same convention.</p>
+          <p>For handling initial whitespace in the parser (before the very first token), you should use <code>Lexer.fully</code>.</p>
+        </div>
+        
+        <h2 id="names-and-symbols" class="section"><a class="anchor-link left" href="#names-and-symbols"><i class="icofont-laika link">&#xef71;</i></a>Names and Symbols</h2>
+        <p>These two categories of parser are closely linked, as described below.</p>
+        
+        <h3 id="lexer-lexeme-nonlexeme-names" class="section"><a class="anchor-link left" href="#lexer-lexeme-nonlexeme-names"><i class="icofont-laika link">&#xef71;</i></a><code>Lexer.{lexeme, nonlexeme}.names</code></h3>
+        <p>This <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M1/parsley/token/names/Names.html">object</a> contains the definitions of several different parsers for dealing with values that
+        represent names in a language, specifically identifiers and operators. These are configured
+        directly by <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M1/parsley/token/descriptions/NameDesc.html"><code>LexicalDesc.nameDesc</code></a>, however
+        valid names are affected by the keywords and reserved operators as given in
+        <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M1/parsley/token/descriptions/SymbolDesc.html"><code>LexicalDesc.symbolDesc</code></a>. Both are defined by
+        an initial letter, and then any subsequent letters.</p>
+        <div class="callout warning">
+          <i class="icofont-laika warning">&#xf026;</i>
+          <p>Note that <strong>both</strong> the start <em>and</em> end letters must be defined for an <code>identifier</code>/<code>userDefinedOperator</code>
+          to work properly. It is not the case that, say, if <code>identifierStart</code> is ommited, that
+          <code>identifierLetter</code> is used in its place.</p>
+        </div>
+        <p>In some cases, languages may have special descriptions of identifiers or operators that
+        work in specific scenarios or with specific properties. For instance: Haskell&#39;s distinction
+        between constructors, which start uppercase, and variables, which start lowercase; and
+        Scala&#39;s special treatment of operators that end in <code>:</code>. In these cases, the <code>identifier</code>
+        and <code>userDefinedOperator</code> parsers provided by <code>Names</code> allow you to refine the start letter (and
+        optionally the end letter for operators) to restrict them to a smaller subset. This
+        allows for these special cases to be handled directly.</p>
+        
+        <h3 id="lexer-lexeme-nonlexeme-symbol" class="section"><a class="anchor-link left" href="#lexer-lexeme-nonlexeme-symbol"><i class="icofont-laika link">&#xef71;</i></a><code>Lexer.{lexeme, nonlexeme}.symbol</code></h3>
+        <p>Compared with <code>names</code>, which deals with user-defined identifiers and operators, <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M1/parsley/token/symbol/Symbol.html"><code>symbol</code></a> is
+        responsible for hard-coded or reserved elements of a language. This includes keywords and
+        built-in operators, as well as specific symbols like <code>{</code>, or <code>;</code>. The description for symbols,
+        found in <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M1/parsley/token/descriptions/SymbolDesc.html"><code>LexicalDesc.symbolDesc</code></a>, describes
+        what the &quot;hard&quot; keywords and operators are for the language: these are <em>always</em> regarded as
+        reserved, and identifiers and user-defined operators may not take these names. However, the
+        <code>symbol</code> object also defines the <code>softKeyword</code> and <code>softOperator</code> combinators: these are
+        for keywords that are <em>contextually</em> reserved. For example, in Scala 3, the soft keyword
+        <code>opaque</code> is only considered a keyword if it appears before <code>type</code>; this means it is possible
+        to define a variable <code>val opaque = 4</code> without issue. In <code>parsley</code>, this could be performed
+        by writing <code>atomic(symbol.softKeyword(&quot;opaque&quot;) ~&gt; symbol(&quot;type&quot;))</code>. Keywords and reserved operators are
+        only legal if they are not followed by something that would turn them into part of a wider
+        identifier or user-defined operator: even if <code>if</code> is a keyword, <code>iffy</code> should not be parsed
+        as <code>if</code> then <code>fy</code>!</p>
+        <div class="callout warning">
+          <i class="icofont-laika warning">&#xf026;</i>
+          <p>Both soft and hard keywords cannot form part of a wider identifer. However, for this to
+          work it is important that <code>NameDesc.identifierLetter</code> (and/or <code>NameDesc.operatorLetter</code>) is
+          defined. If not, then <code>parsley</code> will not know what constitutes an illegal continutation of the symbol!</p>
+        </div>
+        <p>To make things easier, <code>symbol.apply(String)</code> can be used to take any literal symbol and
+        handle it properly with respect to the configuration (except soft keywords need to go
+        via <code>softKeyword</code>). If <code>if</code> is part of the <code>hardKeywords</code> set, then <code>symbol(&quot;if&quot;)</code> will
+        properly parse it, disallowing <code>iffy</code>, and so on. If the provided string is not reserved
+        in any way, it will be parsed literally, as if <code>string</code> had been used.</p>
+        <p>The <code>symbol</code> object also defines a bunch of pre-made helper parsers for some common symbols
+        like <code>;</code>, <code>,</code>, and so on. They are just defined in terms of <code>symbol.apply(String)</code> or <code>symbol.apply(Char)</code>.</p>
+        <p><span class="paragraph"> Implicits </span> <code>symbol.implicits</code> contains the function <code>implicitSymbol</code>,
+        which does the same job as <code>symbol.apply</code>, but is defined as an implicit conversion. By
+        importing this, string literals can themselves serve as parsers of type <code>Parsley[Unit]</code>, and
+        parse symbols correctly. With this, it instead of <code>symbol(&quot;if&quot;)</code> you can simply write <code>&quot;if&quot;</code>.</p>
+        
+        <h2 id="lexer-lexeme-nonlexeme-numeric-parsers" class="section"><a class="anchor-link left" href="#lexer-lexeme-nonlexeme-numeric-parsers"><i class="icofont-laika link">&#xef71;</i></a><code>Lexer.{lexeme, nonlexeme}</code> Numeric Parsers</h2>
+        <p>This <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M1/parsley/token/Lexer$lexeme$.html">object</a> contains the definitions of several different parsers for handling <em>numeric</em> data:
+        this includes both integers and floating point numbers. The configuration for all of these parsers
+        is managed by <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M1/parsley/token/descriptions/numeric/NumericDesc.html"><code>LexicalDesc.numericDesc</code></a>.
+        The members are split into three kinds:</p>
+        <ul>
+          <li>
+            <p><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M1/parsley/token/numeric/IntegerParsers.html"><code>parsley.token.numeric.IntegerParsers</code></a>: values with this type
+            deal with whole numbers, and this interface in particular has support for different bases of
+            number as well as various bit-widths of parsed data. When the bit-width of the parser is restricted,
+            the generated result can be any numeric type that is wide enough to accommodate those values. If
+            the parsed int does not fit in the required bounds, a parse error will be generated. If no bit-width
+            is specified, an arbitrary <code>BigInt</code> is used.</p>
+            <p>The supported bit-widths within <code>parsley</code> are 8, 16, 32, and 64. When one of these widths is chosen,
+            the Scala compiler will automatically pick a result type that matches the same width (so <code>Int</code> for 32).
+            If the generic parameter is filled manually, the given type will be used instead as long as it is
+            wide enough.</p>
+            <p>Currently, there is no way of adding new bit-widths or defining custom numeric container types.</p>
+          </li>
+          <li>
+            <p><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M1/parsley/token/numeric/RealParsers.html"><code>parsley.token.numeric.RealParsers</code></a>: values with this type
+            deal with floating-point numbers <strong>only</strong>: values without a point or an exponent (if allowed)
+            will not be parsed by these parsers. Like <code>Integer</code>, different bases can be specified: in this
+            case the meaning of exponents can be controlled within the configuration, for instance, a
+            hexadecimal floating-point literal like <code>0xAp4</code> classically would represent <code>10 * 2^4</code>, or <code>160</code>,
+            because <code>p</code> represents an exponent delimiter and hexadecimal exponents are normally base 2 (but
+            this is fully configurable in <code>parsley</code>).</p>
+            <p>Compared to <code>IntegerParsers</code>, different precisions can be chosen for <code>RealParsers</code>, allowing for
+            arbitrary-precision floats, <code>Float</code>, and <code>Double</code> results. For the stricter representations,
+            there is a <code>doubleRounded</code>/<code>floatRounded</code> that just gives the nearest valid value (with no parse
+            errors), and a <code>double</code>/<code>float</code> which demands that the parsed literal must at least be
+            between the smallest and largest numbers of the type.</p>
+          </li>
+          <li>
+            <p><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M1/parsley/token/numeric/CombinedParsers.html"><code>parsley.token.numeric.CombinedParsers</code></a>: values with this type
+            can deal with both integers and floating-point numbers. This is done by returning one or the other
+            as part of an <code>Either</code>. A <em>slightly</em> limited selection of bit-widths and precisions are available
+            for both parts. The draw of these combinators is that they may remove the ambiguity between the
+            two kinds of literal so that no backtracking is required within the parser.</p>
+          </li>
+        </ul>
+        <div class="callout info">
+          <i class="icofont-laika info">&#xef4e;</i>
+          <p>The configuration which specifies which of the numeric bases are legal for a number literal applies
+          only to the <code>number</code> parsers within <code>Integer</code>, <code>Real</code>, and <code>Combined</code>. A parser for a specific base
+          can always just be used directly, even when otherwise disabled in configuration.</p>
+        </div>
+        
+        <h3 id="examples-of-configuration-and-valid-literals-1" class="section"><a class="anchor-link left" href="#examples-of-configuration-and-valid-literals-1"><i class="icofont-laika link">&#xef71;</i></a>Examples of Configuration and Valid Literals</h3>
+        <p>The <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M1/parsley/token/descriptions/numeric/NumericDesc$.html#plain"><code>plain</code></a>
+        definition of <code>NumericDesc</code> provides a variety of different configurations for the
+        numeric literals depending on the literal base, so it mostly suffices to look at the effects of
+        these on the different bases to get a sense of what does what.</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">lexer</span><span> = </span><span class="keyword">new</span><span> </span><span class="type-name">Lexer</span><span>(</span><span class="type-name">LexicalDesc</span><span>.</span><span class="identifier">plain</span><span>)</span></code></pre>
+        <p>The basic configuration allows <code>number</code> to work with hexadecimal and octal literals, as well
+        as decimal. These have their standard prefixes of <code>0x</code> and <code>0o</code>, respectively (or uppercase
+        variants). This means that <code>unsigned.number</code> will allow literals like <code>0</code>, <code>0xff</code>, <code>0o45</code>
+        and <code>345</code>. For <code>signed</code>, each of these may be preceded by a <code>+</code> sign, but this is not <em>required</em>; if <code>positiveSign</code> is set to <code>PlusSignPresence.Compulsory</code>, positive literals would always require a <code>+</code>; and if it is set to <code>PlusSignPrecense.Illegal</code>, the <code>+</code> prefix can never be used (but <code>-</code> is fine regardless). By default, <code>023</code> is legal, but this can be
+        disabled by setting <code>leadingZerosAllowed</code> to <code>false</code>.</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">num</span><span> = </span><span class="identifier">lexer</span><span>.</span><span class="identifier">lexeme</span><span>.</span><span class="identifier">signed</span><span>.</span><span class="identifier">number</span><span>
+</span><span class="comment">// num: parsley.Parsley[BigInt] = parsley.Parsley@fcf96ca
+</span><span class="identifier">num</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;0&quot;</span><span>)
+</span><span class="comment">// res0: parsley.Result[String, BigInt] = Success(x = 0)
+</span><span class="identifier">num</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;0xff&quot;</span><span>)
+</span><span class="comment">// res1: parsley.Result[String, BigInt] = Success(x = 255)
+</span><span class="identifier">num</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;+0o45&quot;</span><span>)
+</span><span class="comment">// res2: parsley.Result[String, BigInt] = Success(x = 37)
+</span><span class="identifier">num</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;-345&quot;</span><span>)
+</span><span class="comment">// res3: parsley.Result[String, BigInt] = Success(x = -345)</span></code></pre>
+        <p>In the basic configuration, break characters are not supported. However, by setting
+        <code>literalBreakChar</code> to <code>BreakCharDesc.Supported(&#39;_&#39;, allowedAfterNonDecimalPrefix = true)</code>,
+        say, will allow for <code>1_000</code> or <code>0x_400</code>. Setting the second parameter to <code>false</code> will forbid
+        the latter example, as the break characters may then only appear between digits.</p>
+        <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">lexerWithBreak</span><span> = </span><span class="keyword">new</span><span> </span><span class="type-name">Lexer</span><span>(</span><span class="type-name">LexicalDesc</span><span>.</span><span class="identifier">plain</span><span>.</span><span class="identifier">copy</span><span>(
+        </span><span class="identifier">numericDesc</span><span> = </span><span class="type-name">NumericDesc</span><span>.</span><span class="identifier">plain</span><span>.</span><span class="identifier">copy</span><span>(
+            </span><span class="identifier">literalBreakChar</span><span> = </span><span class="type-name">BreakCharDesc</span><span>.</span><span class="type-name">Supported</span><span>(</span><span class="char-literal">&#39;_&#39;</span><span>, </span><span class="identifier">allowedAfterNonDecimalPrefix</span><span> = </span><span class="boolean-literal">true</span><span>))
+    ))
+</span><span class="comment">// lexerWithBreak: Lexer = parsley.token.Lexer@758e1b31
+</span><span class="keyword">val</span><span> </span><span class="identifier">withBreak</span><span> = </span><span class="identifier">lexerWithBreak</span><span>.</span><span class="identifier">lexeme</span><span>.</span><span class="identifier">signed</span><span>.</span><span class="identifier">number</span><span>
+</span><span class="comment">// withBreak: parsley.Parsley[BigInt] = parsley.Parsley@22b6bb34
+</span><span class="identifier">withBreak</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;1_000&quot;</span><span>)
+</span><span class="comment">// res4: parsley.Result[String, BigInt] = Success(x = 1000)
+</span><span class="identifier">withBreak</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;1_&quot;</span><span>)
+</span><span class="comment">// res5: parsley.Result[String, BigInt] = Failure(
+// ...
+</span><span class="identifier">withBreak</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;2__0&quot;</span><span>) </span><span class="comment">// no double break
+// res6: parsley.Result[String, BigInt] = Failure(
+// ...</span></code></pre>
+        <p>Real numbers in the default configuration do not support literals like <code>.0</code> or <code>1.</code>, this
+        behaviour must be explicitly enabled with <code>trailingDotAllowed</code> and <code>leadingDotAllowed</code>: note
+        that <code>.</code> is not a valid literal, even with both flags enabled! By default, all four different
+        bases support exponents on their literals for floating-point numbers. This could be turned
+        off for each by using <code>ExponentDesc.NoExponents</code>. However, with exponents enabled, it is
+        configured that the non-decimal bases all <em>require</em> exponents for valid literals. Whilst
+        <code>3.142</code> is valid decimal literal, <code>0x3.142</code> is not a legal hexadecimal literal: to make
+        it work, the exponent must be added, i.e. <code>0x3.142p0</code>, where <code>p0</code> is performing <code>* 2^0</code>.
+        For each of the non-decimal literals, the base of the exponent is configured to be <code>2</code>, hence
+        <code>2^0</code> in the previous example; for decimal it is set to the usual <code>10</code>, so that <code>2e3</code> is <code>2*10^3</code>,
+        or <code>2000</code>. Notice that literals do not <em>require</em> a point, so long as they do have
+        an exponent.</p>
+        <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">real</span><span> = </span><span class="identifier">lexer</span><span>.</span><span class="identifier">lexeme</span><span>.</span><span class="identifier">real</span><span>
+</span><span class="comment">// real: parsley.token.numeric.RealParsers = parsley.token.numeric.LexemeReal@723a5a30
+</span><span class="identifier">real</span><span>.</span><span class="identifier">hexadecimalDouble</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;0x3.142&quot;</span><span>)
+</span><span class="comment">// res7: parsley.Result[String, Double] = Failure(
+// ...
+</span><span class="identifier">real</span><span>.</span><span class="identifier">hexadecimalDouble</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;0x3.142p0&quot;</span><span>)
+</span><span class="comment">// res8: parsley.Result[String, Double] = Success(x = 3.07861328125)
+</span><span class="identifier">real</span><span>.</span><span class="identifier">binary</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;0b0.1011p0&quot;</span><span>)
+</span><span class="comment">// res9: parsley.Result[String, BigDecimal] = Success(x = 0.6875)
+</span><span class="identifier">real</span><span>.</span><span class="identifier">decimal</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;3.142&quot;</span><span>)
+</span><span class="comment">// res10: parsley.Result[String, BigDecimal] = Success(x = 3.142)
+</span><span class="identifier">real</span><span>.</span><span class="identifier">decimal</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;4&quot;</span><span>)
+</span><span class="comment">// res11: parsley.Result[String, BigDecimal] = Failure(
+// ...
+</span><span class="identifier">real</span><span>.</span><span class="identifier">decimal</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;2e3&quot;</span><span>)
+</span><span class="comment">// res12: parsley.Result[String, BigDecimal] = Success(x = 2000)</span></code></pre>
+        <div class="callout info">
+          <i class="icofont-laika info">&#xef4e;</i>
+          <p>When a floating point literal is parsed in a non-decimal base, the meaning of each digit past
+          the point is to be a fraction of that base. The example <code>0x3.142p0</code>, for instance is not equal
+          to the decimal <code>3.142</code>. Instead, it is equal to <code>(3 + 1/16 + 4/(16^2) + 2/(16^3)) * 2^0 = 3.07861328125</code>. Handily, hexadecimal floats are still equal to the 4-bit bunching up of binary
+          floats: <code>0x0.Bp0</code> is the same as <code>0b0.1011p0</code>, both of which are <code>0.6875</code> in decimal.</p>
+        </div>
+        
+        <h2 id="lexer-lexeme-nonlexeme-text-parsers" class="section"><a class="anchor-link left" href="#lexer-lexeme-nonlexeme-text-parsers"><i class="icofont-laika link">&#xef71;</i></a><code>Lexer.{lexeme, nonlexeme}</code> Text Parsers</h2>
+        <p>This <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M1/parsley/token/Lexer$lexeme$$text$.html">object</a> deals with the parsing of both string
+        literals and character literals, configured broadby by <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M1/parsley/token/descriptions/text/TextDesc.html"><code>LexicalDesc.textDesc</code></a>:</p>
+        <ul>
+          <li>
+            <p><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M1/parsley/token/text/StringParsers.html"><code>parsley.token.text.StringParsers</code></a>: values with this type
+            deal with multi-character/codepoint strings. Specifically, the interface provides ways
+            of dealing with different levels of character encodings.</p>
+            <p>In practice, there are four values with this type: <code>text.string</code>, <code>text.rawString</code>,
+            <code>text.multiString</code>, and <code>text.rawMultiString</code> covering three different kinds of string:</p>
+            <ul>
+              <li>
+                <p><code>text.string</code>: used to handle regular string literals where escape characters are
+                present. They are single-line.</p>
+              </li>
+              <li>
+                <p><code>text.multiString</code>/<code>text.rawMultiString</code>: handles string literals using the
+                <code>multiStringEnds</code> configuration within <code>LexicalDesc.textDesc</code>. These string literals
+                can span multiple lines.</p>
+              </li>
+              <li>
+                <p><code>text.rawString</code>/<code>text.rawMultiString</code>: handles string literals that do not have
+                escape characters.</p>
+              </li>
+            </ul>
+            <div class="callout info">
+              <i class="icofont-laika info">&#xef4e;</i>
+              <p>Note that currently, whatever a string literal is started with, it must end with the
+              exact same sequence.</p>
+            </div>
+          </li>
+          <li>
+            <p><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M1/parsley/token/text/CharacterParsers.html"><code>parsley.token.text.CharacterParsers</code></a>: like <code>StringParsers</code>,
+            the <code>text.character</code> object can handle different kinds of text encoding. However, unlike
+            <code>String</code>, there is only one kind of character available, which has escape codes and can only
+            contain a single graphic character (or, if applicable, single unicode codepoint).</p>
+            <div class="callout info">
+              <i class="icofont-laika info">&#xef4e;</i>
+              <p>A single codepoint here refers to having at most two 16-bit UTF-16 characters in a surrogate
+              pair, allowing for any character in the range <code>0x00000</code> to <code>0x10ffff</code>. Some unicode
+              characters are composed of multiple codepoints. As an example, national flags are composed
+              of two &quot;regional indicator characters&quot;, for instance 🇬 and 🇧, making 🇬🇧. Such emoji
+              cannot appear within a parsed character in <code>parsley</code>, and can instead only be written in a
+              string.</p>
+            </div>
+          </li>
+        </ul>
+        
+        <h3 id="examples-of-configuration-and-valid-literals-2" class="section"><a class="anchor-link left" href="#examples-of-configuration-and-valid-literals-2"><i class="icofont-laika link">&#xef71;</i></a>Examples of Configuration and Valid Literals</h3>
+        <p>The majority of configuration for strings and characters is focused around the escape
+        sequences. Outside of that, it is mostly just what the valid start and end sequences
+        are valid for different flavours of literal. However, the <code>graphicCharacter</code> predicate
+        is used to denote what the valid characters are that can appear in a string verbatim.
+        This can be restricted to a smaller set than might otherwise have been checked by
+        <code>ascii</code> or <code>latin1</code> parsers. In these instances, a different error message would be
+        generated:</p>
+        <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">aboveSpace</span><span> = </span><span class="identifier">predicate</span><span>.</span><span class="type-name">Unicode</span><span>(</span><span class="identifier">_</span><span> &gt;= </span><span class="number-literal">0x20</span><span>)
+</span><span class="comment">// aboveSpace: predicate.Unicode = Unicode(&lt;function1&gt;)
+</span><span class="keyword">def</span><span> </span><span class="declaration-name">stringParsers</span><span>(</span><span class="identifier">graphicChar</span><span>: </span><span class="type-name">CharPredicate</span><span> = </span><span class="identifier">aboveSpace</span><span>,
+                  </span><span class="identifier">escapeDesc</span><span>: </span><span class="type-name">EscapeDesc</span><span> = </span><span class="type-name">EscapeDesc</span><span>.</span><span class="identifier">plain</span><span>) =
+    </span><span class="keyword">new</span><span> </span><span class="type-name">Lexer</span><span>(</span><span class="type-name">LexicalDesc</span><span>.</span><span class="identifier">plain</span><span>.</span><span class="identifier">copy</span><span>(
+        </span><span class="identifier">textDesc</span><span> = </span><span class="type-name">TextDesc</span><span>.</span><span class="identifier">plain</span><span>.</span><span class="identifier">copy</span><span>(
+            </span><span class="identifier">escapeSequences</span><span> = </span><span class="identifier">escapeDesc</span><span>,
+            </span><span class="identifier">graphicCharacter</span><span> = </span><span class="identifier">graphicChar</span><span>
+        )
+    )).</span><span class="identifier">nonlexeme</span><span>.</span><span class="identifier">string</span><span>
+
+</span><span class="keyword">val</span><span> </span><span class="identifier">fullUnicode</span><span> = </span><span class="identifier">stringParsers</span><span>(</span><span class="identifier">aboveSpace</span><span>)
+</span><span class="comment">// fullUnicode: parsley.token.text.StringParsers = parsley.token.text.ConcreteString@1fd95f25
+</span><span class="keyword">val</span><span> </span><span class="identifier">latin1Limited</span><span> = </span><span class="identifier">stringParsers</span><span>(</span><span class="identifier">predicate</span><span>.</span><span class="type-name">Basic</span><span>(</span><span class="identifier">c</span><span> =&gt; </span><span class="identifier">c</span><span> &gt;= </span><span class="number-literal">0x20</span><span> &amp;&amp; </span><span class="identifier">c</span><span> &lt;= </span><span class="number-literal">0xcf</span><span>))
+</span><span class="comment">// latin1Limited: parsley.token.text.StringParsers = parsley.token.text.ConcreteString@2c815f49
+</span><span>
+</span><span class="identifier">fullUnicode</span><span>.</span><span class="identifier">latin1</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;</span><span class="escape-sequence">\&quot;</span><span class="string-literal">hello α</span><span class="escape-sequence">\&quot;</span><span class="string-literal">&quot;</span><span>)
+</span><span class="comment">// res13: parsley.Result[String, String] = Failure((line 1, column 2):
+//   non-latin1 characters in string literal, this is not allowed
+//   &gt;&quot;hello α&quot;
+//     ^^^^^^^)
+</span><span class="identifier">latin1Limited</span><span>.</span><span class="identifier">fullUtf16</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;</span><span class="escape-sequence">\&quot;</span><span class="string-literal">hello α</span><span class="escape-sequence">\&quot;</span><span class="string-literal">&quot;</span><span>)
+</span><span class="comment">// res14: parsley.Result[String, String] = Failure((line 1, column 8):
+//   unexpected &quot;α&quot;
+//   expected &quot;&quot;&quot; or string character
+//   &gt;&quot;hello α&quot;
+//           ^)</span></code></pre>
+        <p>When it comes to escape characters, the <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M1/parsley/token/descriptions/text/EscapeDesc.html">configuration</a> distinguishes between four kinds of escape sequence, which are further sub-divided:</p>
+        <p><span class="paragraph"> Denotative escapes </span>
+        These are a family of escape sequences that are names or symbols for the escape characters
+        they represent. Parsley supports three different kinds of denotative escape characters:</p>
+        <ul>
+          <li>
+            <p><code>EscapeDesc.literals</code>: these are a set of characters that plainly represent themselves, but
+            for whatever reason must be escaped to appear within the string. Some of the most common
+            examples would be <code>\&quot;</code> or <code>\\</code>, which are an escaped double quote and backslash,
+            respectively. The literal set for these would be <code>Set(&#39;&quot;&#39;, &#39;\\&#39;)</code></p>
+          </li>
+          <li>
+            <p><code>EscapeDesc.mapping</code>: these are a mapping of specific sequences of characters to the underlying
+            characters they represent. Commonly, this might be something like <code>\n</code>, which would be
+            represented in the map by an entry <code>&quot;n&quot; -&gt; 0xa</code>, or <code>&quot;NULL&quot; -&gt; 0x0</code> for <code>&#39;\NULL&#39;</code>.</p>
+          </li>
+        </ul>
+        <p>Of course, all denotative escape sequences can be represented by the <code>mapping</code> on its own,
+        and all the above examples could be represented by
+        <code>Map(&quot;\&quot;&quot; -&gt; &#39;&quot;&#39;, &quot;\\&quot; -&gt; &#39;\\&#39;, &quot;n&quot; -&gt; 0xa, &quot;NULL&quot; -&gt; 0x0)</code>. For <code>literals</code> in particular, the
+        <code>Set</code> is more ergonomic than the <code>Map</code>.</p>
+        <div class="callout error">
+          <i class="icofont-laika error">&#xeedd;</i>
+          <p>Note that the <code>literals</code> set, along with the keys of <code>mapping</code>, must all be
+          distinct from each other. Furthermore, no empty sequences may be placed in <code>mapping</code>.
+          Violating any of these requirements will result in an error.</p>
+        </div>
+        <p><span class="paragraph"> Numeric escapes </span>
+        These are escapes that represent the numeric code of a specific character. There are four different bases for numeric escapes: binary, octal, hexadecimal, and decimal. Each of these
+        can have their own unique prefix (or lack there of), maximum allowed value, and specific
+        number of digits:</p>
+        <ul>
+          <li>
+            <p><code>NumberOfDigits.Unbounded</code>: simply, this allows the numeric escape to have any number of
+            digits, so long as the end result is within the specified maximum value of the escape.</p>
+          </li>
+          <li>
+            <p><code>NumberOfDigits.AtMost(n: Int)</code>: this denotes that there is an upper-limit to the number
+            of digits allowed for the escape sequence, but it can take any number of digits below
+            this limit. Again, the end result must still be within the specified maximum value of the
+            escape.</p>
+          </li>
+          <li>
+            <p><code>NumerOfDigits.Exactly(ns: Int*)</code>: this denotes that the number of digits can be one of
+            the specified totals in <code>ns</code> (there must be at least one provided number). For example
+            <code>Exactly(1, 2, 4, 6)</code> would allow escapes like <code>\0</code>, <code>\20</code>, <code>\0400</code>, <code>\10fffe</code> are legal,
+            but <code>\400</code> would not be.</p>
+          </li>
+        </ul>
+        <p><span class="paragraph"> String gaps </span>
+        Supported for string literals only, string gaps allow for prunable whitespace
+        within a string literal. These take the form of a backslash, followed by whitespace,
+        terminated by another backslash (this can include newlines, even in otherwise
+        single-line strings). As an example:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">withGaps</span><span> = </span><span class="identifier">stringParsers</span><span>(</span><span class="identifier">escapeDesc</span><span> = </span><span class="type-name">EscapeDesc</span><span>.</span><span class="identifier">plain</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">gapsSupported</span><span> = </span><span class="boolean-literal">true</span><span>))
+</span><span class="comment">// withGaps: parsley.token.text.StringParsers = parsley.token.text.ConcreteString@523426a
+</span><span class="identifier">withGaps</span><span>.</span><span class="identifier">ascii</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;&quot;&quot;&quot;Hello \
+
+      \World!&quot; &quot;&quot;&quot;</span><span>)
+</span><span class="comment">// res15: parsley.Result[String, String] = Success(Hello World!)</span></code></pre>
+        <p><span class="paragraph"> Empty escapes </span>
+        These are also only supported by string literals. These characters have no effect on the
+        string literal, but otherwise allow for disambiguation with multi-character escape
+        sequences. For example, if <code>EscapeDesc.emptyEscape</code> is set to <code>Some(&#39;&amp;&#39;)</code>, then
+        <code>&quot;\x20\&amp;7&quot;</code> would be interpreted as the string <code>&quot; 7&quot;</code>, however, without the <code>\&amp;</code>
+        character, it would try and render character <code>0x207</code>.</p>
+        
+        <h2 id="lexer-lexeme-enclosing-separators" class="section"><a class="anchor-link left" href="#lexer-lexeme-enclosing-separators"><i class="icofont-laika link">&#xef71;</i></a><code>Lexer.lexeme.{enclosing, separators}</code></h2>
+        <p>These two objects just contain various shortcuts for doing things such as semi-colon separated
+        things, or braces enclosed things, etc. There is nothing special about them: with <code>lexer.lexeme.symbol.implicits.implicitSymbol</code> imported, <code>&quot;(&quot; ~&gt; p &lt;~ &quot;)&quot;</code> is the same as <code>lexer.lexeme.enclosing.parens(p)</code>. The choice of one style over the other is purely up to taste.</p>
+        
+        <h2 id="whitespace-sensitive-languages-and-lexer-space" class="section"><a class="anchor-link left" href="#whitespace-sensitive-languages-and-lexer-space"><i class="icofont-laika link">&#xef71;</i></a>Whitespace-Sensitive Languages and <code>Lexer.space</code></h2>
+        <p>Normally, the whitespace definitions used by <code>lexeme</code> are fixed as described by the
+        <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M1/parsley/token/descriptions/SpaceDesc.html"><code>LexicalDesc.spaceDesc</code></a>; accounting
+        for the comments and spaces themselves. However, some languages, like Python and Haskell
+        do not have constant definitions of whitespace: for instance, inside a pair of parentheses,
+        newline characters are no longer considered for the current indentation. To support this,
+        <code>parsley</code> allows for the space definition to be locally altered during parsing if
+        <code>LexicalDesc.spaceDesc.whitespaceIsContextDependent</code> is set to <code>true</code>: this <em>may</em> impact
+        the performance of the parser.</p>
+        <div class="callout error">
+          <i class="icofont-laika error">&#xeedd;</i>
+          <p>If the <code>LexicalDesc.spaceDesc.whitespaceIsContextDependent</code> flag is turned on it is <strong>crucial</strong> that
+          either the <code>Lexer.fully</code> combinator is used, <em>or</em> <code>Lexer.space.init</code> is ran as the very first thing the
+          top-level parser does. Without this, the context-dependent whitespace will not be set-up correctly!</p>
+        </div>
+        <p>In this mode, it is possible to use the <code>lexer.space.alter</code> combinator to <em>temporarily</em>
+        change the definition of whitespace (but not comments) within the scope of a given parser.
+        As an example:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">withNewline</span><span> = </span><span class="identifier">predicate</span><span>.</span><span class="type-name">Basic</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">isSpace</span><span>)
+</span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span> = ... | </span><span class="string-literal">&quot;(&quot;</span><span> ~&gt; </span><span class="identifier">lexer</span><span>.</span><span class="identifier">space</span><span>.</span><span class="identifier">alter</span><span>(</span><span class="identifier">withNewline</span><span>)(</span><span class="identifier">expr</span><span>) &lt;~ </span><span class="string-literal">&quot;)&quot;</span></code></pre>
+        <p>For the duration of that nested <code>expr</code> call, newlines are considered regular whitespace. This,
+        of course, is assuming that newlines were <em>not</em> considered whitespace under normal conditions.</p>
+
+        
+<hr class="footer-rule"/>
+<footer>
+  Parsley is distributed under the <a href="https://opensource.org/licenses/BSD-3-Clause">BSD-3-Clause</a> license.
+</footer>
+
+
+      </main>
+
+    </div>
+
+  </body>
+
+</html>
