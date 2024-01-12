@@ -114,8 +114,8 @@ object ParsleySitePlugin extends AutoPlugin {
                 def version(v: String, label: String)(path: String = v) =
                     Version(s"$v.x", path).withLabel(label).withFallbackLink(s"api-guide")
                 Versions
-                  .forCurrentVersion(version(tlBaseVersion.value, "stable")().setCanonical)
-                  .withOlderVersions(version("4.4", "stable")())
+                  .forCurrentVersion(version(tlBaseVersion.value, "dev")().setCanonical)
+                  .withOlderVersions(version("4.4", "stable")(), version("4.5", "stable")())
                   .withRenderUnversioned(notBackport)
             }
             .site.themeColors(
