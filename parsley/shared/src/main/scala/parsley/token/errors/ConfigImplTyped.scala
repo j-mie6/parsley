@@ -17,7 +17,7 @@ import org.typelevel.scalaccompat.annotation.unused
   * @since 4.1.0
   * @group filters
   */
-trait FilterConfig[A] {
+sealed trait FilterConfig[A] {
     private [parsley] def filter(p: Parsley[A])(f: A => Boolean): Parsley[A]
     private [parsley] def mkError(offset: Int, line: Int, col: Int, caretWidth: Int, x: A): DefuncError
     // $COVERAGE-OFF$
@@ -32,19 +32,19 @@ trait FilterConfig[A] {
   * @since 4.1.0
   * @group filters
   */
-trait SpecialisedFilterConfig[A] extends FilterConfig[A]
+sealed trait SpecialisedFilterConfig[A] extends FilterConfig[A]
 /** This subtrait of `FilterConfig` specifies that only filters generating ''vanilla'' errors may be used.
   * @since 4.1.0
   * @group filters
   */
-trait VanillaFilterConfig[A] extends FilterConfig[A]
+sealed trait VanillaFilterConfig[A] extends FilterConfig[A]
 
 /** This class ensures that the filter will generate ''specialised'' messages for the given failing parse.
   * @since 4.1.0
   * @group filters
   */
 abstract class SpecialisedMessage[A] extends SpecialisedFilterConfig[A] { self =>
-    @deprecated("filters do not have partial amend semantics, so this does nothing", "4.1.0")  def this(@unused fullAmend: Boolean) = this()
+    private def this(@unused fullAmend: Boolean) = this()
     /** This method produces the messages for the given value.
       * @since 4.1.0
       * @group badchar
@@ -83,7 +83,7 @@ abstract class SpecialisedMessage[A] extends SpecialisedFilterConfig[A] { self =
   * @group filters
   */
 abstract class Unexpected[A] extends VanillaFilterConfig[A] { self =>
-    @deprecated("filters do not have partial amend semantics, so this does nothing", "4.1.0")  def this(@unused fullAmend: Boolean) = this()
+    private def this(@unused fullAmend: Boolean) = this()
     /** This method produces the unexpected label for the given value.
       * @since 4.1.0
       * @group badchar
@@ -121,7 +121,7 @@ abstract class Unexpected[A] extends VanillaFilterConfig[A] { self =>
   * @group filters
   */
 abstract class Because[A] extends VanillaFilterConfig[A] { self =>
-    @deprecated("filters do not have partial amend semantics, so this does nothing", "4.1.0")  def this(@unused fullAmend: Boolean) = this()
+    private def this(@unused fullAmend: Boolean) = this()
     /** This method produces the reason for the given value.
       * @since 4.1.0
       * @group badchar
@@ -159,7 +159,7 @@ abstract class Because[A] extends VanillaFilterConfig[A] { self =>
   * @group filters
   */
 abstract class UnexpectedBecause[A] extends VanillaFilterConfig[A] { self =>
-    @deprecated("filters do not have partial amend semantics, so this does nothing", "4.1.0")  def this(@unused fullAmend: Boolean) = this()
+    private def this(@unused fullAmend: Boolean) = this()
     /** This method produces the unexpected label for the given value.
       * @since 4.1.0
       * @group badchar

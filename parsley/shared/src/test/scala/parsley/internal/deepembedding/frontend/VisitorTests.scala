@@ -15,13 +15,13 @@ import parsley.internal.deepembedding.{ContOps, Sign}
 import parsley.internal.deepembedding.backend.StrictParsley
 import parsley.internal.deepembedding.singletons.*
 import parsley.internal.deepembedding.singletons.token.*
-import parsley.internal.errors.{CaretWidth, ExpectDesc, ExpectItem, FlexibleCaret}
-import parsley.internal.machine.errors.DefuncError
+import parsley.internal.errors.{CaretWidth, FlexibleCaret}
 import parsley.state.Ref
 import parsley.token.descriptions.SpaceDesc
 import parsley.token.descriptions.numeric.PlusSignPresence
-import parsley.token.errors.{ErrorConfig, FilterConfig, LabelConfig, LabelWithExplainConfig, SpecialisedFilterConfig}
+import parsley.token.errors.{ErrorConfig, BasicFilter, LabelConfig, SpecialisedFilterConfig}
 import parsley.token.predicate.Basic
+import parsley.token.errors.NotConfigured
 
 class VisitorTests extends ParsleyTest {
     sealed trait ConstUnit[+A]
@@ -65,25 +65,7 @@ class VisitorTests extends ParsleyTest {
         }
 
 
-    private val dummyLabelConfig: LabelConfig = new LabelConfig {
-        override private[parsley] def orElse(other: LabelConfig): LabelConfig =
-            dontExecute()
-
-        override private[parsley] def orElse(other: LabelWithExplainConfig): LabelWithExplainConfig =
-            dontExecute()
-
-        override private[parsley] def asExpectDescs: Iterable[ExpectDesc] =
-            dontExecute()
-
-        override private[parsley] def asExpectDescs(otherwise: String): Iterable[ExpectDesc] =
-            dontExecute()
-
-        override private[parsley] def asExpectItems(raw: String): Iterable[ExpectItem] =
-            dontExecute()
-
-        override private[parsley] def apply[A](p: Parsley[A]): Parsley[A] =
-            dontExecute()
-    }
+    private val dummyLabelConfig: LabelConfig = NotConfigured
 
     private val dummyCaretWidth: CaretWidth = new FlexibleCaret(0)
 
@@ -92,22 +74,7 @@ class VisitorTests extends ParsleyTest {
             dontExecute()
     }
 
-    private def dummySFConfig[A](): SpecialisedFilterConfig[A] = new SpecialisedFilterConfig[A] {
-        override private[parsley] def filter(p: Parsley[A])(f: A => Boolean): Parsley[A] =
-            dontExecute()
-
-        override private[parsley] def mkError(offset: Int, line: Int, col: Int, caretWidth: Int, x: A): DefuncError =
-            dontExecute()
-
-        override private[parsley] def injectLeft[B]: FilterConfig[Either[A, B]] =
-            dontExecute()
-
-        override private[parsley] def injectRight[B]: FilterConfig[Either[B, A]] =
-            dontExecute()
-
-        override private[parsley] def injectSnd[B]: FilterConfig[(B, A)] =
-            dontExecute()
-    }
+    private def dummySFConfig[A](): SpecialisedFilterConfig[A] = new BasicFilter[A]
 
     implicit private class TestVisitorOps[A](p: LazyParsley[A]) {
         def testV: Assertion = p.visit(testVisitor, ()) shouldBe CUnit

@@ -847,6 +847,7 @@ class ErrorConfig {
 
 /** Some possible defaults for the `ErrorConfig`.
   *
+  * @group errconfig
   * @since 4.5.0
   */
 object ErrorConfig {

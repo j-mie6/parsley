@@ -20,7 +20,7 @@ private [parsley] sealed trait ConfigImplUntyped {
 
 // TODO: move into internal?
 // Relaxing Types
-private [parsley] trait LabelOps {
+private [parsley] sealed trait LabelOps {
     private [parsley] def asExpectDescs: Iterable[ExpectDesc]
     private [parsley] def asExpectDescs(otherwise: String): Iterable[ExpectDesc]
     private [parsley] def asExpectItems(raw: String): Iterable[ExpectItem]
@@ -28,31 +28,34 @@ private [parsley] trait LabelOps {
 }
 
 // TODO: reason extraction, maybe tie into errors?
-private [parsley] trait ExplainOps
-
+private [parsley] sealed trait ExplainOps
 
 // Constraining Types
 /** This type can be used to configure ''both'' errors that make labels and those that make reasons.
   * @since 4.1.0
   * @group labels
   */
-trait LabelWithExplainConfig extends ConfigImplUntyped with LabelOps with ExplainOps {
+sealed trait LabelWithExplainConfig extends ConfigImplUntyped with LabelOps with ExplainOps {
     private [parsley] def orElse(other: LabelWithExplainConfig): LabelWithExplainConfig
 }
 /** This type can be used to configure errors that make labels.
   * @since 4.1.0
   * @group labels
   */
-trait LabelConfig extends LabelWithExplainConfig {
+sealed trait LabelConfig extends LabelWithExplainConfig {
     private [parsley] def orElse(other: LabelConfig): LabelConfig
 }
 /** This type can be used to configure errors that make reasons.
   * @since 4.1.0
   * @group labels
   */
-trait ExplainConfig extends LabelWithExplainConfig
+sealed trait ExplainConfig extends LabelWithExplainConfig
 
-private [errors] final class Label private[errors] (val label: String, val labels: String*) extends LabelConfig {
+/** This class represents configurations producing labels: labels may not be empty.
+  * @since 4.1.0
+  * @group labels
+  */
+final class Label(val label: String, val labels: String*) extends LabelConfig {
     require(label.nonEmpty && labels.forall(_.nonEmpty), "labels cannot be empty strings")
     private [parsley] final override def apply[A](p: Parsley[A]) = p.label(label, labels: _*)
     private [parsley] final override def asExpectDescs: Iterable[ExpectDesc] = (label +: labels).map(new ExpectDesc(_))
@@ -65,8 +68,7 @@ private [errors] final class Label private[errors] (val label: String, val label
     }
     private [parsley] final override def orElse(config: LabelConfig) = this
 }
-/** This object has a factory for configurations producing labels: labels may not be empty.
-  * @since 4.1.0
+/** @since 4.1.0
   * @group labels
   */
 object Label {
@@ -86,7 +88,11 @@ object Hidden extends LabelConfig {
     private [parsley] final override def orElse(config: LabelConfig) = this
 }
 
-private [errors] final class Reason private[errors] (val reason: String) extends ExplainConfig {
+/** This object has a factory for configurations producing reasons: if the empty string is provided, this equivalent to [[NotConfigured `NotConfigured`]].
+  * @since 4.1.0
+  * @group labels
+  */
+final class Reason(val reason: String) extends ExplainConfig {
     require(reason.nonEmpty, "reasons cannot be empty strings")
     private [parsley] final override def apply[A](p: Parsley[A]) = p.explain(reason)
     private [parsley] final override def asExpectDescs = None
@@ -98,15 +104,18 @@ private [errors] final class Reason private[errors] (val reason: String) extends
         case _ => this
     }
 }
-/** This object has a factory for configurations producing reasons: if the empty string is provided, this equivalent to [[NotConfigured `NotConfigured`]].
-  * @since 4.1.0
+/** @since 4.1.0
   * @group labels
   */
 object Reason {
-    def apply(reason: String): ExplainConfig = if (reason.nonEmpty) new Reason(reason) else NotConfigured
+    def apply(reason: String): ExplainConfig = new Reason(reason)
 }
 
-private [errors] final class LabelAndReason private[errors] (val reason: String, val label: String, val labels: String*) extends LabelWithExplainConfig {
+/** This object has a factory for configurations producing labels and reasons: the reason and labels cannot be empty.
+  * @since 4.1.0
+  * @group labels
+  */
+final class LabelAndReason(val reason: String, val label: String, val labels: String*) extends LabelWithExplainConfig {
     require(reason.nonEmpty, "reason cannot be empty strings, use `Label` instead")
     require(label.nonEmpty && labels.forall(_.nonEmpty), "labels cannot be empty strings")
     private [parsley] final override def apply[A](p: Parsley[A]) = p.label(label, labels: _*).explain(reason)
@@ -115,17 +124,11 @@ private [errors] final class LabelAndReason private[errors] (val reason: String,
     private [parsley] final override def asExpectItems(@unused raw: String) = asExpectDescs
     private [parsley] final override def orElse(config: LabelWithExplainConfig) = this
 }
-/** This object has a factory for configurations producing labels and reasons: if the empty label is provided, this equivalent to [[Hidden `Hidden`]] with no
-  * reason; if the empty reason is provided this is equivalent to [[Label$ `Label`]].
-  * @since 4.1.0
+/** @since 4.1.0
   * @group labels
   */
 object LabelAndReason {
-    def apply(label: String, reason: String): LabelWithExplainConfig = {
-        if (label.isEmpty) Hidden
-        else if (reason.nonEmpty) new LabelAndReason(reason, label)
-        else new Label(label)
-    }
+    def apply(label: String, reason: String): LabelWithExplainConfig = new LabelAndReason(reason, label)
 }
 
 /** This object specifies that no special labels or reasons should be generated, and default errors should be used instead.
