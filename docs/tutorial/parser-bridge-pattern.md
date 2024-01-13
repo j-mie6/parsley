@@ -436,7 +436,7 @@ object Num {
     def apply(x: Parsley[BigInt]): Parsley[Num] = pos <**> x.map(this.apply(_) _)
 }
 object Var {
-    def apply(x: Parsley[String]): Parsley[Var] = pos <**> x.map(this .apply(_) _)
+    def apply(x: Parsley[String]): Parsley[Var] = pos <**> x.map(this.apply(_) _)
 }
 ```
 
