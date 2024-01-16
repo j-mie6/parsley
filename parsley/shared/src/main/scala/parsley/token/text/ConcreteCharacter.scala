@@ -12,9 +12,10 @@ import parsley.token.errors.{ErrorConfig, FilterConfig, LabelConfig, LabelWithEx
 
 private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape, err: ErrorConfig) extends CharacterParsers {
     private val quote = char(desc.characterLiteralEnd)
-    private lazy val graphic = CharacterParsers.letter(desc.characterLiteralEnd, desc.escapeSequences.escBegin, allowsAllSpace = false, desc.graphicCharacter)
+    private lazy val graphic = CharacterParsers.letter(desc.characterLiteralEnd, allowsAllSpace = false, desc.graphicCharacter)
 
     private def charLetter(graphicLetter: Parsley[Int]) = {
+        // escapeChar is not atomic, so we don't need to rule out escape begin in graphic
         escapes.escapeChar <|> err.labelGraphicCharacter(graphicLetter) <|> err.verifiedCharBadCharsUsedInLiteral.checkBadChar
     }
     private def charLiteral[A](letter: Parsley[A], end: LabelConfig) = quote *> letter <* end(quote)

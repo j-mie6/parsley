@@ -115,14 +115,6 @@ private [text] object CharacterParsers {
         case NotRequired                  => NotRequired
     }
 
-    def letter(terminalLead: Char, escapeLead: Char, allowsAllSpace: Boolean, isGraphic: CharPredicate): CharPredicate = {
-        letter(terminalLead, allowsAllSpace, isGraphic) match {
-            case Unicode(g)  => Unicode(c => c != escapeLead.toInt && g(c))
-            case Basic(g)    => Basic(c => c != escapeLead && g(c))
-            case NotRequired => NotRequired
-        }
-    }
-
     @inline def isBmpCodePoint(codepoint: Int): Boolean = java.lang.Character.isBmpCodePoint(codepoint)
     @inline def isValidCodePoint(codepoint: Int): Boolean = java.lang.Character.isValidCodePoint(codepoint)
 }
