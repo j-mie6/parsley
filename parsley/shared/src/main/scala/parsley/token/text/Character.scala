@@ -104,8 +104,8 @@ abstract class CharacterParsers private[text] {
 }
 
 private [text] object CharacterParsers {
-    final val MaxAscii: Int = 0x7f
-    final val MaxLatin1: Int = 0xff
+    final val MaxAscii = 0x7f
+    final val MaxLatin1 = 0xff
 
     def letter(terminalLead: Char, allowsAllSpace: Boolean, isGraphic: CharPredicate): CharPredicate = isGraphic match {
         case Unicode(g) if allowsAllSpace => Unicode(c => c != terminalLead.toInt && (g(c) || c.toChar.isWhitespace))

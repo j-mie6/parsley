@@ -52,6 +52,6 @@ private [token] class Escape(desc: EscapeDesc, err: ErrorConfig, generic: numeri
     private val binaryEscape = fromDesc(radix = 2, desc.binaryEscape, generic.zeroAllowedBinary(NotConfigured))
     private val numericEscape = decimalEscape <|> hexadecimalEscape <|> octalEscape <|> binaryEscape
     val escapeCode = err.labelEscapeEnd(escMapped <|> numericEscape)
-    val escapeBegin = err.labelEscapeSequence(char(desc.escBegin))
+    val escapeBegin = err.labelEscapeSequence(char(desc.escBegin)).void
     val escapeChar = escapeBegin *> escapeCode
 }
