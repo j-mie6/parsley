@@ -228,7 +228,7 @@
         <p>This error is thrown by the Parsley compiler when Scala would otherwise have thrown a
         <code>NullPointerException</code> during what&#39;s known as &quot;let-finding&quot;. This is the very first phase of the
         pipeline, and, since Parsley does not use <code>null</code> <em>anywhere</em> in the front-end, its a symptom of a
-        parser having been demanded before its actually been defined. So what does mean for you, the user?</p>
+        parser having been demanded before its actually been defined. So what does that mean for you, the user?</p>
         <p>Well, unfortunately, Scala doesn&#39;t give us any indication about which parser is at fault (and the
         Java 14 Helpful NPEs don&#39;t help much either). But here are the possible causes:</p>
         <ol class="arabic">
