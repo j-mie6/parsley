@@ -5,6 +5,8 @@
  */
 package parsley.errors
 
+import scala.annotation.nowarn
+
 import parsley.Parsley
 
 import parsley.internal.deepembedding.{frontend, singletons}
@@ -494,6 +496,7 @@ object combinator {
           * @return a parser which returns the result of this parser applied to pf, if possible.
           * @see [[parsley.Parsley.collect `collect`]], which is a basic version of this same combinator with no customised error message.
           * @see [[guardAgainst `guardAgainst`]], which is similar to `collectMsg`, except it does not transform the data.
+          * @see [[filterWithMsg `filterWithMsg`]], which is similar to `collectMsg`, except uses a `A => Either[Seq[String], B]` function.
           * @note $autoAmend
           * @note implemented in terms of [[collectWith `collectWith`]].
           * @group filter
@@ -502,6 +505,41 @@ object combinator {
             this.collectWith(new SpecializedGen[A] {
                 override def messages(x: A) = msggen(x)
             })(pf)
+        }
+
+        /** This combinator conditionally transforms the result of this parser with a given function, if a `Left` is
+          * returned generates an error with its contexts, otherwise results the result inside the `Right`.
+          *
+          * Like [[Parsley.mapFilter `mapFilter`]], except allows for the error message generated to be
+          * specified for invalid parses.
+          *
+          * @example A good example of this combinator in use is for handling overflow in numeric literals.
+          * {{{
+          * val integer: Parsley[BigInt] = ...
+          * // this should be amended/entrenched for best results
+          * val int16: Parsley[Short] =
+          *     integer.filterWithMsg {
+          *         case x if x >= Short.MinValue
+          *                && x <= Short.MaxValue => Right(x.toShort)
+          *         case x => Left(Seq(s"integer literal &#36;n is not within the range -2^16 to +2^16-1"))
+          *     }
+          * }}}
+          *
+          * @since 5.0.0
+          * @param f the predicate that is tested against the parser result.
+          * @return a parser which returns the result of this parser applied to pf, if possible.
+          * @see [[parsley.Parsley.mapFilter `mapFilter`]], which is a basic version of this same combinator with no customised error message.
+          * @note $autoAmend
+          * @note implemented in terms of [[mapFilterWith `mapFilterWith`]].
+          * @group filter
+          */
+        def mapFilterMsg[B](f: A => Either[Seq[String], B]): Parsley[B] = {
+            this.mapFilterWith(new SpecializedGen[A] {
+                override def messages(x: A) = {
+                    val Left(errs) = f(x): @nowarn
+                    errs
+                }
+            })(x => f(x).toOption)
         }
 
         /** This combinator filters the result of this parser using the given partial-predicate, succeeding only when the predicate is undefined.
