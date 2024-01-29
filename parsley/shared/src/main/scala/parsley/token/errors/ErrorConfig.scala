@@ -721,6 +721,16 @@ class ErrorConfig {
       */
     def verifiedStringBadCharsUsedInLiteral: VerifiedBadChars = Unverified
 
+    /** Gives names and/or reasons to symbols.
+      *
+      * Symbols that do not appear in the map are assumed to be `NotConfigured`.
+      *
+      * @since 5.0.0
+      * @note defaults to the empty map
+      * @group symbol
+      */
+    def labelSymbol: Map[String, LabelWithExplainConfig] = Map.empty
+
     /** Gives names to punctuation if it is otherwise unspecified.
       *
       * Symbols that do not appear in the map are unlabelled. When a symbol
@@ -731,6 +741,7 @@ class ErrorConfig {
       * @note defaults to the empty map
       * @group symbol
       */
+    @deprecated("This will be removed in favour of `labelSymbol` in a future milestone", "5.0.0-M3")
     def labelSymbolPunctuation: Map[String, Option[String]] = Map.empty
 
     /** How to refer to a `;` symbol in an error message.
@@ -738,84 +749,98 @@ class ErrorConfig {
       * @note defaults to "semicolon"
       * @group symbol
       */
+    @deprecated("This will be removed in favour of `labelSymbol` in a future milestone", "5.0.0-M3")
     def labelSymbolSemi: LabelConfig = Label("semicolon")
     /** How to refer to a `,` symbol in an error message.
       * @since 4.1.0
       * @note defaults to "comma"
       * @group symbol
       */
+    @deprecated("This will be removed in favour of `labelSymbol` in a future milestone", "5.0.0-M3")
     def labelSymbolComma: LabelConfig = Label("comma")
     /** How to refer to a `:` symbol in an error message.
       * @since 4.1.0
       * @note defaults to "colon"
       * @group symbol
       */
+    @deprecated("This will be removed in favour of `labelSymbol` in a future milestone", "5.0.0-M3")
     def labelSymbolColon: LabelConfig = Label("colon")
     /** How to refer to a `.` symbol in an error message.
       * @since 4.1.0
       * @note defaults to "dot"
       * @group symbol
       */
+    @deprecated("This will be removed in favour of `labelSymbol` in a future milestone", "5.0.0-M3")
     def labelSymbolDot: LabelConfig = Label("dot")
     /** How to refer to a `(` symbol in an error message.
       * @since 4.1.0
       * @note defaults to "open parenthesis"
       * @group symbol
       */
+    @deprecated("This will be removed in favour of `labelSymbol` in a future milestone", "5.0.0-M3")
     def labelSymbolOpenParen: LabelConfig = Label("open parenthesis")
     /** How to refer to a `{` symbol in an error message.
       * @since 4.1.0
       * @note defaults to "open brace"
       * @group symbol
       */
+    @deprecated("This will be removed in favour of `labelSymbol` in a future milestone", "5.0.0-M3")
     def labelSymbolOpenBrace: LabelConfig = Label("open brace")
     /** How to refer to a `[` symbol in an error message.
       * @since 4.1.0
       * @note defaults to "open square bracket"
       * @group symbol
       */
+    @deprecated("This will be removed in favour of `labelSymbol` in a future milestone", "5.0.0-M3")
     def labelSymbolOpenSquare: LabelConfig = Label("open square bracket")
     /** How to refer to a `<` symbol in an error message.
       * @since 4.1.0
       * @note defaults to "open angle bracket"
       * @group symbol
       */
+    @deprecated("This will be removed in favour of `labelSymbol` in a future milestone", "5.0.0-M3")
     def labelSymbolOpenAngle: LabelConfig = Label("open angle bracket")
     /** How to refer to a `)` symbol in an error message.
       * @since 4.1.0
       * @note defaults to "closing parenthesis"
       * @group symbol
       */
+    @deprecated("This will be removed in favour of `labelSymbol` in a future milestone", "5.0.0-M3")
     def labelSymbolClosingParen: LabelConfig = Label("closing parenthesis")
     /** How to refer to a `}` symbol in an error message.
       * @since 4.1.0
       * @note defaults to "closing brace"
       * @group symbol
       */
+    @deprecated("This will be removed in favour of `labelSymbol` in a future milestone", "5.0.0-M3")
     def labelSymbolClosingBrace: LabelConfig = Label("closing brace")
     /** How to refer to a `]` symbol in an error message.
       * @since 4.1.0
       * @note defaults to "closing square bracket"
       * @group symbol
       */
+    @deprecated("This will be removed in favour of `labelSymbol` in a future milestone", "5.0.0-M3")
     def labelSymbolClosingSquare: LabelConfig = Label("closing square bracket")
     /** How to refer to a `>` symbol in an error message.
       * @since 4.1.0
       * @note defaults to "closing angle bracket"
       * @group symbol
       */
+    @deprecated("This will be removed in favour of `labelSymbol` in a future milestone", "5.0.0-M3")
     def labelSymbolClosingAngle: LabelConfig = Label("closing angle bracket")
     /** How a given keyword should be described in an error message.
       * @since 4.1.0
       * @note defaults to labelling with the symbol itself
       * @group symbol
       */
+    @deprecated("This will be removed in favour of `labelSymbol` in a future milestone", "5.0.0-M3")
     def labelSymbolKeyword(symbol: String): LabelWithExplainConfig = Label(symbol)
     /** How a given operator should be described in an error message.
       * @since 4.1.0
       * @note defaults to labelling with the symbol itself
       * @group symbol
       */
+    @deprecated("This will be removed in favour of `labelSymbol` in a future milestone", "5.0.0-M3")
     def labelSymbolOperator(symbol: String): LabelWithExplainConfig = Label(symbol)
     /** How the required end of a given keyword should be specified in an error.
       * @since 4.1.0

@@ -8,7 +8,7 @@ package parsley.token.symbol
 import parsley.Parsley, Parsley.atomic
 import parsley.character.{char, string}
 import parsley.token.descriptions.{NameDesc, SymbolDesc}
-import parsley.token.errors.ErrorConfig
+import parsley.token.errors.{ErrorConfig, NotConfigured}
 
 import parsley.internal.deepembedding.singletons.token
 
@@ -24,20 +24,20 @@ private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc,
         require(name.nonEmpty, "Symbols may not be empty strings")
         if (symbolDesc.hardKeywords(name))       softKeyword(name)
         else if (symbolDesc.hardOperators(name)) softOperator(name)
-        else                                     atomic(string(name)).void
+        else                                     err.labelSymbol.getOrElse(name, NotConfigured)(atomic(string(name)).void)
     }
 
-    override def apply(name: Char): Parsley[Unit] = char(name).void
+    override def apply(name: Char): Parsley[Unit] = err.labelSymbol.getOrElse(name.toString, NotConfigured)(char(name).void)
 
     override def softKeyword(name: String): Parsley[Unit] = {
         require(name.nonEmpty, "Keywords may not be empty strings")
         new Parsley(new token.SoftKeyword(name, nameDesc.identifierLetter, symbolDesc.caseSensitive,
-                                          err.labelSymbolKeyword(name), err.labelSymbolEndOfKeyword(name)))
+                                          err.labelSymbol.getOrElse(name, err.labelSymbolKeyword(name)), err.labelSymbolEndOfKeyword(name)))
     }
 
     override def softOperator(name: String): Parsley[Unit] = {
         require(name.nonEmpty, "Operators may not be empty strings")
         new Parsley(new token.SoftOperator(name, nameDesc.operatorLetter, symbolDesc.hardOperatorsTrie,
-                                           err.labelSymbolOperator(name), err.labelSymbolEndOfOperator(name)))
+                                           err.labelSymbol.getOrElse(name, err.labelSymbolOperator(name)), err.labelSymbolEndOfOperator(name)))
     }
 }
