@@ -494,7 +494,7 @@ object combinator {
           * @return a parser which returns the result of this parser applied to pf, if possible.
           * @see [[parsley.Parsley.collect `collect`]], which is a basic version of this same combinator with no customised error message.
           * @see [[guardAgainst `guardAgainst`]], which is similar to `collectMsg`, except it does not transform the data.
-          * @see [[filterWithMsg `filterWithMsg`]], which is similar to `collectMsg`, except uses a `A => Either[Seq[String], B]` function.
+          * @see [[mapFilterMsg `mapFilterMsg`]], which is similar to `collectMsg`, except uses a `A => Either[Seq[String], B]` function.
           * @note $autoAmend
           * @note implemented in terms of [[collectWith `collectWith`]].
           * @group filter
