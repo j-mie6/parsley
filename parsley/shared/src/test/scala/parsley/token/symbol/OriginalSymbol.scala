@@ -5,6 +5,8 @@
  */
 package parsley.token.symbol
 
+import scala.annotation.nowarn
+
 import parsley.Parsley, Parsley.{atomic, empty, notFollowedBy, unit}
 import parsley.character.{char, string, strings}
 import parsley.unicode
@@ -45,7 +47,7 @@ private [token] class OriginalSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc,
     override def softKeyword(name: String): Parsley[Unit] = {
         require(name.nonEmpty, "Keywords may not be empty strings")
         atomic {
-            err.labelSymbolKeyword(name)(caseString(name)) *>
+            err.labelSymbol.getOrElse(name, err.labelSymbolKeyword(name): @nowarn)(caseString(name)) *>
             notFollowedBy(identLetter).label(err.labelSymbolEndOfKeyword(name))
         }
     }
@@ -58,11 +60,11 @@ private [token] class OriginalSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc,
         }.toList
         ends match {
             case Nil => atomic {
-                err.labelSymbolOperator(name)(string(name)) *>
+                err.labelSymbol.getOrElse(name, err.labelSymbolOperator(name): @nowarn)(string(name)) *>
                 notFollowedBy(opLetter).label(err.labelSymbolEndOfOperator(name))
             }
             case end::ends => atomic {
-                err.labelSymbolOperator(name)(string(name)) *>
+                err.labelSymbol.getOrElse(name, err.labelSymbolOperator(name): @nowarn)(string(name)) *>
                 notFollowedBy(opLetter <|> strings(end, ends: _*)).label(err.labelSymbolEndOfOperator(name))
             }
         }
