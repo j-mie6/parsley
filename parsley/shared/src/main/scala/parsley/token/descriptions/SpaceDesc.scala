@@ -42,8 +42,8 @@ object SpaceDesc {
       *
       * {{{
       * multiLineCommentStart = ""
-      * commentEnd = ""
-      * lineComment = ""
+      * multiLineCommendEnd = ""
+      * lineCommentStart = ""
       * lineCommentAllowsEOF = true
       * multiLineNestedComments = false
       * space = Unicode(Character.isWhitespace)
