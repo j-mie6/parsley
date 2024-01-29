@@ -22,9 +22,13 @@ private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc,
 
     override def apply(name: String): Parsley[Unit] = {
         require(name.nonEmpty, "Symbols may not be empty strings")
+        lazy val compatLabel = err.labelSymbolPunctuation.get(name).map {
+            case None => parsley.token.errors.Hidden
+            case Some(l) => parsley.token.errors.Label(l)
+        }.getOrElse(NotConfigured)
         if (symbolDesc.hardKeywords(name))       softKeyword(name)
         else if (symbolDesc.hardOperators(name)) softOperator(name)
-        else                                     err.labelSymbol.getOrElse(name, NotConfigured)(atomic(string(name)).void)
+        else                                     err.labelSymbol.getOrElse(name, compatLabel)(atomic(string(name)).void)
     }
 
     override def apply(name: Char): Parsley[Unit] = err.labelSymbol.getOrElse(name.toString, NotConfigured)(char(name).void)
