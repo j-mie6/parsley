@@ -5,8 +5,6 @@
  */
 package parsley.errors
 
-import scala.annotation.nowarn
-
 import parsley.Parsley
 
 import parsley.internal.deepembedding.{frontend, singletons}
@@ -536,7 +534,7 @@ object combinator {
         def mapFilterMsg[B](f: A => Either[Seq[String], B]): Parsley[B] = {
             this.mapFilterWith(new SpecializedGen[A] {
                 override def messages(x: A) = {
-                    val Left(errs) = f(x): @nowarn
+                    val Left(errs) = f(x): @unchecked
                     errs
                 }
             })(x => f(x).toOption)
