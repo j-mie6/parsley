@@ -15,7 +15,8 @@ import parsley.XAssert._
 import parsley.errors.ErrorBuilder
 
 import parsley.internal.errors.{CaretWidth, ExpectItem, LineBuilder, UnexpectDesc}
-import parsley.internal.machine.errors.{ClassicFancyError, DefuncError, DefuncHints, EmptyHints, ErrorItemBuilder, ExpectedError, UnexpectedError}
+import parsley.internal.machine.errors.{ClassicFancyError, DefuncError, DefuncHints, EmptyHints,
+                                        ErrorItemBuilder, ExpectedError, ExpectedErrorWithReason, UnexpectedError}
 
 import instructions.Instr
 import stacks.{ArrayStack, CallStack, ErrorStack, HandlerStack, Stack, StateStack}, Stack.StackExt
@@ -192,6 +193,13 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     }
     private [machine] def expectedFail(expected: Iterable[ExpectItem], unexpectedWidth: Int): Unit = {
         this.fail(new ExpectedError(offset, line, col, expected, unexpectedWidth))
+    }
+    private [machine] def expectedFailWithReason(expected: Iterable[ExpectItem], reason: String, unexpectedWidth: Int): Unit = {
+        this.fail(new ExpectedErrorWithReason(offset, line, col, expected, reason, unexpectedWidth))
+    }
+    private [machine] def expectedFailWithReason(expected: Iterable[ExpectItem], reason: Option[String], unexpectedWidth: Int): Unit = {
+        if (reason.isEmpty) this.expectedFail(expected, unexpectedWidth)
+        else this.expectedFailWithReason(expected, reason.get, unexpectedWidth)
     }
 
     private [machine] def fail(error: DefuncError): Unit = {

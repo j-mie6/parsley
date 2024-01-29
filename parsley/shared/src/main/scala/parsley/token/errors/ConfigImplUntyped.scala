@@ -27,8 +27,9 @@ private [parsley] sealed trait LabelOps {
     private [parsley] final def asExpectItems(raw: Char): Iterable[ExpectItem] = asExpectItems(s"$raw")
 }
 
-// TODO: reason extraction, maybe tie into errors?
-private [parsley] sealed trait ExplainOps
+private [parsley] sealed trait ExplainOps {
+    private [parsley] def asReason: Option[String]
+}
 
 // Constraining Types
 /** This type can be used to configure ''both'' errors that make labels and those that make reasons.
@@ -67,6 +68,7 @@ final class Label(val label: String, val labels: String*) extends LabelConfig {
         case _ => this
     }
     private [parsley] final override def orElse(config: LabelConfig) = this
+    private [parsley] final override def asReason: Option[String] = None
 }
 /** @since 4.1.0
   * @group labels
@@ -86,6 +88,7 @@ object Hidden extends LabelConfig {
     private [parsley] final override def asExpectItems(@unused raw: String) = asExpectDescs
     private [parsley] final override def orElse(config: LabelWithExplainConfig) = this
     private [parsley] final override def orElse(config: LabelConfig) = this
+    private [parsley] final override def asReason: Option[String] = None
 }
 
 /** This object has a factory for configurations producing reasons: if the empty string is provided, this equivalent to [[NotConfigured `NotConfigured`]].
@@ -103,6 +106,7 @@ final class Reason(val reason: String) extends ExplainConfig {
         case lr: LabelAndReason => new LabelAndReason(reason, lr.label, lr.labels: _*)
         case _ => this
     }
+    private [parsley] final override def asReason: Option[String] = Some(reason)
 }
 /** @since 4.1.0
   * @group labels
@@ -123,6 +127,7 @@ final class LabelAndReason(val reason: String, val label: String, val labels: St
     private [parsley] final override def asExpectDescs(@unused otherwise: String) = asExpectDescs
     private [parsley] final override def asExpectItems(@unused raw: String) = asExpectDescs
     private [parsley] final override def orElse(config: LabelWithExplainConfig) = this
+    private [parsley] final override def asReason: Option[String] = Some(reason)
 }
 /** @since 4.1.0
   * @group labels
@@ -142,4 +147,5 @@ object NotConfigured extends LabelConfig with ExplainConfig with LabelWithExplai
     private [parsley] final override def asExpectItems(raw: String) = Some(new ExpectRaw(raw))
     private [parsley] final override def orElse(config: LabelWithExplainConfig) = config
     private [parsley] final override def orElse(config: LabelConfig) = config
+    private [parsley] final override def asReason: Option[String] = None
 }

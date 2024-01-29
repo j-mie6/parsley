@@ -805,19 +805,18 @@ class ErrorConfig {
       * @group symbol
       */
     def labelSymbolClosingAngle: LabelConfig = Label("closing angle bracket")
-    //TODO: In future, we want to add LabelWithExplain config here: to do that, introduce an explainSymbolKeyword and merge with a private verson
     /** How a given keyword should be described in an error message.
       * @since 4.1.0
       * @note defaults to labelling with the symbol itself
       * @group symbol
       */
-    def labelSymbolKeyword(symbol: String): LabelConfig = Label(symbol)
+    def labelSymbolKeyword(symbol: String): LabelWithExplainConfig = Label(symbol)
     /** How a given operator should be described in an error message.
       * @since 4.1.0
       * @note defaults to labelling with the symbol itself
       * @group symbol
       */
-    def labelSymbolOperator(symbol: String): LabelConfig = Label(symbol)
+    def labelSymbolOperator(symbol: String): LabelWithExplainConfig = Label(symbol)
     /** How the required end of a given keyword should be specified in an error.
       * @since 4.1.0
       * @note defaults to "end of symbol"

@@ -5,7 +5,7 @@
  */
 package parsley.errors
 
-// TODO: move into ErrorBuilder object in 5.5.0?
+// TODO: move into ErrorBuilder object in 5.0.0?
 /** This class represents an extracted token returned by `unexpectedToken` in `ErrorBuilder`.
   *
   * There is deliberately no analogue for `EndOfInput` because we guarantee that non-empty

@@ -12,7 +12,7 @@ import parsley.errors.ErrorBuilder
 import parsley.state.Ref
 import parsley.token.descriptions.SpaceDesc
 import parsley.token.descriptions.numeric.PlusSignPresence
-import parsley.token.errors.{ErrorConfig, LabelConfig, SpecialisedFilterConfig}
+import parsley.token.errors.{ErrorConfig, LabelConfig, LabelWithExplainConfig, SpecialisedFilterConfig}
 import parsley.token.predicate.CharPredicate
 
 // scalastyle:off underscore.import
@@ -74,9 +74,13 @@ private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle
     def visit(self: SoftKeyword, context: T)(specific: String,
                                              letter: CharPredicate,
                                              caseSensitive: Boolean,
-                                             expected: LabelConfig,
+                                             expected: LabelWithExplainConfig,
                                              expectedEnd: String): U[Unit]
-    def visit(self: SoftOperator, context: T)(specific: String, letter: CharPredicate, ops: Trie[Unit], expected: LabelConfig, expectedEnd: String): U[Unit]
+    def visit(self: SoftOperator, context: T)(specific: String,
+                                              letter: CharPredicate,
+                                              ops: Trie[Unit],
+                                              expected: LabelWithExplainConfig,
+                                              expectedEnd: String): U[Unit]
 
     // Primitive parser visitors.
     def visit[A](self: Attempt[A], context: T)(p: LazyParsley[A]): U[A]
@@ -213,12 +217,12 @@ private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
     override def visit(self: SoftKeyword, context: T)(specific: String,
                                                       letter: CharPredicate,
                                                       caseSensitive: Boolean,
-                                                      expected: LabelConfig,
+                                                      expected: LabelWithExplainConfig,
                                                       expectedEnd: String): U[Unit] = visitSingleton(self, context)
     override def visit(self: SoftOperator, context: T)(specific: String,
                                                        letter: CharPredicate,
                                                        ops: Trie[Unit],
-                                                       expected: LabelConfig,
+                                                       expected: LabelWithExplainConfig,
                                                        expectedEnd: String): U[Unit] = visitSingleton(self, context)
 
     // Primitive overrides.
