@@ -358,7 +358,9 @@ private [parsley] final class EmptyErrorWithReason(val presentationOffset: Int, 
 }
 
 private [errors] final class TrivialMergedErrors private [errors] (val err1: TrivialDefuncError, val err2: TrivialDefuncError) extends TrivialDefuncError {
-    override final val flags = err1.flags & err2.flags
+    // FIXME: this is horrid, split out the flags at this point, we'll do 16-bit and 8-bit
+    override final val flags = scala.math.max(err1.entrenchedBy, err2.entrenchedBy) |
+                               (err1.flags & err2.flags & ~DefuncError.EntrenchedMask)
     assume(err1.underlyingOffset == err2.underlyingOffset, "two errors only merge when they have matching offsets")
     override val underlyingOffset = err1.underlyingOffset
     assume(err1.presentationOffset == err2.presentationOffset, "two errors only merge when they have matching offsets")
@@ -370,7 +372,9 @@ private [errors] final class TrivialMergedErrors private [errors] (val err1: Tri
 }
 
 private [errors] final class FancyMergedErrors private [errors] (val err1: FancyDefuncError, val err2: FancyDefuncError) extends FancyDefuncError {
-    override final val flags = err1.flags & err2.flags
+    // FIXME: this is horrid, split out the flags at this point, we'll do 16-bit and 8-bit
+    override final val flags = scala.math.max(err1.entrenchedBy, err2.entrenchedBy) |
+                               (err1.flags & err2.flags & ~DefuncError.EntrenchedMask)
     assume(err1.underlyingOffset == err2.underlyingOffset, "two errors only merge when they have matching offsets")
     override val underlyingOffset = err1.underlyingOffset
     assume(err1.presentationOffset == err2.presentationOffset, "two errors only merge when they have matching offsets")
