@@ -239,7 +239,7 @@ floats: `0x0.Bp0` is the same as `0b0.1011p0`, both of which are `0.6875` in dec
 
 ## `Lexer.{lexeme, nonlexeme}` Text Parsers
 This [object](@:api(parsley.token.Lexer$lexeme$$text$)) deals with the parsing of both string
-literals and character literals, configured broadby by [`LexicalDesc.textDesc`](@:api(parsley.token.descriptions.text.TextDesc)):
+literals and character literals, configured broadly by [`LexicalDesc.textDesc`](@:api(parsley.token.descriptions.text.TextDesc)):
 
 * [`parsley.token.text.StringParsers`](@:api(parsley.token.text.StringParsers)): values with this type
   deal with multi-character/codepoint strings. Specifically, the interface provides ways
