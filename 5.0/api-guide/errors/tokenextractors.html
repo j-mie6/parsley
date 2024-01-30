@@ -171,21 +171,13 @@
         denotes whether or not the failure happened whilst trying
         to parse a token from <code>Lexer</code>, or not. The return value,
         <code>Token</code>, is one of the following classes:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Named</span><span>(</span><span class="identifier">name</span><span>: </span><span class="type-name">String</span><span>, </span><span class="identifier">span</span><span>: </span><span class="type-name">TokenSpan</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Token</span><span>
-</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Raw</span><span>(</span><span class="identifier">tok</span><span>: </span><span class="type-name">String</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Token</span><span>
-
-</span><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">TokenSpan</span><span>
-</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Spanning</span><span>(</span><span class="identifier">line</span><span>: </span><span class="type-name">Int</span><span>, </span><span class="identifier">col</span><span>: </span><span class="type-name">Int</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">TokenSpan</span><span>
-</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Width</span><span>(</span><span class="identifier">w</span><span>: </span><span class="type-name">Int</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">TokenSpan</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Named</span><span>(</span><span class="identifier">name</span><span>: </span><span class="type-name">String</span><span>, </span><span class="identifier">span</span><span>: </span><span class="type-name">Int</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Token</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Raw</span><span>(</span><span class="identifier">tok</span><span>: </span><span class="type-name">String</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Token</span></code></pre>
         <p>A <code>Raw</code> token indicates no further processing of the input could
         occur to get a better token, and some is returned verbatim.
         Otherwise, a <code>Named</code> token can replace a raw token with something
         derived from the input -- the <code>span</code> here denotes how wide that
         token had been determined to be.</p>
-        <div class="callout warning">
-          <i class="icofont-laika warning">&#xf026;</i>
-          <p>The <code>Spanning</code> class will be removed in <code>parsley:5.0.0</code>: in future, the width will be in <code>Named</code> directly.</p>
-        </div>
         <p>The idea is that <code>unexpectedToken</code> should examine the provided
         arguments and determine if a more specific token can be extracted
         from the residual input, or, if not, produce a final <code>Raw</code> token
@@ -254,7 +246,7 @@
     </span><span class="keyword">def</span><span> </span><span class="declaration-name">extractItem</span><span>(</span><span class="identifier">cs</span><span>: </span><span class="type-name">Iterable</span><span>[</span><span class="type-name">Char</span><span>], </span><span class="identifier">amountOfInputParserWanted</span><span>: </span><span class="type-name">Int</span><span>): </span><span class="type-name">Token</span><span> = {
         </span><span class="type-name">SingleChar</span><span>.</span><span class="identifier">unexpectedToken</span><span>(</span><span class="identifier">cs</span><span>)
     }
-    </span><span class="keyword">def</span><span> </span><span class="declaration-name">selectToken</span><span>(</span><span class="identifier">matchedToks</span><span>: </span><span class="type-name">List</span><span>[(</span><span class="type-name">String</span><span>, (</span><span class="type-name">Int</span><span>, </span><span class="type-name">Int</span><span>))]): (</span><span class="type-name">String</span><span>, (</span><span class="type-name">Int</span><span>, </span><span class="type-name">Int</span><span>)) = {
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">selectToken</span><span>(</span><span class="identifier">matchedToks</span><span>: </span><span class="type-name">List</span><span>[(</span><span class="type-name">String</span><span>, </span><span class="type-name">Int</span><span>)]): (</span><span class="type-name">String</span><span>, </span><span class="type-name">Int</span><span>) = {
         </span><span class="identifier">matchedToks</span><span>.</span><span class="identifier">maxBy</span><span>(</span><span class="identifier">_</span><span class="number-literal">._2</span><span>)
     }
 }</span></code></pre>
