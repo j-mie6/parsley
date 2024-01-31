@@ -44,8 +44,8 @@ They can be made in three different ways:
     not guarantee uniqueness of scoping. The state will **not** be initialised.
 
     @:callout(warning)
-    Using the same globally constructed reference in two places is undefined
-    behaviour and should *not* be done.
+    Using the same globally constructed reference in two different parsers (in terms of calling
+    `.parse` on them) is undefined behaviour and should *not* be done.
     @:@
 
 References themselves have two core operations, with several more built on top:
