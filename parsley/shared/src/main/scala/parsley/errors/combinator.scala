@@ -338,7 +338,7 @@ object combinator {
       *     offset than `p` originally started at. While this sounds like it is the same as "having consumed input" for the
       *     purposes of backtracking, they are disjoint concepts:
       *
-      *       1. in `attempt(p)`, `p` can ''observably'' consume input even though the wider parser does not consume input due to the `attempt`.
+      *       1. in `atomic(p)`, `p` can ''observably'' consume input even though the wider parser does not consume input due to the `atomic`.
       *       1. in `amend(p)`, `p` can consume input and may not backtrack even though the consumption is not ''observable'' in the error
       *          message due to the `amend`.
       *
