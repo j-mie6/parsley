@@ -59,8 +59,8 @@ private [token] class OriginalEscape(desc: EscapeDesc, err: ErrorConfig, generic
             case n :: ns  =>
                 val theseDigits = exactly(digits, m, radix, digit, reqDigits)
                 val restDigits = (
-                        (atomic(go(n-m, n, ns).map(Some(_)) <* digitsParsed.update(_ + digits)))
-                    <|> (digitsParsed.set(digits).as(None))
+                        atomic(go(n-m, n, ns).map(Some(_)) <* digitsParsed.update(_ + digits))
+                    <|> digitsParsed.set(digits).as(None)
                 )
                 (theseDigits, restDigits, digitsParsed.get).zipped[BigInt] {
                     case (x, None, _) => x

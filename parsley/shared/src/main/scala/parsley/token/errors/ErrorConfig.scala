@@ -54,25 +54,25 @@ class ErrorConfig {
 
     /** How unsigned decimal integers should be referred to or explained within an error.
       * @since 4.1.0
-      * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerUnsignedNumber:* `labelIntegerUnsignedNumber`]]
+      * @note defaults to `labelIntegerUnsignedNumber`
       * @group numeric
       */
     def labelIntegerUnsignedDecimal: LabelWithExplainConfig = labelIntegerUnsignedNumber
     /** How unsigned hexadecimal integers should be referred to or explained within an error.
       * @since 4.1.0
-      * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerUnsignedNumber:* `labelIntegerUnsignedNumber`]]
+      * @note defaults to `labelIntegerUnsignedNumber`
       * @group numeric
       */
     def labelIntegerUnsignedHexadecimal: LabelWithExplainConfig = labelIntegerUnsignedNumber
     /** How unsigned octal integers should be referred to or explained within an error.
       * @since 4.1.0
-      * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerUnsignedNumber:* `labelIntegerUnsignedNumber`]]
+      * @note defaults to `labelIntegerUnsignedNumber`
       * @group numeric
       */
     def labelIntegerUnsignedOctal: LabelWithExplainConfig = labelIntegerUnsignedNumber
     /** How unsigned binary integers should be referred to or explained within an error.
       * @since 4.1.0
-      * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerUnsignedNumber:* `labelIntegerUnsignedNumber`]]
+      * @note defaults to `labelIntegerUnsignedNumber`
       * @group numeric
       */
     def labelIntegerUnsignedBinary: LabelWithExplainConfig = labelIntegerUnsignedNumber
@@ -115,25 +115,25 @@ class ErrorConfig {
 
     /** How signed decimal integers should be referred to or explained within an error.
       * @since 4.1.0
-      * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerSignedNumber:* `labelIntegerSignedNumber`]]
+      * @note defaults to `labelIntegerSignedNumber`
       * @group numeric
       */
     def labelIntegerSignedDecimal: LabelWithExplainConfig = labelIntegerSignedNumber
     /** How signed hexadecimal integers should be referred to or explained within an error.
       * @since 4.1.0
-      * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerSignedNumber:* `labelIntegerSignedNumber`]]
+      * @note defaults to `labelIntegerSignedNumber`
       * @group numeric
       */
     def labelIntegerSignedHexadecimal: LabelWithExplainConfig = labelIntegerSignedNumber
     /** How signed octal integers should be referred to or explained within an error.
       * @since 4.1.0
-      * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerSignedNumber:* `labelIntegerSignedNumber`]]
+      * @note defaults to `labelIntegerSignedNumber`
       * @group numeric
       */
     def labelIntegerSignedOctal: LabelWithExplainConfig = labelIntegerSignedNumber
     /** How signed binary integers should be referred to or explained within an error.
       * @since 4.1.0
-      * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerSignedNumber:* `labelIntegerSignedNumber`]]
+      * @note defaults to `labelIntegerSignedNumber`
       * @group numeric
       */
     def labelIntegerSignedBinary: LabelWithExplainConfig = labelIntegerSignedNumber

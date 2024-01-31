@@ -1005,6 +1005,7 @@ object Parsley extends PlatformSpecific {
           * }}}
           *
           * @return the parser `p`, but guaranteed to be lazy.
+          * @group special
           */
         def unary_~ : Parsley[A] = unit *> p
     }
