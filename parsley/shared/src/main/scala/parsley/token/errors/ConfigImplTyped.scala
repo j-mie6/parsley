@@ -32,6 +32,7 @@ sealed trait FilterConfig[A] {
   * @since 4.1.0
   * @group filters
   */
+// FIXME: needs to be americanised
 sealed trait SpecialisedFilterConfig[A] extends FilterConfig[A]
 /** This subtrait of `FilterConfig` specifies that only filters generating ''vanilla'' errors may be used.
   * @since 4.1.0

@@ -540,24 +540,40 @@ with the AST nodes type itself: this can be useful!
 Let's see how style (2) compares. To accomplish this, we can think of the new `from` combinator as
 being another template method provided by our generic bridge traits:
 
-```scala
+```scala mdoc:reset:invisible
+import parsley.Parsley
+import parsley.position.pos
+```
+```scala mdoc
+import parsley.ap._
+
 trait ParserBridgePos1[-A, +B] {
     def apply(x: A)(pos: (Int, Int)): B
-    def apply(x: Parsley[A]): Parsley[B] = pos <**> x.map(this.apply(_) _)
-    def from(op: Parsley[_]): Parsley[A => B] =
-        pos.map[A => B](p => this.apply(_)(p)) <~ op
+    private def con(pos: (Int, Int)): A => B = this.apply(_)(pos)
+
+    def apply(x: Parsley[A]): Parsley[B] = ap1(pos.map(con), x)
+    def from(op: Parsley[_]): Parsley[A => B] = pos.map(con) <~ op
     final def <#(op: Parsley[_]): Parsley[A => B] = this from op
+
 }
 
 trait ParserBridgePos2[-A, -B, +C] {
     def apply(x: A, y: B)(pos: (Int, Int)): C
-    def apply(x: Parsley[A], y: Parsley[B]): Parsley[C] =
-        pos <**> (x, y).zipped(this.apply(_, _) _)
-    def from(op: Parsley[_]): Parsley[(A, B) => C] =
-        pos.map[(A, B) => C](p => this.apply(_, _)(p)) <* op
+    private def con(pos: (Int, Int)): (A, B) => C = this.apply(_, _)(pos)
+
+    def apply(x: Parsley[A], y: =>Parsley[B]): Parsley[C] = ap2(pos.map(con), x, y)
+    def from(op: Parsley[_]): Parsley[(A, B) => C] = pos.map(con) <* op
     final def <#(op: Parsley[_]): Parsley[(A, B) => C] = this from op
 }
 ```
+
+In amongst this, I've factored out the application of our hook `apply` into the private function
+`con`, which helps keep the code a bit cleaner. In the unsaturated case, the `from` combinator just
+maps `con` over the position, leaving a residual function, and the saturated template `apply` case has been
+cleaned up to use the `ap`-family of combinators, which allow for the application of a parser returning
+a function to many parsers; this is similar to `lift`/`zipped`, but works for parsers instead of functions,
+which is helpful here. As a side-effect of using `ap`, the laziness of the template `apply` combinator
+has been improved, which is nice.
 
 Now, by mixing in one of the generic bridge traits, we get two ways of using bridge constructors:
 the first, `apply`, allows for fully-saturated application of a constructor to its parser arguments;
@@ -604,59 +620,104 @@ object expressions {
 }
 ```
 
-### Abstracting One More Time
+### Abstracting Again
 In the refined definition of our generic bridge traits we supported the _Singleton Bridge_
 parsing design pattern by allowing the companion object itself to "appear" like a parser itself.
 However, if we peer in closely we can even spot some common structure between the two different
 `from` implementations from above:
 
-```scala
+```scala mdoc:invisible:reset
+import parsley.Parsley
+import parsley.position.pos
+```
+```scala mdoc
 trait ParserBridgePos1[-A, +B] {
     def apply(x: A)(pos: (Int, Int)): B
-    def from(op: Parsley[_]): Parsley[A => B] =
-        pos.map[A => B](p => this.apply(_)(p)) <* op
+    private def con(pos: (Int, Int)): A => B = this.apply(_)(pos)
+
+    def from(op: Parsley[_]): Parsley[A => B] = pos.map(con) <* op
     final def <#(op: Parsley[_]): Parsley[A => B] = this from op
 }
 
 trait ParserBridgePos2[-A, -B, +C] {
     def apply(x: A, y: B)(pos: (Int, Int)): C
-    def from(op: Parsley[_]): Parsley[(A, B) => C] =
-        pos.map[(A, B) => C](p => this.apply(_, _)(p)) <* op
+    private def con(pos: (Int, Int)): (A, B) => C = this.apply(_, _)(pos)
+
+    def from(op: Parsley[_]): Parsley[(A, B) => C] = pos.map(con) <* op
     final def <#(op: Parsley[_]): Parsley[(A, B) => C] = this from op
 }
 ```
 
-They are _almost_ identical, except for the arity of the `apply` method found within the `map`.
-It's possible to abstract one more layer and introduce another couple of traits to help factor
+Both bridges are _almost_
+identical except for the shape returned by their `con` function. It's possible to abstract one more
+layer and introduce another couple of traits to help factor
 the common code:
 
 ```scala mdoc:invisible:reset
 import parsley.Parsley
-import parsley.syntax.zipped.Zipped2
 import parsley.position.pos
+import parsley.ap._
 ```
 ```scala mdoc
 trait ParserSingletonBridgePos[+A] {
-    def con(pos: (Int, Int)): A
+    protected def con(pos: (Int, Int)): A
     def from(op: Parsley[_]): Parsley[A] = pos.map(this.con(_)) <* op
     final def <#(op: Parsley[_]): Parsley[A] = this from op
 }
 
 trait ParserBridgePos1[-A, +B] extends ParserSingletonBridgePos[A => B] {
     def apply(x: A)(pos: (Int, Int)): B
-    def apply(x: Parsley[A]): Parsley[B] = pos <**> x.map(this.apply(_) _)
+    def apply(x: Parsley[A]): Parsley[B] = ap1(pos.map(con), x)
+
     override final def con(pos: (Int, Int)): A => B = this.apply(_)(pos)
 }
 
 trait ParserBridgePos2[-A, -B, +C] extends ParserSingletonBridgePos[(A, B) => C] {
     def apply(x: A, y: B)(pos: (Int, Int)): C
-    def apply(x: Parsley[A], y: Parsley[B]): Parsley[C] =
-        pos <**> (x, y).zipped(this.apply(_, _) _)
+    def apply(x: Parsley[A], y: =>Parsley[B]): Parsley[C] = ap2(pos.map(con), x, y)
+
     override final def con(pos: (Int, Int)): (A, B) => C = this.apply(_, _)(pos)
 }
 ```
 
 This provides a _modest_ improvement over the original versions.
+
+### Adding Errors
+The generic bridges found in `parsley.generic` offer one additional component that is absent from the
+descriptions above: they all extend `generic.ParserSingleBridge`, which in turn extends
+`generic.ErrorBridge`. This trait exposes hook methods for `labels` and `reason`, which allow for
+error messages to be associated with the bridge, and in exchange provides the template `error` combinator:
+this is supposed to be called within the bridge to annotate a parser with the provided error messages.
+Our definitions of `ParserBridgePos1` and `ParserBridgePos2` can also benefit from this:
+
+```scala mdoc:invisible:reset
+import parsley.Parsley
+import parsley.position.pos
+import parsley.ap._
+```
+```scala mdoc
+import parsley.generic
+
+trait ParserSingletonBridgePos[+A] extends generic.ErrorBridge {
+    protected def con(pos: (Int, Int)): A
+    def from(op: Parsley[_]): Parsley[A] = error(pos.map(this.con(_)) <* op)
+    final def <#(op: Parsley[_]): Parsley[A] = this from op
+}
+
+trait ParserBridgePos1[-A, +B] extends ParserSingletonBridgePos[A => B] {
+    def apply(x: A)(pos: (Int, Int)): B
+    def apply(x: Parsley[A]): Parsley[B] = error(ap1(pos.map(con), x))
+
+    override final def con(pos: (Int, Int)): A => B = this.apply(_)(pos)
+}
+
+trait ParserBridgePos2[-A, -B, +C] extends ParserSingletonBridgePos[(A, B) => C] {
+    def apply(x: A, y: B)(pos: (Int, Int)): C
+    def apply(x: Parsley[A], y: =>Parsley[B]): Parsley[C] = error(ap2(pos.map(con), x, y))
+
+    override final def con(pos: (Int, Int)): (A, B) => C = this.apply(_, _)(pos)
+}
+```
 
 ## The Final Parser
 
