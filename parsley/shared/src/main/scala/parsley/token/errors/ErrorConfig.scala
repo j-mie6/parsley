@@ -609,7 +609,7 @@ class ErrorConfig {
       * @note defaults to label of "end of escape sequence" with a reason of "invalid escape sequence"
       * @group text
       */
-    def labelEscapeEnd: LabelWithExplainConfig = LabelAndReason("end of escape sequence", "invalid escape sequence")
+    def labelEscapeEnd: LabelWithExplainConfig = LabelAndReason(label = "end of escape sequence", reason = "invalid escape sequence")
     /** How zero-width escape characters should be referred to within error messages.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
@@ -880,6 +880,7 @@ class ErrorConfig {
   * @since 4.5.0
   */
 object ErrorConfig {
+    // TODO: deprecate/remove?
     /** Can be used as part of `labelSymbolPunctuation` to give names to common punctuation
       * their english name counterpart.
       * @since 4.5.0

@@ -134,6 +134,7 @@ final class LabelAndReason(val reason: String, val label: String, val labels: St
     private [parsley] final override def orElse(config: LabelWithExplainConfig) = this
     private [parsley] final override def asReason: Option[String] = Some(reason)
 }
+// FIXME: reverse order of arguments! Add varargs
 /** @since 4.1.0
   * @group labels
   */
