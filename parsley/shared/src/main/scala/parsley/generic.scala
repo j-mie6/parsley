@@ -66,7 +66,7 @@ object generic {
         /** The abstract hook method: what value is the singleton representing?
           * @since 4.0.0
           */
-        def con: A
+        protected def con: A
         /** The syntax on this implementing type that performs the parser and
           * returns `con`.
           *
@@ -83,7 +83,7 @@ object generic {
     }
 
     /** Generic bridge trait for singleton objects that simply return themselves
-      * after running the parser provided to `<#`.
+      * after running the parser provided to `from`.
       *
       * @since 4.0.0
       */
