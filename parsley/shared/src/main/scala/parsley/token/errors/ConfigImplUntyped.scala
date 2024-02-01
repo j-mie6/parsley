@@ -52,6 +52,10 @@ sealed trait LabelConfig extends LabelWithExplainConfig {
   */
 sealed trait ExplainConfig extends LabelWithExplainConfig
 
+private [parsley] sealed trait Labeller {
+    private [parsley] def config(name: String): LabelConfig
+}
+
 /** This class represents configurations producing labels: labels may not be empty.
   * @since 4.1.0
   * @group labels
@@ -73,8 +77,9 @@ final class Label(val label: String, val labels: String*) extends LabelConfig {
 /** @since 4.1.0
   * @group labels
   */
-object Label {
+object Label extends Labeller {
     def apply(label: String, labels: String*): LabelConfig = new Label(label, labels: _*)
+    private [parsley] final def config(name: String) = new Label(name)
 }
 
 /** This object configures labels by stating that it must be hidden.
@@ -140,7 +145,7 @@ object LabelAndReason {
   * @since 4.1.0
   * @group labels
   */
-object NotConfigured extends LabelConfig with ExplainConfig with LabelWithExplainConfig {
+object NotConfigured extends LabelConfig with ExplainConfig with LabelWithExplainConfig with Labeller {
     private [parsley] final override def apply[A](p: Parsley[A]) = p
     private [parsley] final override def asExpectDescs = None
     private [parsley] final override def asExpectDescs(otherwise: String) = Some(new ExpectDesc(otherwise))
@@ -148,4 +153,5 @@ object NotConfigured extends LabelConfig with ExplainConfig with LabelWithExplai
     private [parsley] final override def orElse(config: LabelWithExplainConfig) = config
     private [parsley] final override def orElse(config: LabelConfig) = config
     private [parsley] final override def asReason: Option[String] = None
+    private [parsley] final def config(name: String) = this
 }

@@ -30,7 +30,7 @@ private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc,
         }.getOrElse(NotConfigured)
         if (symbolDesc.hardKeywords(name))       softKeyword(name)
         else if (symbolDesc.hardOperators(name)) softOperator(name)
-        else                                     err.labelSymbol.getOrElse(name, compatLabel)(atomic(string(name)).void)
+        else                                     err.labelSymbol.getOrElse(name, compatLabel).orElse(err.defaultSymbolPunctuation.config(name))(atomic(string(name)).void)
     }
 
     override def apply(name: Char): Parsley[Unit] = err.labelSymbol.getOrElse(name.toString, NotConfigured)(char(name).void)
@@ -38,12 +38,12 @@ private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc,
     override def softKeyword(name: String): Parsley[Unit] = {
         require(name.nonEmpty, "Keywords may not be empty strings")
         new Parsley(new token.SoftKeyword(name, nameDesc.identifierLetter, symbolDesc.caseSensitive,
-                                          err.labelSymbol.getOrElse(name, err.labelSymbolKeyword(name): @nowarn), err.labelSymbolEndOfKeyword(name)))
+                                          err.labelSymbol.getOrElse(name, err.labelSymbolKeyword(name): @nowarn).orElse(err.defaultSymbolKeyword.config(name)), err.labelSymbolEndOfKeyword(name)))
     }
 
     override def softOperator(name: String): Parsley[Unit] = {
         require(name.nonEmpty, "Operators may not be empty strings")
         new Parsley(new token.SoftOperator(name, nameDesc.operatorLetter, symbolDesc.hardOperatorsTrie,
-                                           err.labelSymbol.getOrElse(name, err.labelSymbolOperator(name): @nowarn), err.labelSymbolEndOfOperator(name)))
+                                           err.labelSymbol.getOrElse(name, err.labelSymbolOperator(name): @nowarn).orElse(err.defaultSymbolOperator.config(name)), err.labelSymbolEndOfOperator(name)))
     }
 }

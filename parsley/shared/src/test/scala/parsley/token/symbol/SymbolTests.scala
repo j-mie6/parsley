@@ -7,7 +7,7 @@ package parsley.token.symbol
 
 import Predef.{ArrowAssoc => _, _}
 
-import parsley.{Parsley, ParsleyTest}
+import parsley._
 import parsley.token.LexemeImpl._
 
 import parsley.token.descriptions._
@@ -17,7 +17,11 @@ import parsley.character.{spaces, string}
 import org.scalactic.source.Position
 
 class SymbolTests extends ParsleyTest {
-    val errConfig = new ErrorConfig
+    val errConfig = new ErrorConfig {
+        override def labelSymbol = Map(
+            ("keyword", parsley.token.errors.Reason("bla bla"))
+        )
+    }
     def makeSymbol(nameDesc: NameDesc, symDesc: SymbolDesc): Symbol = new LexemeSymbol(new ConcreteSymbol(nameDesc, symDesc, errConfig), spaces, errConfig)
 
     val plainName = NameDesc.plain.copy(identifierLetter = Basic(_.isLetter), operatorLetter = ':')
