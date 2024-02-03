@@ -44,6 +44,6 @@ private [token] final class ConcreteString(ends: Set[(String, String)], stringCh
         // then only one string builder needs allocation
         sbReg.set(fresh(new StringBuilder)) *>
         skipManyUntil(sbReg.update(char(terminalInit).hide.as((sb: StringBuilder) => sb += terminalInit)) <|> content,
-                      closeLabel(allowsAllSpace, stringChar.isRaw)(atomic(string(end)))) //is the atomic needed here? not sure
+                      closeLabel(allowsAllSpace, stringChar.isRaw)(atomic(string(end)))) // atomic needed because ambiguity with init
     }
 }
