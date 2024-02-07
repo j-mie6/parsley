@@ -581,7 +581,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *                                     .filterNot(keywords.contains(_))
       * scala> identifier.parse("hello")
       * val res0 = Success("hello")
-      * scala> idenfitier.parse("if")
+      * scala> identifier.parse("if")
       * val res1 = Failure(..)
       * }}}
       *

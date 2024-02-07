@@ -30,7 +30,7 @@ the bad input was found; the second is the amount of input
 the parser tried to read when it failed; and `lexicalError`
 denotes whether or not the failure happened whilst trying
 to parse a token from `Lexer`, or not. The return value,
-`Token`, is one of the following classes:
+of type `Token`, is one of the following classes:
 
 ```scala
 case class Named(name: String, span: Int) extends Token
