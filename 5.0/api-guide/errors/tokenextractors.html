@@ -170,7 +170,7 @@
         the parser tried to read when it failed; and <code>lexicalError</code>
         denotes whether or not the failure happened whilst trying
         to parse a token from <code>Lexer</code>, or not. The return value,
-        <code>Token</code>, is one of the following classes:</p>
+        of type <code>Token</code>, is one of the following classes:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Named</span><span>(</span><span class="identifier">name</span><span>: </span><span class="type-name">String</span><span>, </span><span class="identifier">span</span><span>: </span><span class="type-name">Int</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Token</span><span>
 </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Raw</span><span>(</span><span class="identifier">tok</span><span>: </span><span class="type-name">String</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Token</span></code></pre>
         <p>A <code>Raw</code> token indicates no further processing of the input could
