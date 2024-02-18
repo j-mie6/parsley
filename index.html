@@ -118,9 +118,11 @@
         
       </div>
     
-    <h1 id="getting-started" class="title">Getting Started</h1>
-    <p>Parsley can be added to your project by one of the following configuration commands.</p>
-    <pre class="keep-together pdf epub"><code class="nohighlight"><span class="comment">// SBT
+    
+    <main>
+      <h1 id="getting-started" class="title">Getting Started</h1>
+      <p>Parsley can be added to your project by one of the following configuration commands.</p>
+      <pre class="keep-together pdf epub"><code class="nohighlight"><span class="comment">// SBT
 </span><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;com.github.j-mie6&quot;</span><span> %% </span><span class="string-literal">&quot;parsley&quot;</span><span> % </span><span class="string-literal">&quot;4.5.1&quot;</span><span>
 
 </span><span class="comment">// scala-cli
@@ -130,17 +132,17 @@
 </span><span>
 </span><span class="comment">// mill
 </span><span class="string-literal">ivy&quot;com.github.j-mie6::parsley:4.5.1&quot;</span></code></pre>
-    <p>Alternatively, the most up-to-date development pre-release is <code>5.0.0-M5</code> and the
-    most bleeding-edge snapshot is <code>5.0-d5fd933-SNAPSHOT</code>.</p>
-    
-    <h2 id="examples" class="section"><a class="anchor-link left" href="#examples"><i class="icofont-laika link">&#xef71;</i></a>Examples</h2>
-    <p>Parsley can leverage string and character literals in Scala by implicit conversions, keeping the
-    description of the parser uncluttered:</p>
-    <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>
+      <p>Alternatively, the most up-to-date development pre-release is <code>5.0.0-M5</code> and the
+      most bleeding-edge snapshot is <code>5.0-1e6de1b-SNAPSHOT</code>.</p>
+      
+      <h2 id="examples" class="section"><a class="anchor-link left" href="#examples"><i class="icofont-laika link">&#xef71;</i></a>Examples</h2>
+      <p>Parsley can leverage string and character literals in Scala by implicit conversions, keeping the
+      description of the parser uncluttered:</p>
+      <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">charLift</span><span>, </span><span class="identifier">stringLift</span><span>}
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">hello</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = (</span><span class="char-literal">&#39;h&#39;</span><span> ~&gt; (</span><span class="string-literal">&quot;ello&quot;</span><span> | </span><span class="string-literal">&quot;i&quot;</span><span>) ~&gt; </span><span class="string-literal">&quot; world!&quot;</span><span>).</span><span class="identifier">void</span><span>
-</span><span class="comment">// hello: Parsley[Unit] = parsley.Parsley@71ef061f
+</span><span class="comment">// hello: Parsley[Unit] = parsley.Parsley@233b2121
 </span><span class="identifier">hello</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;hello world!&quot;</span><span>)
 </span><span class="comment">// res0: parsley.Result[String, Unit] = Success(())
 </span><span class="identifier">hello</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;hi world!&quot;</span><span>)
@@ -151,15 +153,17 @@
 //   expected &quot;ello&quot;
 //   &gt;hey world!
 //     ^^)</span></code></pre>
-    <p>Combinators exist to collapse results efficiently for iterative parsers, allowing for concise
-    definitions of simple numbers:</p>
-    <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">digit</span><span>
+      <p>Combinators exist to collapse results efficiently for iterative parsers, allowing for concise
+      definitions of simple numbers:</p>
+      <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">digit</span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">natural</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Int</span><span>] = </span><span class="identifier">digit</span><span>.</span><span class="identifier">foldLeft1</span><span>(</span><span class="number-literal">0</span><span>)((</span><span class="identifier">n</span><span>, </span><span class="identifier">d</span><span>) =&gt; </span><span class="identifier">n</span><span> * </span><span class="number-literal">10</span><span> + </span><span class="identifier">d</span><span>.</span><span class="identifier">asDigit</span><span>)
-</span><span class="comment">// natural: Parsley[Int] = parsley.Parsley@32cb65cb
+</span><span class="comment">// natural: Parsley[Int] = parsley.Parsley@5f766271
 </span><span class="identifier">natural</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;0&quot;</span><span>)
 </span><span class="comment">// res3: parsley.Result[String, Int] = Success(0)
 </span><span class="identifier">natural</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;123&quot;</span><span>)
 </span><span class="comment">// res4: parsley.Result[String, Int] = Success(123)</span></code></pre>
+    </main>
+    
 
   </body>
 </html>
