@@ -1,4 +1,4 @@
-val sbtTypelevelVersion = "0.6.5"
+val sbtTypelevelVersion = "0.6.6"
 val circeVersion = "0.14.1"
 
 resolvers ++= Opts.resolver.sonatypeOssSnapshots
