@@ -5,6 +5,8 @@
  */
 package parsley
 
+import scala.collection.{Factory, mutable}
+
 import parsley.combinator.option
 import parsley.errors.ErrorBuilder
 import parsley.expr.{chain, infix}
@@ -292,25 +294,6 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @group alt
       */
     def </>[Aʹ >: A](x: Aʹ): Parsley[Aʹ] = this <|> pure(x)
-    /** This combinator $orconst
-      *
-      * $attemptreason
-      *
-      * @example {{{
-      * scala> import parsley.character.string
-      * scala> val p = string("aa").getOrElse("b")
-      * scala> p.parse("aa")
-      * val res0 = Success("a")
-      * scala> p.parse("xyz")
-      * val res1 = Success("b")
-      * scala> p.parse("ab")
-      * val res2 = Failure(..) // first parser consumed an 'a'!
-      * }}}
-      *
-      * @note just an alias for `</>`
-      */
-    @deprecated("This combinator will be removed in 5.x, and `</>` used instead", "4.5.0")
-    def getOrElse[Aʹ >: A](x: Aʹ): Parsley[Aʹ] = this </> x
     /** This combinator, pronounced "sum", wraps this parser's result in `Left` if it succeeds, and parses `q` if it failed '''without''' consuming input,
       * wrapping the result in `Right`.
       *
@@ -598,7 +581,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *                                     .filterNot(keywords.contains(_))
       * scala> identifier.parse("hello")
       * val res0 = Success("hello")
-      * scala> idenfitier.parse("if")
+      * scala> identifier.parse("if")
       * val res1 = Failure(..)
       * }}}
       *
@@ -687,7 +670,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @return a parser which parses this parser many times and folds the results together with `f` and `k` right-associatively.
       * @group fold
       */
-    def foldRight[B](k: B)(f: (A, B) => B): Parsley[B] = chain.prefix(this.map(f.curried), pure(k))
+    def foldRight[B](k: B)(f: (A, B) => B): Parsley[B] = chain.prefix(pure(k))(this.map(f.curried))
     /** This combinator will parse this parser '''zero''' or more times combining the results with the function `f` and base value `k` from the left.
       *
       * This parser will continue to be parsed until it fails having '''not consumed''' input.
@@ -800,7 +783,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @since 2.3.0
       * @group fold
       */
-    def reduceLeft[B >: A](op: (B, A) => B): Parsley[B] = infix.left1(this, pure(op))
+    def reduceLeft[B >: A](op: (B, A) => B): Parsley[B] = infix.left1(this)(pure(op))
     /** This combinator will parse this parser '''zero''' or more times combining the results left-associatively with the function `op`.
       *
       * This parser will continue to be parsed until it fails having '''not consumed''' input.
@@ -843,28 +826,6 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @group monad
       */
     def flatMap[B](f: A => Parsley[B]): Parsley[B] = new Parsley(new frontend.>>=(this.internal, f.andThen(_.internal)))
-    // $COVERAGE-OFF$
-    /** This combinator, pronounced "bind", $bind
-      *
-      * @example {{{
-      * // this is an inefficient implementation, but does work
-      * def filter(pred: A => Boolean): Parsley[A] = {
-      *     this >>= { x =>
-      *         if (pred(x)) pure(x)
-      *         else empty
-      *     }
-      * }
-      * }}}
-      *
-      * @note there is '''significant''' overhead for using `>>=`: if possible try to avoid using it! This
-      *       is because Parsley will need to generate, process, and compile each parser produced by the combinator
-      *       during parse-time.
-      * @param f the function that produces the next parser.
-      * @return a new parser, which sequences this parser with the parser generated from its result.
-      */
-    @deprecated("This combinator will be removed in 5.x, and `.flatMap` used instead", "4.5.0")
-    def >>=[B](f: A => Parsley[B]): Parsley[B] = this.flatMap(f)
-    // $COVERAGE-ON$
     /** This combinator collapses two layers of parsing structure into one.
       *
       * The implicit (compiler-provided) evidence proves that this parser really has type `Parsley[Parsley[B]]`.
@@ -942,16 +903,6 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @group special
       */
     def impure: Parsley[A] = new Parsley(new frontend.Opaque(this.internal))
-    /** This combinator signifies that the parser it is invoked on is impure and any optimisations which assume purity
-      * are disabled.
-      *
-      * @example Any parsers that make use of mutable state may need to use this combinator to control
-      *          parsley's aggressive optimisations that remove results that are not needed: in this case,
-      *          the optimiser cannot see that the result of a parser is mutating some value, and may remove it.
-      * @note old alias for `impure`
-      */
-    @deprecated("This combinator will be removed in 5.x, and `impure` used instead", "4.5.0")
-    def unsafe(): Parsley[A] = impure
 
     /** This is an alias for `p.filter(pred)`. It is needed to support for-comprehension syntax with `if`s.
       *
@@ -1032,13 +983,13 @@ object Parsley extends PlatformSpecific {
           * problem: a recursion point inside one of these strict fields
           * will cause an infinite loop at runtime! This can be fixed by
           * ensuring that this becomes part of a lazy argument. This is
-          * a solution described by the [[combinator.skip `skip`]]
-          * combinator, for instance: `p *> skip(q, .., r)` will ensure
-          * that the `skip` is in a lazy position in `*>` meaning that
+          * a solution described by the [[combinator.sequence `sequence`]]
+          * combinator, for instance: `p <::> sequence(q, .., r)` will ensure
+          * that the `sequence` is in a lazy position in `<::>` meaning that
           * even if any of `q` to `r` must be lazy, they can go in the strict
-          * positions of skip because the `p *>` provides the required
+          * positions of skip because the `p <::>` provides the required
           * laziness. However, if this isn't possible (for instance, with
-          * the [[implicits.zipped `zipped`]] combinators), then how can
+          * the [[syntax.zipped `zipped`]] combinators), then how can
           * this problem be solved?
           *
           * This is the job of the `~` combinator: very simply it wraps up
@@ -1054,6 +1005,7 @@ object Parsley extends PlatformSpecific {
           * }}}
           *
           * @return the parser `p`, but guaranteed to be lazy.
+          * @group special
           */
         def unary_~ : Parsley[A] = unit *> p
     }
@@ -1157,39 +1109,6 @@ object Parsley extends PlatformSpecific {
       * @group cond
       */
     def select[A, B](p: Parsley[Either[A, B]], q: =>Parsley[A => B]): Parsley[B] = branch(p, q, pure(identity[B](_)))
-    // $COVERAGE-OFF$
-    /** This combinator collapses two layers of parsing structure into one.
-      *
-      * Just an alias for `_.flatten`, providing a namesake to Haskell.
-      *
-      * @see [[Parsley.flatten `flatten`]] for details and examples.
-      */
-    @deprecated("This combinator will be removed in 5.x, and `.flatten` used instead", "4.5.0")
-    def join[A](p: Parsley[Parsley[A]]): Parsley[A] = p.flatten
-    /** This combinator parses its argument `p`, but rolls back any consumed input on failure.
-      *
-      * If the parser `p` succeeds, then `attempt(p)` has no effect. However, if `p` failed,
-      * then any input that it consumed is rolled back. This has two uses: it ensures that
-      * the parser `p` is all-or-nothing when consuming input (atomic), and it allows for
-      * parsers that consume input to backtrack when they fail (with `<|>`). It should be
-      * used for the latter purpose sparingly, however, since excessive backtracking in a
-      * parser can result in much lower efficiency.
-      *
-      * @example {{{
-      * scala> import parsley.character.string, parsley.Parsley.attempt
-      * scala> (string("abc") <|> string("abd")).parse("abd")
-      * val res0 = Failure(..) // first parser consumed a, so no backtrack
-      * scala> (attempt(string("abc")) <|> string("abd")).parse("abd")
-      * val res1 = Success("abd") // first parser does not consume input on failure now
-      * }}}
-      *
-      * @param p the parser to execute, if it fails, it will not have consumed input.
-      * @return a parser that tries `p`, but never consumes input if it fails.
-      * @note `atomic` should be used instead.
-      */
-    @deprecated("This combinator will be removed in 5.x, and `atomic` used instead", "4.5.0")
-    def attempt[A](p: Parsley[A]): Parsley[A] = atomic(p)
-    // $COVERAGE-ON$
     /** This combinator parses its argument `p`, but rolls back any consumed input on failure.
       *
       * If the parser `p` succeeds, then `atomic(p)` has no effect. However, if `p` failed,
@@ -1348,7 +1267,10 @@ object Parsley extends PlatformSpecific {
       * @since 4.5.0
       * @group iter
       */
-    def many[A](p: Parsley[A]): Parsley[List[A]] = new Parsley(new frontend.Many(p.internal))
+    def many[A](p: Parsley[A]): Parsley[List[A]] = many(p, List)
+    private [parsley] def many[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = {
+        new Parsley(new frontend.Many(p.internal, factory))
+    }
 
     /** This combinator repeatedly parses a given parser '''one''' or more times, collecting the results into a list.
       *
@@ -1376,28 +1298,15 @@ object Parsley extends PlatformSpecific {
       * @since 4.5.0
       * @group iter
       */
-    def some[A](p: Parsley[A]): Parsley[List[A]] = combinator.manyN(1, p)
-
-    // $COVERAGE-OFF$
-    /** This parser returns the current line number of the input without having any other effect.
-      *
-      * @deprecated Moved to [[position.line `position.line`]], due for removal in 5.0.0
-      */
-    @deprecated("Position parsing functionality was moved to `parsley.position`; use `position.line` instead as this will be removed in 5.0.0", "4.2.0")
-    def line: Parsley[Int] = position.line
-    /** This parser returns the current column number of the input without having any other effect.
-      *
-      * @note in the presence of wide unicode characters, the column value returned may be inaccurate.
-      * @deprecated Moved to [[position.col `position.col`]], due for removal in 5.0.0
-      */
-    @deprecated("Position parsing functionality was moved to `parsley.position`; use `position.col` instead as this will be removed in 5.0.0", "4.2.0")
-    def col: Parsley[Int] = position.col
-    /** This parser returns the current line and column numbers of the input without having any other effect.
-      *
-      * @note in the presence of wide unicode characters, the column value returned may be inaccurate.
-      * @deprecated Moved to [[position.pos `position.pos`]], due for removal in 5.0.0
-      */
-    @deprecated("Position parsing functionality was moved to `parsley.position`; use `position.pos` instead as this will be removed in 5.0.0", "4.2.0")
-    def pos: Parsley[(Int, Int)] = position.pos
-    // $COVERAGE-ON$
+    def some[A](p: Parsley[A]): Parsley[List[A]] = p <::> many(p)
+    private [parsley] def some[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = secretSome(p, p, factory)
+    // This could be generalised to be the new many, where many(p, factory) = secretSome(fresh(factory.newBuilder), p, factory)
+    private [parsley] def secretSome[A, C](init: Parsley[A], p: Parsley[A], factory: Factory[A, C]): Parsley[C] = {
+        secretSome(init.map(factory.newBuilder += _), p)
+    }
+    private [parsley] def secretSome[A, C](init: Parsley[mutable.Builder[A, C]], p: Parsley[A]): Parsley[C] = {
+        val pf = pure[(mutable.Builder[A, C], A) => mutable.Builder[A, C]](_ += _)
+        // Can't use the regular foldLeft1 here, because we need a fresh Builder each time.
+        expr.infix.secretLeft1(init, p, pf).map(_.result())
+    }
 }

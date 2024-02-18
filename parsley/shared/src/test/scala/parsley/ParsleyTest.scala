@@ -18,7 +18,7 @@ case class TestError(pos: (Int, Int), lines: TestErrorLines)
 
 sealed trait TestErrorLines
 case class VanillaError(unexpected: Option[TestErrorItem], expecteds: Set[TestErrorItem], reasons: Set[String], width: Int) extends TestErrorLines
-case class SpecialisedError(msgs: Set[String], width: Int) extends TestErrorLines
+case class SpecializedError(msgs: Set[String], width: Int) extends TestErrorLines
 
 sealed trait TestErrorItem
 case class Raw(item: String) extends TestErrorItem
@@ -38,7 +38,7 @@ abstract class TestErrorBuilder extends ErrorBuilder[TestError] {
     override def vanillaError(unexpected: UnexpectedLine, expected: ExpectedLine, reasons: Messages, line: LineInfo): ErrorInfoLines = {
         VanillaError(unexpected, expected, reasons, line)
     }
-    override def specialisedError(msgs: Messages, line: LineInfo): ErrorInfoLines = SpecialisedError(msgs, line)
+    override def specializedError(msgs: Messages, line: LineInfo): ErrorInfoLines = SpecializedError(msgs, line)
 
     type ExpectedItems = Set[Item]
     override def combineExpectedItems(alts: Set[Item]): ExpectedItems = alts

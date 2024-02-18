@@ -25,8 +25,8 @@ class TotalAttachmentSpec extends ParsleyTest {
             Parsley.lookAhead,
             _.map(identity[Unit]),
             _.flatMap(Parsley.pure),
-            chain.left(_, Parsley.fresh { (_: Unit, _: Unit) => () }, ()),
-            chain.right(_, Parsley.fresh { (_: Unit, _: Unit) => () }, ())
+            chain.left(_)(Parsley.fresh { (_: Unit, _: Unit) => () }, ()),
+            chain.right(_)(Parsley.fresh { (_: Unit, _: Unit) => () }, ())
         )
 
         private val binaryModifiers: Array[(Parsley[Unit], Parsley[Unit]) => Parsley[Unit]] = Array(

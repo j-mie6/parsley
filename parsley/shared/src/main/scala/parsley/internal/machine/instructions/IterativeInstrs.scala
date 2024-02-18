@@ -16,7 +16,7 @@ private [internal] final class Many(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         if (ctx.good) {
             val x = ctx.stack.upop()
-            ctx.stack.peek[mutable.ListBuffer[Any]] += x
+            ctx.stack.peek[mutable.Builder[Any, Any]] += x
             ctx.updateCheckOffset()
             ctx.pc = label
         }
@@ -24,7 +24,7 @@ private [internal] final class Many(var label: Int) extends InstrWithLabel {
         else ctx.catchNoConsumed(ctx.handlers.check) {
             ctx.handlers = ctx.handlers.tail
             ctx.addErrorToHintsAndPop()
-            ctx.exchangeAndContinue(ctx.stack.peek[mutable.ListBuffer[Any]].toList)
+            ctx.exchangeAndContinue(ctx.stack.peek[mutable.Builder[Any, Any]].result())
         }
     }
     // $COVERAGE-OFF$
@@ -160,7 +160,9 @@ private [internal] final class SepEndBy1Jump(var label: Int) extends InstrWithLa
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         val x = ctx.stack.upop()
-        ctx.stack.peek[mutable.ListBuffer[Any]] += x
+        ctx.stack.pop_() // the bool
+        ctx.stack.peek[mutable.Builder[Any, Any]] += x
+        ctx.stack.upush(true)
         DualHandler.popSecondHandlerAndJump(ctx, label)
     }
 
@@ -170,12 +172,12 @@ private [internal] final class SepEndBy1Jump(var label: Int) extends InstrWithLa
 }
 
 private [instructions] object SepEndBy1Handlers {
-    def pushAccWhenCheckValidAndContinue(ctx: Context, check: Int, acc: mutable.ListBuffer[Any]): Unit = {
-        if (ctx.offset != check || acc.isEmpty) ctx.fail()
+    def pushAccWhenCheckValidAndContinue(ctx: Context, check: Int, acc: mutable.Builder[Any, Any], readP: Boolean): Unit = {
+        if (ctx.offset != check || !readP) ctx.fail()
         else {
             ctx.addErrorToHintsAndPop()
             ctx.good = true
-            ctx.exchangeAndContinue(acc.toList)
+            ctx.exchangeAndContinue(acc.result())
         }
     }
 }
@@ -187,14 +189,15 @@ private [internal] object SepEndBy1SepHandler extends Instr {
         ctx.handlers = ctx.handlers.tail
         // p succeeded and sep didn't, so push p and fall-through to the whole handler
         val x = ctx.stack.upop()
-        val acc = ctx.stack.peek[mutable.ListBuffer[Any]]
+        ctx.stack.pop_() // the bool is no longer needed
+        val acc = ctx.stack.peek[mutable.Builder[Any, Any]]
         acc += x
         // discard the other handler and increment so that we are sat on the other handler
         assert(ctx.instrs(ctx.pc + 1) eq SepEndBy1WholeHandler, "the next instruction from the sep handler must be the whole handler")
         assert(ctx.handlers.pc == ctx.pc + 1, "the top-most handler must be the whole handler in the sep handler")
         ctx.handlers = ctx.handlers.tail
         ctx.inc()
-        SepEndBy1Handlers.pushAccWhenCheckValidAndContinue(ctx, check, acc)
+        SepEndBy1Handlers.pushAccWhenCheckValidAndContinue(ctx, check, acc, readP = true)
     }
 
     // $COVERAGE-OFF$
@@ -207,7 +210,8 @@ private [internal] object SepEndBy1WholeHandler extends Instr {
         ensureHandlerInstruction(ctx)
         val check = ctx.handlers.check
         ctx.handlers = ctx.handlers.tail
-        SepEndBy1Handlers.pushAccWhenCheckValidAndContinue(ctx, check, ctx.stack.peek[mutable.ListBuffer[Any]])
+        val readP = ctx.stack.pop[Boolean]()
+        SepEndBy1Handlers.pushAccWhenCheckValidAndContinue(ctx, check, ctx.stack.peek[mutable.Builder[Any, Any]], readP)
     }
 
     // $COVERAGE-OFF$
@@ -219,9 +223,9 @@ private [internal] final class ManyUntil(var label: Int) extends InstrWithLabel 
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         ctx.stack.upop() match {
-            case parsley.combinator.ManyUntil.Stop => ctx.exchangeAndContinue(ctx.stack.peek[mutable.ListBuffer[Any]].toList)
+            case parsley.combinator.ManyUntil.Stop => ctx.exchangeAndContinue(ctx.stack.peek[mutable.Builder[Any, Any]].result())
             case x =>
-                ctx.stack.peek[mutable.ListBuffer[Any]] += x
+                ctx.stack.peek[mutable.Builder[Any, Any]] += x
                 ctx.pc = label
         }
     }

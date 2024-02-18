@@ -5,10 +5,12 @@
  */
 package parsley.token.symbol
 
+import scala.annotation.nowarn
+
 import parsley.Parsley, Parsley.atomic
 import parsley.character.{char, string}
 import parsley.token.descriptions.{NameDesc, SymbolDesc}
-import parsley.token.errors.ErrorConfig
+import parsley.token.errors.{ErrorConfig, NotConfigured}
 
 import parsley.internal.deepembedding.singletons.token
 
@@ -22,22 +24,26 @@ private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc,
 
     override def apply(name: String): Parsley[Unit] = {
         require(name.nonEmpty, "Symbols may not be empty strings")
+        lazy val compatLabel = (err.labelSymbolPunctuation: @nowarn).get(name).map {
+            case None => parsley.token.errors.Hidden
+            case Some(l) => parsley.token.errors.Label(l)
+        }.getOrElse(NotConfigured)
         if (symbolDesc.hardKeywords(name))       softKeyword(name)
         else if (symbolDesc.hardOperators(name)) softOperator(name)
-        else                                     atomic(string(name)).void
+        else                                     err.labelSymbol.getOrElse(name, compatLabel).orElse(err.defaultSymbolPunctuation.config(name))(atomic(string(name)).void)
     }
 
-    override def apply(name: Char): Parsley[Unit] = char(name).void
+    override def apply(name: Char): Parsley[Unit] = err.labelSymbol.getOrElse(name.toString, NotConfigured)(char(name).void)
 
     override def softKeyword(name: String): Parsley[Unit] = {
         require(name.nonEmpty, "Keywords may not be empty strings")
         new Parsley(new token.SoftKeyword(name, nameDesc.identifierLetter, symbolDesc.caseSensitive,
-                                          err.labelSymbolKeyword(name), err.labelSymbolEndOfKeyword(name)))
+                                          err.labelSymbol.getOrElse(name, err.labelSymbolKeyword(name): @nowarn).orElse(err.defaultSymbolKeyword.config(name)), err.labelSymbolEndOfKeyword(name)))
     }
 
     override def softOperator(name: String): Parsley[Unit] = {
         require(name.nonEmpty, "Operators may not be empty strings")
         new Parsley(new token.SoftOperator(name, nameDesc.operatorLetter, symbolDesc.hardOperatorsTrie,
-                                           err.labelSymbolOperator(name), err.labelSymbolEndOfOperator(name)))
+                                           err.labelSymbol.getOrElse(name, err.labelSymbolOperator(name): @nowarn).orElse(err.defaultSymbolOperator.config(name)), err.labelSymbolEndOfOperator(name)))
     }
 }

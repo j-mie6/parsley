@@ -5,7 +5,7 @@
  */
 package parsley.internal.deepembedding.frontend.debugger
 
-import scala.collection.mutable
+import scala.collection.{Factory, mutable}
 
 import org.typelevel.scalaccompat.annotation.unused
 import parsley.debugger.internal.DebugContext
@@ -156,9 +156,9 @@ private [parsley] object helper {
             handle2Ary[<|>, A, A, A](self, context)(new <|>(_, _))(p, q)
 
         // Iterative parsers need their own handling.
-        override def visit[A](self: Many[A], context: ParserTracker)(p: LazyParsley[A]): L[List[A]] =
+        override def visit[A, C](self: Many[A, C], context: ParserTracker)(p: LazyParsley[A], factory: Factory[A, C]): L[C] =
             handlePossiblySeen(self, context) {
-                suspend[M, R, LazyParsley[A]](p.visit(this, context)).map(new Many[A](_))
+                suspend[M, R, LazyParsley[A]](p.visit(this, context)).map(new Many[A, C](_, factory))
             }
 
         override def visit[A](self: ChainPost[A], context: ParserTracker)(p: LazyParsley[A], _op: => LazyParsley[A => A]): L[A] =
@@ -186,17 +186,17 @@ private [parsley] object helper {
                 )
             }
 
-        override def visit[A, B](self: SepEndBy1[A, B], context: ParserTracker)(p: LazyParsley[A], sep: => LazyParsley[B]): L[List[A]] =
-            handlePossiblySeen[List[A]](self, context) {
-                zipWith[M, R, LazyParsley[A], LazyParsley[B], SepEndBy1[A, B]](new SepEndBy1[A, B](_, _))(
+        override def visit[A, C](self: SepEndBy1[A, C], context: ParserTracker)(p: LazyParsley[A], sep: => LazyParsley[_], factory: Factory[A, C]): L[C] =
+            handlePossiblySeen[C](self, context) {
+                zipWith[M, R, LazyParsley[A], LazyParsley[_], SepEndBy1[A, C]](new SepEndBy1[A, C](_, _, factory))(
                     suspend[M, R, LazyParsley[A]](p.visit(this, context)),
-                    suspend[M, R, LazyParsley[B]](sep.visit(this, context))
+                    suspend[M, R, LazyParsley[_]](sep.visit(this, context))
                 )
             }
 
-        override def visit[A](self: ManyUntil[A], context: ParserTracker)(body: LazyParsley[Any]): L[List[A]] =
-            handlePossiblySeen[List[A]](self, context) {
-                suspend[M, R, LazyParsley[Any]](body.visit(this, context)).map(new ManyUntil[A](_))
+        override def visit[A, C](self: ManyUntil[A, C], context: ParserTracker)(body: LazyParsley[Any], factory: Factory[A, C]): L[C] =
+            handlePossiblySeen[C](self, context) {
+                suspend[M, R, LazyParsley[Any]](body.visit(this, context)).map(new ManyUntil[A, C](_, factory))
             }
 
         // XXX: This will assume all completely unknown parsers have no children at all (i.e. are Singletons).

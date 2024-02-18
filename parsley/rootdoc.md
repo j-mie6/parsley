@@ -48,8 +48,8 @@ is defined as being an object which mocks a package):
     ubiquitous.
   - [[parsley.ap$ `parsley.ap`]] contains functions which allow for the application of a parser
     returning a function to several parsers returning each of the argument types.
-  - [[parsley.registers$ `parsley.registers`]] contains combinators that interact with the
-    context-sensitive functionality in the form of registers.
+  - [[parsley.state$ `parsley.state`]] contains combinators that interact with the
+    context-sensitive functionality in the form of state.
   - [[parsley.token `parsley.token`]] contains the [[parsley.token.Lexer `Lexer`]] class that provides
     a host of helpful lexing combinators when provided with the description of a language.
   - [[parsley.position `parsley.position`]] contains parsers for extracting position information.

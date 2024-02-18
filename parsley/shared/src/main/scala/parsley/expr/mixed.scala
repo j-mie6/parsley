@@ -101,7 +101,7 @@ object mixed {
                 lift4((b: (C, A) => B, y: A, u: C => C, r: C => C) => (x: C) => r(u(b(x, y))), bop, p, uops, rest)
             <|> pure(identity[C] _)
         )
-        chain.postfix(p.map(wrap), _uop) <**> rest
+        chain.postfix(p.map(wrap))(_uop) <**> rest
     }
 
     private def flip[A, B, C](f: (A, B) => C, y: B)(x: A) = f(x, y)

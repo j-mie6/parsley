@@ -12,7 +12,7 @@ import parsley.token.errors.{ErrorConfig, LabelWithExplainConfig}
 import parsley.internal.deepembedding.Sign.IntType
 import parsley.internal.deepembedding.singletons
 
-private [token] final class SignedInteger(desc: NumericDesc, unsigned: UnsignedInteger, err: ErrorConfig) extends Integer(desc) {
+private [token] final class SignedInteger(desc: NumericDesc, unsigned: UnsignedInteger, err: ErrorConfig) extends IntegerParsers(desc) {
     private val sign = new Parsley(new singletons.Sign[IntType.resultType](IntType, desc.positiveSign))
 
     override lazy val _decimal: Parsley[BigInt] = atomic(sign <*> err.labelIntegerDecimalEnd(unsigned._decimal))
@@ -28,7 +28,7 @@ private [token] final class SignedInteger(desc: NumericDesc, unsigned: UnsignedI
     override def number: Parsley[BigInt] = err.labelIntegerSignedNumber.apply(_number)
 
     override protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int, label: (ErrorConfig, Boolean) => LabelWithExplainConfig)
-                                               (implicit ev: CanHold[bits.self,T]): Parsley[T] = label(err, false) {
+                                               (implicit ev: CanHold[bits.self,T]): Parsley[T] = label(err, true) {
         err.filterIntegerOutOfBounds(bits.lowerSigned, bits.upperSigned, radix).collect(number) {
             case x if bits.lowerSigned <= x && x <= bits.upperSigned => ev.fromBigInt(x)
         }

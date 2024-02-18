@@ -8,7 +8,7 @@ val Java8 = JavaSpec.temurin("8")
 val JavaLTS = JavaSpec.temurin("11")
 val JavaLatest = JavaSpec.temurin("17")
 
-val mainBranch = "master"
+val mainBranch = "staging/5.0"
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
@@ -16,7 +16,7 @@ val releaseFlags = Seq("-Xdisable-assertions", "-opt:l:method,inline", "-opt-inl
 val noReleaseFlagsScala3 = true // maybe some day this can be turned off...
 
 inThisBuild(List(
-  tlBaseVersion := "4.5",
+  tlBaseVersion := "5.0",
   organization := "com.github.j-mie6",
   organizationName := "Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>",
   startYear := Some(2020), // true start is 2018, but license is from 2020
@@ -84,6 +84,10 @@ lazy val docs = project
   .enablePlugins(ParsleySitePlugin)
   .settings(
     tlSiteApiModule := Some((parsley.jvm / projectID).value),
+    libraryDependencySchemes ++= Seq(
+        // this helps us when parsley-cats is trailing behind us
+        "com.github.j-mie6" %% "parsley" % VersionScheme.Always,
+    ),
     libraryDependencies ++= Seq(
         "org.typelevel" %% "cats-core" % "2.10.0",
         "com.github.j-mie6" %% "parsley-cats" % "1.3.0"

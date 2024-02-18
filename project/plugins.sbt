@@ -1,4 +1,4 @@
-val sbtTypelevelVersion = "0.6.4"
+val sbtTypelevelVersion = "0.6.6"
 val circeVersion = "0.14.1"
 
 resolvers ++= Opts.resolver.sonatypeOssSnapshots
@@ -24,7 +24,6 @@ addSbtPlugin("org.typelevel" % "sbt-typelevel-site" % sbtTypelevelVersion)
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.13.2")
 addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.4.15")
 
-// This is here purely to enable the niceness settings
 addSbtPlugin("com.beautiful-scala" % "sbt-scalastyle" % "1.5.1")
 addSbtPlugin("org.jmotor.sbt" % "sbt-dependency-updates" % "1.2.7")
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.0.9")
