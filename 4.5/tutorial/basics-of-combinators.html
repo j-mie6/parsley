@@ -534,10 +534,10 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">debug</span><span>.</span><span class="identifier">_</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> | </span><span class="identifier">atomic</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>) | </span><span class="string-literal">&quot;dead&quot;</span><span>
-</span><span class="comment">// p: Parsley[String] = parsley.Parsley@680b0dd5
+</span><span class="comment">// p: Parsley[String] = parsley.Parsley@565ad1e
 </span><span class="keyword">val</span><span> </span><span class="identifier">q</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> | (</span><span class="identifier">atomic</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading def&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;backtrack!&quot;</span><span>) |
                    </span><span class="string-literal">&quot;dead&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading dead&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;branch&quot;</span><span>)
-</span><span class="comment">// q: Parsley[String] = parsley.Parsley@c969c00
+</span><span class="comment">// q: Parsley[String] = parsley.Parsley@7d64376
 </span><span>
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;dead&quot;</span><span>)
 </span><span class="comment">// res37: parsley.Result[String, String] = Success(dead)
@@ -585,9 +585,9 @@
 // def notFollowedBy(p: Parsley[_]): Parsley[Unit]
 </span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">eof</span><span> = </span><span class="identifier">notFollowedBy</span><span>(</span><span class="identifier">item</span><span>)
-</span><span class="comment">// eof: Parsley[Unit] = parsley.Parsley@2ff1789d
+</span><span class="comment">// eof: Parsley[Unit] = parsley.Parsley@1a014abf
 </span><span class="keyword">val</span><span> </span><span class="identifier">abcOnly</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> &lt;~ </span><span class="identifier">eof</span><span>
-</span><span class="comment">// abcOnly: Parsley[String] = parsley.Parsley@564f7ccd
+</span><span class="comment">// abcOnly: Parsley[String] = parsley.Parsley@3d700b1a
 </span><span>
 </span><span class="identifier">abcOnly</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>)
 </span><span class="comment">// res39: parsley.Result[String, String] = Success(abc)
@@ -598,7 +598,7 @@
 //       ^)
 </span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>) &lt;~ </span><span class="identifier">lookAhead</span><span>(</span><span class="string-literal">&quot;!!&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;!!&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;lookahead&quot;</span><span>)
-</span><span class="comment">// p: Parsley[String] = parsley.Parsley@66239017
+</span><span class="comment">// p: Parsley[String] = parsley.Parsley@398d6c5
 </span><span>
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc!!&quot;</span><span>)
 </span><span class="comment">// &gt;abc&gt; (1, 1): abc!!•
