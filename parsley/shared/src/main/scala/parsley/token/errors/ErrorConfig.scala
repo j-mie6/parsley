@@ -818,6 +818,11 @@ class ErrorConfig {
       * @group symbol
       */
     def labelSymbolOperator(symbol: String): LabelConfig = Label(symbol)
+    // To unify, or not to unify
+    private [parsley] def defaultSymbolKeyword: Labeller = Label
+    private [parsley] def defaultSymbolOperator: Labeller = Label
+    // Other?
+    private [parsley] def defaultSymbolPunctuation: Labeller = NotConfigured
     /** How the required end of a given keyword should be specified in an error.
       * @since 4.1.0
       * @note defaults to "end of symbol"
