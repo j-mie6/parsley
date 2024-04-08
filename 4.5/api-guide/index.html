@@ -61,7 +61,7 @@
 
   <div class="row links">
     
-    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.5.0/">API</a>
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.5.1/">API</a>
     
     <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
   <g class="svg-shape">
@@ -77,7 +77,7 @@
 
   <div class="row">
     
-    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.5.0/">API</a>
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.5.1/">API</a>
     
     <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
   <g class="svg-shape">
@@ -140,37 +140,37 @@
         
         
         <h2 id="main-classes-and-packages" class="section"><a class="anchor-link left" href="#main-classes-and-packages"><i class="icofont-laika link">&#xef71;</i></a>Main Classes and Packages</h2>
-        <p>In <code>parsley</code>, everything resides within the <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.5.0/parsley.html">parsley</a> package, and the major entry point is
-        <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.5.0/parsley/Parsley.html"><code>parsley.Parsley</code></a>.
+        <p>In <code>parsley</code>, everything resides within the <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.5.1/parsley.html">parsley</a> package, and the major entry point is
+        <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.5.1/parsley/Parsley.html"><code>parsley.Parsley</code></a>.
         There are a few modules of note:</p>
         <ul>
           <li><a href="Parsley.html"><code>parsley.Parsley</code></a>:
           contains some of the basic and primitive combinators (at least those that aren&#39;t methods on
           parsers).</li>
-          <li><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.5.0/parsley/combinator$.html"><code>parsley.combinator</code></a>:
+          <li><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.5.1/parsley/combinator$.html"><code>parsley.combinator</code></a>:
           contains handy combinators, this should be your first port of call
           when you want to do something but are not sure a combinator exists for it. At the very
           least, the <code>eof</code> combinator is very common.</li>
-          <li><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.5.0/parsley/character$.html"><code>parsley.character</code></a>:
+          <li><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.5.1/parsley/character$.html"><code>parsley.character</code></a>:
           contains a variety of combinators which deal with characters, key ones include <code>char</code>,
           <code>satisfy</code> and <code>string</code>.</li>
-          <li><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.5.0/parsley/syntax$.html"><code>parsley.syntax</code></a>:
+          <li><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.5.1/parsley/syntax$.html"><code>parsley.syntax</code></a>:
           contains the very useful implicit conversion combinators. In particular, importing <code>charLift</code>
           and <code>stringLift</code> allows you write character and string literals as if they were parsers
           themselves. There are also implicit classes here which extend functions of any arity with a
           corresponding <code>.lift</code> method, instead of using the <code>liftN</code> functions.</li>
-          <li><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.5.0/parsley/expr$.html"><code>parsley.expr</code></a>:
+          <li><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.5.1/parsley/expr$.html"><code>parsley.expr</code></a>:
           contains the machinery needed to generate expression parsers for you based, at its simplest, on
           a table of operators in order of precedence. This is <em>well</em> worth a look (this is covered in
           detail in <a href="../tutorial/building-expression-parsers.html#building-expression-parsers">Building Expression Parsers</a>.</li>
-          <li><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.5.0/parsley/token$.html"><code>parsley.token</code></a>:
+          <li><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.5.1/parsley/token$.html"><code>parsley.token</code></a>:
           contains a bunch of functionality for performing common lexing tasks, which is <em>very</em> configurable.
           These parsers may also be optimised for performance.</li>
         </ul>
         
         <h3 id="using-parsley-token-for-lexing" class="section"><a class="anchor-link left" href="#using-parsley-token-for-lexing"><i class="icofont-laika link">&#xef71;</i></a>Using <code>parsley.token</code> for Lexing</h3>
         <p>Unlike Haskell libraries like <code>megaparsec</code> and <code>parsec</code>, <code>parsley</code> does not
-        tie the lexing functionality to the Haskell Report, instead supporting a superset of the functionality. The functionality is provided to the user by <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.5.0/parsley/token/Lexer.html">Lexer</a>, and this must be provided an value of type <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.5.0/parsley/token/descriptions/LexicalDesc.html">LexicalDesc</a>, which provides all the configuration necessary to describe the language and make the parsers.</p>
+        tie the lexing functionality to the Haskell Report, instead supporting a superset of the functionality. The functionality is provided to the user by <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.5.1/parsley/token/Lexer.html">Lexer</a>, and this must be provided an value of type <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.5.1/parsley/token/descriptions/LexicalDesc.html">LexicalDesc</a>, which provides all the configuration necessary to describe the language and make the parsers.</p>
 
         
 <hr class="footer-rule"/>
