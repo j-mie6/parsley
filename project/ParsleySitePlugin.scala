@@ -20,6 +20,10 @@ import laika.sbt.LaikaPlugin.autoImport._
 import mdoc.MdocPlugin.autoImport._
 
 object ParsleySitePlugin extends AutoPlugin {
+    final val Stable = "stable"
+    final val Dev = "dev"
+    final val EndOfLife = "EOL"
+
     override def requires = TypelevelSitePlugin
 
     override def projectSettings: Seq[Def.Setting[_]] = Seq(
@@ -117,8 +121,8 @@ object ParsleySitePlugin extends AutoPlugin {
                 def version(v: String, label: String)(path: String = v) =
                     Version(s"$v.x", path).withLabel(label).withFallbackLink(s"api-guide")
                 Versions
-                  .forCurrentVersion(version(tlBaseVersion.value, "dev")())
-                  .withOlderVersions(version("4.4", "stable")(), version("4.5", "stable")().setCanonical)
+                  .forCurrentVersion(version(tlBaseVersion.value, Dev)())
+                  .withOlderVersions(version("4.4", EndOfLife)(), version("4.5", Stable)().setCanonical)
                   .withRenderUnversioned(notBackport)
             }
             .site.themeColors(
