@@ -32,7 +32,7 @@ private [token] class RawCharacter(err: ErrorConfig) extends StringCharacter {
 
 private [token] class EscapableCharacter(desc: EscapeDesc, escapes: Escape, space: Parsley[_], err: ErrorConfig) extends StringCharacter {
     override def isRaw: Boolean = false
-    private lazy val escapeEmpty = err.labelStringEscapeEmpty(desc.emptyEscape.fold[Parsley[Char]](empty)(char))
+    private lazy val escapeEmpty = desc.emptyEscape.fold[Parsley[Char]](empty)(c => err.labelStringEscapeEmpty(char(c)))
     private lazy val escapeGap = {
         if (desc.gapsSupported) skipSome(err.labelStringEscapeGap(space)) *> err.labelStringEscapeGapEnd(desc.escBegin)
         else empty
