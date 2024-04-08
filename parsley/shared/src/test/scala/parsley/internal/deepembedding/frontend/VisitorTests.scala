@@ -83,6 +83,8 @@ class VisitorTests extends ParsleyTest {
 
         override private[parsley] def apply[A](p: Parsley[A]): Parsley[A] =
             dontExecute()
+
+        override private[parsley] def asReason: Option[String] = None
     }
 
     private val dummyCaretWidth: CaretWidth = new FlexibleCaret(0)
