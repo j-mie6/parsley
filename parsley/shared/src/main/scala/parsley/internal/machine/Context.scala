@@ -129,7 +129,9 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         try go[Err, A]()
         catch {
             // additional diagnostic checks
-            case RegisterOutOfBoundsException(err) => throw err
+            // $COVERAGE-OFF$
+            case RegisterOutOfBoundsException(err) => throw err // scalastyle:ignore throw
+            // $COVERAGE-ON$
         }
     }
     @tailrec private def go[Err: ErrorBuilder, A](): Result[Err, A] = {

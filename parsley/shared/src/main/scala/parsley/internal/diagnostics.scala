@@ -5,7 +5,7 @@
  */
 package parsley.internal.diagnostics
 
-import parsley.exceptions.{CorruptedReferenceException, ParsleyException}
+import parsley.exceptions.{BadLazinessException, CorruptedReferenceException, ParsleyException}
 
 private [parsley] object UserException {
     def unapply(e: Throwable): Option[Throwable] = e match {
@@ -37,6 +37,15 @@ private [parsley] object RegisterOutOfBoundsException {
                 err.addSuppressed(e)
                 err
         }
+        case _ => None
+    }
+}
+
+private [parsley] object NullParserException {
+    def unapply(e: Throwable): Option[Throwable] = e match {
+        // this should only be true when the null was tripped from within the parsley namespace,
+        // not the user one
+        case e: NullPointerException if !UserException.userStackTrace(e.getStackTrace) => Some(new BadLazinessException)
         case _ => None
     }
 }
