@@ -64,7 +64,6 @@ class VisitorTests extends ParsleyTest {
                 dontExecute()
         }
 
-
     private val dummyLabelConfig: LabelConfig = NotConfigured
 
     private val dummyCaretWidth: CaretWidth = new FlexibleCaret(0)
