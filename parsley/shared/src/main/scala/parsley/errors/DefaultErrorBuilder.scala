@@ -5,7 +5,7 @@
  */
 package parsley.errors
 
-import scala.annotation.unused
+import org.typelevel.scalaccompat.annotation.unused
 
 // Turn coverage off, because the tests have their own error builder
 // We might want to test this on its own though
