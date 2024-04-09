@@ -51,10 +51,10 @@ object consolepretty {
         }
 
         // Print a parse attempt in a human-readable way.
-        private [TreePrinter] def printParseAttempt(attempt: ParseAttempt): String =
-            s"(\"${attempt.rawInput}\" [${attempt.fromPos} -> ${attempt.toPos}], ${if (attempt.success)
-                s"Success - [ ${attempt.result.get} ]"
-                else "Failure"})"
+        private [TreePrinter] def printParseAttempt(attempt: ParseAttempt): String = {
+            val status = if (attempt.success) s"Success - [ ${attempt.result.get} ]" else "Failure"
+            s"""(\"${attempt.rawInput}\" [${attempt.fromPos} -> ${attempt.toPos}], $status)"""
+        }
 
         // Print all the children, remembering to add a blank indent for the last child.
         @tailrec private def printChildren(helper: PrettyPrintHelper, children: List[(String, DebugTree)]): Unit = children match {
