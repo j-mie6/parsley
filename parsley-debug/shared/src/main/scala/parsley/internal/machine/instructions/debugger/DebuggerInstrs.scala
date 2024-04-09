@@ -16,9 +16,8 @@ import parsley.internal.machine.instructions.{Instr, InstrWithLabel}
 private [internal] sealed trait DebuggerInstr extends Instr
 
 // Enter into the scope of a parser in the current context.
-private [internal] class EnterParser
-    (var label: Int, origin: LazyParsley[_], optName: Option[String])
-    (dbgCtx: DebugContext) extends InstrWithLabel with DebuggerInstr {
+private [internal] class EnterParser(var label: Int, origin: LazyParsley[_], optName: Option[String])(dbgCtx: DebugContext)
+    extends InstrWithLabel with DebuggerInstr {
     override def apply(ctx: Context): Unit = {
         // Uncomment to debug entries and exits.
         // println(s"Entering ${origin.prettyName} (@ ${ctx.pc} -> Exit @ $label)")
@@ -64,7 +63,7 @@ private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Debugg
                 fps = prevPos,
                 tps = (ctx.line, ctx.col),
                 scs = success,
-                res = if (success) Some(ctx.stack.peek.asInstanceOf[Any] match {
+                res = if (success) Some(ctx.stack.upeek match {
                     case f if dbgCtx.toStringRules.exists(_(f)) => f.toString // Closures and lambdas are expensive!
                     case x                                      => x
                 }) else None

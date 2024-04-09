@@ -10,7 +10,7 @@ import scala.collection.mutable
 
 import parsley.debugger.{DebugTree, ParseAttempt}
 
-object consolepretty {
+private [debugger] object consolepretty {
     // Utility class for aiding in the toString method for debug trees.
     private [frontend] case class PrettyPrintHelper(acc: mutable.StringBuilder, indents: Vector[String]) {
         // Indent a string with the given indenting delimiters.
@@ -38,7 +38,7 @@ object consolepretty {
             acc.init.toString
         }
 
-        private [TreePrinter] def prettyPrint(helper: PrettyPrintHelper): Unit = {
+        private [consolepretty] def prettyPrint(helper: PrettyPrintHelper): Unit = {
             val uname =
                 if (dt.parserName != dt.internalName)
                     s"${dt.parserName} (${dt.internalName}${if (dt.childNumber.isDefined) s" (${dt.childNumber.get})" else ""})"
