@@ -391,7 +391,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           *
           * @since 4.0.0
           */
-        val symbol: parsley.token.symbol.Symbol = new LexemeSymbol(nonlexeme.symbol, this, errConfig)
+        val symbol: parsley.token.symbol.Symbol = new LexemeSymbol(nonlexeme.symbol, this)
 
         /**  This combinator parses '''zero''' or more occurrences of `p`, separated by semi-colons.
           *

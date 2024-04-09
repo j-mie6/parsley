@@ -22,7 +22,7 @@ class SymbolTests extends ParsleyTest {
             ("keyword", parsley.token.errors.Reason("bla bla"))
         )
     }
-    def makeSymbol(nameDesc: NameDesc, symDesc: SymbolDesc): Symbol = new LexemeSymbol(new ConcreteSymbol(nameDesc, symDesc, errConfig), spaces, errConfig)
+    def makeSymbol(nameDesc: NameDesc, symDesc: SymbolDesc): Symbol = new LexemeSymbol(new ConcreteSymbol(nameDesc, symDesc, errConfig), spaces)
 
     val plainName = NameDesc.plain.copy(identifierLetter = Basic(_.isLetter), operatorLetter = ':')
     val plainSym = SymbolDesc.plain.copy(hardKeywords = Set("keyword", "hard"), hardOperators = Set("+", "<", "<="))

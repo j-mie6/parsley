@@ -5,8 +5,6 @@
  */
 package parsley.token.symbol
 
-import scala.annotation.nowarn
-
 import parsley.Parsley, Parsley.atomic
 import parsley.character.{char, string}
 import parsley.token.descriptions.{NameDesc, SymbolDesc}
@@ -20,30 +18,29 @@ import parsley.internal.deepembedding.singletons.token
   * "test" folder. This is because a requirement of optimisation is that the semantics can
   * still be implemented by plain combinators. Go look there!
   */
-private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc, err: ErrorConfig) extends Symbol(err) {
+private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc, err: ErrorConfig) extends Symbol {
 
     override def apply(name: String): Parsley[Unit] = {
         require(name.nonEmpty, "Symbols may not be empty strings")
-        lazy val compatLabel = (err.labelSymbolPunctuation: @nowarn).get(name).map {
-            case None => parsley.token.errors.Hidden
-            case Some(l) => parsley.token.errors.Label(l)
-        }.getOrElse(NotConfigured)
+        lazy val symbolLabel = err.labelSymbol.getOrElse(name, NotConfigured).orElse(err.defaultSymbolPunctuation.config(name))
         if (symbolDesc.hardKeywords(name))       softKeyword(name)
         else if (symbolDesc.hardOperators(name)) softOperator(name)
-        else                                     err.labelSymbol.getOrElse(name, compatLabel).orElse(err.defaultSymbolPunctuation.config(name))(atomic(string(name)).void)
+        else                                     symbolLabel(atomic(string(name)).void)
     }
 
     override def apply(name: Char): Parsley[Unit] = err.labelSymbol.getOrElse(name.toString, NotConfigured)(char(name).void)
 
     override def softKeyword(name: String): Parsley[Unit] = {
         require(name.nonEmpty, "Keywords may not be empty strings")
+        val keywordLabel = err.labelSymbol.getOrElse(name, NotConfigured).orElse(err.defaultSymbolKeyword.config(name))
         new Parsley(new token.SoftKeyword(name, nameDesc.identifierLetter, symbolDesc.caseSensitive,
-                                          err.labelSymbol.getOrElse(name, err.labelSymbolKeyword(name): @nowarn).orElse(err.defaultSymbolKeyword.config(name)), err.labelSymbolEndOfKeyword(name)))
+                                          keywordLabel, err.labelSymbolEndOfKeyword(name)))
     }
 
     override def softOperator(name: String): Parsley[Unit] = {
         require(name.nonEmpty, "Operators may not be empty strings")
+        val operatorLabel = err.labelSymbol.getOrElse(name, NotConfigured).orElse(err.defaultSymbolOperator.config(name))
         new Parsley(new token.SoftOperator(name, nameDesc.operatorLetter, symbolDesc.hardOperatorsTrie,
-                                           err.labelSymbol.getOrElse(name, err.labelSymbolOperator(name): @nowarn).orElse(err.defaultSymbolOperator.config(name)), err.labelSymbolEndOfOperator(name)))
+                                           operatorLabel, err.labelSymbolEndOfOperator(name)))
     }
 }

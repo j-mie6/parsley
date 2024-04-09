@@ -5,8 +5,6 @@
  */
 package parsley.token.symbol
 
-import scala.annotation.nowarn
-
 import parsley.Parsley, Parsley.{atomic, empty, notFollowedBy, unit}
 import parsley.character.{char, string, strings}
 import parsley.unicode
@@ -15,7 +13,7 @@ import parsley.token.descriptions.{NameDesc, SymbolDesc}
 import parsley.token.errors.{ErrorConfig, NotConfigured}
 
 // $COVERAGE-OFF$
-private [token] class OriginalSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc, err: ErrorConfig) extends Symbol(err) {
+private [token] class OriginalSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc, err: ErrorConfig) extends Symbol {
 
     override def apply(name: String): Parsley[Unit] = {
         require(name.nonEmpty, "Symbols may not be empty strings")
@@ -47,7 +45,7 @@ private [token] class OriginalSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc,
     override def softKeyword(name: String): Parsley[Unit] = {
         require(name.nonEmpty, "Keywords may not be empty strings")
         atomic {
-            err.labelSymbol.getOrElse(name, err.labelSymbolKeyword(name): @nowarn).orElse(err.defaultSymbolKeyword.config(name))(caseString(name)) *>
+            err.labelSymbol.getOrElse(name, NotConfigured).orElse(err.defaultSymbolKeyword.config(name))(caseString(name)) *>
             notFollowedBy(identLetter).label(err.labelSymbolEndOfKeyword(name))
         }
     }
@@ -60,11 +58,11 @@ private [token] class OriginalSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc,
         }.toList
         ends match {
             case Nil => atomic {
-                err.labelSymbol.getOrElse(name, err.labelSymbolOperator(name): @nowarn).orElse(err.defaultSymbolOperator.config(name))(string(name)) *>
+                err.labelSymbol.getOrElse(name, NotConfigured).orElse(err.defaultSymbolOperator.config(name))(string(name)) *>
                 notFollowedBy(opLetter).label(err.labelSymbolEndOfOperator(name))
             }
             case end::ends => atomic {
-                err.labelSymbol.getOrElse(name, err.labelSymbolOperator(name): @nowarn).orElse(err.defaultSymbolOperator.config(name))(string(name)) *>
+                err.labelSymbol.getOrElse(name, NotConfigured).orElse(err.defaultSymbolOperator.config(name))(string(name)) *>
                 notFollowedBy(opLetter <|> strings(end, ends: _*)).label(err.labelSymbolEndOfOperator(name))
             }
         }
