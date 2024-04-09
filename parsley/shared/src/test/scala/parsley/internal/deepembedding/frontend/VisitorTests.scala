@@ -19,7 +19,7 @@ import parsley.internal.errors.{CaretWidth, FlexibleCaret}
 import parsley.state.Ref
 import parsley.token.descriptions.SpaceDesc
 import parsley.token.descriptions.numeric.PlusSignPresence
-import parsley.token.errors.{ErrorConfig, BasicFilter, LabelConfig, SpecialisedFilterConfig}
+import parsley.token.errors.{ErrorConfig, BasicFilter, LabelConfig, SpecializedFilterConfig}
 import parsley.token.predicate.Basic
 import parsley.token.errors.NotConfigured
 
@@ -74,7 +74,7 @@ class VisitorTests extends ParsleyTest {
             dontExecute()
     }
 
-    private def dummySFConfig[A](): SpecialisedFilterConfig[A] = new BasicFilter[A]
+    private def dummySFConfig[A](): SpecializedFilterConfig[A] = new BasicFilter[A]
 
     implicit private class TestVisitorOps[A](p: LazyParsley[A]) {
         def testV: Assertion = p.visit(testVisitor, ()) shouldBe CUnit

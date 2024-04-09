@@ -363,7 +363,7 @@ class ErrorConfig {
       * @note defaults to a ''specialised'' error describing what the min and max bounds are.
       * @group numeric
       */
-    def filterIntegerOutOfBounds(min: BigInt, max: BigInt, nativeRadix: Int): FilterConfig[BigInt] = new SpecialisedMessage[BigInt] {
+    def filterIntegerOutOfBounds(min: BigInt, max: BigInt, nativeRadix: Int): FilterConfig[BigInt] = new SpecializedMessage[BigInt] {
         def message(n: BigInt) = Seq(s"literal is not within the range ${min.toString(nativeRadix)} to ${max.toString(nativeRadix)}")
     }
 
@@ -373,7 +373,7 @@ class ErrorConfig {
       * @note defaults to a ''specialised'' error stating that the literal is not exactly representable.
       * @group numeric
       */
-    def filterRealNotExact(name: String): FilterConfig[BigDecimal] = new SpecialisedMessage[BigDecimal] {
+    def filterRealNotExact(name: String): FilterConfig[BigDecimal] = new SpecializedMessage[BigDecimal] {
         def message(n: BigDecimal) = Seq(s"literal cannot be represented exactly as an $name")
     }
 
@@ -386,7 +386,7 @@ class ErrorConfig {
       * @group numeric
       */
     def filterRealOutOfBounds(name: String, min: BigDecimal, max: BigDecimal): FilterConfig[BigDecimal] =
-        new SpecialisedMessage[BigDecimal] {
+        new SpecializedMessage[BigDecimal] {
             def message(n: BigDecimal) = Seq(s"literal is not within the range $min to $max and is not an $name")
         }
 
@@ -609,7 +609,7 @@ class ErrorConfig {
       * @note defaults to label of "end of escape sequence" with a reason of "invalid escape sequence"
       * @group text
       */
-    def labelEscapeEnd: LabelWithExplainConfig = LabelAndReason(label = "end of escape sequence", reason = "invalid escape sequence")
+    def labelEscapeEnd: LabelWithExplainConfig = LabelAndReason(reason = "invalid escape sequence", label = "end of escape sequence")
     /** How zero-width escape characters should be referred to within error messages.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
@@ -659,7 +659,7 @@ class ErrorConfig {
       * @note defaults to a filter generating a ''specialised'' message of "non-ascii characters in string literal, this is not allowed"
       * @group text
       */
-    def filterStringNonAscii: SpecialisedFilterConfig[StringBuilder] = new SpecialisedMessage[StringBuilder] {
+    def filterStringNonAscii: SpecializedFilterConfig[StringBuilder] = new SpecializedMessage[StringBuilder] {
         def message(@unused s: StringBuilder) = Seq("non-ascii characters in string literal, this is not allowed")
     }
 
@@ -668,7 +668,7 @@ class ErrorConfig {
       * @note defaults to a filter generating a ''specialised'' message of "non-latin1 characters in string literal, this is not allowed"
       * @group text
       */
-    def filterStringNonLatin1: SpecialisedFilterConfig[StringBuilder] = new SpecialisedMessage[StringBuilder] {
+    def filterStringNonLatin1: SpecializedFilterConfig[StringBuilder] = new SpecializedMessage[StringBuilder] {
         def message(@unused s: StringBuilder) = Seq("non-latin1 characters in string literal, this is not allowed")
     }
 
@@ -680,8 +680,8 @@ class ErrorConfig {
       * @note defaults to a ''specialised'' message describing how many digits are required but how many were present.
       * @group text
       */
-    def filterEscapeCharRequiresExactDigits(@unused radix: Int, needed: Seq[Int]): SpecialisedFilterConfig[Int] =
-        new SpecialisedMessage[Int] {
+    def filterEscapeCharRequiresExactDigits(@unused radix: Int, needed: Seq[Int]): SpecializedFilterConfig[Int] =
+        new SpecializedMessage[Int] {
             def message(got: Int) = {
                 assume(needed.nonEmpty, "cannot be empty!")
                 val Some(formatted) = parsley.errors.helpers.disjunct(needed.toList.map(_.toString), oxfordComma = true): @unchecked
@@ -696,8 +696,8 @@ class ErrorConfig {
       * @note defaults to a ''specialised'' message stating if the character is larger than the given maximum, or just an illegal codepoint otherwise.
       * @group text
       */
-    def filterEscapeCharNumericSequenceIllegal(maxEscape: Int, radix: Int): SpecialisedFilterConfig[BigInt] =
-        new SpecialisedMessage[BigInt] {
+    def filterEscapeCharNumericSequenceIllegal(maxEscape: Int, radix: Int): SpecializedFilterConfig[BigInt] =
+        new SpecializedMessage[BigInt] {
             def message(escapeChar: BigInt) = Seq(
                 if (escapeChar > BigInt(maxEscape)) {
                     s"${escapeChar.toString(radix)} is greater than the maximum character value of ${BigInt(maxEscape).toString(radix)}"

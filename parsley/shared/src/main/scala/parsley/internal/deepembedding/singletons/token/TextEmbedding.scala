@@ -5,7 +5,7 @@
  */
 package parsley.internal.deepembedding.singletons.token
 
-import parsley.token.errors.SpecialisedFilterConfig
+import parsley.token.errors.SpecializedFilterConfig
 
 import parsley.internal.collection.immutable.Trie
 import parsley.internal.deepembedding.backend.StrictParsley.InstrBuffer
@@ -43,7 +43,7 @@ private [parsley] final class EscapeAtMost(n: Int, radix: Int) extends Singleton
     // $COVERAGE-ON$
 }
 
-private [parsley] final class EscapeOneOfExactly(radix: Int, ns: List[Int], inexactErr: SpecialisedFilterConfig[Int]) extends Singleton[BigInt] {
+private [parsley] final class EscapeOneOfExactly(radix: Int, ns: List[Int], inexactErr: SpecializedFilterConfig[Int]) extends Singleton[BigInt] {
     override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
         instrs += new instructions.token.EscapeOneOfExactly(radix, ns, inexactErr)
         if (!producesResults) instrs += instructions.Pop

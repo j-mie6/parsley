@@ -134,12 +134,11 @@ final class LabelAndReason(val reason: String, val label: String, val labels: St
     private [parsley] final override def orElse(config: LabelWithExplainConfig) = this
     private [parsley] final override def asReason: Option[String] = Some(reason)
 }
-// FIXME: reverse order of arguments! Add varargs
 /** @since 4.1.0
   * @group labels
   */
 object LabelAndReason {
-    def apply(label: String, reason: String): LabelWithExplainConfig = new LabelAndReason(reason, label)
+    def apply(reason: String, label: String, labels: String*): LabelWithExplainConfig = new LabelAndReason(reason, label, labels: _*)
 }
 
 /** This object specifies that no special labels or reasons should be generated, and default errors should be used instead.

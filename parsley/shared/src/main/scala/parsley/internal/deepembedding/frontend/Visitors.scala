@@ -12,7 +12,7 @@ import parsley.errors.ErrorBuilder
 import parsley.state.Ref
 import parsley.token.descriptions.SpaceDesc
 import parsley.token.descriptions.numeric.PlusSignPresence
-import parsley.token.errors.{ErrorConfig, LabelConfig, LabelWithExplainConfig, SpecialisedFilterConfig}
+import parsley.token.errors.{ErrorConfig, LabelConfig, LabelWithExplainConfig, SpecializedFilterConfig}
 import parsley.token.predicate.CharPredicate
 
 // scalastyle:off underscore.import
@@ -70,7 +70,7 @@ private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle
     def visit[A](self: SpecializedGen[A], context: T)(gen: parsley.errors.SpecializedGen[A]): U[((A, Int)) => Nothing]
     def visit(self: EscapeMapped, context: T)(escTrie: Trie[Int], escs: Set[String]): U[Int]
     def visit(self: EscapeAtMost, context: T)(n: Int, radix: Int): U[BigInt]
-    def visit(self: EscapeOneOfExactly, context: T)(radix: Int, ns: List[Int], ie: SpecialisedFilterConfig[Int]): U[BigInt]
+    def visit(self: EscapeOneOfExactly, context: T)(radix: Int, ns: List[Int], ie: SpecializedFilterConfig[Int]): U[BigInt]
     def visit(self: SoftKeyword, context: T)(specific: String,
                                              letter: CharPredicate,
                                              caseSensitive: Boolean,
@@ -211,7 +211,7 @@ private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
     }
     override def visit(self: EscapeMapped, context: T)(escTrie: Trie[Int], escs: Set[String]): U[Int] = visitSingleton(self, context)
     override def visit(self: EscapeAtMost, context: T)(n: Int, radix: Int): U[BigInt] = visitSingleton(self, context)
-    override def visit(self: EscapeOneOfExactly, context: T)(radix: Int, ns: List[Int], ie: SpecialisedFilterConfig[Int]): U[BigInt] = {
+    override def visit(self: EscapeOneOfExactly, context: T)(radix: Int, ns: List[Int], ie: SpecializedFilterConfig[Int]): U[BigInt] = {
         visitSingleton(self, context)
     }
     override def visit(self: SoftKeyword, context: T)(specific: String,
