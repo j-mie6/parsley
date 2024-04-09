@@ -31,7 +31,7 @@ inThisBuild(List(
   tlCiHeaderCheck := true,
   githubWorkflowJavaVersions := Seq(Java8, JavaLTS, JavaLatest),
   githubWorkflowAddedJobs += testCoverageJob(githubWorkflowGeneratedCacheSteps.value.toList),
-  //githubWorkflowConcurrency := None,
+  githubWorkflowConcurrency := None, // this allows us to not fail the pipeline on double commit
   // Website Configuration
   tlSitePublishBranch := Some(mainBranch),
 ))
