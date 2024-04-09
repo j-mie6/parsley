@@ -107,37 +107,9 @@ object combinator {
       */
     def choice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceRightOption(_ <|> _).getOrElse(empty)
 
-    /** This combinator tries to parse each of the parsers `ps` in order, until one of them succeeds.
-      *
-      * Finds the first parser in `ps` which succeeds, returning its result. If none of the parsers
-      * succeed, then this combinator fails. This combinator will always try and parse each of the
-      * combinators until one succeeds, regardless of how they fail. The last argument will '''not'''
-      * be wrapped in `atomic`, as this is not necessary.
-      *
-      * @example {{{
-      * scala> import parsley.combinator.atomicChoice
-      * scala> import parsley.character.string
-      * scala> val p = atomicChoice(string("abc"), string("ab"), string("bc"), string("d"))
-      * scala> p.parse("abc")
-      * val res0 = Success("abc")
-      * scala> p.parse("ab")
-      * val res1 = Success("ab")
-      * scala> p.parse("bc")
-      * val res2 = Success("bc")
-      * scala> p.parse("x")
-      * val res3 = Failure(..)
-      * }}}
-      *
-      * @param ps the parsers to try, in order.
-      * @return a parser that tries to parse one of `ps`.
-      * @group multi
-      * @see [[parsley.Parsley.<|> `<|>`]]
-      * @see [[parsley.Parsley$.atomic `atomic`]]
-      * @since 4.4.0
-      * @note this combinator is not particularly efficient, because it may unnecessarily backtrack for each alternative: a more efficient alternative
-      *       for `String` is [[character.strings(str0* `strings`]].
-      */
-    def atomicChoice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceRightOption((p, q) => atomic(p) <|> q).getOrElse(empty)
+    // This combinator is still used in internal testing, but is a trap for new users
+    // it will not be exposed in the API again.
+    private [parsley] def atomicChoice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceRightOption((p, q) => atomic(p) <|> q).getOrElse(empty)
 
     /** This combinator will parse each of `ps` in order, collecting the results.
       *
