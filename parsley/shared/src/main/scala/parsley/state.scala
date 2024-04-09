@@ -10,7 +10,7 @@ import scala.collection.Factory
 import parsley.XAssert._
 import parsley.combinator.{whenS, whileS}
 import parsley.syntax.zipped.Zipped2
-import parsley.exceptions.UnfilledRegisterException
+import parsley.exceptions.UnfilledReferenceException
 
 import parsley.internal.deepembedding.{frontend, singletons}
 
@@ -277,7 +277,7 @@ object state {
 
         private [this] var _v: Int = -1
         private [parsley] def addr: Int = {
-            if (!allocated) throw new UnfilledRegisterException // scalastyle:ignore throw
+            if (!allocated) throw new UnfilledReferenceException // scalastyle:ignore throw
             _v
         }
         private [parsley] def allocated: Boolean = _v != -1
@@ -285,8 +285,10 @@ object state {
             assert(!allocated)
             this._v = v
         }
-        // This must ONLY be used by CalleeSave in flatMap
-        private [parsley] def deallocate(): Unit = _v = -1
+        private [parsley] def deallocate(): Unit = {
+            assert((new Throwable).getStackTrace.exists(_.getClassName == "parsley.internal.machine.instructions.CalleeSave"))
+            _v = -1
+        }
         //override def toString: String = s"Reg(${if (allocated) addr else "unallocated"})"
     }
 

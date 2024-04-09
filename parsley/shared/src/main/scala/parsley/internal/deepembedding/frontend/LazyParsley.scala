@@ -9,11 +9,11 @@ import scala.annotation.nowarn
 import scala.collection.mutable
 
 import parsley.XAssert._
-import parsley.exceptions.BadLazinessException
 import parsley.state.Ref
 
 import parsley.internal.deepembedding.{Cont, ContOps, Id}, ContOps.{perform, result, ContAdapter}
 import parsley.internal.deepembedding.backend, backend.StrictParsley
+import parsley.internal.diagnostics.NullParserException
 import parsley.internal.machine.instructions, instructions.Instr
 
 /** This is the root type of the parsley "frontend": it represents a combinator tree
@@ -135,7 +135,6 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
       * @param seen the set of all nodes that have previously been seen by the let-finding
       * @param state stores all the information of the let-finding process
       */
-    @throws[BadLazinessException]("if this parser references another parser before it has been initialised")
     final protected [frontend] def findLets[M[_, +_]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] = {
         state.addPred(this)
         if (seen.contains(this)) result(state.addRec(this))
@@ -148,7 +147,7 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
             try findLetsAux(seen + this)
             catch {
                 // $COVERAGE-OFF$
-                case _: NullPointerException => throw new BadLazinessException // scalastyle:ignore throw
+                case NullParserException(err) => throw err // scalastyle:ignore throw
                 // $COVERAGE-ON$
             }
         }
