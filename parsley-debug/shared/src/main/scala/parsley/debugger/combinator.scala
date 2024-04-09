@@ -243,8 +243,8 @@ object combinator {
       *   [[parsley.debugger.combinator$.attachWithFrontend[A](parser:parsley\.Parsley[A],frontend:parsley\.debugger\.frontend\.DebugFrontend,toStringRules* attachWithFrontend]]
       *   for more information.
       */
-    def attachWithImplicitFrontend[A](parser: Parsley[A], toStringRules: Seq[Any => Boolean] = defaultRules)(implicit frontend: DebugFrontend): Parsley[A]
-        = attachWithFrontend(parser, frontend, toStringRules)
+    def attachWithImplicitFrontend[A](parser: Parsley[A], toStringRules: Seq[Any => Boolean] = defaultRules)(implicit frontend: DebugFrontend): Parsley[A] =
+        attachWithFrontend(parser, frontend, toStringRules)
 
     /** Attach a debugger and an implicitly-available frontend in which the debug tree should be
       * processed with.
@@ -266,46 +266,28 @@ object combinator {
       *
       * Renaming the same parser multiple times simply overwrites its name to the most latest rename.
       */
-    def named[A](parser: Parsley[A], name: String): Parsley[A] =
-        parser.internal match {
-            case Named(i, _) => new Parsley(Named(i.asInstanceOf[LazyParsley[A]], name))
-            case _           => new Parsley(Named(parser.internal, name))
-        }
+    def named[A](parser: Parsley[A], name: String): Parsley[A] = parser.internal match {
+        case Named(i, _) => new Parsley(Named(i.asInstanceOf[LazyParsley[A]], name))
+        case _           => new Parsley(Named(parser.internal, name))
+    }
 
+    // TODO: just use these for everything?
     /** Dot accessor versions of the combinators.  */
     implicit class DebuggerOps[A](par: Parsley[A]) {
-        def attachDebugger(toStringRules: Seq[Any => Boolean]): DebuggedPair[A] =
-            combinator.attachDebugger(par, toStringRules)
-
-        def attachReusable(toStringRules: Seq[Any => Boolean]): () => DebuggedPair[A] =
-            combinator.attachReusable(par, toStringRules)
-
+        def attachDebugger(toStringRules: Seq[Any => Boolean]): DebuggedPair[A] = combinator.attachDebugger(par, toStringRules)
+        def attachReusable(toStringRules: Seq[Any => Boolean]): () => DebuggedPair[A] = combinator.attachReusable(par, toStringRules)
         def attachWithFrontend(frontend: DebugFrontend, toStringRules: Seq[Any => Boolean]): Parsley[A] =
             combinator.attachWithFrontend(par, frontend, toStringRules)
-
         def attachReusableWithFrontend(frontend: () => DebugFrontend, toStringRules: Seq[Any => Boolean]): () => Parsley[A] =
             combinator.attachReusableWithFrontend(par, frontend, toStringRules)
-
         def attachWithImplicitFrontend(toStringRules: Seq[Any => Boolean])(implicit frontend: DebugFrontend): Parsley[A] =
             combinator.attachWithImplicitFrontend(par, toStringRules)
-
-        def attachDebugger: DebuggedPair[A] =
-            combinator.attachDebugger(par, defaultRules)
-
-        def attachReusable: () => DebuggedPair[A] =
-            combinator.attachReusable(par, defaultRules)
-
-        def attachWithFrontend(frontend: DebugFrontend): Parsley[A] =
-            combinator.attachWithFrontend(par, frontend, defaultRules)
-
-        def attachReusableWithFrontend(frontend: () => DebugFrontend): () => Parsley[A] =
-            combinator.attachReusableWithFrontend(par, frontend, defaultRules)
-
-        def attachWithImplicitFrontend(implicit frontend: DebugFrontend): Parsley[A] =
-            combinator.attachWithImplicitFrontend(par, defaultRules)
-
-        def named(name: String): Parsley[A] =
-            combinator.named(par, name)
+        def attachDebugger: DebuggedPair[A] = combinator.attachDebugger(par, defaultRules)
+        def attachReusable: () => DebuggedPair[A] = combinator.attachReusable(par, defaultRules)
+        def attachWithFrontend(frontend: DebugFrontend): Parsley[A] = combinator.attachWithFrontend(par, frontend, defaultRules)
+        def attachReusableWithFrontend(frontend: () => DebugFrontend): () => Parsley[A] = combinator.attachReusableWithFrontend(par, frontend, defaultRules)
+        def attachWithImplicitFrontend(implicit frontend: DebugFrontend): Parsley[A] = combinator.attachWithImplicitFrontend(par, defaultRules)
+        def named(name: String): Parsley[A] = combinator.named(par, name)
     }
     // $COVERAGE-ON$
 }

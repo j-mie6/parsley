@@ -301,7 +301,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           *
           * @since 4.5.0
           */
-        def natural: IntegerParsers = _natural
+        val natural: IntegerParsers = new LexemeInteger(nonlexeme.natural, this)
 
         /** $integer
           *
@@ -317,7 +317,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @since 4.5.0
           * @see [[natural `natural`]] for a full description of integer configuration
           */
-        def integer: IntegerParsers = _integer
+        val integer: IntegerParsers = new LexemeInteger(nonlexeme.integer, this)
 
         /** $real
           *
@@ -333,59 +333,46 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @since 4.5.0
           * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
           */
-        def real: RealParsers = _real
+        val real: RealParsers = new LexemeReal(nonlexeme.real, this, errConfig)
 
         /** $unsignedCombined
           *
           * @since 4.5.0
           */
-        def unsignedCombined: CombinedParsers = _unsignedCombined
+        val unsignedCombined: CombinedParsers = new LexemeCombined(nonlexeme.unsignedCombined, this, errConfig)
         /** $signedCombined
           *
           * @since 4.5.0
           */
-        def signedCombined: CombinedParsers = _signedCombined
-
-        private [Lexer] val _natural = new LexemeInteger(nonlexeme.natural, this)
-        private [Lexer] val _integer = new LexemeInteger(nonlexeme.integer, this)
-        private [Lexer] val _positiveReal = new LexemeReal(nonlexeme._positiveReal, this, errConfig)
-        private [Lexer] val _real = new LexemeReal(nonlexeme.real, this, errConfig)
-        private [Lexer] val _unsignedCombined = new LexemeCombined(nonlexeme.unsignedCombined, this, errConfig)
-        private [Lexer] val _signedCombined = new LexemeCombined(nonlexeme.signedCombined, this, errConfig)
+        val signedCombined: CombinedParsers = new LexemeCombined(nonlexeme.signedCombined, this, errConfig)
 
         /** $character
           *
           * @since 4.5.0
           */
-        def character: CharacterParsers = _character
+        def character: CharacterParsers = new LexemeCharacter(nonlexeme.character, this)
         /** $string
           *
           * @since 4.5.0
           */
-        def string: StringParsers = _string
+        def string: StringParsers = new LexemeString(nonlexeme.string, this)
         /** $string
           *
           * @note $raw
           * @since 4.5.0
           */
-        def rawString: StringParsers = _rawString
+        def rawString: StringParsers = new LexemeString(nonlexeme.rawString, this)
         /** $multiString
           *
           * @since 4.5.0
           */
-        def multiString: StringParsers = _multiString
+        def multiString: StringParsers = new LexemeString(nonlexeme.multiString, this)
         /** $multiString
           *
           * @note $raw
           * @since 4.5.0
           */
-        def rawMultiString: StringParsers = _rawMultiString
-
-        private [Lexer] val _character = new LexemeCharacter(nonlexeme._character, this)
-        private [Lexer] val _string = new LexemeString(nonlexeme._string, this)
-        private [Lexer] val _rawString = new LexemeString(nonlexeme._rawString, this)
-        private [Lexer] val _multiString = new LexemeString(nonlexeme._multiString, this)
-        private [Lexer] val _rawMultiString = new LexemeString(nonlexeme._rawMultiString, this)
+        def rawMultiString: StringParsers = new LexemeString(nonlexeme.rawMultiString, this)
 
         /** $symbol
           *
@@ -611,13 +598,13 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @note alias for [[natural `natural`]].
           */
         // $COVERAGE-OFF$
-        def unsigned: IntegerParsers = _natural
+        def unsigned: IntegerParsers = natural
         // $COVERAGE-ON$
         /** $natural
           *
           * @since 4.5.0
           */
-        def natural: IntegerParsers = _natural
+        val natural: IntegerParsers = new UnsignedInteger(desc.numericDesc, errConfig, generic)
 
         /** $integer
           *
@@ -626,14 +613,14 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @see [[unsigned `unsigned`]] for a full description of signed integer configuration
           */
         // $COVERAGE-OFF$
-        def signed: IntegerParsers = _integer
+        def signed: IntegerParsers = integer
         // $COVERAGE-ON$
         /** $integer
           *
           * @since 4.5.0
           * @see [[natural `natural`]] for a full description of integer configuration
           */
-        def integer: IntegerParsers = _integer
+        val integer: IntegerParsers = new SignedInteger(desc.numericDesc, natural, errConfig)
 
         /** $real
           *
@@ -644,67 +631,57 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
         // $COVERAGE-OFF$
         def floating: RealParsers = real
         // $COVERAGE-ON$
+        private [Lexer] val positiveReal = new UnsignedReal(desc.numericDesc, errConfig, generic)
         /** $real
           *
           * @since 4.5.0
           * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
           */
-        def real: RealParsers = _real
+        val real: RealParsers = new SignedReal(desc.numericDesc, positiveReal, errConfig)
 
         /** $unsignedCombined
           *
           * @since 4.5.0
           */
-        def unsignedCombined: CombinedParsers = _unsignedCombined
+        val unsignedCombined: CombinedParsers = new UnsignedCombined(desc.numericDesc, natural, positiveReal, errConfig)
         /** $signedCombined
           *
           * @since 4.5.0
           */
-        def signedCombined: CombinedParsers = _signedCombined
+        val signedCombined: CombinedParsers = new SignedCombined(desc.numericDesc, unsignedCombined, errConfig)
 
-        private [Lexer] val _natural = new UnsignedInteger(desc.numericDesc, errConfig, generic)
-        private [Lexer] val _integer = new SignedInteger(desc.numericDesc, _natural, errConfig)
-        private [Lexer] val _positiveReal = new UnsignedReal(desc.numericDesc, errConfig, generic)
-        private [Lexer] val _real = new SignedReal(desc.numericDesc, _positiveReal, errConfig)
-        private [Lexer] val _unsignedCombined = new UnsignedCombined(desc.numericDesc, _natural, _positiveReal, errConfig)
-        private [Lexer] val _signedCombined = new SignedCombined(desc.numericDesc, _unsignedCombined, errConfig)
+        // These are not going to be picked up by the debugger... I removed that machinery... oh well
+        private val escapes = new Escape(desc.textDesc.escapeSequences, errConfig, generic)
+        private val escapeChar = new EscapableCharacter(desc.textDesc.escapeSequences, escapes, space.space, errConfig)
+        private val rawChar = new RawCharacter(errConfig)
 
         /** $character
           *
           * @since 4.5.0
           */
-        def character: CharacterParsers = _character
+        val character: CharacterParsers = new ConcreteCharacter(desc.textDesc, escapes, errConfig)
         /** $string
           *
           * @since 4.5.0
           */
-        def string: StringParsers = _string
+        val string: StringParsers = new ConcreteString(desc.textDesc.stringEnds, escapeChar, desc.textDesc.graphicCharacter, false, errConfig)
         /** $string
           *
           * @note $raw
           * @since 4.5.0
           */
-        def rawString: StringParsers = _rawString
+        val rawString: StringParsers = new ConcreteString(desc.textDesc.stringEnds, rawChar, desc.textDesc.graphicCharacter, false, errConfig)
         /** $multiString
           *
           * @since 4.5.0
           */
-        def multiString: StringParsers = _multiString
+        val multiString: StringParsers = new ConcreteString(desc.textDesc.multiStringEnds, escapeChar, desc.textDesc.graphicCharacter, true, errConfig)
         /** $multiString
           *
           * @note $raw
           * @since 4.5.0
           */
-        def rawMultiString: StringParsers = _rawMultiString
-
-        private val escapes = new Escape(desc.textDesc.escapeSequences, errConfig, generic)
-        private val escapeChar = new EscapableCharacter(desc.textDesc.escapeSequences, escapes, space.space, errConfig)
-        private val rawChar = new RawCharacter(errConfig)
-        private [Lexer] val _character: CharacterParsers = new ConcreteCharacter(desc.textDesc, escapes, errConfig)
-        private [Lexer] val _string = new ConcreteString(desc.textDesc.stringEnds, escapeChar, desc.textDesc.graphicCharacter, false, errConfig)
-        private [Lexer] val _rawString = new ConcreteString(desc.textDesc.stringEnds, rawChar, desc.textDesc.graphicCharacter, false, errConfig)
-        private [Lexer] val _multiString = new ConcreteString(desc.textDesc.multiStringEnds, escapeChar, desc.textDesc.graphicCharacter, true, errConfig)
-        private [Lexer] val _rawMultiString = new ConcreteString(desc.textDesc.multiStringEnds, rawChar, desc.textDesc.graphicCharacter, true, errConfig)
+        val rawMultiString: StringParsers = new ConcreteString(desc.textDesc.multiStringEnds, rawChar, desc.textDesc.graphicCharacter, true, errConfig)
 
         /** $symbol
           *

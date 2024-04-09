@@ -114,21 +114,35 @@ private [parsley] abstract class CollectorImpl {
     // All of these objects inside a lexer are exposed, so are easy to collect parser names from.
     // The rest will need to be handled by reflection.
     // If any public objects are added to Lexer, please add them to this list.
-    @inline protected final def safeLexerObjects(lexer: Lexer): List[Any] = List(
+    @inline protected final def lexerObjects(lexer: Lexer): List[Any] = List(
         lexer,
         lexer.space,
         lexer.lexeme,
+        lexer.lexeme.integer,
+        lexer.lexeme.natural,
+        lexer.lexeme.real,
+        lexer.lexeme.unsignedCombined,
+        lexer.lexeme.signedCombined,
+        lexer.lexeme.character,
+        lexer.lexeme.string,
+        lexer.lexeme.multiString,
+        lexer.lexeme.rawString,
+        lexer.lexeme.rawMultiString,
         lexer.lexeme.names,
         lexer.lexeme.symbol,
         lexer.nonlexeme,
+        lexer.nonlexeme.integer,
+        lexer.nonlexeme.natural,
+        lexer.nonlexeme.real,
+        lexer.nonlexeme.unsignedCombined,
+        lexer.nonlexeme.signedCombined,
+        lexer.nonlexeme.character,
+        lexer.nonlexeme.string,
+        lexer.nonlexeme.multiString,
+        lexer.nonlexeme.rawString,
+        lexer.nonlexeme.rawMultiString,
         lexer.nonlexeme.names,
         lexer.nonlexeme.symbol,
     )
-
-    // All of these objects inside a lexer have private sub-objects which contain parsers.
-    // They require special handling where those sub-objects must be exposed, and then the parsers inside will be
-    // extracted in a second step.
-    @deprecated("This method is no longer needed, because the lexer does not nest anymore for numeric/test/enclosing/separators", "4.5.0")
-    @inline protected final def unsafeLexerObjects(lexer: Lexer): List[Any] = Nil
 }
 // $COVERAGE-ON$
