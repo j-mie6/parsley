@@ -181,7 +181,7 @@
         <p>Error messages within <code>parsley</code> take two different forms: <em>vanilla</em>
         or <em>specialised</em>. The error chosen depends on the combinators used
         to produce it: <code>empty</code>, <code>unexpected</code>, <code>char</code>, <code>string</code>, etc all produce vanilla errors; and <code>fail</code> and its derivatives produce
-        specialised errors. An <code>ErrorBuilder</code> must describe how to format
+        specialised errors. An <code>ErrorBuilder</code> must describe how to build
         both kinds of error; their structure is explained below.</p>
         
         <h3 id="vanilla-errors" class="section"><a class="anchor-link left" href="#vanilla-errors"><i class="icofont-laika link">&#xef71;</i></a>Vanilla Errors</h3>
@@ -263,8 +263,8 @@
         <p>After these types are specified, the methods of the typeclass
         can be implemented. These put together the primtive-most components
         and compose them into the larger whole. The documentation of the
-        typeclass details the role of these well enough, however. For example&#39;s sake, however, these are the two shapes of call that will
-        be made for the different types of error messages:</p>
+        typeclass details the role of these well enough, however. For example&#39;s sake, however, these
+        are the two shapes of call that will be made for the different types of error messages:</p>
         
         <h4 id="vanilla" class="section"><a class="anchor-link left" href="#vanilla"><i class="icofont-laika link">&#xef71;</i></a>Vanilla</h4>
         <pre><code>(line 1, column 5):
@@ -274,7 +274,7 @@
   &gt;3+4-
        ^</code></pre>
         <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">builder</span><span> = </span><span class="identifier">implicitly</span><span>[</span><span class="type-name">ErrorBuilder</span><span>[</span><span class="type-name">String</span><span>]]
-</span><span class="identifier">builder</span><span>.</span><span class="identifier">format</span><span> (
+</span><span class="identifier">builder</span><span>.</span><span class="identifier">build</span><span> (
     </span><span class="identifier">builder</span><span>.</span><span class="identifier">pos</span><span>(</span><span class="number-literal">1</span><span>, </span><span class="number-literal">5</span><span>),
     </span><span class="identifier">builder</span><span>.</span><span class="identifier">source</span><span>(</span><span class="type-name">None</span><span>),
     </span><span class="identifier">builder</span><span>.</span><span class="identifier">vanillaError</span><span> (
@@ -290,7 +290,7 @@
         </span><span class="identifier">builder</span><span>.</span><span class="identifier">combineMessages</span><span>(</span><span class="type-name">List</span><span>(
             </span><span class="identifier">builder</span><span>.</span><span class="identifier">reason</span><span>(</span><span class="string-literal">&quot;&#39;-&#39; is a binary operator&quot;</span><span>)
         )),
-        </span><span class="identifier">builder</span><span>.</span><span class="identifier">lineInfo</span><span>(</span><span class="string-literal">&quot;3+4-&quot;</span><span>, </span><span class="type-name">Nil</span><span>, </span><span class="type-name">Nil</span><span>, </span><span class="number-literal">4</span><span>, </span><span class="number-literal">4</span><span>)
+        </span><span class="identifier">builder</span><span>.</span><span class="identifier">lineInfo</span><span>(</span><span class="string-literal">&quot;3+4-&quot;</span><span>, </span><span class="type-name">Nil</span><span>, </span><span class="type-name">Nil</span><span>, </span><span class="number-literal">1</span><span>, </span><span class="number-literal">4</span><span>, </span><span class="number-literal">4</span><span>)
     )
 )</span></code></pre>
         <p>One builder call not shown here, is a call to
@@ -307,7 +307,7 @@
   &gt;third line
   &gt;fourth line</code></pre>
         <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">builder</span><span> = </span><span class="identifier">implicitly</span><span>[</span><span class="type-name">ErrorBuilder</span><span>[</span><span class="type-name">String</span><span>]]
-</span><span class="identifier">builder</span><span>.</span><span class="identifier">format</span><span> (
+</span><span class="identifier">builder</span><span>.</span><span class="identifier">build</span><span> (
     </span><span class="identifier">builder</span><span>.</span><span class="identifier">pos</span><span>(</span><span class="number-literal">2</span><span>, </span><span class="number-literal">6</span><span>),
     </span><span class="identifier">builder</span><span>.</span><span class="identifier">source</span><span>(</span><span class="type-name">Some</span><span>(</span><span class="string-literal">&quot;foo.txt&quot;</span><span>)),
     </span><span class="identifier">builder</span><span>.</span><span class="identifier">specializedError</span><span> (
@@ -318,6 +318,7 @@
         </span><span class="identifier">builder</span><span>.</span><span class="identifier">lineInfo</span><span>(</span><span class="string-literal">&quot;second line&quot;</span><span>,
                          </span><span class="type-name">List</span><span>(</span><span class="string-literal">&quot;first line of input&quot;</span><span>),
                          </span><span class="type-name">List</span><span>(</span><span class="string-literal">&quot;third line&quot;</span><span>, </span><span class="string-literal">&quot;fourth line&quot;</span><span>),
+                         </span><span class="number-literal">2</span><span>,
                          </span><span class="number-literal">5</span><span>,
                          </span><span class="number-literal">3</span><span>)
     )
@@ -339,7 +340,7 @@
 </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">TestRaw</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">TestErrorItem</span><span>
 </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">TestNamed</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">TestErrorItem</span><span>
 </span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">TestEndOfInput</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">TestErrorItem</span></code></pre>
-        <p>This type, as will become evident from the formatter derived
+        <p>This type, as will become evident from the builder derived
         from it, is lossy and does not perfectly encode all the
         information available. Notice that <code>TestErrorItem</code> is a supertype
         of <code>TestRaw</code>, <code>TestNamed</code>, and <code>TestEndOfInput</code>: this is
@@ -367,8 +368,8 @@
         methods make it very easy to fill in the gaps:</p>
         <pre><code class="nohighlight"><span class="keyword">class</span><span> </span><span class="type-name">TestErrorBuilder</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ErrorBuilder</span><span>[</span><span class="type-name">TestError</span><span>] {
     </span><span class="comment">//...
-</span><span>    </span><span class="keyword">def</span><span> </span><span class="declaration-name">format</span><span>(</span><span class="identifier">pos</span><span>: (</span><span class="type-name">Int</span><span>, </span><span class="type-name">Int</span><span>), </span><span class="identifier">source</span><span>: </span><span class="type-name">Unit</span><span>,
-               </span><span class="identifier">lines</span><span>: </span><span class="type-name">TestErrorLines</span><span>): </span><span class="type-name">TestError</span><span> = </span><span class="type-name">TestError</span><span>(</span><span class="identifier">pos</span><span>, </span><span class="identifier">lines</span><span>)
+</span><span>    </span><span class="keyword">def</span><span> </span><span class="declaration-name">build</span><span>(</span><span class="identifier">pos</span><span>: (</span><span class="type-name">Int</span><span>, </span><span class="type-name">Int</span><span>), </span><span class="identifier">source</span><span>: </span><span class="type-name">Unit</span><span>,
+              </span><span class="identifier">lines</span><span>: </span><span class="type-name">TestErrorLines</span><span>): </span><span class="type-name">TestError</span><span> = </span><span class="type-name">TestError</span><span>(</span><span class="identifier">pos</span><span>, </span><span class="identifier">lines</span><span>)
     </span><span class="keyword">def</span><span> </span><span class="declaration-name">vanillaError</span><span>(
         </span><span class="identifier">unexpected</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">TestErrorItem</span><span>],
         </span><span class="identifier">expected</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">TestErrorItem</span><span>],
@@ -397,7 +398,7 @@
         </span><span class="identifier">line</span><span>: </span><span class="type-name">String</span><span>,
         </span><span class="identifier">linesBefore</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">String</span><span>],
         </span><span class="identifier">linesAfter</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">String</span><span>],
-        </span><span class="identifier">errorPointsAt</span><span>: </span><span class="type-name">Int</span><span>, </span><span class="identifier">errorWidth</span><span>: </span><span class="type-name">Int</span><span>
+        </span><span class="identifier">lineNum</span><span>: </span><span class="type-name">Int</span><span>, </span><span class="identifier">errorPointsAt</span><span>: </span><span class="type-name">Int</span><span>, </span><span class="identifier">errorWidth</span><span>: </span><span class="type-name">Int</span><span>
       ): </span><span class="type-name">Unit</span><span> = ()
 
     </span><span class="comment">// The implementation of this is usually provided by a mixed-in
