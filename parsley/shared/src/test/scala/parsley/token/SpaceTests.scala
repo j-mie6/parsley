@@ -12,7 +12,7 @@ import parsley.Parsley.atomic
 
 import descriptions.{SpaceDesc, LexicalDesc}
 import parsley.character.{string, char}
-import parsley.exceptions.UnfilledRegisterException
+import parsley.exceptions.UnfilledReferenceException
 import parsley.VanillaError
 import parsley.Failure
 import parsley.TestError
@@ -231,7 +231,7 @@ class SpaceTests extends ParsleyTest {
     val basicDependent = basicMixed.copy(whitespaceIsContextDependent = true)
 
     "context-dependent whitespace" must "be initialised" in {
-        a [UnfilledRegisterException] must be thrownBy {
+        a [UnfilledReferenceException] must be thrownBy {
             makeSpace(basicDependent).whiteSpace.parse("     ")
         }
     }

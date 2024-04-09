@@ -6,6 +6,6 @@
 package parsley.exceptions
 
 // $COVERAGE-OFF$
-private [parsley] class UnfilledRegisterException
-    extends ParsleyException("A parser uses a register that has not been initialised by a `put`")
+private [parsley] class CorruptedReferenceException
+    extends ParsleyException("A reference has been used across two different parsers in separate calls to parse, causing it to be misallocated")
 // $COVERAGE-ON$

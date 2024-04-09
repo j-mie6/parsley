@@ -11,6 +11,7 @@ import parsley.combinator.option
 import parsley.errors.ErrorBuilder
 import parsley.expr.{chain, infix}
 
+import parsley.internal.diagnostics.UserException
 import parsley.internal.deepembedding.{frontend, singletons}
 import parsley.internal.machine.Context
 
@@ -128,7 +129,12 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @since 3.0.0
       * @group run
       */
-    def parse[Err: ErrorBuilder](input: String): Result[Err, A] = new Context(internal.instrs, input, internal.numRegs, None).run()
+    def parse[Err: ErrorBuilder](input: String): Result[Err, A] = {
+        try new Context(internal.instrs, input, internal.numRegs, None).run()
+        catch {
+            case UserException(err) => throw err
+        }
+    }
 
     // RESULT CHANGING COMBINATORS
     /** This combinator allows the result of this parser to be changed using a given function.
