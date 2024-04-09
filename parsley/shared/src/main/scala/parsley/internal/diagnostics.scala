@@ -33,7 +33,9 @@ private [parsley] object RegisterOutOfBoundsException {
             // out of bounds register.
             case ste if ste.getMethodName == "apply"
                      && ste.getClassName.startsWith("parsley.internal.machine.instructions") =>
-                new CorruptedReferenceException
+                val err = new CorruptedReferenceException
+                err.addSuppressed(e)
+                err
         }
         case _ => None
     }
