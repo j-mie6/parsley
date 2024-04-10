@@ -11,7 +11,7 @@ import parsley.debugger.util.XMutMap
 
 // Abstracts away the logic of XWeakMap so that only minimal interfaces are needed between Scala
 // versions. This reduces code duplication, and makes further changes much easier to implement.
-private [debugger] final class XWeakMap[K, V] extends XMutMap[K, V] with Iterable[(K, V)] {
+private [parsley] final class XWeakMap[K, V] extends XMutMap[K, V] with Iterable[(K, V)] {
     // If we ever need to change this type, it can be done here instead of in each individual
     // implementation of XWeakMap.
     private val backing = mutable.WeakHashMap.empty[K, V]
