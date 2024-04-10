@@ -31,9 +31,7 @@ private [parsley] object helper {
         type LPM[+A] = M[R, LazyParsley[A]]
     }
 
-    private def visitWithM[M[_, +_]: ContOps, A](parser: LazyParsley[A],
-                                                 tracker: ParserTracker,
-                                                 visitor: DebugInjectingVisitorM[M, LazyParsley[A]]): LazyParsley[A] = {
+    private def visitWithM[M[_, +_]: ContOps, A](parser: LazyParsley[A], tracker: ParserTracker, visitor: DebugInjectingVisitorM[M, LazyParsley[A]]) = {
         perform[M, LazyParsley[A]](parser.visit(visitor, tracker))
     }
 
@@ -58,14 +56,18 @@ private [parsley] object helper {
         extends GenericLazyParsleyIVisitor[ParserTracker, ContWrap[M, R]#LPM] {
         private type L[+A] = ContWrap[M, R]#LPM[A]
 
+        // This is the main logic for the visitor: everything else is just plumbing
         private def handlePossiblySeen[A](self: LazyParsley[A], context: ParserTracker)(dbgF: =>L[A]): L[A] = {
             if (context.contains(self)) result(context.get(self))
             else {
-                val current = new Debugged(self, null, None)(dbgCtx)
-                context.put(self, current)
+                // let me guess, the map needs to be populated before the dbgF traversal happens to resolve recursion...
+                // TODO: any way around that? would get rid of the nasty `null` + mutvar
+                val debugSelf = new Debugged(self, null, None)(dbgCtx)
+                context.put(self, debugSelf)
                 dbgF.map { dbgF_ =>
-                    current.par = dbgF_
-                    current
+                    // rewrite the debug node to contain its processed sub-tree
+                    debugSelf.subParser = dbgF_
+                    debugSelf
                 }
             }
         }

@@ -39,7 +39,7 @@ private [parsley] object Renamer {
     }
 
     // Perform the first step of renaming, a partial rename where only the type name is exposed.
-    @inline def partial(p: LazyParsley[_]): String = underlying(p).prettyName
+    @inline def internalName(p: LazyParsley[_]): String = underlying(p).prettyName
 
     private [parsley] def addNames(names: Map[LazyParsley[_], String]): Unit = collected ++= names
     private [parsley] def addName(par: LazyParsley[_], name: String): Unit = collected.update(par, name)

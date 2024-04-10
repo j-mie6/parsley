@@ -79,7 +79,7 @@ private [parsley] class DebugContext(val toStringRules: Seq[Any => Boolean] = de
     def push(fullInput: String, parser: LazyParsley[_], userAssignedName: Option[String]): Unit = {
         val newTree = new TransientDebugTree(fullInput = fullInput)
         newTree.name = Renamer.nameOf(userAssignedName, parser)
-        newTree.internal = Renamer.partial(parser)
+        newTree.internal = Renamer.internalName(parser)
 
         builderStack.head.children(newTree.name + "-#" + nextUid()) = newTree
         builderStack.prepend(newTree)
