@@ -13,15 +13,7 @@ import ParseAttempt._ // scalastyle:ignore underscore.import
   *
   * @since 4.5.0
   */
-final class ParseAttempt private [parsley] (
-    inp: Input,
-    fof: Offset,
-    tof: Offset,
-    fps: Pos,
-    tps: Pos,
-    scs: Success,
-    res: Result
-) {
+final class ParseAttempt private [parsley] (inp: Input, fof: Offset, tof: Offset, fps: Pos, tps: Pos, scs: Success, res: Result) {
     /** The input parsed, as raw text. */
     val rawInput: Input = inp
 
@@ -54,16 +46,8 @@ final class ParseAttempt private [parsley] (
     XAssert.assert(success == result.isDefined)
 
     // Utility copy method only to be used internally.
-    private [parsley] def copy(
-        inp: Input = rawInput,
-        fof: Offset = fromOffset,
-        tof: Offset = toOffset,
-        fps: Pos = fromPos,
-        tps: Pos = toPos,
-        scs: Success = success,
-        res: Result = result
-    ): ParseAttempt =
-        new ParseAttempt(inp, fof, tof, fps, tps, scs, res)
+    private [parsley] def copy(inp: Input = rawInput, fof: Offset = fromOffset, tof: Offset = toOffset, fps: Pos = fromPos, tps: Pos = toPos,
+                               scs: Success = success, res: Result = result): ParseAttempt = new ParseAttempt(inp, fof, tof, fps, tps, scs, res)
 }
 
 // Ideally, this would be public. However, that introduces potential binary incompatibilities later down the line
@@ -83,7 +67,8 @@ private [parsley] object ParseAttempt {
     // To stop warnings about refutable / non-exhaustive matches, the return type must be Some[_].
     // You'd think that'd be in <https://docs.scala-lang.org/tour/extractor-objects.html>, but no.
     // $COVERAGE-OFF$
-    def unapply(att: ParseAttempt): Some[(Input, Offset, Offset, Pos, Pos, Success, Result)] =
+    def unapply(att: ParseAttempt): Some[(Input, Offset, Offset, Pos, Pos, Success, Result)] = {
         Some((att.rawInput, att.fromOffset, att.toOffset, att.fromPos, att.toPos, att.success, att.result))
+    }
     // $COVERAGE-ON$
 }

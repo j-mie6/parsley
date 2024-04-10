@@ -23,11 +23,7 @@ class DebuggerUsageSpec extends ParsleyTest {
     it should "not allow nesting of Debugged nodes" in {
         val ctx = new DebugContext()
         try {
-            val _ = new Debugged(
-                new Debugged(fresh(()).internal, None, None)(ctx),
-                None,
-                None
-            )(ctx)
+            val _ = new Debugged(new Debugged(fresh(()).internal, null, None)(ctx), null, None)(ctx)
             fail("Debugged nodes have been nested")
         } catch {
             case _: Throwable => info("assertion exception thrown, as expected")
@@ -36,9 +32,9 @@ class DebuggerUsageSpec extends ParsleyTest {
 
     it should "preserve the prettified names of the parsers" in {
         val ctx = new DebugContext()
-        new Debugged(named(fresh(()), "foo").internal, None, None)(ctx).prettyName shouldBe "foo"
-        new Debugged(fresh(()).internal, None, None)(ctx).prettyName shouldBe "fresh"
-        new Debugged(fresh(()).internal, None, Some("bar"))(ctx).prettyName shouldBe "bar"
+        new Debugged(named(fresh(()), "foo").internal, null, None)(ctx).prettyName shouldBe "foo"
+        new Debugged(fresh(()).internal, null, None)(ctx).prettyName shouldBe "fresh"
+        new Debugged(fresh(()).internal, null, Some("bar"))(ctx).prettyName shouldBe "bar"
     }
 
     behavior of "the debugger runtime"

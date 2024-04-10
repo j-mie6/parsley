@@ -55,8 +55,7 @@ object Collector {
       *
       * @note Names assigned using this will take precedence over names assigned using [[parsley.debugger.combinator.named]].
       */
-    def assignName(par: Parsley[_], name: String): Unit =
-        Renamer.addName(par.internal, name)
+    def assignName(par: Parsley[_], name: String): Unit = Renamer.addName(par.internal, name)
 
     /** Does the implementation of the collector for the current Scala platform actually work in
       * automatically finding parsers in objects and getting their field names as written in your
@@ -69,19 +68,18 @@ object Collector {
 
     /** Collect the names of Parsley's various default singleton parsers. */
     private var defaultCollected: Boolean = false
-    private def collectDefault(): Unit =
-        if (isSupported) {
-            this.synchronized {
-                if (!defaultCollected) {
-                    defaultCollected = true
+    private def collectDefault(): Unit = if (isSupported) {
+        this.synchronized {
+            if (!defaultCollected) {
+                defaultCollected = true
 
-                    names(parsley.character)
-                    names(parsley.combinator)
-                    names(parsley.Parsley)
-                    names(parsley.position)
-                }
+                names(parsley.character)
+                names(parsley.combinator)
+                names(parsley.Parsley)
+                names(parsley.position)
             }
         }
+    }
     // $COVERAGE-ON$
 }
 

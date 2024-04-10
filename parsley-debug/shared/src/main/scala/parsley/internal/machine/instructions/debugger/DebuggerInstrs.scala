@@ -55,20 +55,14 @@ private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Debugg
 
         // Construct a new parse attempt and add it in.
         // XXX: Cast to Any required as otherwise the Some creation is treated as dead code.
-        dbgCtx.addParseAttempt(
-            new ParseAttempt(
-                inp = input,
-                fof = prevOffset,
-                tof = currentOff,
-                fps = prevPos,
-                tps = (ctx.line, ctx.col),
-                scs = success,
-                res = if (success) Some(ctx.stack.upeek match {
+        dbgCtx.addParseAttempt {
+            val res =
+                if (success) Some(ctx.stack.upeek match {
                     case f if dbgCtx.toStringRules.exists(_(f)) => f.toString // Closures and lambdas are expensive!
                     case x                                      => x
                 }) else None
-            )
-        )
+            new ParseAttempt(inp = input, fof = prevOffset, tof = currentOff, fps = prevPos, tps = (ctx.line, ctx.col), scs = success, res = res)
+        }
 
         dbgCtx.pop()
 

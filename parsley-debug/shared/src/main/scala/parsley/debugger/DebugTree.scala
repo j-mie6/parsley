@@ -55,8 +55,7 @@ trait DebugTree extends Iterable[DebugTree] {
 
 // $COVERAGE-OFF$
     /** Provides a depth-first view of the tree as an iterator. */
-    override def iterator: Iterator[DebugTree] =
-        Iterator(this) ++ nodeChildren.values.flatMap(_.iterator)
+    override def iterator: Iterator[DebugTree] = Iterator(this) ++ nodeChildren.values.flatMap(_.iterator)
 
     override def toString: String = {
         val possibleChildNumber = childNumber.map(", " + _.toString).getOrElse("")
@@ -68,8 +67,8 @@ trait DebugTree extends Iterable[DebugTree] {
 }
 
 object DebugTree {
-    def unapply(dt: DebugTree): Some[(String, String, Option[Long], String, Option[ParseAttempt], Map[String, DebugTree])] =
+    def unapply(dt: DebugTree): Some[(String, String, Option[Long], String, Option[ParseAttempt], Map[String, DebugTree])] = {
         Some((dt.parserName, dt.internalName, dt.childNumber, dt.fullInput, dt.parseResults, dt.nodeChildren))
+    }
 }
 // $COVERAGE-ON$
-
