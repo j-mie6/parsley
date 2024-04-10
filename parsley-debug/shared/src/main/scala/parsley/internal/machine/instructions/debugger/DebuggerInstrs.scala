@@ -16,14 +16,14 @@ import parsley.internal.machine.instructions.{Instr, InstrWithLabel}
 private [internal] sealed trait DebuggerInstr extends Instr
 
 // Enter into the scope of a parser in the current context.
-private [internal] class EnterParser(var label: Int, origin: LazyParsley[_], optName: Option[String])(dbgCtx: DebugContext)
+private [internal] class EnterParser(var label: Int, origin: LazyParsley[_], userAssignedName: Option[String])(dbgCtx: DebugContext)
     extends InstrWithLabel with DebuggerInstr {
     override def apply(ctx: Context): Unit = {
         // Uncomment to debug entries and exits.
         // println(s"Entering ${origin.prettyName} (@ ${ctx.pc} -> Exit @ $label)")
 
         // I think we can get away with executing this unconditionally.
-        dbgCtx.push(ctx.input, origin, optName)
+        dbgCtx.push(ctx.input, origin, userAssignedName)
         // Using my own state tracker instead.
         dbgCtx.pushPos(ctx.offset, ctx.line, ctx.col)
         ctx.pushHandler(label) // Mark the AddAttempt instruction as an exit handler.

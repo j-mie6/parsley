@@ -21,20 +21,14 @@ private [parsley] class DebugContext(val toStringRules: Seq[Any => Boolean] = de
     // Create a new dummy root of the tree that will act as filler for the rest of the tree to build
     // off of (as there is no "nil" representation for the tree... other than null, which should be
     // avoided in Scala wherever possible).
-    private val dummyRoot: TransientDebugTree =
-        TransientDebugTree("ROOT", "ROOT", "NIL")
+    private val dummyRoot = new TransientDebugTree("ROOT", "ROOT", "NIL")
 
     // Context's checkStack vanished.
     // Migrating it here for futureproofing.
     private val checkStack = mutable.ListBuffer.empty[(Int, Int, Int)]
 
-    def pushPos(offset: Int, line: Int, col: Int): Unit = {
-        checkStack.prepend((offset, line, col))
-    }
-
-    def popPos(): (Int, Int, Int) = {
-        checkStack.remove(0)
-    }
+    def pushPos(offset: Int, line: Int, col: Int): Unit = checkStack.prepend((offset, line, col))
+    def popPos(): (Int, Int, Int) = checkStack.remove(0)
 
     // Tracks where we are in the parser callstack.
     private val builderStack = mutable.ListBuffer[TransientDebugTree](dummyRoot)
@@ -82,10 +76,10 @@ private [parsley] class DebugContext(val toStringRules: Seq[Any => Boolean] = de
     }
 
     // Push a new parser onto the parser callstack.
-    def push(fullInput: String, parser: LazyParsley[_], optName: Option[String]): Unit = {
-        val newTree = TransientDebugTree(fullInput = fullInput)
-        newTree.name = Rename(optName, parser)
-        newTree.internal = Rename.partial(parser)
+    def push(fullInput: String, parser: LazyParsley[_], userAssignedName: Option[String]): Unit = {
+        val newTree = new TransientDebugTree(fullInput = fullInput)
+        newTree.name = Renamer.nameOf(userAssignedName, parser)
+        newTree.internal = Renamer.partial(parser)
 
         builderStack.head.children(newTree.name + "-#" + nextUid()) = newTree
         builderStack.prepend(newTree)

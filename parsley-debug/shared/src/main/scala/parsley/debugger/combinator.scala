@@ -80,7 +80,7 @@ object combinator {
     def attachDebugger[A](parser: Parsley[A], toStringRules: Seq[Any => Boolean]): DebuggedPair[A] = {
         // XXX: A weak map is needed so that memory leaks will not be caused by flatMap parsers.
         //      We want a decent amount of initial space to speed up debugging larger parsers slightly.
-        val seen: ParserTracker   = new ParserTracker(new XWeakMap) // scalastyle:ignore magic.number
+        val seen: ParserTracker   = new ParserTracker(new XWeakMap)
         val context: DebugContext = new DebugContext(toStringRules)
 
         val attached: LazyParsley[A] = injectM[A](parser.internal, seen, context)
@@ -103,8 +103,7 @@ object combinator {
       * @tparam A Output type of original parser.
       * @return A pair of the finalised tree, and the instrumented parser.
       */
-    def attachDebugger[A](parser: Parsley[A]): DebuggedPair[A] =
-        attachDebugger[A](parser, defaultRules)
+    def attachDebugger[A](parser: Parsley[A]): DebuggedPair[A] = attachDebugger[A](parser, defaultRules)
 
     // $COVERAGE-OFF$
     /** Create a closure that freshly attaches a debugger to a parser every time it is called.
@@ -120,8 +119,7 @@ object combinator {
       *
       * @return Generator closure for debugged versions of the input parser.
       */
-    def attachReusable[A](parser: Parsley[A], toStringRules: Seq[Any => Boolean]): () => DebuggedPair[A] =
-        () => attachDebugger[A](parser, toStringRules)
+    def attachReusable[A](parser: Parsley[A], toStringRules: Seq[Any => Boolean]): () => DebuggedPair[A] = () => attachDebugger[A](parser, toStringRules)
 
     /** Create a closure that freshly attaches a debugger to a parser every time it is called.
       * This is used for creating debugged parsers that can be used as children to multiple parent
@@ -137,8 +135,7 @@ object combinator {
       *   has more information on its usage.
       * @return Generator closure for debugged versions of the input parser.
       */
-    def attachReusable[A](parser: Parsley[A]): () => DebuggedPair[A] =
-        attachReusable[A](parser, defaultRules)
+    def attachReusable[A](parser: Parsley[A]): () => DebuggedPair[A] = attachReusable[A](parser, defaultRules)
 
     /** Attach a debugger and an explicitly-available frontend in which the debug tree should be
       * proessed with.
@@ -204,8 +201,7 @@ object combinator {
       *         a call to [[Parsley.parse]] is made.
       *
       */
-    def attachWithFrontend[A](parser: Parsley[A], frontend: DebugFrontend): Parsley[A] =
-        attachWithFrontend[A](parser, frontend, defaultRules)
+    def attachWithFrontend[A](parser: Parsley[A], frontend: DebugFrontend): Parsley[A] = attachWithFrontend[A](parser, frontend, defaultRules)
 
     /** Create a closure that freshly attaches a debugger and a tree-processing frontend to a parser every
       * time it is called.
@@ -216,8 +212,9 @@ object combinator {
       *
       * @return Generator closure for frontend-debugged versions of the input parser.
       */
-    def attachReusableWithFrontend[A](parser: Parsley[A], frontend: () => DebugFrontend, toStringRules: Seq[Any => Boolean]): () => Parsley[A] =
+    def attachReusableWithFrontend[A](parser: Parsley[A], frontend: () => DebugFrontend, toStringRules: Seq[Any => Boolean]): () => Parsley[A] = {
         () => attachWithFrontend(parser, frontend(), toStringRules)
+    }
 
     /** Create a closure that freshly attaches a debugger and a tree-processing frontend to a parser every
       * time it is called.
@@ -232,8 +229,9 @@ object combinator {
       *   has more information on its usage.
       * @return Generator closure for frontend-debugged versions of the input parser.
       */
-    def attachReusableWithFrontend[A](parser: Parsley[A], frontend: () => DebugFrontend): () => Parsley[A] =
+    def attachReusableWithFrontend[A](parser: Parsley[A], frontend: () => DebugFrontend): () => Parsley[A] = {
         attachReusableWithFrontend[A](parser, frontend, defaultRules)
+    }
 
     /** Attach a debugger and an implicitly-available frontend in which the debug tree should be
       * processed with.
@@ -243,8 +241,9 @@ object combinator {
       *   [[parsley.debugger.combinator$.attachWithFrontend[A](parser:parsley\.Parsley[A],frontend:parsley\.debugger\.frontend\.DebugFrontend,toStringRules* attachWithFrontend]]
       *   for more information.
       */
-    def attachWithImplicitFrontend[A](parser: Parsley[A], toStringRules: Seq[Any => Boolean] = defaultRules)(implicit frontend: DebugFrontend): Parsley[A] =
+    def attachWithImplicitFrontend[A](parser: Parsley[A], toStringRules: Seq[Any => Boolean] = defaultRules)(implicit frontend: DebugFrontend): Parsley[A] = {
         attachWithFrontend(parser, frontend, toStringRules)
+    }
 
     /** Attach a debugger and an implicitly-available frontend in which the debug tree should be
       * processed with.
@@ -258,8 +257,7 @@ object combinator {
       *   ([[parsley.debugger.combinator$.attachWithImplicitFrontend[A](parser:parsley\.Parsley[A],toStringRules* attachWithImplicitFrontend]])
       *   has more information on its usage.
       */
-    def attachWithImplicitFrontend[A](parser: Parsley[A])(implicit frontend: DebugFrontend): Parsley[A] =
-        attachWithImplicitFrontend[A](parser, defaultRules)
+    def attachWithImplicitFrontend[A](parser: Parsley[A])(implicit frontend: DebugFrontend): Parsley[A] = attachWithImplicitFrontend[A](parser, defaultRules)
 
     /** Attach a name to a parser, for display within the debugger output.
       * Names assigned here have a higher precedence than names collected with [[parsley.debugger.util.Collector]].

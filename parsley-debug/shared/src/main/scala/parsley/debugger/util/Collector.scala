@@ -6,7 +6,7 @@
 package parsley.debugger.util
 
 import parsley.Parsley
-import parsley.debugger.internal.Rename
+import parsley.debugger.internal.Renamer
 import parsley.token.Lexer
 
 import parsley.internal.deepembedding.frontend.LazyParsley
@@ -32,7 +32,7 @@ object Collector {
       */
     def names(obj: Any): Unit = {
         collectDefault() // Runs only once, ever, for a program execution.
-        Rename.addNames(XCollector.collectNames(obj))
+        Renamer.addNames(XCollector.collectNames(obj))
     }
 
     /** Collect names of parsers from a [[parsley.token.Lexer]].
@@ -43,7 +43,7 @@ object Collector {
       */
     def lexer(lexer: Lexer): Unit = {
         collectDefault()
-        Rename.addNames(XCollector.collectLexer(lexer))
+        Renamer.addNames(XCollector.collectLexer(lexer))
     }
 
     // $COVERAGE-OFF$
@@ -56,7 +56,7 @@ object Collector {
       * @note Names assigned using this will take precedence over names assigned using [[parsley.debugger.combinator.named]].
       */
     def assignName(par: Parsley[_], name: String): Unit =
-        Rename.addName(par.internal, name)
+        Renamer.addName(par.internal, name)
 
     /** Does the implementation of the collector for the current Scala platform actually work in
       * automatically finding parsers in objects and getting their field names as written in your
@@ -65,14 +65,13 @@ object Collector {
       * @note Manually named parsers using [[assignName]] or [[parsley.debugger.combinator.named]]
       *       will still work regardless if the platform is supported or not.
       */
-    @inline def isSupported: Boolean =
-        XCollector.supported
+    @inline def isSupported: Boolean = XCollector.supported
 
     /** Collect the names of Parsley's various default singleton parsers. */
     private var defaultCollected: Boolean = false
     private def collectDefault(): Unit =
         if (isSupported) {
-                this.synchronized {
+            this.synchronized {
                 if (!defaultCollected) {
                     defaultCollected = true
 
