@@ -11,6 +11,7 @@ import scala.collection.mutable
 import parsley.internal.deepembedding.frontend.LazyParsley
 
 private [parsley] class DivergenceContext {
+    // FIXME: this list could be better as an ArraySeq, but we need some generic way to get there for all backends
     case class CtxSnap(pc: Int, instrs: Array[_], off: Int, regs: List[AnyRef]) {
         def matches(that: CtxSnap) = this.pc == that.pc && this.instrs == that.instrs && this.off == that.off && this.regs == that.regs
     }

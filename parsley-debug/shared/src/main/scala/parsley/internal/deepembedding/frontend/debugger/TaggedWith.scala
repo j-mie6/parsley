@@ -20,6 +20,7 @@ import parsley.internal.deepembedding.frontend._ // scalastyle:ignore underscore
 
 // Wrapper class signifying debugged classes
 // TODO: the origin is needed to figure out the name later on... but couldn't we resolve the name here and avoid forwarding on to the backend (send string instead)?
+// FIXME: this clobbers the register allocator, apparently?
 private [parsley] final class TaggedWith[A](strat: DebugStrategy)(val origin: LazyParsley[A], var subParser: LazyParsley[A], userAssignedName: Option[String])
     extends LazyParsley[A] {
     XAssert.assert(!origin.isInstanceOf[TaggedWith[_]], "Tagged parsers should not be nested within each other directly.")
