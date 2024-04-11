@@ -13,6 +13,8 @@ import parsley.internal.machine.Context
 import parsley.internal.machine.instructions.{Instr, InstrWithLabel}
 import parsley.internal.machine.XAssert._
 
+import parsley.internal.machine.stacks.Stack.StackExt
+
 // Enter into the scope of a parser in the current context.
 private [internal] class EnterParser(var label: Int, origin: LazyParsley[_], userAssignedName: Option[String])(dbgCtx: DebugContext) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
@@ -77,14 +79,10 @@ private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Instr 
 private [internal] class TakeSnapshot(var label: Int, origin: LazyParsley[_], userAssignedName: Option[String])(dtx: DivergenceContext) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-
-        // this is interesting, without scoping, this will pick up sibling calls, but atomic(p) | p will trip the engine
-        // but with scoping, it is no longer possible to detect infinite divergence within an iterative combinator
-        // is there a heuristic that allows for siblings to be disambiguated?
-        // perhaps the handler that sits on the top of the stack (should one exist): this would only be equal for iteration?
-        // the path from root is still needed though: while we can distinguish iteration from recursion, we want to report
-        // the cycle, which means we need a root path
-
+        val handler = ctx.handlers
+        ctx.pushHandler(label)
+        val ctxSnap = dtx.CtxSnap(ctx.pc, ctx.instrs, ctx.offset, ctx.regs)
+        dtx.takeSnapshot(origin, userAssignedName, ctxSnap, if (ctx.handlers.isEmpty) None else Some(dtx.HandlerSnap(handler.pc, handler.instrs)))
         ctx.inc()
     }
 
@@ -95,8 +93,7 @@ private [internal] class TakeSnapshot(var label: Int, origin: LazyParsley[_], us
 
 private [internal] class DropSnapshot(dtx: DivergenceContext) extends Instr {
     override def apply(ctx: Context): Unit = {
-
-
+        dtx.dropSnapshot()
         ctx.handlers = ctx.handlers.tail
         if (ctx.good) ctx.inc() else ctx.fail()
     }
