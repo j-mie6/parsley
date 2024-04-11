@@ -12,10 +12,10 @@ import parsley.debugger.internal.{DebugContext, Renamer}
 import parsley.debugger.util.Collector
 import parsley.internal.deepembedding.backend.StrictParsley
 import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor, LetFinderState, LetMap}
-import parsley.internal.deepembedding.frontend.debugger.Debugged
+import parsley.internal.deepembedding.frontend.debugger.TaggedWith
 import parsley.token.Lexer
 import parsley.token.descriptions.LexicalDesc
-import parsley.internal.deepembedding.backend.debugger.DebuggedFactory
+import parsley.internal.deepembedding.backend.debugger.Debugging
 
 class RenameSpec extends ParsleyTest {
     "the Renamer object" should "not rename a parser it does not know of" in {
@@ -37,7 +37,7 @@ class RenameSpec extends ParsleyTest {
 
     it should "pass through Debugged parsers and get the inner parser's name" in {
         val symbolic = new <**>
-        val debugged = new Debugged[Any](symbolic, symbolic, None)(new DebuggedFactory(new DebugContext()))
+        val debugged = new TaggedWith[Any](new Debugging(new DebugContext()))(symbolic, symbolic, None)
 
         Renamer.nameOf(None, debugged) shouldBe "<**>"
     }

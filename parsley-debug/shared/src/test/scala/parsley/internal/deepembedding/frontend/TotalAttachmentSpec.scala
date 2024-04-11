@@ -13,7 +13,7 @@ import parsley.ParsleyTest
 import parsley.combinator.ifS
 import parsley.debugger.combinator.attachDebugger
 import parsley.expr.chain
-import parsley.internal.deepembedding.frontend.debugger.Debugged
+import parsley.internal.deepembedding.frontend.debugger.TaggedWith
 import parsley.internal.deepembedding.singletons
 
 class TotalAttachmentSpec extends ParsleyTest {
@@ -100,8 +100,8 @@ class TotalAttachmentSpec extends ParsleyTest {
         //noinspection NoTailRecursionAnnotation
         override def visitUnknown[A](self: LazyParsley[A], context: Boolean): ConstUnit[A] =
             self match {
-                case d: Debugged[_] if !context => visitUnknown(d.subParser, context = true)
-                case _: Debugged[_]             => failure("Not allowed to stack debuggers.") // Can't have a debugged on top of another!
+                case d: TaggedWith[_] if !context => visitUnknown(d.subParser, context = true)
+                case _: TaggedWith[_]             => failure("Not allowed to stack debuggers.") // Can't have a debugged on top of another!
                 case s: singletons.Singleton[_] => visitSingleton(s.asInstanceOf[singletons.Singleton[A]], context)
                 case g: GenericLazyParsley[_]   => visitGeneric(g.asInstanceOf[GenericLazyParsley[A]], context)
                 case alt: <|>[_]                => alt.visit(this, context)

@@ -15,17 +15,16 @@ import parsley.debugger.internal.XWeakMap
 import parsley.internal.deepembedding.{singletons, Cont, ContOps, Id}
 import parsley.internal.deepembedding.ContOps.{perform, result, suspend, zipWith, zipWith3, ContAdapter}
 import parsley.internal.deepembedding.backend.StrictParsley
-import parsley.internal.deepembedding.backend.debugger.DebugStrategyFactory
+import parsley.internal.deepembedding.backend.debugger.DebugStrategy
 import parsley.internal.deepembedding.frontend._ // scalastyle:ignore underscore.import
 
 // Wrapper class signifying debugged classes
 // TODO: the origin is needed to figure out the name later on... but couldn't we resolve the name here and avoid forwarding on to the backend (send string instead)?
-// TODO: rename this to Tagged, which allows us to be generic over debugging strategies
-private [parsley] final class Debugged[A](val origin: LazyParsley[A], var subParser: LazyParsley[A], val userAssignedName: Option[String])(factory: DebugStrategyFactory)
+private [parsley] final class TaggedWith[A](strat: DebugStrategy)(val origin: LazyParsley[A], var subParser: LazyParsley[A], userAssignedName: Option[String])
     extends LazyParsley[A] {
-    XAssert.assert(!origin.isInstanceOf[Debugged[_]], "Debugged parsers should not be nested within each other directly.")
+    XAssert.assert(!origin.isInstanceOf[TaggedWith[_]], "Tagged parsers should not be nested within each other directly.")
 
-    def make(p: StrictParsley[A]): StrictParsley[A] = factory.create(origin, p, userAssignedName)
+    def make(p: StrictParsley[A]): StrictParsley[A] = strat.create(origin, p, userAssignedName)
 
     override def findLetsAux[M[_, +_] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] = suspend(subParser.findLets(seen))
     override def preprocess[M[_, +_] : ContOps, R, A_ >: A](implicit lets: LetMap): M[R, StrictParsley[A_]] = {
@@ -33,26 +32,26 @@ private [parsley] final class Debugged[A](val origin: LazyParsley[A], var subPar
     }
 
     // $COVERAGE-OFF$
-    private [frontend] def withName(name: String): Debugged[A] = new Debugged(origin, subParser, Some(name))(factory)
+    private [frontend] def withName(name: String): TaggedWith[A] = new TaggedWith(strat)(origin, subParser, Some(name))
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visitUnknown(this, context)
     // $COVERAGE-ON$
 
     override private [parsley] def prettyName = userAssignedName.getOrElse(origin.prettyName)
 }
 
-private [parsley] object Debugged {
+private [parsley] object TaggedWith {
     // Run this to inject the debugger itself.
-    def tagRecursively[A](parser: LazyParsley[A], factory: DebugStrategyFactory): LazyParsley[A] = {
+    def tagRecursively[A](parser: LazyParsley[A], strategy: DebugStrategy): LazyParsley[A] = {
         // XXX: A weak map is needed so that memory leaks will not be caused by flatMap parsers.
         //      We want a decent amount of initial space to speed up debugging larger parsers slightly.
         val tracker: ParserTracker = new ParserTracker(new XWeakMap)
         if (parser.isCps) {
             implicit val ops: ContOps[Cont.Impl] = Cont.ops
-            val visitor = new DebugInjectingVisitorM[Cont.Impl, LazyParsley[A]](factory)
+            val visitor = new DebugInjectingVisitorM[Cont.Impl, LazyParsley[A]](strategy)
             visitWithM[Cont.Impl, A](parser, tracker, visitor)
         } else {
             implicit val ops: ContOps[Id.Impl] = Id.ops
-            val visitor = new DebugInjectingVisitorM[Id.Impl, LazyParsley[A]](factory)
+            val visitor = new DebugInjectingVisitorM[Id.Impl, LazyParsley[A]](strategy)
             visitWithM[Id.Impl, A](parser, tracker, visitor)
         }
     }
@@ -60,9 +59,9 @@ private [parsley] object Debugged {
     // This map tracks seen parsers to prevent infinitely recursive parsers from overflowing the stack (and ties
     // the knot for these recursive parsers).
     // Use maps with weak keys or don't pass this into a >>= parser.
-    private final class ParserTracker(val map: mutable.Map[LazyParsley[_], Debugged[_]]) {
-        def put[A](par: LazyParsley[A], dbg: Debugged[A]): Unit = map(par) = dbg
-        def get[A](par: LazyParsley[A]): Debugged[A] = map(par).asInstanceOf[Debugged[A]]
+    private final class ParserTracker(val map: mutable.Map[LazyParsley[_], TaggedWith[_]]) {
+        def put[A](par: LazyParsley[A], dbg: TaggedWith[A]): Unit = map(par) = dbg
+        def get[A](par: LazyParsley[A]): TaggedWith[A] = map(par).asInstanceOf[TaggedWith[A]]
         def contains(par: LazyParsley[_]): Boolean = map.contains(par)
     }
 
@@ -79,22 +78,22 @@ private [parsley] object Debugged {
     // to use the trampoline ( https://en.wikipedia.org/wiki/Trampoline_(computing) ) to ensure that all calls are
     // turned into heap thunks instead of stack frames.
     // $COVERAGE-OFF$
-    private final class DebugInjectingVisitorM[M[_, +_]: ContOps, R](factory: DebugStrategyFactory)
+    private final class DebugInjectingVisitorM[M[_, +_]: ContOps, R](strategy: DebugStrategy)
         extends GenericLazyParsleyIVisitor[ParserTracker, ContWrap[M, R]#LPM] {
         private type L[+A] = ContWrap[M, R]#LPM[A]
 
         // This is the main logic for the visitor: everything else is just plumbing
-        private def handlePossiblySeen[A](self: LazyParsley[A], context: ParserTracker)(dbgF: =>L[A]): L[A] = {
+        private def handlePossiblySeen[A](self: LazyParsley[A], context: ParserTracker)(subParser: =>L[A]): L[A] = {
             if (context.contains(self)) result(context.get(self))
             else {
-                // let me guess, the map needs to be populated before the dbgF traversal happens to resolve recursion...
+                // let me guess, the map needs to be populated before the subParser traversal happens to resolve recursion...
                 // TODO: any way around that? would get rid of the nasty `null` + mutvar
-                val debugSelf = new Debugged(self, null, None)(factory)
-                context.put(self, debugSelf)
-                dbgF.map { dbgF_ =>
-                    // rewrite the debug node to contain its processed sub-tree
-                    debugSelf.subParser = dbgF_
-                    debugSelf
+                val taggedSelf = new TaggedWith(strategy)(self, null, None)
+                context.put(self, taggedSelf)
+                subParser.map { subParser_ =>
+                    // rewrite the tagged node to contain its processed sub-tree
+                    taggedSelf.subParser = subParser_
+                    taggedSelf
                 }
             }
         }
@@ -163,7 +162,7 @@ private [parsley] object Debugged {
                 // cause a massive memory leak.
                 suspend[M, R, LazyParsley[A]](p.visit(this, context)).map { dbgC =>
                     def dbgF(x: A): LazyParsley[B] = {
-                        val subvisitor = new DebugInjectingVisitorM[M, LazyParsley[B]](factory)
+                        val subvisitor = new DebugInjectingVisitorM[M, LazyParsley[B]](strategy)
                         perform[M, LazyParsley[B]](f(x).visit(subvisitor, context))
                     }
                     new >>=(dbgC, dbgF)
@@ -219,12 +218,12 @@ private [parsley] object Debugged {
 
         // XXX: This will assume all completely unknown parsers have no children at all (i.e. are Singletons).
         override def visitUnknown[A](self: LazyParsley[A], context: ParserTracker): L[A] = self match {
-            case d: Debugged[A @unchecked] => result[R, LazyParsley[A], M](d) // No need to debug a parser twice!
+            case d: TaggedWith[A @unchecked] => result[R, LazyParsley[A], M](d) // No need to debug a parser twice!
             case n: Named[A @unchecked]    => n.par match {
-                case g: GenericLazyParsley[A @unchecked] => visitGeneric(g, context).map(_.asInstanceOf[Debugged[A]].withName(n.name))
-                case alt: <|>[A @unchecked]              => alt.visit(this, context).map(_.asInstanceOf[Debugged[A]].withName(n.name))
-                case cpre: ChainPre[A @unchecked]        => cpre.visit(this, context).map(_.asInstanceOf[Debugged[A]].withName(n.name))
-                case _                                   => visitUnknown(n.par, context).map(_.asInstanceOf[Debugged[A]].withName(n.name))
+                case g: GenericLazyParsley[A @unchecked] => visitGeneric(g, context).map(_.asInstanceOf[TaggedWith[A]].withName(n.name))
+                case alt: <|>[A @unchecked]              => alt.visit(this, context).map(_.asInstanceOf[TaggedWith[A]].withName(n.name))
+                case cpre: ChainPre[A @unchecked]        => cpre.visit(this, context).map(_.asInstanceOf[TaggedWith[A]].withName(n.name))
+                case _                                   => visitUnknown(n.par, context).map(_.asInstanceOf[TaggedWith[A]].withName(n.name))
             }
             case _                         => handleNoChildren(self, context)
         }

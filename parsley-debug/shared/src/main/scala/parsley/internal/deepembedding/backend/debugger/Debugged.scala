@@ -15,11 +15,11 @@ import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.machine.instructions.{Label, Pop}
 import parsley.internal.machine.instructions.debugger.{AddAttemptAndLeave, EnterParser}
 
-private [deepembedding] sealed abstract class DebugStrategyFactory {
+private [deepembedding] sealed abstract class DebugStrategy {
     def create[A](origin: LazyParsley[A], p: StrictParsley[A], userAssignedName: Option[String]): StrictParsley[A]
 }
 
-private [parsley] final class DebuggedFactory(dbgCtx: DebugContext) extends DebugStrategyFactory {
+private [parsley] final class Debugging(dbgCtx: DebugContext) extends DebugStrategy {
     def create[A](origin: LazyParsley[A], p: StrictParsley[A], userAssignedName: Option[String]): StrictParsley[A] = {
         new Debugged(origin, p, userAssignedName)(dbgCtx)
     }

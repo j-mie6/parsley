@@ -6,7 +6,7 @@
 package parsley.debugger.internal
 
 import parsley.internal.deepembedding.frontend.LazyParsley
-import parsley.internal.deepembedding.frontend.debugger.Debugged
+import parsley.internal.deepembedding.frontend.debugger.TaggedWith
 
 // An object with a single public apply method that allows the renaming of a
 // debugged  parser's name in order to increase the clarity of the debugger's
@@ -27,7 +27,7 @@ private [parsley] object Renamer {
     lazy private val collected = new XWeakMap[LazyParsley[_], String]
 
     private def underlying(p: LazyParsley[_]): LazyParsley[_] = p match {
-        case dbg: Debugged[_] => dbg.origin // this should never be the case?
+        case dbg: TaggedWith[_] => dbg.origin // this should never be the case?
         case _                => p
     }
 
