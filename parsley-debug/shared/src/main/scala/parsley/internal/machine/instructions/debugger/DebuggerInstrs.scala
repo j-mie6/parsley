@@ -81,8 +81,8 @@ private [internal] class TakeSnapshot(var label: Int, origin: LazyParsley[_], us
         ensureRegularInstruction(ctx)
         val handler = ctx.handlers
         ctx.pushHandler(label)
-        val ctxSnap = dtx.CtxSnap(ctx.pc, ctx.instrs, ctx.offset, ctx.regs)
-        dtx.takeSnapshot(origin, userAssignedName, ctxSnap, if (ctx.handlers.isEmpty) None else Some(dtx.HandlerSnap(handler.pc, handler.instrs)))
+        val ctxSnap = dtx.CtxSnap(ctx.pc, ctx.instrs, ctx.offset, ctx.regs.toList)
+        dtx.takeSnapshot(origin, userAssignedName, ctxSnap, if (handler.isEmpty) None else Some(dtx.HandlerSnap(handler.pc, handler.instrs)))
         ctx.inc()
     }
 

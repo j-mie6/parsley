@@ -11,15 +11,16 @@ import scala.collection.mutable
 import parsley.internal.deepembedding.frontend.LazyParsley
 
 private [parsley] class DivergenceContext {
-    case class CtxSnap(pc: Int, instrs: Array[_], off: Int, regs: Array[AnyRef]) {
-        def matches(that: CtxSnap) = this.pc == that.pc && this.instrs == that.instrs && this.off == that.off && this.regs.sameElements(that.regs)
+    case class CtxSnap(pc: Int, instrs: Array[_], off: Int, regs: List[AnyRef]) {
+        def matches(that: CtxSnap) = this.pc == that.pc && this.instrs == that.instrs && this.off == that.off && this.regs == that.regs
     }
     case class HandlerSnap(pc: Int, instrs: Array[_])
     private case class Snapshot(name: String, ctxSnap: CtxSnap, handlerSnap: Option[HandlerSnap], children: mutable.ListBuffer[Snapshot]) {
         // this is true when the ctxSnaps match
         def matchesParent(that: Snapshot): Boolean = this.ctxSnap.matches(that.ctxSnap)
 
-        // this is true when the handlers are equal and the ctxSnaps match
+        // this is true when the handlers are equal (they should exist!) and the ctxSnaps match
+        // TODO: technically, we should check that the instrs match for the handler and the ctx?
         def matchesSibling(that: Snapshot): Boolean = this.handlerSnap == that.handlerSnap && this.ctxSnap.matches(that.ctxSnap)
     }
 
@@ -59,4 +60,5 @@ private [parsley] class DivergenceContext {
         snaps.push(self)
     }
     def dropSnapshot(): Unit = snaps.pop(): @nowarn
+    def reset(): Unit = snaps.clear()
 }

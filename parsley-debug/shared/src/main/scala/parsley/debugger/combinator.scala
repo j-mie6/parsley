@@ -8,11 +8,11 @@ package parsley.debugger
 import parsley.Parsley
 import parsley.Parsley.{atomic, empty, fresh}
 import parsley.debugger.frontend.DebugFrontend
-import parsley.debugger.internal.DebugContext
+import parsley.debugger.internal.{DebugContext, DivergenceContext}
 
 import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.deepembedding.frontend.debugger.{TaggedWith, Named}
-import parsley.internal.deepembedding.backend.debugger.Debugging
+import parsley.internal.deepembedding.backend.debugger.{CheckDivergence, Debugging}
 
 /** This object contains the two main debug combinators, `attachDebugger` and `attachWithFrontend`.
   *
@@ -80,10 +80,20 @@ object combinator {
     def attachDebugger[A](parser: Parsley[A], toStringRules: Seq[Any => Boolean]): DebuggedPair[A] = {
         val context: DebugContext = new DebugContext(toStringRules)
 
-        val attached: LazyParsley[A] = TaggedWith.tagRecursively[A](parser.internal, new Debugging(context))
+        val attached: LazyParsley[A] = TaggedWith.tagRecursively(parser.internal, new Debugging(context))
         val resetter: Parsley[Unit]  = fresh(context.reset()).impure
 
         (() => context.getFinalTree, resetter *> new Parsley(attached))
+    }
+
+    // TODO: document
+    def detectDivergence[A](parser: Parsley[A]): Parsley[A] = {
+        val context: DivergenceContext = new DivergenceContext
+
+        val attached: LazyParsley[A] = TaggedWith.tagRecursively(parser.internal, new CheckDivergence(context))
+        val resetter: Parsley[Unit]  = fresh(context.reset()).impure
+
+        resetter *> new Parsley(attached)
     }
 
     /** Attaches a debugger to a parser.
