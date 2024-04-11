@@ -6,19 +6,17 @@
 package parsley.internal.machine.instructions.debugger
 
 import parsley.debugger.ParseAttempt
-import parsley.debugger.internal.DebugContext
+import parsley.debugger.internal.{DebugContext, DivergenceContext}
 
 import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.machine.Context
 import parsley.internal.machine.instructions.{Instr, InstrWithLabel}
-
-// Instructions used by the debugger itself.
-private [internal] sealed trait DebuggerInstr extends Instr
+import parsley.internal.machine.XAssert._
 
 // Enter into the scope of a parser in the current context.
-private [internal] class EnterParser(var label: Int, origin: LazyParsley[_], userAssignedName: Option[String])(dbgCtx: DebugContext)
-    extends InstrWithLabel with DebuggerInstr {
+private [internal] class EnterParser(var label: Int, origin: LazyParsley[_], userAssignedName: Option[String])(dbgCtx: DebugContext) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
         // Uncomment to debug entries and exits.
         // println(s"Entering ${origin.prettyName} (@ ${ctx.pc} -> Exit @ $label)")
 
@@ -37,7 +35,7 @@ private [internal] class EnterParser(var label: Int, origin: LazyParsley[_], use
 
 // Add a parse attempt to the current context at the current callstack point, and leave the current
 // parser's scope.
-private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends DebuggerInstr {
+private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Instr {
     override def apply(ctx: Context): Unit = {
         // Uncomment to debug entries and exits.
         // println(s"Leaving ${if (ctx.good) "OK" else "FAIL" } (@ ${ctx.pc})")
@@ -73,5 +71,37 @@ private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Debugg
 
     // $COVERAGE-OFF$
     override def toString: String = "AddAttemptAndLeave"
+    // $COVERAGE-ON$
+}
+
+private [internal] class TakeSnapshot(var label: Int, origin: LazyParsley[_], userAssignedName: Option[String])(dtx: DivergenceContext) extends InstrWithLabel {
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+
+        // this is interesting, without scoping, this will pick up sibling calls, but atomic(p) | p will trip the engine
+        // but with scoping, it is no longer possible to detect infinite divergence within an iterative combinator
+        // is there a heuristic that allows for siblings to be disambiguated?
+        // perhaps the handler that sits on the top of the stack (should one exist): this would only be equal for iteration?
+        // the path from root is still needed though: while we can distinguish iteration from recursion, we want to report
+        // the cycle, which means we need a root path
+
+        ctx.inc()
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = s"TakeSnapshot(until: $label)"
+    // $COVERAGE-ON$
+}
+
+private [internal] class DropSnapshot(dtx: DivergenceContext) extends Instr {
+    override def apply(ctx: Context): Unit = {
+
+
+        ctx.handlers = ctx.handlers.tail
+        if (ctx.good) ctx.inc() else ctx.fail()
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = "DropSnapshot"
     // $COVERAGE-ON$
 }
