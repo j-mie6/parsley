@@ -15,15 +15,16 @@ import parsley.debugger.combinator.{attachDebugger, named}
 import parsley.debugger.internal.DebugContext
 import parsley.expr._
 import parsley.internal.deepembedding.frontend.debugger.Debugged
+import parsley.internal.deepembedding.backend.debugger.DebuggedFactory
 // scalastyle:on underscore.import
 
 class DebuggerUsageSpec extends ParsleyTest {
     behavior of "the Debugged internal frontend class"
 
     it should "not allow nesting of Debugged nodes" in {
-        val ctx = new DebugContext()
+        val factory = new DebuggedFactory(new DebugContext())
         try {
-            val _ = new Debugged(new Debugged(fresh(()).internal, null, None)(ctx), null, None)(ctx)
+            val _ = new Debugged(new Debugged(fresh(()).internal, null, None)(factory), null, None)(factory)
             fail("Debugged nodes have been nested")
         } catch {
             case _: Throwable => info("assertion exception thrown, as expected")
@@ -31,10 +32,10 @@ class DebuggerUsageSpec extends ParsleyTest {
     }
 
     it should "preserve the prettified names of the parsers" in {
-        val ctx = new DebugContext()
-        new Debugged(named(fresh(()), "foo").internal, null, None)(ctx).prettyName shouldBe "foo"
-        new Debugged(fresh(()).internal, null, None)(ctx).prettyName shouldBe "fresh"
-        new Debugged(fresh(()).internal, null, Some("bar"))(ctx).prettyName shouldBe "bar"
+        val factory = new DebuggedFactory(new DebugContext())
+        new Debugged(named(fresh(()), "foo").internal, null, None)(factory).prettyName shouldBe "foo"
+        new Debugged(fresh(()).internal, null, None)(factory).prettyName shouldBe "fresh"
+        new Debugged(fresh(()).internal, null, Some("bar"))(factory).prettyName shouldBe "bar"
     }
 
     behavior of "the debugger runtime"

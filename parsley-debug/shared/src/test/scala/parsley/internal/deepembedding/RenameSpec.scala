@@ -15,6 +15,7 @@ import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor
 import parsley.internal.deepembedding.frontend.debugger.Debugged
 import parsley.token.Lexer
 import parsley.token.descriptions.LexicalDesc
+import parsley.internal.deepembedding.backend.debugger.DebuggedFactory
 
 class RenameSpec extends ParsleyTest {
     "the Renamer object" should "not rename a parser it does not know of" in {
@@ -36,7 +37,7 @@ class RenameSpec extends ParsleyTest {
 
     it should "pass through Debugged parsers and get the inner parser's name" in {
         val symbolic = new <**>
-        val debugged = new Debugged[Any](symbolic, symbolic, None)(new DebugContext())
+        val debugged = new Debugged[Any](symbolic, symbolic, None)(new DebuggedFactory(new DebugContext()))
 
         Renamer.nameOf(None, debugged) shouldBe "<**>"
     }
@@ -60,9 +61,10 @@ class RenameSpec extends ParsleyTest {
     }
 
     it should "collect names of parsers from lexers (on supported platforms)" in {
-        val lexer = new Lexer(LexicalDesc.plain.copy())
+        val lexer = new Lexer(LexicalDesc.plain)
         if (Collector.isSupported) {
             Collector.lexer(lexer)
+            // TODO: more tests here, we want to test across all aspects of the lexer
             Renamer.nameOf(None, lexer.lexeme.names.identifier.internal) shouldBe "identifier"
         } else alert("the current platform does not support Collector")
     }

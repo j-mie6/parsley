@@ -12,6 +12,7 @@ import parsley.debugger.internal.DebugContext
 
 import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.deepembedding.frontend.debugger.{Debugged, Named}
+import parsley.internal.deepembedding.backend.debugger.DebuggedFactory
 
 /** This object contains the two main debug combinators, `attachDebugger` and `attachWithFrontend`.
   *
@@ -79,7 +80,7 @@ object combinator {
     def attachDebugger[A](parser: Parsley[A], toStringRules: Seq[Any => Boolean]): DebuggedPair[A] = {
         val context: DebugContext = new DebugContext(toStringRules)
 
-        val attached: LazyParsley[A] = Debugged.tagRecursively[A](parser.internal, context)
+        val attached: LazyParsley[A] = Debugged.tagRecursively[A](parser.internal, new DebuggedFactory(context))
         val resetter: Parsley[Unit]  = fresh(context.reset()).impure
 
         (() => context.getFinalTree, resetter *> new Parsley(attached))

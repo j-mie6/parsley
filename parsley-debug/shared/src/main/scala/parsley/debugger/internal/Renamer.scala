@@ -27,7 +27,7 @@ private [parsley] object Renamer {
     lazy private val collected = new XWeakMap[LazyParsley[_], String]
 
     private def underlying(p: LazyParsley[_]): LazyParsley[_] = p match {
-        case dbg: Debugged[_] => dbg.origin
+        case dbg: Debugged[_] => dbg.origin // this should never be the case?
         case _                => p
     }
 
