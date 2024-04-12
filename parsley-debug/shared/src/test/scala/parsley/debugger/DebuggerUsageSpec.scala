@@ -11,7 +11,7 @@ import org.typelevel.scalaccompat.annotation.unused
 import parsley.Parsley, Parsley._
 import parsley.ParsleyTest
 import parsley.character._
-import parsley.debugger.combinator.{attachDebugger, named}
+import parsley.debugger.combinator.{attachDebugger, named, detectDivergence}
 import parsley.debugger.internal.DebugContext
 import parsley.expr._
 import parsley.internal.deepembedding.frontend.debugger.TaggedWith
@@ -19,9 +19,7 @@ import parsley.internal.deepembedding.backend.debugger.Debugging
 // scalastyle:on underscore.import
 
 class DebuggerUsageSpec extends ParsleyTest {
-    behavior of "the Debugged internal frontend class"
-
-    it should "not allow nesting of Debugged nodes" in {
+    "the Debugged internal frontend class" should "not allow nesting of Debugged nodes" in {
         val factory = new Debugging(new DebugContext())
         try {
             val _ = new TaggedWith(factory)(new TaggedWith(factory)(fresh(()).internal, null, None), null, None)
@@ -38,9 +36,7 @@ class DebuggerUsageSpec extends ParsleyTest {
         new TaggedWith(factory)(fresh(()).internal, null, Some("bar")).prettyName shouldBe "bar"
     }
 
-    behavior of "the debugger runtime"
-
-    it should "preserve the result of parsers" in {
+    "the debugger runtime" should "preserve the result of parsers" in {
         val debugMath = attachDebugger(Arithmetic.prog)
 
         debugMath._2.parse("1+1").get.head shouldBe 2
@@ -49,6 +45,12 @@ class DebuggerUsageSpec extends ParsleyTest {
         debugMath._2.parse("6/2").get.head shouldBe 3
 
         debugMath._2.parse("1+2+3+4+5\n2*3*4").get shouldBe List(15, 24) // scalastyle:ignore magic.number
+    }
+
+    it should "not cause references to be unallocated" in {
+        import parsley.state._
+        val p = detectDivergence(7.makeRef(r => many(char('a') *> r.get)))
+        p.parse("aaa").get shouldBe List(7, 7, 7)
     }
 
     it should "preserve the side-effecting behaviour of parsers" in {

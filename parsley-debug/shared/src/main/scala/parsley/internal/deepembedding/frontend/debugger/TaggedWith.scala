@@ -5,12 +5,13 @@
  */
 package parsley.internal.deepembedding.frontend.debugger
 
-import scala.collection.{Factory, mutable}
+import scala.collection.mutable
 
 import org.typelevel.scalaccompat.annotation.unused
 
 import parsley.XAssert
 import parsley.debugger.internal.XWeakMap
+import parsley.state.Ref
 
 import parsley.internal.deepembedding.{singletons, Cont, ContOps, Id}
 import parsley.internal.deepembedding.ContOps.{perform, result, suspend, zipWith, zipWith3, ContAdapter}
@@ -173,47 +174,21 @@ private [parsley] object TaggedWith {
 
         override def visit[A](self: <|>[A], context: ParserTracker)(p: LazyParsley[A], q: LazyParsley[A]): L[A] = handle2Ary(self, context)(p, q)(new <|>(_, _))
 
-        // Iterative parsers need their own handling.
-        override def visit[A, C](self: Many[A, C], context: ParserTracker)(p: LazyParsley[A], factory: Factory[A, C]): L[C] = {
-            handlePossiblySeen(self, context) {
-                suspend[M, R, LazyParsley[A]](p.visit(this, context)).map(new Many[A, C](_, factory))
-            }
-        }
-
-        override def visit[A](self: ChainPost[A], context: ParserTracker)(p: LazyParsley[A], _op: =>LazyParsley[A => A]): L[A] = {
-            handle2Ary(self, context)(p, _op)(new ChainPost(_, _))
-        }
-
         override def visit[A](self: ChainPre[A], context: ParserTracker)(p: LazyParsley[A], op: =>LazyParsley[A => A]): L[A] = {
             handle2Ary(self, context)(p, op)(new ChainPre(_, _))
         }
 
-        override def visit[A, B](self: Chainl[A, B], context: ParserTracker)
-                                (init: LazyParsley[B], p: =>LazyParsley[A], op: =>LazyParsley[(B, A) => B]): L[B] = handlePossiblySeen[B](self, context) {
-            zipWith3(suspend[M, R, LazyParsley[B]](init.visit(this, context)),
-                     suspend[M, R, LazyParsley[A]](p.visit(this, context)),
-                     suspend[M, R, LazyParsley[(B, A) => B]](op.visit(this, context)))(new Chainl[A, B](_, _, _))
-        }
-
-        override def visit[A, B](self: Chainr[A, B], context: ParserTracker)(p: LazyParsley[A], op: =>LazyParsley[(A, B) => B], wrap: A => B): L[B] = {
+        // the generic unary/binary overrides above cannot handle this properly, as they lose the UsesReg trait
+        override def visit[S](self: Put[S], context: ParserTracker)(ref: Ref[S], p: LazyParsley[S]): L[Unit] = {
             handlePossiblySeen(self, context) {
-                zipWith(suspend[M, R, LazyParsley[A]](p.visit(this, context)), suspend[M, R, LazyParsley[(A, B) => B]](op.visit(this, context))) {
-                    new Chainr[A, B](_, _, wrap)
-                }
+                suspend[M, R, LazyParsley[S]](p.visit(this, context)).map(new Put(ref, _))
             }
         }
-
-        override def visit[A, C](self: SepEndBy1[A, C], context: ParserTracker)(p: LazyParsley[A], sep: =>LazyParsley[_], factory: Factory[A, C]): L[C] = {
+        override def visit[S, A](self: NewReg[S, A], context: ParserTracker)(ref: Ref[S], init: LazyParsley[S], body: =>LazyParsley[A]): L[A] = {
             handlePossiblySeen(self, context) {
-                zipWith(suspend[M, R, LazyParsley[A]](p.visit(this, context)), suspend[M, R, LazyParsley[_]](sep.visit(this, context))) {
-                    new SepEndBy1[A, C](_, _, factory)
+                zipWith(suspend[M, R, LazyParsley[S]](init.visit(this, context)), suspend[M, R, LazyParsley[A]](body.visit(this, context))) {
+                    new NewReg(ref, _, _)
                 }
-            }
-        }
-
-        override def visit[A, C](self: ManyUntil[A, C], context: ParserTracker)(body: LazyParsley[Any], factory: Factory[A, C]): L[C] = {
-            handlePossiblySeen(self, context) {
-                suspend[M, R, LazyParsley[Any]](body.visit(this, context)).map(new ManyUntil[A, C](_, factory))
             }
         }
 
