@@ -13,18 +13,15 @@ import parsley.exceptions.ParsleyException
 import parsley.internal.deepembedding.frontend.LazyParsley
 
 private [parsley] final class DivergenceContext {
-    // FIXME: this list could be better as an ArraySeq, but we need some generic way to get there for all backends
-    case class CtxSnap(pc: Int, instrs: Array[_], off: Int, regs: List[AnyRef]) {
-        def matches(that: CtxSnap) = this.pc == that.pc && this.instrs == that.instrs && this.off == that.off && this.regs == that.regs
-    }
+    case class CtxSnap(pc: Int, instrs: Array[_], off: Int, regs: List[AnyRef])
     case class HandlerSnap(pc: Int, instrs: Array[_])
     private case class Snapshot(name: Option[String], ctxSnap: CtxSnap, handlerSnap: Option[HandlerSnap], children: mutable.ListBuffer[Snapshot]) {
         // this is true when the ctxSnaps match
-        def matchesParent(that: Snapshot): Boolean = this.ctxSnap.matches(that.ctxSnap)
+        def matchesParent(that: Snapshot): Boolean = this.ctxSnap == that.ctxSnap
 
         // this is true when the handlers are equal (they should exist!) and the ctxSnaps match
         // TODO: technically, we should check that the instrs match for the handler and the ctx?
-        def matchesSibling(that: Snapshot): Boolean = this.handlerSnap == that.handlerSnap && this.ctxSnap.matches(that.ctxSnap)
+        def matchesSibling(that: Snapshot): Boolean = this.handlerSnap == that.handlerSnap && this.ctxSnap == that.ctxSnap
     }
 
     private val snaps = mutable.Stack.empty[Snapshot]
