@@ -8,6 +8,8 @@ package parsley.debugger.internal
 import scala.annotation.nowarn
 import scala.collection.mutable
 
+import parsley.exceptions.ParsleyException
+
 import parsley.internal.deepembedding.frontend.LazyParsley
 
 private [parsley] class DivergenceContext {
@@ -43,12 +45,11 @@ private [parsley] class DivergenceContext {
             // there are two routes to divergence: left-recursion and non-productive iteration
             // the former involves searching for an equivalent CtxSnap somewhere along the stack, the path along the way would be the trace
             if (snaps.exists(self.matchesParent(_))) { //TODO: as soon as the offset changes, the search can stop
-
-                throw new Exception("oh no!")
+                val cycle = snaps.view.takeWhile(!self.matchesParent(_)).map(_.name).toList
+                throw new ParsleyException(cycle.mkString(s"$name <- ", " <- ", s" <- $name"))
             }
             // the latter involves the same but along our siblings -- in this case, us and our parent are relevant for reporting the issue
             else if (siblings.exists(self.matchesSibling(_))) { //TODO: as soon as the offset changes, the search can stop
-
                 throw new Exception("oh no!")
             }
 
