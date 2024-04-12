@@ -12,13 +12,13 @@ import parsley.exceptions.ParsleyException
 
 import parsley.internal.deepembedding.frontend.LazyParsley
 
-private [parsley] class DivergenceContext {
+private [parsley] final class DivergenceContext {
     // FIXME: this list could be better as an ArraySeq, but we need some generic way to get there for all backends
     case class CtxSnap(pc: Int, instrs: Array[_], off: Int, regs: List[AnyRef]) {
         def matches(that: CtxSnap) = this.pc == that.pc && this.instrs == that.instrs && this.off == that.off && this.regs == that.regs
     }
     case class HandlerSnap(pc: Int, instrs: Array[_])
-    private case class Snapshot(name: String, ctxSnap: CtxSnap, handlerSnap: Option[HandlerSnap], children: mutable.ListBuffer[Snapshot]) {
+    private case class Snapshot(name: Option[String], ctxSnap: CtxSnap, handlerSnap: Option[HandlerSnap], children: mutable.ListBuffer[Snapshot]) {
         // this is true when the ctxSnaps match
         def matchesParent(that: Snapshot): Boolean = this.ctxSnap.matches(that.ctxSnap)
 
@@ -31,9 +31,10 @@ private [parsley] class DivergenceContext {
 
     def takeSnapshot(parser: LazyParsley[_], userAssignedName: Option[String], ctxSnap: CtxSnap, handlerSnap: Option[HandlerSnap]): Unit = {
         val name = Renamer.nameOf(userAssignedName, parser)
+        val internalName = Renamer.internalName(parser)
         // at this point we may have some old snapshots on the stack
         // we also have a current snapshot and optional handler snapshot ready to go
-        val self = Snapshot(name, ctxSnap, handlerSnap, mutable.ListBuffer.empty)
+        val self = Snapshot(if (name != internalName) Some(name) else None, ctxSnap, handlerSnap, mutable.ListBuffer.empty)
 
         // first step is to check for divergence
         // we must have a parent snapshot for it to possible that we have diverged
@@ -45,8 +46,10 @@ private [parsley] class DivergenceContext {
             // there are two routes to divergence: left-recursion and non-productive iteration
             // the former involves searching for an equivalent CtxSnap somewhere along the stack, the path along the way would be the trace
             if (snaps.exists(self.matchesParent(_))) { //TODO: as soon as the offset changes, the search can stop
-                val cycle = snaps.view.takeWhile(!self.matchesParent(_)).map(_.name).toList
-                throw new ParsleyException(cycle.mkString(s"$name <- ", " <- ", s" <- $name"))
+                val cycle = snaps.view.takeWhile(!self.matchesParent(_)).map(s => (s.name, s.ctxSnap.regs)).collect {
+                    case (Some(name), regs) => (name, regs)
+                }.toVector.reverse
+                reportLeftRecursion(name, ctxSnap.regs, cycle)
             }
             // the latter involves the same but along our siblings -- in this case, us and our parent are relevant for reporting the issue
             else if (siblings.exists(self.matchesSibling(_))) { //TODO: as soon as the offset changes, the search can stop
@@ -63,4 +66,47 @@ private [parsley] class DivergenceContext {
     }
     def dropSnapshot(): Unit = snaps.pop(): @nowarn
     def reset(): Unit = snaps.clear()
+
+    private final val MissingInformation =
+        s"""
+           |Left-recursion has been detected in the given parser; however, there is not
+           |enough information to determine the cycle. To get the full cycle diagnostic,
+           |please use `parsley.debugger.util.Collector` to populate the name information
+           |(this is ${if (parsley.debugger.util.Collector.isSupported) "supported" else "not supported"} on your platform).
+           |
+           |For example, if your parsers are exposed (publically) in an object called
+           |`foo`, you should run:
+           |
+           |> parsley.debugger.util.Collector.names(foo)
+           |
+           |Do this before running the `detectDivergence(foo.[...]).parse([...])` call.
+           |Alternatively, you can give individual parser fragments names by using the
+           |`named` combinator, which will cause them to appear along the path.
+           |""".stripMargin
+
+    private def LeftRecursion(cycle: Iterable[String]): String =
+        s"""
+           |Left-recursion has been detected in the given parser. The trace is as follows:
+           |
+           |${cycle.mkString("\n")}
+           |
+           |For readability, all non-named combinators have been stripped out -- to see more,
+           |use the `named` combinator to tag parts of the parser you want to see appear in
+           |the trace.
+           |""".stripMargin
+
+    private def reportLeftRecursion(name: String, regs: List[AnyRef], cycle: Vector[(String, List[AnyRef])]): Nothing = {
+        // if the cycle is empty, this means there is no name information
+        if (cycle.isEmpty) throw new ParsleyException(MissingInformation)
+        else {
+            // if all the registers are the same, there is no point reporting the state in the cycle
+            val stateFree = (regs +: cycle.map(_._2)).distinct.size == 1
+            val cycle2 = (name, regs) +: cycle :+ ((name, regs))
+            if (stateFree) throw new ParsleyException(LeftRecursion(cycle2.map(_._1)))
+            else throw new ParsleyException(LeftRecursion(cycle2.map {
+                // this is horrid, but it'll (TODO: some day allow for watched references like in `debug`?)
+                case (name, regs) => s"$name (with state ${regs.zipWithIndex})"
+            }))
+        }
+    }
 }
