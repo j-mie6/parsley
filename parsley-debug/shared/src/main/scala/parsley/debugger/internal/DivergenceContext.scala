@@ -15,7 +15,7 @@ import parsley.internal.deepembedding.frontend.LazyParsley
 private [parsley] final class DivergenceContext {
     case class CtxSnap(pc: Int, instrs: Array[_], off: Int, regs: List[AnyRef])
     case class HandlerSnap(pc: Int, instrs: Array[_])
-    private case class Snapshot(name: Option[String], ctxSnap: CtxSnap, handlerSnap: Option[HandlerSnap], children: mutable.ListBuffer[Snapshot]) {
+    private case class Snapshot(name: String, internalName: String, ctxSnap: CtxSnap, handlerSnap: Option[HandlerSnap], children: mutable.ListBuffer[Snapshot]) {
         // this is true when the ctxSnaps match
         def matchesParent(that: Snapshot): Boolean = this.ctxSnap == that.ctxSnap
 
@@ -31,7 +31,7 @@ private [parsley] final class DivergenceContext {
         val internalName = Renamer.internalName(parser)
         // at this point we may have some old snapshots on the stack
         // we also have a current snapshot and optional handler snapshot ready to go
-        val self = Snapshot(if (name != internalName) Some(name) else None, ctxSnap, handlerSnap, mutable.ListBuffer.empty)
+        val self = Snapshot(name, internalName, ctxSnap, handlerSnap, mutable.ListBuffer.empty)
 
         // first step is to check for divergence
         // we must have a parent snapshot for it to possible that we have diverged
@@ -43,14 +43,16 @@ private [parsley] final class DivergenceContext {
             // there are two routes to divergence: left-recursion and non-productive iteration
             // the former involves searching for an equivalent CtxSnap somewhere along the stack, the path along the way would be the trace
             if (snaps.exists(self.matchesParent(_))) { //TODO: as soon as the offset changes, the search can stop
-                val cycle = snaps.view.takeWhile(!self.matchesParent(_)).map(s => (s.name, s.ctxSnap.regs)).collect {
-                    case (Some(name), regs) => (name, regs)
+                val cycle = snaps.view.takeWhile(!self.matchesParent(_)).collect {
+                    // internal names aren't particularly useful here, filter them out
+                    case s if s.name != s.internalName => (s.name, s.ctxSnap.regs)
                 }.toVector.reverse
                 reportLeftRecursion(name, ctxSnap.regs, cycle)
             }
             // the latter involves the same but along our siblings -- in this case, us and our parent are relevant for reporting the issue
             else if (siblings.exists(self.matchesSibling(_))) { //TODO: as soon as the offset changes, the search can stop
-                throw new Exception("oh no!")
+                val states = siblings.view.takeWhile(!self.matchesSibling(_)).map(_.ctxSnap.regs).toList
+                reportNonProductiveIteration(name, internalName, parent.name, parent.internalName, ctxSnap.regs, states)
             }
 
             // can the snapshots be pruned in some way? anything with a different offset can be ruled out of being in the path?
@@ -105,5 +107,30 @@ private [parsley] final class DivergenceContext {
                 case (name, regs) => s"$name (with state ${regs.zipWithIndex})"
             }))
         }
+    }
+
+    private def reportNonProductiveIteration(bodyName: String, bodyInternal: String,
+                                             loopName: String, loopInternal: String,
+                                             curState: List[AnyRef], states: List[List[AnyRef]]): Nothing = {
+        // no point talking about the state cycle if there is no changes
+        val stateFree = (curState :: states).distinct.size == 1
+        val stateNote = if (!stateFree) "\nand adjusts the state in a cyclic way." else "."
+
+        // if the names are only internal, we should direct the user to either use the collector or use the
+        // named combinator to get further information
+        val couldRefine = (if (bodyName == bodyInternal) Set("the body") else Set.empty) ++
+                          (if (loopName == loopInternal) Set("the loop") else Set.empty)
+        val refineMsg =
+            if (couldRefine.nonEmpty)
+            s"""
+               |${couldRefine.mkString(" and ")} could be named more precisely by using Collector.names
+               |or the `named` combinator.""".stripMargin
+            else ""
+
+        // TODO: present state cycle
+
+        val msg =
+            s"$loopName is looping unproductively as $bodyName can succeed having not consumed input$stateNote$refineMsg"
+        throw new Exception(msg)
     }
 }
