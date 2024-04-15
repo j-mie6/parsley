@@ -79,7 +79,8 @@ import parsley.internal.deepembedding.frontend
   *
   * @define strict be aware that all of the arguments to this combinator are in '''strict''' positions.
   */
-object combinator {
+object combinator extends combinator
+private [parsley] trait combinator {
     /** This combinator tries to parse each of the parsers `ps` in order, until one of them succeeds.
       *
       * Finds the first parser in `ps` which succeeds, returning its result. If none of the parsers

@@ -78,7 +78,8 @@ import parsley.internal.deepembedding.singletons
   *     ''The full list of codepoints found in a category can be found in the
   *     [[https://www.unicode.org/Public/13.0.0/ucd/extracted/DerivedGeneralCategory.txt Unicode Character Database]]''.
   */
-object character {
+object character extends character
+private [parsley] trait character {
     /** This combinator tries to parse a single specific character `c` from the input.
       *
       * Attempts to read the given character `c` from the input stream at the current

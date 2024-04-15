@@ -9,6 +9,7 @@ import parsley.syntax.zipped.Zipped3
 
 import parsley.internal.deepembedding.singletons
 
+// TODO: position grouping?
 /** This module contains parsers that provide a way to extract position information during a parse.
   *
   * Position parsers can be important
@@ -18,7 +19,8 @@ import parsley.internal.deepembedding.singletons
   *
   * @since 4.2.0
   */
-object position {
+object position extends position
+private [parsley] trait position {
     /** This parser returns the current line number (starting at 1) of the input without having any other effect.
       *
       * When this combinator is ran, no input is required, nor consumed, and
@@ -36,7 +38,6 @@ object position {
       * }}}
       *
       * @return a parser that returns the line number the parser is currently at.
-      * @group pos
       */
     val line: Parsley[Int] = new Parsley(singletons.Line)
     /** This parser returns the current column number (starting at 1) of the input without having any other effect.
@@ -57,7 +58,6 @@ object position {
       *
       * @return a parser that returns the column number the parser is currently at.
       * @note in the presence of wide unicode characters, the value returned may be inaccurate.
-      * @group pos
       */
     val col: Parsley[Int] = new Parsley(singletons.Col)
     /** This parser returns the current line and column numbers (starting at 1) of the input without having any other effect.
@@ -78,7 +78,6 @@ object position {
       *
       * @return a parser that returns the line and column number the parser is currently at.
       * @note in the presence of wide unicode characters, the column value returned may be inaccurate.
-      * @group pos
       */
     val pos: Parsley[(Int, Int)] = line <~> col
 

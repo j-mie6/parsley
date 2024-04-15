@@ -32,17 +32,18 @@ import parsley.internal.deepembedding.frontend
   * }}}
   * @since 2.2.0
   *
-  * @define body
+  * @define bodyLift
   *     This combinator applies the given parsers in sequence and then applies the given function `f` of to all of the results.
   *
   *     Firstly, each parser is parsed in turn, each producing a result. So long as all of the parsers succeeded,
   *     the combinator can succeed by returning the application of the function `f` to all the arguments. If any
   *     of the parsers fails, the entire combinator fails.
   *
-  * @define param a function to apply to the results of the parsers with arity
-  * @define return a parser that parses all of the given parsers in order, and then combines their results with `f`.
+  * @define paramLift a function to apply to the results of the parsers with arity
+  * @define returnLift a parser that parses all of the given parsers in order, and then combines their results with `f`.
   */
-object lift {
+object lift extends lift
+private [parsley] trait lift {
     // scalastyle:off parameter.number ensure.single.space.after.token
     /** This combinator allows the result of a given parser to be changed using a given function.
       *
@@ -55,135 +56,135 @@ object lift {
         (f: T1 => R,
          p1: Parsley[T1]): Parsley[R] =
         p1.map(f)
-    /** $body
+    /** $bodyLift
       *
-      * @param f $param two.
-      * @return $return
+      * @param f $paramLift two.
+      * @return $returnLift
       */
     def lift2[T1, T2, R]
         (f: (T1, T2) => R,
          p1: Parsley[T1], p2: =>Parsley[T2]): Parsley[R] =
         new Parsley(new frontend.Lift2(f, p1.internal, p2.internal))
-    /** $body
+    /** $bodyLift
       *
-      * @param f $param three.
-      * @return $return
+      * @param f $paramLift three.
+      * @return $returnLift
       */
     def lift3[T1, T2, T3, R]
         (f: (T1, T2, T3) => R,
          p1: Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3]): Parsley[R] =
         new Parsley(new frontend.Lift3(f, p1.internal, p2.internal, p3.internal))
     // $COVERAGE-OFF$
-    /** $body
+    /** $bodyLift
       *
-      * @param f $param four.
-      * @return $return
+      * @param f $paramLift four.
+      * @return $returnLift
       */
     def lift4[T1, T2, T3, T4, R]
         (f: (T1, T2, T3, T4) => R,
          p1: Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4]): Parsley[R] =
         ap4(pure(f), p1, p2, p3, p4)
-    /** $body
+    /** $bodyLift
       *
-      * @param f $param five.
-      * @return $return
+      * @param f $paramLift five.
+      * @return $returnLift
       */
     def lift5[T1, T2, T3, T4, T5, R]
         (f: (T1, T2, T3, T4, T5) => R,
          p1: Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5]): Parsley[R] =
         ap5(pure(f), p1, p2, p3, p4, p5)
-    /** $body
+    /** $bodyLift
       *
-      * @param f $param six.
-      * @return $return
+      * @param f $paramLift six.
+      * @return $returnLift
       */
     def lift6[T1, T2, T3, T4, T5, T6, R]
         (f: (T1, T2, T3, T4, T5, T6) => R,
          p1: Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6]): Parsley[R] =
         ap6(pure(f), p1, p2, p3, p4, p5, p6)
-    /** $body
+    /** $bodyLift
       *
-      * @param f $param seven.
-      * @return $return
+      * @param f $paramLift seven.
+      * @return $returnLift
       */
     def lift7[T1, T2, T3, T4, T5, T6, T7, R]
         (f: (T1, T2, T3, T4, T5, T6, T7) => R,
          p1: Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7]): Parsley[R] =
         ap7(pure(f), p1, p2, p3, p4, p5, p6, p7)
-    /** $body
+    /** $bodyLift
       *
-      * @param f $param eight.
-      * @return $return
+      * @param f $paramLift eight.
+      * @return $returnLift
       */
     def lift8[T1, T2, T3, T4, T5, T6, T7, T8, R]
         (f: (T1, T2, T3, T4, T5, T6, T7, T8) => R,
          p1:   Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7],
          p8: =>Parsley[T8]): Parsley[R] =
         ap8(pure(f), p1, p2, p3, p4, p5, p6, p7, p8)
-    /** $body
+    /** $bodyLift
       *
-      * @param f $param nine.
-      * @return $return
+      * @param f $paramLift nine.
+      * @return $returnLift
       */
     def lift9[T1, T2, T3, T4, T5, T6, T7, T8, T9, R]
         (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9) => R,
          p1:   Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9]): Parsley[R] =
         ap9(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9)
-    /** $body
+    /** $bodyLift
       *
-      * @param f $param ten.
-      * @return $return
+      * @param f $paramLift ten.
+      * @return $returnLift
       */
     def lift10[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R]
         (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10) => R,
          p1:   Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10]): Parsley[R] =
         ap10(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10)
-    /** $body
+    /** $bodyLift
       *
-      * @param f $param eleven.
-      * @return $return
+      * @param f $paramLift eleven.
+      * @return $returnLift
       */
     def lift11[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, R]
         (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11) => R,
          p1:   Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11]): Parsley[R] =
         ap11(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11)
-    /** $body
+    /** $bodyLift
       *
-      * @param f $param twelve.
-      * @return $return
+      * @param f $paramLift twelve.
+      * @return $returnLift
       */
     def lift12[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, R]
         (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12) => R,
          p1:   Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12]): Parsley[R] =
         ap12(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12)
-    /** $body
+    /** $bodyLift
       *
-      * @param f $param thirteen.
-      * @return $return
+      * @param f $paramLift thirteen.
+      * @return $returnLift
       */
     def lift13[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, R]
         (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13) => R,
          p1:   Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13]): Parsley[R] =
         ap13(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13)
-    /** $body
+    /** $bodyLift
       *
-      * @param f $param fourteen.
-      * @return $return
+      * @param f $paramLift fourteen.
+      * @return $returnLift
       */
     def lift14[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, R]
         (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14) => R,
          p1:   Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14]): Parsley[R] =
         ap14(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14)
-    /** $body
+    /** $bodyLift
       *
-      * @param f $param fifteen.
-      * @return $return
+      * @param f $paramLift fifteen.
+      * @return $returnLift
       */
     def lift15[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, R]
         (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15) => R,
@@ -191,10 +192,10 @@ object lift {
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14],
          p15: =>Parsley[T15]): Parsley[R] =
         ap15(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15)
-    /** $body
+    /** $bodyLift
       *
-      * @param f $param sixteen.
-      * @return $return
+      * @param f $paramLift sixteen.
+      * @return $returnLift
       */
     def lift16[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, R]
         (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16) => R,
@@ -202,10 +203,10 @@ object lift {
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16]):
         Parsley[R] = ap16(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16)
-    /** $body
+    /** $bodyLift
       *
-      * @param f $param seventeen.
-      * @return $return
+      * @param f $paramLift seventeen.
+      * @return $returnLift
       */
     def lift17[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, R]
         (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17) => R,
@@ -213,10 +214,10 @@ object lift {
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16], p17: =>Parsley[T17]): Parsley[R] =
         ap17(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17)
-    /** $body
+    /** $bodyLift
       *
-      * @param f $param eighteen.
-      * @return $return
+      * @param f $paramLift eighteen.
+      * @return $returnLift
       */
     def lift18[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, R]
         (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18) => R,
@@ -224,10 +225,10 @@ object lift {
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16], p17: =>Parsley[T17], p18: =>Parsley[T18]): Parsley[R] =
         ap18(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18)
-    /** $body
+    /** $bodyLift
       *
-      * @param f $param nineteen.
-      * @return $return
+      * @param f $paramLift nineteen.
+      * @return $returnLift
       */
     def lift19[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, R]
         (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19) => R,
@@ -235,10 +236,10 @@ object lift {
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16], p17: =>Parsley[T17], p18: =>Parsley[T18], p19: =>Parsley[T19]): Parsley[R] =
         ap19(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19)
-    /** $body
+    /** $bodyLift
       *
-      * @param f $param twenty.
-      * @return $return
+      * @param f $paramLift twenty.
+      * @return $returnLift
       */
     def lift20[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, R]
         (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20) => R,
@@ -246,10 +247,10 @@ object lift {
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16], p17: =>Parsley[T17], p18: =>Parsley[T18], p19: =>Parsley[T19], p20: =>Parsley[T20]): Parsley[R] =
         ap20(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20)
-    /** $body
+    /** $bodyLift
       *
-      * @param f $param twenty-one.
-      * @return $return
+      * @param f $paramLift twenty-one.
+      * @return $returnLift
       */
     def lift21[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, R]
         (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21) => R,
@@ -258,10 +259,10 @@ object lift {
          p16: =>Parsley[T16], p17: =>Parsley[T17], p18: =>Parsley[T18], p19: =>Parsley[T19], p20: =>Parsley[T20], p21: =>Parsley[T21]): Parsley[R] =
         ap21(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21)
     // $COVERAGE-ON$
-    /** $body
+    /** $bodyLift
       *
-      * @param f $param twenty-two.
-      * @return $return
+      * @param f $paramLift twenty-two.
+      * @return $returnLift
       */
     def lift22[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, R]
         (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22) => R,

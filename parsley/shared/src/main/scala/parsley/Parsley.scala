@@ -965,7 +965,9 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
   *     whether or not there is more input that can be consumed or not. In particular, most parsers should be making
   *     use of `eof` to ensure that the parser consumes all the input available at the end of the parse.
   */
-object Parsley extends PlatformSpecific {
+object Parsley extends ParsleyImpl with PlatformSpecific {
+    private val emptyErr = new parsley.errors.VanillaGen[Any]
+
     /** This class enables the prefix `~` combinator, which allows a parser in an otherwise strict
       * position to be made lazy.
       *
@@ -1017,6 +1019,8 @@ object Parsley extends PlatformSpecific {
           */
         def unary_~ : Parsley[A] = unit *> p
     }
+}
+private [parsley] abstract class ParsleyImpl {
     /** This combinator produces a value without having any other effect.
       *
       * When this combinator is ran, no input is required, nor consumed, and
@@ -1246,8 +1250,6 @@ object Parsley extends PlatformSpecific {
       * @since 4.5.0
       */
     val eof: Parsley[Unit] = new Parsley(singletons.Eof)
-
-    private val emptyErr = new parsley.errors.VanillaGen[Any]
 
     /** This combinator repeatedly parses a given parser '''zero''' or more times, collecting the results into a list.
       *

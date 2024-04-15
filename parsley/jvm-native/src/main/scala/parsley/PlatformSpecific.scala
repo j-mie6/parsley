@@ -14,7 +14,7 @@ import parsley.errors.ErrorBuilder
 
 import parsley.internal.machine.Context
 
-class PlatformSpecific {
+trait PlatformSpecific {
     /** This class exposes a method of running parsers from a file.
       *
       * This extension class operates on values that are convertible to parsers. It enables the use of

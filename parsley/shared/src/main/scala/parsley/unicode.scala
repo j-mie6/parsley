@@ -15,7 +15,7 @@ import parsley.internal.deepembedding.singletons
   *
   * In particular, this module contains: combinators that can read specific characters; combinators that represent character classes and their negations;
   * combinators for reading specific strings; as well as a selection of pre-made parsers to parse specific kinds of character, like digits and letters.
-  * Unlike [[parsley.character `character`]], this module handles full utf-16 codepoints, which can be up to two 16-bit characters long.
+  * Unlike [[parsley.character$ `character`]], this module handles full utf-16 codepoints, which can be up to two 16-bit characters long.
   *
   * @since 4.4.0
   *

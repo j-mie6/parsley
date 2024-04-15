@@ -26,17 +26,18 @@ package parsley
   * }}}
   * @since 4.0.0
   *
-  * @define body
+  * @define bodyAp
   *     This combinator applies the given parsers in sequence and then applies the function returned by `pf` of to all of the results of the other parsers.
   *
   *     Firstly, each parser is parsed in turn, each producing a result (and the first, a function `f`). So long as all of the parsers succeeded,
   *     the combinator can succeed by returning the application of the function `f` to all the arguments. If any
   *     of the parsers fails, the entire combinator fails.
   *
-  * @define param a parser that returns a function to apply to the results of the parsers with arity
-  * @define return a parser that parses all of the given parsers in order, and then combines their results with `f`.
+  * @define paramAp a parser that returns a function to apply to the results of the parsers with arity
+  * @define returnAp a parser that parses all of the given parsers in order, and then combines their results with `f`.
   */
-object ap {
+object ap extends ap
+private [parsley] trait ap {
     // scalastyle:off parameter.number ensure.single.space.after.token
     // $COVERAGE-OFF$
     /** This combinator allows the function that results from one parser to be applied to the result of another parser.
@@ -51,20 +52,20 @@ object ap {
         (pf: Parsley[T1 => R],
          p1: =>Parsley[T1]): Parsley[R] =
         pf <*> p1
-    /** $body
+    /** $bodyAp
       *
-      * @param pf $param two.
-      * @return $return
+      * @param pf $paramAp two.
+      * @return $returnAp
       */
     // TODO: This can be improved, and lift2 can go via this
     def ap2[T1, T2, R]
         (pf: Parsley[(T1, T2) => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2]): Parsley[R] =
         pf.map(_.curried) <*> p1 <*> p2
-    /** $body
+    /** $bodyAp
       *
-      * @param pf $param three.
-      * @return $return
+      * @param pf $paramAp three.
+      * @return $returnAp
       */
     // TODO: This can be improved, and lift3 can go via this
     def ap3[T1, T2, T3, R]
@@ -73,116 +74,116 @@ object ap {
         pf.map(_.curried) <*> p1 <*> p2 <*> p3
     // $COVERAGE-ON$
     // $COVERAGE-OFF$
-    /** $body
+    /** $bodyAp
       *
-      * @param pf $param four.
-      * @return $return
+      * @param pf $paramAp four.
+      * @return $returnAp
       */
     def ap4[T1, T2, T3, T4, R]
         (pf: Parsley[(T1, T2, T3, T4) => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4]): Parsley[R] =
         _ap4(pf.map(_.curried), p1, p2, p3, p4)
-    /** $body
+    /** $bodyAp
       *
-      * @param pf $param five.
-      * @return $return
+      * @param pf $paramAp five.
+      * @return $returnAp
       */
     def ap5[T1, T2, T3, T4, T5, R]
         (pf: Parsley[(T1, T2, T3, T4, T5) => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5]): Parsley[R] =
         _ap5(pf.map(_.curried), p1, p2, p3, p4, p5)
-    /** $body
+    /** $bodyAp
       *
-      * @param pf $param six.
-      * @return $return
+      * @param pf $paramAp six.
+      * @return $returnAp
       */
     def ap6[T1, T2, T3, T4, T5, T6, R]
         (pf: Parsley[(T1, T2, T3, T4, T5, T6) => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6]): Parsley[R] =
         _ap6(pf.map(_.curried), p1, p2, p3, p4, p5, p6)
-    /** $body
+    /** $bodyAp
       *
-      * @param pf $param seven.
-      * @return $return
+      * @param pf $paramAp seven.
+      * @return $returnAp
       */
     def ap7[T1, T2, T3, T4, T5, T6, T7, R]
         (pf: Parsley[(T1, T2, T3, T4, T5, T6, T7) => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7]): Parsley[R] =
         _ap7(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7)
-    /** $body
+    /** $bodyAp
       *
-      * @param pf $param eight.
-      * @return $return
+      * @param pf $paramAp eight.
+      * @return $returnAp
       */
     def ap8[T1, T2, T3, T4, T5, T6, T7, T8, R]
         (pf: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8) => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7],
          p8: =>Parsley[T8]): Parsley[R] =
         _ap8(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8)
-    /** $body
+    /** $bodyAp
       *
-      * @param pf $param nine.
-      * @return $return
+      * @param pf $paramAp nine.
+      * @return $returnAp
       */
     def ap9[T1, T2, T3, T4, T5, T6, T7, T8, T9, R]
         (pf: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9) => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9]): Parsley[R] =
         _ap9(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8, p9)
-    /** $body
+    /** $bodyAp
       *
-      * @param pf $param ten.
-      * @return $return
+      * @param pf $paramAp ten.
+      * @return $returnAp
       */
     def ap10[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R]
         (pf: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10) => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10]): Parsley[R] =
         _ap10(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10)
-    /** $body
+    /** $bodyAp
       *
-      * @param pf $param eleven.
-      * @return $return
+      * @param pf $paramAp eleven.
+      * @return $returnAp
       */
     def ap11[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, R]
         (pf: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11) => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11]): Parsley[R] =
         _ap11(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11)
-    /** $body
+    /** $bodyAp
       *
-      * @param pf $param twelve.
-      * @return $return
+      * @param pf $paramAp twelve.
+      * @return $returnAp
       */
     def ap12[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, R]
         (pf: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12) => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12]): Parsley[R] =
         _ap12(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12)
-    /** $body
+    /** $bodyAp
       *
-      * @param pf $param thirteen.
-      * @return $return
+      * @param pf $paramAp thirteen.
+      * @return $returnAp
       */
     def ap13[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, R]
         (pf: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13) => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13]): Parsley[R] =
         _ap13(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13)
-    /** $body
+    /** $bodyAp
       *
-      * @param pf $param fourteen.
-      * @return $return
+      * @param pf $paramAp fourteen.
+      * @return $returnAp
       */
     def ap14[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, R]
         (pf: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14) => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14]): Parsley[R] =
         _ap14(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14)
-    /** $body
+    /** $bodyAp
       *
-      * @param pf $param fifteen.
-      * @return $return
+      * @param pf $paramAp fifteen.
+      * @return $returnAp
       */
     def ap15[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, R]
         (pf: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15) => R],
@@ -190,10 +191,10 @@ object ap {
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14],
          p15: =>Parsley[T15]): Parsley[R] =
         _ap15(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15)
-    /** $body
+    /** $bodyAp
       *
-      * @param pf $param sixteen.
-      * @return $return
+      * @param pf $paramAp sixteen.
+      * @return $returnAp
       */
     def ap16[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, R]
         (pf: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16) => R],
@@ -201,10 +202,10 @@ object ap {
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16]): Parsley[R] =
         _ap16(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16)
-    /** $body
+    /** $bodyAp
       *
-      * @param pf $param seventeen.
-      * @return $return
+      * @param pf $paramAp seventeen.
+      * @return $returnAp
       */
     def ap17[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, R]
         (pf: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17) => R],
@@ -212,10 +213,10 @@ object ap {
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16], p17: =>Parsley[T17]): Parsley[R] =
         _ap17(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17)
-    /** $body
+    /** $bodyAp
       *
-      * @param pf $param eighteen.
-      * @return $return
+      * @param pf $paramAp eighteen.
+      * @return $returnAp
       */
     def ap18[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, R]
         (pf: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18) => R],
@@ -223,10 +224,10 @@ object ap {
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16], p17: =>Parsley[T17], p18: =>Parsley[T18]): Parsley[R] =
         _ap18(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18)
-    /** $body
+    /** $bodyAp
       *
-      * @param pf $param nineteen.
-      * @return $return
+      * @param pf $paramAp nineteen.
+      * @return $returnAp
       */
     def ap19[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, R]
         (pf: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19) => R],
@@ -234,10 +235,10 @@ object ap {
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16], p17: =>Parsley[T17], p18: =>Parsley[T18], p19: =>Parsley[T19]): Parsley[R] =
         _ap19(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19)
-    /** $body
+    /** $bodyAp
       *
-      * @param pf $param twenty.
-      * @return $return
+      * @param pf $paramAp twenty.
+      * @return $returnAp
       */
     def ap20[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, R]
         (pf: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20) => R],
@@ -245,10 +246,10 @@ object ap {
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16], p17: =>Parsley[T17], p18: =>Parsley[T18], p19: =>Parsley[T19], p20: =>Parsley[T20]): Parsley[R] =
         _ap20(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20)
-    /** $body
+    /** $bodyAp
       *
-      * @param pf $param twenty-one.
-      * @return $return
+      * @param pf $paramAp twenty-one.
+      * @return $returnAp
       */
     def ap21[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, R]
         (pf: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21) => R],
@@ -257,10 +258,10 @@ object ap {
          p16: =>Parsley[T16], p17: =>Parsley[T17], p18: =>Parsley[T18], p19: =>Parsley[T19], p20: =>Parsley[T20], p21: =>Parsley[T21]): Parsley[R] =
         _ap21(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21)
     // $COVERAGE-ON$
-    /** $body
+    /** $bodyAp
       *
-      * @param pf $param twenty-two.
-      * @return $return
+      * @param pf $paramAp twenty-two.
+      * @return $returnAp
       */
     def ap22[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, R]
         (pf: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22) => R],
