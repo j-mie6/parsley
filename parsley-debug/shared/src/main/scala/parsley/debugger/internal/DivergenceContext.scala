@@ -12,6 +12,8 @@ import parsley.exceptions.ParsleyException
 
 import parsley.internal.deepembedding.frontend.LazyParsley
 
+// FIXME: in future, this should use better tuned exception names
+
 private [parsley] final class DivergenceContext {
     case class CtxSnap(pc: Int, instrs: Array[_], off: Int, regs: List[AnyRef])
     case class HandlerSnap(pc: Int, instrs: Array[_])
@@ -24,6 +26,10 @@ private [parsley] final class DivergenceContext {
         def matchesSibling(that: Snapshot): Boolean = this.handlerSnap == that.handlerSnap && this.ctxSnap == that.ctxSnap
     }
 
+    // NOTE: Pruning snapshots sounds attractive, but doesn't really work, at least for siblings
+    // consider `val p = r.updateDuring(_ => random())(lookAhead(char('a'))) *> p`
+    // this I think in an iterative example would be unable to resolve if the offset from the lookahead dominates
+    // For a recursive structure, I think the pruning actually would work, and can be done
     private val snaps = mutable.Stack.empty[Snapshot]
 
     def takeSnapshot(parser: LazyParsley[_], userAssignedName: Option[String], ctxSnap: CtxSnap, handlerSnap: Option[HandlerSnap]): Unit = {
@@ -42,7 +48,7 @@ private [parsley] final class DivergenceContext {
 
             // there are two routes to divergence: left-recursion and non-productive iteration
             // the former involves searching for an equivalent CtxSnap somewhere along the stack, the path along the way would be the trace
-            if (snaps.exists(self.matchesParent(_))) { //TODO: as soon as the offset changes, the search can stop
+            if (snaps.exists(self.matchesParent(_))) { //TODO: as soon as the offset changes, the search can stop?
                 val cycle = snaps.view.takeWhile(!self.matchesParent(_)).collect {
                     // internal names aren't particularly useful here, filter them out
                     case s if s.name != s.internalName => (s.name, s.ctxSnap.regs)
@@ -50,15 +56,15 @@ private [parsley] final class DivergenceContext {
                 reportLeftRecursion(name, ctxSnap.regs, cycle)
             }
             // the latter involves the same but along our siblings -- in this case, us and our parent are relevant for reporting the issue
-            else if (siblings.exists(self.matchesSibling(_))) { //TODO: as soon as the offset changes, the search can stop
-                val states = siblings.view.takeWhile(!self.matchesSibling(_)).map(_.ctxSnap.regs).toList
+            else if (siblings.exists(self.matchesSibling(_))) { //TODO: as soon as the offset changes, the search can stop?
+                val states = siblings.view.takeWhile(!self.matchesSibling(_)).collect {
+                    // we need them to be proper siblings for the path to match up
+                    case snap if snap.handlerSnap == self.handlerSnap => snap.ctxSnap.regs
+                }.toVector.reverse
                 reportNonProductiveIteration(name, internalName, parent.name, parent.internalName, ctxSnap.regs, states)
             }
-
-            // can the snapshots be pruned in some way? anything with a different offset can be ruled out of being in the path?
-
-            // no divergence, register ourself as a sibling to the parent
-            siblings += self
+            // no divergence, register ourself as a sibling to the parent (put at the front!!!)
+            self +=: siblings
         }
         // at this point, we know divergence didn't occur, so we can push ourself onto the stack
         snaps.push(self)
@@ -111,10 +117,13 @@ private [parsley] final class DivergenceContext {
 
     private def reportNonProductiveIteration(bodyName: String, bodyInternal: String,
                                              loopName: String, loopInternal: String,
-                                             curState: List[AnyRef], states: List[List[AnyRef]]): Nothing = {
+                                             curState: List[AnyRef], states: Vector[List[AnyRef]]): Nothing = {
+        val cycle = curState +: states :+ curState
         // no point talking about the state cycle if there is no changes
-        val stateFree = (curState :: states).distinct.size == 1
-        val stateNote = if (!stateFree) "\nand adjusts the state in a cyclic way." else "."
+        val stateFree = cycle.distinct.size == 1
+        // if the states do form a cycle, we should report the cycle
+        lazy val cycleStr = cycle.mkString("\n")
+        val stateNote = if (!stateFree) s"\nand adjusts the state in a cyclic way, as follows:\n\n$cycleStr" else "."
 
         // if the names are only internal, we should direct the user to either use the collector or use the
         // named combinator to get further information
@@ -123,14 +132,13 @@ private [parsley] final class DivergenceContext {
         val refineMsg =
             if (couldRefine.nonEmpty)
             s"""
-               |${couldRefine.mkString(" and ")} could be named more precisely by using Collector.names
+               |
+               |More precise names for ${couldRefine.mkString(" and ")} can be sourced using Collector.names
                |or the `named` combinator.""".stripMargin
             else ""
 
-        // TODO: present state cycle
-
         val msg =
-            s"$loopName is looping unproductively as $bodyName can succeed having not consumed input$stateNote$refineMsg"
-        throw new Exception(msg)
+            s"\n$loopName is looping unproductively as $bodyName can succeed having not consumed input$stateNote$refineMsg"
+        throw new ParsleyException(msg)
     }
 }
