@@ -24,7 +24,7 @@ private [parsley] final class CharTok[A](private val c: Char, private val x: A, 
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(c, x, expected)
 
-    override private[parsley] def prettyName: String = "charTok"
+    override private[parsley] def prettyName: String = "char"
     // $COVERAGE-ON$
 }
 
@@ -40,7 +40,7 @@ private [parsley] final class SupplementaryCharTok[A](private val codepoint: Int
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(codepoint, x, expected)
 
-    override private[parsley] def prettyName: String = "supplementaryCharTok"
+    override private[parsley] def prettyName: String = "char"
     // $COVERAGE-ON$
 }
 
@@ -58,7 +58,7 @@ private [parsley] final class StringTok[A](private val s: String, private val x:
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(s, x, expected)
 
-    override private[parsley] def prettyName: String = "stringTok"
+    override private[parsley] def prettyName: String = "string"
     // $COVERAGE-ON$
 }
 
@@ -106,7 +106,7 @@ private [parsley] final class Modify[S](val ref: Ref[S], f: S => S) extends Sing
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)(ref, f)
 
-    override private[parsley] def prettyName = "Reg.modify"
+    override private[parsley] def prettyName = "Ref.update"
     // $COVERAGE-ON$
 }
 

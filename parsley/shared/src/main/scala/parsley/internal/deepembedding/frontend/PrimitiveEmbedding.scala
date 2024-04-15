@@ -44,7 +44,7 @@ private [parsley] final class Put[S](val ref: Ref[S], _p: LazyParsley[S]) extend
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)(ref, _p)
 
-    override private[parsley] def prettyName = "Reg.put"
+    override private[parsley] def prettyName = "Ref.set"
     // $COVERAGE-ON$
 }
 private [parsley] final class NewReg[S, A](val ref: Ref[S], init: LazyParsley[S], body: =>LazyParsley[A]) extends Binary[S, A, A](init, body) with UsesRef {
@@ -53,7 +53,7 @@ private [parsley] final class NewReg[S, A](val ref: Ref[S], init: LazyParsley[S]
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(ref, init, body)
 
-    override private[parsley] def prettyName = "fillReg"
+    override private[parsley] def prettyName = "fillRef"
     // $COVERAGE-ON$
 }
 private [parsley] final class Span(p: LazyParsley[_]) extends Unary[Any, String](p) {
