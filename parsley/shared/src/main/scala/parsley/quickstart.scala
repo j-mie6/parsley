@@ -48,21 +48,6 @@ package parsley
   *     whether or not there is more input that can be consumed or not. In particular, most parsers should be making
   *     use of `eof` to ensure that the parser consumes all the input available at the end of the parse.
   *
-  * @groupprio iter 0
-  * @groupname iter Iterative Combinators
-  * @groupdesc iter
-  *     These combinators all execute a given parser an unbounded number of times, until either it fails, or another
-  *     parser succeeds, depending on the combinator. Depending on the combinator, all of the results produced by the
-  *     repeated execution of the parser may be returned in a `List`. These are almost essential for any practical parsing
-  *     task.
-  *
-  * @groupprio item 10
-  * @groupname item Input Query Combinators
-  * @groupdesc item
-  *     These combinators do not consume input, but they allow for querying of the input stream - specifically checking
-  *     whether or not there is more input that can be consumed or not. In particular, most parsers should be making
-  *     use of `eof` to ensure that the parser consumes all the input available at the end of the parse.
-  *
   * @groupprio opt 20
   * @groupname opt Optional Parsing Combinators
   * @groupdesc opt
@@ -96,13 +81,6 @@ package parsley
   * @groupdesc range
   *     These combinators allow for the parsing of a specific parser either a specific number of times, or between a certain
   *     amount of times.
-  *
-  * @groupprio cond 75
-  * @groupname cond Conditional Combinators
-  * @groupdesc cond
-  *     These combinators allow for the conditional extraction of a result, or the execution of a parser
-  *     based on another. They are morally related to [[Parsley.branch `branch`]] and [[Parsley.select `select`]] but are
-  *     less fundamental.
   *
   * @groupprio pred 100
   * @groupname pred Character Predicates

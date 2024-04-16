@@ -29,13 +29,6 @@ import parsley.internal.deepembedding.frontend
   *     repeated execution of the parser may be returned in a `List`. These are almost essential for any practical parsing
   *     task.
   *
-  * @groupprio item 10
-  * @groupname item Input Query Combinators
-  * @groupdesc item
-  *     These combinators do not consume input, but they allow for querying of the input stream - specifically checking
-  *     whether or not there is more input that can be consumed or not. In particular, most parsers should be making
-  *     use of `eof` to ensure that the parser consumes all the input available at the end of the parse.
-  *
   * @groupprio opt 20
   * @groupname opt Optional Parsing Combinators
   * @groupdesc opt
@@ -70,9 +63,9 @@ import parsley.internal.deepembedding.frontend
   *     These combinators allow for the parsing of a specific parser either a specific number of times, or between a certain
   *     amount of times.
   *
-  * @groupprio cond 75
-  * @groupname cond Conditional Combinators
-  * @groupdesc cond
+  * @groupprio condComp 75
+  * @groupname condComp Conditional Combinators
+  * @groupdesc condComp
   *     These combinators allow for the conditional extraction of a result, or the execution of a parser
   *     based on another. They are morally related to [[Parsley.branch `branch`]] and [[Parsley.select `select`]] but are
   *     less fundamental.
@@ -254,7 +247,7 @@ private [parsley] trait combinator {
       *
       * @param p the parser to parse and extract the result from.
       * @return a parser that tries to extract the result from `p`.
-      * @group cond
+      * @group condComp
       */
     def decide[A](p: Parsley[Option[A]]): Parsley[A] = p.collect {
         case Some(x) => x
@@ -273,7 +266,7 @@ private [parsley] trait combinator {
       * @param p the first parser, which returns an `Option` to eliminate.
       * @param q a parser to execute when `p` returns `None`, to provide a value of type `A`.
       * @return a parser that either just parses `p` or both `p` and `q` in order to return an `A`.
-      * @group cond
+      * @group condComp
       */
     def decide[A](p: Parsley[Option[A]], q: =>Parsley[A]): Parsley[A] = select(p.map(_.toRight(())), q.map(x => (_: Unit) => x))
 
@@ -626,7 +619,7 @@ private [parsley] trait combinator {
       * @param thenP the parser to execute if the condition is `true`.
       * @param elseP the parser to execute if the condition is `false.
       * @return a parser that conditionally parses `thenP` or `elseP` after `condP`.
-      * @group cond
+      * @group condComp
       * @since 4.5.0
       */
     def ifS[A](condP: Parsley[Boolean], thenP: =>Parsley[A], elseP: =>Parsley[A]): Parsley[A] = {
@@ -650,7 +643,7 @@ private [parsley] trait combinator {
       * @param condP the parser that yields the condition value.
       * @param thenP the parser to execute if the condition is `true`.
       * @return a parser that conditionally parses `thenP` after `condP`.
-      * @group cond
+      * @group condComp
       */
     def whenS(condP: Parsley[Boolean])(thenP: =>Parsley[Unit]): Parsley[Unit] = ifS(condP, thenP, unit)
 
@@ -666,7 +659,7 @@ private [parsley] trait combinator {
       * }}}
       *
       * @param p the parser that yields the condition value.
-      * @group cond
+      * @group condComp
       */
     def guardS(p: Parsley[Boolean]): Parsley[Unit] = ifS(p, unit, empty)
 
@@ -690,7 +683,7 @@ private [parsley] trait combinator {
       *
       * @param p the parser to repeatedly parse.
       * @return a parser that continues to parse `p` until it returns `false`.
-      * @group cond
+      * @group condComp
       */
     def whileS(p: Parsley[Boolean]): Parsley[Unit] = {
         lazy val whileP: Parsley[Unit] = whenS(p)(whileP)
