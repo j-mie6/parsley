@@ -97,7 +97,7 @@ object ast {
 object expressions {
     import parsley.expr.{precedence, Ops, InfixL, Prefix}
     import parsley.combinator.sepEndBy1
-    import parsley.syntax.lift.Lift2
+    import parsley.syntax.lift.liftSyntax2
 
     import lexer.implicits.implicitSymbol
     import lexer.{number, fully, identifier}

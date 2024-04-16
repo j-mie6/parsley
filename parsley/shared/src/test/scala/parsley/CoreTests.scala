@@ -12,8 +12,8 @@ import parsley.combinator.ifS
 import parsley.lift._
 import parsley.character.{char, satisfy, digit, item, string}
 import parsley.syntax.character.{charLift, stringLift}
-import parsley.syntax.lift.Lift1
-import parsley.syntax.zipped.Zipped2
+import parsley.syntax.lift._
+import parsley.syntax.zipped._
 import parsley.state._
 import parsley.errors.combinator.{fail => pfail}
 

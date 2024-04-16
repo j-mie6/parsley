@@ -700,7 +700,7 @@ less efficient) and will give a sense of how the solution works out.
 ```scala mdoc:silent
 import parsley.Parsley, Parsley.atomic
 import parsley.syntax.character.stringLift
-import parsley.syntax.lift.Lift2
+import parsley.syntax.lift.liftSyntax2
 import parsley.syntax.zipped.Zipped2
 
 val or = (x: Boolean, y: Boolean) => x || y
@@ -747,7 +747,7 @@ said, is to implement the second grammar. This is, as we'll see, a little tricke
 ```scala mdoc:silent:reset
 import parsley.Parsley
 import parsley.syntax.character.stringLift
-import parsley.syntax.lift.Lift2
+import parsley.syntax.lift.liftSyntax2
 import parsley.combinator.option
 
 val and = (y: Boolean) => (x: Boolean) => x && y

@@ -180,7 +180,7 @@ Use this form of lifting when type-inference fails you. Otherwise, for clarity, 
 syntactic sugar for it:
 
 ```scala mdoc:silent
-import parsley.syntax.lift.{Lift2, Lift1}
+import parsley.syntax.lift.{liftSyntax1, liftSyntax2}
 
 val charCons = (c: Char, cs: List[Char]) => c :: cs
 

@@ -102,7 +102,7 @@ private [parsley] trait character {
       *       consider using [[string `string`]] or [[unicode.char `unicode.char`]].
       * @group core
       */
-    def char(c: Char): Parsley[Char] = char(c, NotConfigured)
+    final def char(c: Char): Parsley[Char] = char(c, NotConfigured)
     private def char(c: Char, label: String): Parsley[Char] = char(c, Label(label))
     private def char(c: Char, label: LabelConfig): Parsley[Char] = new Parsley(new singletons.CharTok(c, c, label))
 
@@ -128,7 +128,7 @@ private [parsley] trait character {
       * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[unicode.satisfy `unicode.satisfy`]].
       * @group core
       */
-    def satisfy(pred: Char => Boolean): Parsley[Char] = satisfy(pred, NotConfigured)
+    final def satisfy(pred: Char => Boolean): Parsley[Char] = satisfy(pred, NotConfigured)
     private def satisfy(pred: Char => Boolean, label: String): Parsley[Char] = satisfy(pred, Label(label))
     private def satisfy(pred: Char => Boolean, label: LabelConfig) = new Parsley(new singletons.Satisfy(pred, label))
 
@@ -157,7 +157,7 @@ private [parsley] trait character {
       * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[unicode.satisfyMap `unicode.satisfyMap`]].
       * @group core
       */
-    def satisfyMap[A](f: PartialFunction[Char, A]): Parsley[A] = satisfy(f.isDefinedAt(_)).map(f)
+    final def satisfyMap[A](f: PartialFunction[Char, A]): Parsley[A] = satisfy(f.isDefinedAt(_)).map(f)
 
     /** This combinator attempts to parse a given string from the input, and fails otherwise.
       *
@@ -184,7 +184,7 @@ private [parsley] trait character {
       *       natural. However, input '''will''' still be consumed for purposes of backtracking.
       * @group string
       */
-    def string(s: String): Parsley[String] = string(s, NotConfigured)
+    final def string(s: String): Parsley[String] = string(s, NotConfigured)
     private [parsley] def string(s: String, label: String): Parsley[String] = string(s, Label(label))
     private [parsley] def string(s: String, label: LabelConfig): Parsley[String] = {
         require(s.nonEmpty, "`string` may not be passed the empty string (`string(\"\")` is meaningless, perhaps you meant `pure(\"\")`?)")
@@ -213,7 +213,7 @@ private [parsley] trait character {
       * @see [[satisfy `satisfy`]]
       * @group class
       */
-    def oneOf(cs: Set[Char]): Parsley[Char] = cs.size match {
+    final def oneOf(cs: Set[Char]): Parsley[Char] = cs.size match {
         case 0 => empty
         case 1 => char(cs.head)
         case _ => satisfy(cs, {
@@ -244,7 +244,7 @@ private [parsley] trait character {
       * @see [[satisfy `satisfy`]]
       * @group class
       */
-    def oneOf(cs: Char*): Parsley[Char] = oneOf(cs.toSet)
+    final def oneOf(cs: Char*): Parsley[Char] = oneOf(cs.toSet)
 
     /** $oneOf
       *
@@ -270,7 +270,7 @@ private [parsley] trait character {
       * @see [[satisfy `satisfy`]]
       * @group class
       */
-    def oneOf(cs: NumericRange[Char]): Parsley[Char] = cs.size match {
+    final def oneOf(cs: NumericRange[Char]): Parsley[Char] = cs.size match {
         case 0 => empty
         case 1 => char(cs.head)
         case _ if Math.abs(cs(0).toInt - cs(1).toInt) == 1 => satisfy(cs.contains(_),
@@ -303,7 +303,7 @@ private [parsley] trait character {
       * @see [[satisfy `satisfy`]]
       * @group class
       */
-    def noneOf(cs: Set[Char]): Parsley[Char] = cs.size match {
+    final def noneOf(cs: Set[Char]): Parsley[Char] = cs.size match {
         case 0 => item
         case 1 => satisfy(cs.head != _, s"anything except ${renderChar(cs.head)}")
         case _ => satisfy(!cs.contains(_), {
@@ -336,7 +336,7 @@ private [parsley] trait character {
       * @see [[satisfy `satisfy`]]
       * @group class
       */
-    def noneOf(cs: Char*): Parsley[Char] = noneOf(cs.toSet)
+    final def noneOf(cs: Char*): Parsley[Char] = noneOf(cs.toSet)
 
     /** $noneOf
       *
@@ -364,7 +364,7 @@ private [parsley] trait character {
       * @see [[satisfy `satisfy`]]
       * @group class
       */
-    def noneOf(cs: NumericRange[Char]): Parsley[Char] = cs.size match {
+    final def noneOf(cs: NumericRange[Char]): Parsley[Char] = cs.size match {
         case 0 => item
         case 1 => satisfy(cs.head != _, s"anything except ${renderChar(cs.head)}")
         case _ if Math.abs(cs(0).toInt - cs(1).toInt) == 1 => satisfy(!cs.contains(_), {
@@ -396,7 +396,7 @@ private [parsley] trait character {
       * @since 4.0.0
       * @group string
       */
-    def stringOfMany(pc: Parsley[Char]): Parsley[String] = many(pc, StringFactories.charFactory)
+    final def stringOfMany(pc: Parsley[Char]): Parsley[String] = many(pc, StringFactories.charFactory)
 
     // TODO: optimise, this can be _really_ tightly implemented with a substring on the input
     /** This combinator parses characters matching the given predicate '''zero''' or more times, collecting
@@ -425,7 +425,7 @@ private [parsley] trait character {
       * @since 4.4.0
       * @group string
       */
-    def stringOfMany(pred: Char => Boolean): Parsley[String] = many(satisfy(pred)).span
+    final def stringOfMany(pred: Char => Boolean): Parsley[String] = many(satisfy(pred)).span
 
     /** This combinator parses `pc` '''one''' or more times, collecting its results into a string.
       *
@@ -448,7 +448,7 @@ private [parsley] trait character {
       * @since 4.0.0
       * @group string
       */
-    def stringOfSome(pc: Parsley[Char]): Parsley[String] = some(pc, StringFactories.charFactory)
+    final def stringOfSome(pc: Parsley[Char]): Parsley[String] = some(pc, StringFactories.charFactory)
 
     // TODO: optimise, this can be _really_ tightly implemented with a substring on the input
     /** This combinator parses characters matching the given predicate '''one''' or more times, collecting
@@ -475,7 +475,7 @@ private [parsley] trait character {
       * @since 4.4.0
       * @group string
       */
-    def stringOfSome(pred: Char => Boolean): Parsley[String] = some(satisfy(pred)).span
+    final def stringOfSome(pred: Char => Boolean): Parsley[String] = some(satisfy(pred)).span
 
     /** This combinator tries to parse each of the strings `strs` (and `str0`), until one of them succeeds.
       *
@@ -507,7 +507,7 @@ private [parsley] trait character {
       * @since 4.0.0
       * @group string
       */
-    def strings(str0: String, strs: String*): Parsley[String] = strings(str0 -> pure(str0), strs.map(s => s -> pure(s)): _*)
+    final def strings(str0: String, strs: String*): Parsley[String] = strings(str0 -> pure(str0), strs.map(s => s -> pure(s)): _*)
 
     /** This combinator tries to parse each of the key-value pairs `kvs` (and `kv0`), until one of them succeeds.
       *
@@ -543,7 +543,7 @@ private [parsley] trait character {
       * @since 4.0.0
       * @group string
       */
-    def strings[A](kv0: (String, Parsley[A]), kvs: (String, Parsley[A])*): Parsley[A] = {
+    final def strings[A](kv0: (String, Parsley[A]), kvs: (String, Parsley[A])*): Parsley[A] = {
         // this isn't the best we could do: it's possible to eliminate backtracking with a Trie...
         // can this be done in a semantic preserving way without resorting to a new instruction?
         // I don't think it's worth it. Down the line a general Trie-backed optimisation would be
@@ -560,20 +560,20 @@ private [parsley] trait character {
       * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[unicode.item `unicode.item`]].
       * @group core
       */
-    val item: Parsley[Char] = satisfy(_ => true, "any character")
+    final val item: Parsley[Char] = satisfy(_ => true, "any character")
 
     /** This parser tries to parse a space or tab character, and returns it if successful.
       *
       * @see [[isSpace `isSpace`]]
       * @group spec
       */
-    val space: Parsley[Char] = satisfy(isSpace(_), "space/tab")
+    final val space: Parsley[Char] = satisfy(isSpace(_), "space/tab")
 
     /** This parser skips zero or more space characters using [[space `space`]].
       *
       * @group skip
       */
-    val spaces: Parsley[Unit] = many(space).void
+    final val spaces: Parsley[Unit] = many(space).void
 
     /** This parser tries to parse a whitespace character, and returns it if successful.
       *
@@ -587,13 +587,13 @@ private [parsley] trait character {
       *
       * @group spec
       */
-    val whitespace: Parsley[Char] = satisfy(_.isWhitespace, "whitespace")
+    final val whitespace: Parsley[Char] = satisfy(_.isWhitespace, "whitespace")
 
     /** This parser skips zero or more space characters using [[whitespace `whitespace`]].
       *
       * @group skip
       */
-    val whitespaces: Parsley[Unit] = many(whitespace).void
+    final val whitespaces: Parsley[Unit] = many(whitespace).void
 
     /** This parser tries to parse a line feed newline (`'\n'`) character, and returns it if successful.
       *
@@ -601,7 +601,7 @@ private [parsley] trait character {
       *
       * @group spec
       */
-    val newline: Parsley[Char] = char('\n', "newline")
+    final val newline: Parsley[Char] = char('\n', "newline")
 
     /** This parser tries to parse a `CRLF` newline character pair, returning `'\n'` if successful.
       *
@@ -610,14 +610,14 @@ private [parsley] trait character {
       *
       * @group spec
       */
-    val crlf: Parsley[Char] = atomic(string("\r\n", "end of crlf")).as('\n')
+    final val crlf: Parsley[Char] = atomic(string("\r\n", "end of crlf")).as('\n')
 
     /** This parser will parse either a line feed (`LF`) or a `CRLF` newline, returning `'\n'` if successful.
       *
       * @group spec
       * @see [[crlf `crlf`]]
       */
-    val endOfLine: Parsley[Char] = (newline <|> crlf).label("end of line")
+    final val endOfLine: Parsley[Char] = (newline <|> crlf).label("end of line")
 
     /** This parser tries to parse a tab (`'\t'`) character, and returns it if successful.
       *
@@ -625,7 +625,7 @@ private [parsley] trait character {
       *
       * @group spec
       */
-    val tab: Parsley[Char] = char('\t', "tab")
+    final val tab: Parsley[Char] = char('\t', "tab")
 
     /** This parser tries to parse an uppercase letter, and returns it if successful.
       *
@@ -641,7 +641,7 @@ private [parsley] trait character {
       *
       * @group spec
       */
-    val upper: Parsley[Char] = satisfy(_.isUpper, "uppercase letter")
+    final val upper: Parsley[Char] = satisfy(_.isUpper, "uppercase letter")
 
     /** This parser tries to parse a lowercase letter, and returns it if successful.
       *
@@ -657,7 +657,7 @@ private [parsley] trait character {
       *
       * @group spec
       */
-    val lower: Parsley[Char] = satisfy(_.isLower, "lowercase letter")
+    final val lower: Parsley[Char] = satisfy(_.isLower, "lowercase letter")
 
     /** This parser tries to parse either a letter or a digit, and returns it if successful.
       *
@@ -667,7 +667,7 @@ private [parsley] trait character {
       * @see documentation for [[digit `digit`]].
       * @group spec
       */
-    val letterOrDigit: Parsley[Char] = satisfy(_.isLetterOrDigit, "alpha-numeric character")
+    final val letterOrDigit: Parsley[Char] = satisfy(_.isLetterOrDigit, "alpha-numeric character")
 
     /** This parser tries to parse a letter, and returns it if successful.
       *
@@ -682,7 +682,7 @@ private [parsley] trait character {
       *
       * @group spec
       */
-    val letter: Parsley[Char] = satisfy(_.isLetter, "letter")
+    final val letter: Parsley[Char] = satisfy(_.isLetter, "letter")
 
     /** This parser tries to parse a digit, and returns it if successful.
       *
@@ -698,7 +698,7 @@ private [parsley] trait character {
       *
       * @group spec
       */
-    val digit: Parsley[Char] = satisfy(_.isDigit, "digit")
+    final val digit: Parsley[Char] = satisfy(_.isDigit, "digit")
 
     /** This parser tries to parse a hexadecimal digit, and returns it if successful.
       *
@@ -710,7 +710,7 @@ private [parsley] trait character {
       * @see [[isHexDigit ``isHexDigit``]]
       * @group spec
       */
-    val hexDigit: Parsley[Char] = satisfy(isHexDigit(_), "hexadecimal digit")
+    final val hexDigit: Parsley[Char] = satisfy(isHexDigit(_), "hexadecimal digit")
 
     /** This parser tries to parse an octal digit, and returns it if successful.
       *
@@ -719,7 +719,7 @@ private [parsley] trait character {
       * @see [[isOctDigit ``isOctDigit``]]
       * @group spec
       */
-    val octDigit: Parsley[Char] = satisfy(isOctDigit(_), "octal digit")
+    final val octDigit: Parsley[Char] = satisfy(isOctDigit(_), "octal digit")
 
     /** This parser tries to parse a binary digit (bit) and returns it if successful.
       *
@@ -727,7 +727,7 @@ private [parsley] trait character {
       *
       * @group spec
       */
-    val bit: Parsley[Char] = satisfy(c => Character.digit(c, 2) != -1, "bit")
+    final val bit: Parsley[Char] = satisfy(c => Character.digit(c, 2) != -1, "bit")
 
     // Functions
     /** This function returns true if a character is a hexadecimal digit.
@@ -741,7 +741,7 @@ private [parsley] trait character {
       * @see [[hexDigit `hexDigit`]]
       * @group pred
       */
-    def isHexDigit(c: Char): Boolean = Character.digit(c, 16) != -1
+    final def isHexDigit(c: Char): Boolean = Character.digit(c, 16) != -1
 
     /** This function returns true if a character is an octal digit.
       *
@@ -750,14 +750,14 @@ private [parsley] trait character {
       * @group pred
       * @see [[octDigit `octDigit`]]
       */
-    def isOctDigit(c: Char): Boolean = Character.digit(c, 8) != -1
+    final def isOctDigit(c: Char): Boolean = Character.digit(c, 8) != -1
 
     /** This function returns true if a character is either a space or a tab character.
       *
       * @group pred
       * @see [[space `space`]]
       */
-    def isSpace(c: Char): Boolean = c == ' ' || c == '\t'
+    final def isSpace(c: Char): Boolean = c == ' ' || c == '\t'
 
     // Sue me.
     private def renderChar(c: Char): String = parsley.errors.helpers.renderRawString(s"$c")

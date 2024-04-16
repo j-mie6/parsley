@@ -1039,7 +1039,7 @@ private [parsley] abstract class ParsleyImpl {
       * @return a parser which consumes no input and produces a value `x`.
       * @group basic
       */
-    def pure[A](x: A): Parsley[A] = new Parsley(new singletons.Pure(x))
+    final def pure[A](x: A): Parsley[A] = new Parsley(new singletons.Pure(x))
     /** This combinator produces a '''new''' value everytime it is parsed without having any other effect.
       *
       * When this combinator is ran, no input is required, nor consumed, and
@@ -1068,7 +1068,7 @@ private [parsley] abstract class ParsleyImpl {
       * @since 4.0.0
       * @group basic
       */
-    def fresh[A](x: =>A): Parsley[A] = new Parsley(new singletons.Fresh(x))
+    final def fresh[A](x: =>A): Parsley[A] = new Parsley(new singletons.Fresh(x))
 
     /** This combinator parses its first argument `either`, and then parses either `left` or `right` depending on its result.
       *
@@ -1095,7 +1095,7 @@ private [parsley] abstract class ParsleyImpl {
       * @return a parser that will parse one of `left` or `right` depending on `either`'s result.
       * @group cond
       */
-    def branch[A, B, C](either: Parsley[Either[A, B]], left: =>Parsley[A => C], right: =>Parsley[B => C]): Parsley[C] = {
+    final def branch[A, B, C](either: Parsley[Either[A, B]], left: =>Parsley[A => C], right: =>Parsley[B => C]): Parsley[C] = {
         new Parsley(new frontend.Branch(either.internal, left.internal, right.internal))
     }
     /** This combinator parses its first argument `p`, then parses `q` only if `p` returns a `Left`.
@@ -1120,7 +1120,7 @@ private [parsley] abstract class ParsleyImpl {
       * @return a parser that will parse `p` then possibly parse `q` to transform `p`'s result into a `B`.
       * @group cond
       */
-    def select[A, B](p: Parsley[Either[A, B]], q: =>Parsley[A => B]): Parsley[B] = branch(p, q, pure(identity[B](_)))
+    final def select[A, B](p: Parsley[Either[A, B]], q: =>Parsley[A => B]): Parsley[B] = branch(p, q, pure(identity[B](_)))
     /** This combinator parses its argument `p`, but rolls back any consumed input on failure.
       *
       * If the parser `p` succeeds, then `atomic(p)` has no effect. However, if `p` failed,
@@ -1144,7 +1144,7 @@ private [parsley] abstract class ParsleyImpl {
       * @since 4.4.0
       * @group prim
       */
-    def atomic[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.Attempt(p.internal))
+    final def atomic[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.Attempt(p.internal))
     /** This combinator parses its argument `p`, but does not consume input if it succeeds.
       *
       * If the parser `p` succeeds, then `lookAhead(p)` will roll back any input consumed
@@ -1164,7 +1164,7 @@ private [parsley] abstract class ParsleyImpl {
       * @return a parser that parses `p` and never consumes input if it succeeds.
       * @group prim
       */
-    def lookAhead[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.Look(p.internal))
+    final def lookAhead[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.Look(p.internal))
     /** This combinator parses its argument `p`, and succeeds when `p` fails and vice-versa, never consuming input.
       *
       * If the parser `p` succeeds, then `notFollowedBy(p)` will fail, consuming no input.
@@ -1187,7 +1187,7 @@ private [parsley] abstract class ParsleyImpl {
       * @return a parser which fails when `p` succeeds and succeeds otherwise, never consuming input.
       * @group prim
       */
-    def notFollowedBy(p: Parsley[_]): Parsley[Unit] = new Parsley(new frontend.NotFollowedBy(p.internal))
+    final def notFollowedBy(p: Parsley[_]): Parsley[Unit] = new Parsley(new frontend.NotFollowedBy(p.internal))
     /** This combinator fails immediately, with a caret of the given width and no other information.
       *
       * By producing basically no information, this combinator is principally for adjusting the
@@ -1199,7 +1199,7 @@ private [parsley] abstract class ParsleyImpl {
       * @since 4.4.0
       * @group basic
       */
-    def empty(caretWidth: Int): Parsley[Nothing] = new Parsley(singletons.Empty(caretWidth))
+    final def empty(caretWidth: Int): Parsley[Nothing] = new Parsley(singletons.Empty(caretWidth))
     /** This parser fails immediately, with an unknown parse error.
       *
       * @example {{{
@@ -1212,7 +1212,7 @@ private [parsley] abstract class ParsleyImpl {
       * @note equivalent to `empty(0)`
       * @group basic
       */
-    val empty: Parsley[Nothing] = empty(0)
+    final val empty: Parsley[Nothing] = empty(0)
     /** This parser produces `()` without having any other effect.
       *
       * When this parser is ran, no input is required, nor consumed, and
@@ -1232,7 +1232,7 @@ private [parsley] abstract class ParsleyImpl {
       * @note defined as `pure(())` as a simple convenience.
       * @group basic
       */
-    val unit: Parsley[Unit] = pure(())
+    final val unit: Parsley[Unit] = pure(())
 
     /** This parser only succeeds at the end of the input.
       *
@@ -1249,7 +1249,7 @@ private [parsley] abstract class ParsleyImpl {
       * @group item
       * @since 4.5.0
       */
-    val eof: Parsley[Unit] = new Parsley(singletons.Eof)
+    final val eof: Parsley[Unit] = new Parsley(singletons.Eof)
 
     /** This combinator repeatedly parses a given parser '''zero''' or more times, collecting the results into a list.
       *
@@ -1277,8 +1277,8 @@ private [parsley] abstract class ParsleyImpl {
       * @since 4.5.0
       * @group iter
       */
-    def many[A](p: Parsley[A]): Parsley[List[A]] = many(p, List)
-    private [parsley] def many[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = {
+    final def many[A](p: Parsley[A]): Parsley[List[A]] = many(p, List)
+    private [parsley] final def many[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = {
         new Parsley(new frontend.Many(p.internal, factory))
     }
 
@@ -1308,13 +1308,13 @@ private [parsley] abstract class ParsleyImpl {
       * @since 4.5.0
       * @group iter
       */
-    def some[A](p: Parsley[A]): Parsley[List[A]] = p <::> many(p)
-    private [parsley] def some[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = secretSome(p, p, factory)
+    final def some[A](p: Parsley[A]): Parsley[List[A]] = p <::> many(p)
+    private [parsley] final def some[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = secretSome(p, p, factory)
     // This could be generalised to be the new many, where many(p, factory) = secretSome(fresh(factory.newBuilder), p, factory)
-    private [parsley] def secretSome[A, C](init: Parsley[A], p: Parsley[A], factory: Factory[A, C]): Parsley[C] = {
+    private [parsley] final def secretSome[A, C](init: Parsley[A], p: Parsley[A], factory: Factory[A, C]): Parsley[C] = {
         secretSome(init.map(factory.newBuilder += _), p)
     }
-    private [parsley] def secretSome[A, C](init: Parsley[mutable.Builder[A, C]], p: Parsley[A]): Parsley[C] = {
+    private [parsley] final def secretSome[A, C](init: Parsley[mutable.Builder[A, C]], p: Parsley[A]): Parsley[C] = {
         val pf = pure[(mutable.Builder[A, C], A) => mutable.Builder[A, C]](_ += _)
         // Can't use the regular foldLeft1 here, because we need a fresh Builder each time.
         expr.infix.secretLeft1(init, p, pf).map(_.result())
