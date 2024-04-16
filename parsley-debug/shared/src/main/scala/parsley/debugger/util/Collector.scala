@@ -35,6 +35,12 @@ object Collector {
         Renamer.addNames(XCollector.collectNames(obj))
     }
 
+    def registerNames(names: Map[Parsley[_], String]): Unit = {
+        Renamer.addNames(names.map {
+            case (k, v) => k.internal -> v
+        })
+    }
+
     /** Collect names of parsers from a [[parsley.token.Lexer]].
       *
       * @note For Scala 3 on the JVM, this may trigger a warning about `setAccessible` for private members
