@@ -160,4 +160,4 @@ package parsley
   * @define paramAp a parser that returns a function to apply to the results of the parsers with arity
   * @define returnAp a parser that parses all of the given parsers in order, and then combines their results with `f`.
   */
-object quickstart extends ParsleyImpl with combinator with character with position with lift with ap
+object quick extends ParsleyImpl with combinator with character with position with lift with ap
