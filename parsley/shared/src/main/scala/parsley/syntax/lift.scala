@@ -28,7 +28,7 @@ import parsley.lift._
   *
   * @since 4.5.0
   * @note a limitation of this syntax is that it requires the function's type to be fully known.
-  *       For a version of this syntax that behaves better with type inference, see [[zipped `zipped`]].
+  *       For a version of this syntax that behaves better with type inference, see [[zipped$ `zipped`]].
   */
 object lift extends lift
 private [syntax] trait lift {

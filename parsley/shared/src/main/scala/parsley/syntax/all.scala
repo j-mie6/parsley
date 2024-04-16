@@ -5,4 +5,4 @@
  */
 package parsley.syntax
 
-object all extends lift with zipped
+object all extends lift with zipped with extension
