@@ -1075,7 +1075,7 @@ val INT_OR_FLOAT = lexer.lexeme.numeric.unsignedCombined.number
 }</span></code></pre>
         <p>Now, to make this work nicely, I&#39;m going to make use of the <code>&lt;+&gt;</code> combinator: pronounced &quot;sum&quot;, this parser works like <code>|</code> except it returns its result into a co-product (<code>Either</code>). Using
         this, we can define the factored <code>&lt;program&gt;</code>:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">zipped</span><span>.</span><span class="type-name">Zipped3</span><span>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">zipped</span><span>.</span><span class="identifier">_</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">`&lt;declaration&gt;`</span><span> = </span><span class="string-literal">&quot;::&quot;</span><span> ~&gt; </span><span class="identifier">`&lt;type&gt;`</span><span>
 
