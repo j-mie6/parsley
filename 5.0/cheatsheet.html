@@ -471,7 +471,7 @@
         </div>
         <p>Use this form of lifting when type-inference fails you. Otherwise, for clarity, use a regular <code>liftN</code>, or the
         syntactic sugar for it:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">lift</span><span>.{</span><span class="type-name">Lift2</span><span>, </span><span class="type-name">Lift1</span><span>}
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">lift</span><span>.{</span><span class="identifier">liftSyntax1</span><span>, </span><span class="identifier">liftSyntax2</span><span>}
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">charCons</span><span> = (</span><span class="identifier">c</span><span>: </span><span class="type-name">Char</span><span>, </span><span class="identifier">cs</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">Char</span><span>]) =&gt; </span><span class="identifier">c</span><span> :: </span><span class="identifier">cs</span><span>
 
