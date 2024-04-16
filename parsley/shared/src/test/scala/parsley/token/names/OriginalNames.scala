@@ -8,7 +8,7 @@ package parsley.token.names
 import parsley.Parsley, Parsley.{atomic, empty, pure}
 import parsley.character.{satisfy, stringOfMany}
 import parsley.errors.combinator.ErrorMethods
-import parsley.syntax.zipped.Zipped2
+import parsley.syntax.zipped._
 import parsley.token.descriptions.{NameDesc, SymbolDesc}
 import parsley.token.errors.ErrorConfig
 import parsley.token.predicate.{Basic, CharPredicate, NotRequired, Unicode}

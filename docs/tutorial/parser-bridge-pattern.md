@@ -208,7 +208,7 @@ import lexer.implicits._
 val letExpr: Parsley[LetExpr] = empty
 ```
 ```scala mdoc:silent
-import parsley.syntax.zipped.Zipped2
+import parsley.syntax.zipped._
 val binding: Parsley[Binding] =
     pos <**> (identifier, "=" ~> letExpr).zipped(Binding(_, _) _)
 ```
@@ -286,7 +286,7 @@ object lexer {
 ```scala mdoc
 object ast {
     import parsley.position.pos
-    import parsley.syntax.zipped.Zipped2
+    import parsley.syntax.zipped._
 
     sealed trait LetExpr
     case class Let(bindings: List[Binding], x: Expr)(val pos: (Int, Int)) extends LetExpr
@@ -446,7 +446,7 @@ constructors themselves. But there is enough structure here to extract some shin
 template traits:
 
 ```scala mdoc:invisible
-import parsley.syntax.zipped.Zipped2
+import parsley.syntax.zipped._
 import parsley.position.pos
 ```
 ```scala mdoc

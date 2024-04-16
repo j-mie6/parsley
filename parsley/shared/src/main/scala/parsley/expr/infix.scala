@@ -8,7 +8,7 @@ package parsley.expr
 import parsley.Parsley, Parsley.notFollowedBy
 import parsley.XAnnotation.{implicitNotFound212, implicitNotFound213}
 import parsley.errors.combinator.ErrorMethods
-import parsley.syntax.zipped.Zipped2
+import parsley.syntax.zipped.zippedSyntax2
 
 import parsley.internal.deepembedding.frontend
 

@@ -166,7 +166,7 @@ after the receiver of the method: it gets given the right argument type straight
 for leveraging this property:
 
 ```scala mdoc:silent
-import parsley.syntax.zipped.Zipped2
+import parsley.syntax.zipped.zippedSyntax2
 
 (nonzero, many(digit)).zipped(_ :: _)
 ```

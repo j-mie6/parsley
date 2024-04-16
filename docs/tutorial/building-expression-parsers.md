@@ -39,7 +39,7 @@ parse into an `Int`: behold, the magic of combinators!):
 import parsley.Parsley, Parsley.atomic
 import parsley.character.digit
 import parsley.syntax.character.charLift
-import parsley.syntax.zipped.Zipped2
+import parsley.syntax.zipped._
 
 // Standard number parser
 val number = digit.foldLeft1[Int](0)((n, d) => n * 10 + d.asDigit)

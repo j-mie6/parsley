@@ -118,7 +118,7 @@ import parsley.Parsley.atomic
 import lexer.implicits.implicitSymbol
 import lexer.{number, identifier, fully}
 import parsley.combinator.sepEndBy
-import parsley.syntax.zipped.{Zipped2, Zipped3}
+import parsley.syntax.zipped._
 import parsley.expr.{Prefix, InfixR, InfixL, precedence, Ops}
 
 def infixN[A, B](p: Parsley[A])(op: Parsley[(A, A) => B]): Parsley[B] =

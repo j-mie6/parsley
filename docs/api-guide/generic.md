@@ -29,7 +29,7 @@ val py: Parsley[Int] = pure(6)
 ```
 
 ```scala mdoc
-import parsley.syntax.zipped.Zipped2
+import parsley.syntax.zipped.zippedSyntax2
 case class Foo(x: Int, y: Int)
 // with px, py of type Parsley[Int]
 val p = (px, py).zipped(Foo(_, _))

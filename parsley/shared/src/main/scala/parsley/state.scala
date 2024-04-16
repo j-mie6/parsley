@@ -9,7 +9,7 @@ import scala.collection.Factory
 
 import parsley.XAssert._
 import parsley.combinator.{whenS, whileS}
-import parsley.syntax.zipped.Zipped2
+import parsley.syntax.zipped.{zippedSyntax2}
 import parsley.exceptions.UnfilledReferenceException
 
 import parsley.internal.deepembedding.{frontend, singletons}

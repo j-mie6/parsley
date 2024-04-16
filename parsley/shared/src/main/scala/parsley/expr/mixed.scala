@@ -8,7 +8,7 @@ package parsley.expr
 import parsley.Parsley, Parsley._
 import parsley.XAnnotation.{implicitNotFound212, implicitNotFound213}
 import parsley.lift.lift4
-import parsley.syntax.zipped.Zipped2
+import parsley.syntax.zipped.zippedSyntax2
 
 /** This module contains specialist combinators for mixing unary and binary operators
   * on the same level. This is only sensible when mixing infix-left and postfix

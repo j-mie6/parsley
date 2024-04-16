@@ -381,7 +381,7 @@ private [parsley] trait character {
       *
       * @example {{{
       * scala> import parsley.character.{letter, letterOrDigit, stringOfMany}
-      * scala> import parsley.syntax.zipped.Zipped2
+      * scala> import parsley.syntax.zipped._
       * scala> val ident = (letter, stringOfMany(letterOrDigit)).zipped((c, s) => s"&#36;c&#36;s")
       * scala> ident.parse("abdc9d")
       * val res0 = Success("abdc9d")
@@ -408,7 +408,7 @@ private [parsley] trait character {
       *
       * @example {{{
       * scala> import parsley.character.{letter, stringOfMany}
-      * scala> import parsley.syntax.zipped.Zipped2
+      * scala> import parsley.syntax.zipped._
       * scala> val ident = (letter, stringOfMany(_.isLetterOrDigit)).zipped((c, s) => s"&#36;c&#36;s")
       * scala> ident.parse("abdc9d")
       * val res0 = Success("abdc9d")

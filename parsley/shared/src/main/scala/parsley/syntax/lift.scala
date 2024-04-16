@@ -31,7 +31,7 @@ import parsley.lift._
   *       For a version of this syntax that behaves better with type inference, see [[zipped `zipped`]].
   */
 object lift extends lift
-private [parsley] trait lift {
+private [syntax] trait lift {
     implicit final def liftSyntax0[R](x: R): Lift0[R] = new Lift0(x)
     implicit final def liftSyntax1[T1, R](f: T1 => R): Lift1[T1, R] = new Lift1(f)
     implicit final def liftSyntax2[T1, T2, R](f: (T1, T2) => R): Lift2[T1, T2, R] = new Lift2(f)

@@ -9,7 +9,7 @@ import parsley.Parsley, Parsley.{atomic, fresh, pure}
 import parsley.character.{char, string}
 import parsley.combinator.{choice, skipManyUntil}
 import parsley.errors.combinator.ErrorMethods
-import parsley.syntax.zipped.Zipped2
+import parsley.syntax.zipped._
 import parsley.token.errors.{ErrorConfig, LabelConfig, LabelWithExplainConfig}
 import parsley.token.predicate.CharPredicate
 

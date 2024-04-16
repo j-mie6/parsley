@@ -701,7 +701,7 @@ less efficient) and will give a sense of how the solution works out.
 import parsley.Parsley, Parsley.atomic
 import parsley.syntax.character.stringLift
 import parsley.syntax.lift.liftSyntax2
-import parsley.syntax.zipped.Zipped2
+import parsley.syntax.zipped._
 
 val or = (x: Boolean, y: Boolean) => x || y
 

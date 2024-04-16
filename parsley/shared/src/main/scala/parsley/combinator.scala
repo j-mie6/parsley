@@ -10,7 +10,7 @@ import scala.collection.{Factory, mutable}
 
 import parsley.Parsley.{atomic, empty, fresh, many, notFollowedBy, pure, secretSome, select, some, unit}
 import parsley.state.{RefMaker, StateCombinators, forP}
-import parsley.syntax.zipped.Zipped2
+import parsley.syntax.zipped.zippedSyntax2
 
 import parsley.internal.deepembedding.frontend
 

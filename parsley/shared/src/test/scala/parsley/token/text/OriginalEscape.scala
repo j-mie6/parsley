@@ -8,7 +8,7 @@ package parsley.token.text
 import parsley.Parsley, Parsley.{atomic, empty, pure}
 import parsley.character.{bit, char, digit, hexDigit, octDigit, strings}
 import parsley.combinator.guardS
-import parsley.syntax.zipped.Zipped3
+import parsley.syntax.zipped._
 import parsley.token.descriptions.text.{EscapeDesc, NumberOfDigits, NumericEscape}
 import parsley.token.errors.{ErrorConfig, NotConfigured}
 import parsley.token.numeric
