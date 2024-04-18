@@ -138,7 +138,7 @@ private [parsley] final class DivergenceContext {
             else ""
 
         val msg =
-            s"\n$loopName is looping unproductively as $bodyName can succeed having not consumed input$stateNote$refineMsg"
+            s"\n`$loopName` is looping unproductively as `$bodyName` can succeed having not consumed input$stateNote$refineMsg"
         throw new ParsleyException(msg)
     }
 }
