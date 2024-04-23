@@ -8,6 +8,18 @@ package parsley
 import scala.annotation.{StaticAnnotation, compileTimeOnly}
 import scala.reflect.macros.blackbox
 
+/** This annotation can be applied to an object or class to record their
+  * names for the debugging/diagnostic combinators.
+  *
+  * @note BE WARNED: this annotation crashes the compiler for objects/classes nested within another type -- this is ok for Scala 3
+  * @note It requires that the
+  * object/class is type-checkable, which due to Scala 2 macro limitations
+  * involes stripping away the enclosing type itself. This might lead to
+  * weird edge-cases: if parsley reports that type-checking failed, you
+  * should report this to the maintainers.
+  *
+  * @since 5.0.0
+  */
 @compileTimeOnly("macros need to be enabled to use this functionality: -Ymacro-annotations in 2.13, or use \"Macro Paradise\" for 2.12")
 class debuggable extends StaticAnnotation {
     def macroTransform(annottees: Any*): Any = macro debuggable.impl

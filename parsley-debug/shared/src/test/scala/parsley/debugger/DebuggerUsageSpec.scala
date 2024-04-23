@@ -5,8 +5,10 @@
  */
 package parsley.debugger
 
+import scala.annotation.experimental
+
 // scalastyle:off underscore.import
-import DebuggerUsageSpec.Arithmetic
+//import DebuggerUsageSpec.Arithmetic
 import org.typelevel.scalaccompat.annotation.unused
 import parsley.Parsley, Parsley._
 import parsley.ParsleyTest
@@ -18,6 +20,7 @@ import parsley.internal.deepembedding.frontend.debugger.TaggedWith
 import parsley.internal.deepembedding.backend.debugger.Debugging
 // scalastyle:on underscore.import
 
+@experimental
 class DebuggerUsageSpec extends ParsleyTest {
     "the Debugged internal frontend class" should "not allow nesting of Debugged nodes" in {
         val factory = new Debugging(new DebugContext())
@@ -37,14 +40,14 @@ class DebuggerUsageSpec extends ParsleyTest {
     }
 
     "the debugger runtime" should "preserve the result of parsers" in {
-        val debugMath = attachDebugger(Arithmetic.prog)
+        val (_, debugMath) = attachDebugger(Arithmetic.prog)
 
-        debugMath._2.parse("1+1").get.head shouldBe 2
-        debugMath._2.parse("2*3").get.head shouldBe 6
-        debugMath._2.parse("9-4").get.head shouldBe 5
-        debugMath._2.parse("6/2").get.head shouldBe 3
+        debugMath.parse("1+1").get.head shouldBe 2
+        debugMath.parse("2*3").get.head shouldBe 6
+        debugMath.parse("9-4").get.head shouldBe 5
+        debugMath.parse("6/2").get.head shouldBe 3
 
-        debugMath._2.parse("1+2+3+4+5\n2*3*4").get shouldBe List(15, 24) // scalastyle:ignore magic.number
+        debugMath.parse("1+2+3+4+5\n2*3*4").get shouldBe List(15, 24) // scalastyle:ignore magic.number
     }
 
     it should "not cause references to be unallocated" in {
@@ -87,28 +90,16 @@ class DebuggerUsageSpec extends ParsleyTest {
     }
 }
 
-object DebuggerUsageSpec {
+// Look, for some reason the annotation dies if it's nested, I don't know why, it's impossible to diagnose
+//object DebuggerUsageSpec {
+    @experimental @parsley.debuggable
     private [parsley] object Arithmetic {
-        val int: Parsley[BigInt] =
-            satisfy(_.isDigit)
-              .foldLeft1(BigInt(0))((acc, c) => acc * 10 + c.asDigit)
-
+        val int: Parsley[BigInt] = satisfy(_.isDigit).foldLeft1(BigInt(0))((acc, c) => acc * 10 + c.asDigit)
         lazy val expr: Parsley[BigInt] =
-            precedence[BigInt](
-                int,
-                char('(') ~> expr <~ char(')')
-            )(
-                Ops(InfixL)(
-                    char('*') #> (_ * _),
-                    char('/') #> (_ / _)
-                ),
-                Ops(InfixL)(
-                    char('+') #> (_ + _),
-                    char('-') #> (_ - _)
-                )
+            precedence[BigInt](int, char('(') ~> expr <~ char(')'))(
+                Ops(InfixL)(char('*') #> (_ * _), char('/') #> (_ / _)),
+                Ops(InfixL)(char('+') #> (_ + _), char('-') #> (_ - _))
             )
-
-        lazy val prog: Parsley[List[BigInt]] =
-            many(many(satisfy("\r\n".contains(_))) ~> expr)
+        lazy val prog: Parsley[List[BigInt]] = many(many(satisfy("\r\n".contains(_))) ~> expr)
     }
-}
+//}

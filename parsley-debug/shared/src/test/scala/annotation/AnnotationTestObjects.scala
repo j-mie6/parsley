@@ -16,7 +16,7 @@ object otherParsers {
 
 @experimental @parsley.debuggable
 class parsers(val x: Int) {
-    val p = char('a')
+    val p = satisfy(_.isDigit)
     val q = p ~> p
     lazy val r: Parsley[Char] = ~r ~> q
     def s = otherParsers.a

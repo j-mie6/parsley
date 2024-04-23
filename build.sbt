@@ -78,22 +78,6 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     Compile / doc / scalacOptions ++= Seq("-doc-root-content", s"${baseDirectory.value.getPath}/rootdoc.md"),
   )
 
-lazy val docs = project
-  .in(file("site"))
-  .dependsOn(parsley.jvm)
-  .enablePlugins(ParsleySitePlugin)
-  .settings(
-    tlSiteApiModule := Some((parsley.jvm / projectID).value),
-    libraryDependencySchemes ++= Seq(
-        // this helps us when parsley-cats is trailing behind us
-        "com.github.j-mie6" %% "parsley" % VersionScheme.Always,
-    ),
-    libraryDependencies ++= Seq(
-        "org.typelevel" %% "cats-core" % "2.10.0",
-        "com.github.j-mie6" %% "parsley-cats" % "1.3.0"
-    ),
-  )
-
 lazy val parsleyDebug = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .withoutSuffixFor(JVMPlatform)
   .crossType(CrossType.Full)
@@ -125,6 +109,22 @@ lazy val parsleyDebug = crossProject(JSPlatform, JVMPlatform, NativePlatform)
       "2.13" -> "4.5.0",
       "2.12" -> "4.5.0",
       "3"    -> "4.5.0",
+    ),
+  )
+
+lazy val docs = project
+  .in(file("site"))
+  .dependsOn(parsley.jvm)
+  .enablePlugins(ParsleySitePlugin)
+  .settings(
+    tlSiteApiModule := Some((parsley.jvm / projectID).value),
+    libraryDependencySchemes ++= Seq(
+        // this helps us when parsley-cats is trailing behind us
+        "com.github.j-mie6" %% "parsley" % VersionScheme.Always,
+    ),
+    libraryDependencies ++= Seq(
+        "org.typelevel" %% "cats-core" % "2.10.0",
+        "com.github.j-mie6" %% "parsley-cats" % "1.3.0"
     ),
   )
 

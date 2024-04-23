@@ -5,9 +5,11 @@
  */
 package parsley.internal.deepembedding
 
+import scala.annotation.experimental
+
 import org.scalatest.Assertions.fail
 import parsley.ParsleyTest
-import parsley.debugger.DebuggerUsageSpec
+import parsley.debugger.Arithmetic
 import parsley.debugger.internal.{DebugContext, Renamer}
 import parsley.debugger.util.Collector
 import parsley.internal.deepembedding.backend.StrictParsley
@@ -17,6 +19,7 @@ import parsley.token.Lexer
 import parsley.token.descriptions.LexicalDesc
 import parsley.internal.deepembedding.backend.debugger.Debugging
 
+@experimental
 class RenameSpec extends ParsleyTest {
     "the Renamer object" should "not rename a parser it does not know of" in {
         val exampleParser = new DummyParser
@@ -51,12 +54,12 @@ class RenameSpec extends ParsleyTest {
 
     "the Collector implementations" should "collect names of parsers from objects (on supported platforms)" in {
         if (Collector.isSupported) {
-            Collector.names(DebuggerUsageSpec.Arithmetic)
-            Renamer.nameOf(None, DebuggerUsageSpec.Arithmetic.prog.internal) shouldBe "prog"
+            //Collector.names(Arithmetic)
+            Renamer.nameOf(None, Arithmetic.prog.internal) shouldBe "prog"
 
             info("it should also allow overriding the name")
-            Collector.assignName(DebuggerUsageSpec.Arithmetic.prog, "foo")
-            Renamer.nameOf(None, DebuggerUsageSpec.Arithmetic.prog.internal) shouldBe "foo"
+            Collector.assignName(Arithmetic.prog, "foo")
+            Renamer.nameOf(None, Arithmetic.prog.internal) shouldBe "foo"
         } else alert("the current platform does not support Collector")
     }
 
@@ -70,22 +73,22 @@ class RenameSpec extends ParsleyTest {
     }
 }
 
-object RenameSpec {
+object Utils {
     def crash(): Nothing = fail("Should not have been run.")
 }
 
 // These are dummy parsers used for the above tests.
 // We don't actually care that they don't implement anything.
 private class DummyParser extends LazyParsley[Any] {
-    override protected def findLetsAux[M[_, +_] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] = RenameSpec.crash()
-    override protected def preprocess[M[_, +_] : ContOps, R, A_ >: Any](implicit lets: LetMap): M[R, StrictParsley[A_]] = RenameSpec.crash()
+    override protected def findLetsAux[M[_, +_] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] = Utils.crash()
+    override protected def preprocess[M[_, +_] : ContOps, R, A_ >: Any](implicit lets: LetMap): M[R, StrictParsley[A_]] = Utils.crash()
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Any] = visitor.visitUnknown(this, context)
     override private [parsley] def prettyName = "dummyParser"
 }
 
 private class <**> extends LazyParsley[Any] {
-    override protected def findLetsAux[M[_, +_] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] = RenameSpec.crash()
-    override protected def preprocess[M[_, +_] : ContOps, R, A_ >: Any](implicit lets: LetMap): M[R, StrictParsley[A_]] = RenameSpec.crash()
+    override protected def findLetsAux[M[_, +_] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] = Utils.crash()
+    override protected def preprocess[M[_, +_] : ContOps, R, A_ >: Any](implicit lets: LetMap): M[R, StrictParsley[A_]] = Utils.crash()
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Any] = visitor.visitUnknown(this, context)
     override private [parsley] def prettyName = "<**>"
 }

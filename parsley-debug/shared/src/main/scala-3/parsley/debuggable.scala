@@ -8,6 +8,15 @@ package parsley
 import scala.annotation.{experimental, MacroAnnotation}
 import scala.quoted.*
 
+/** This annotation can be applied to an object or class to record their
+  * names for the debugging/diagnostic combinators.
+  *
+  * @note Currently, macro-annotations in Scala 3 are experimental, which
+  * means the @experimental annotation will need to be used (or the global
+  * -experimental flag on 3.4+) to use this functionality.
+  *
+  * @since 5.0.0
+  */
 @experimental class debuggable extends MacroAnnotation {
     def transform(using Quotes)(tree: quotes.reflect.Definition): List[quotes.reflect.Definition] = {
         import quotes.reflect.*
