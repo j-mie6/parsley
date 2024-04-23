@@ -22,9 +22,9 @@ private object debuggable {
         val inputs = annottees.toList
         val outputs = inputs match {
             case ClassDef(mods, clsName, tyParams, Template(parents, self, body)) :: rest =>
-                collect(c)(body, body => ClassDef(mods, clsName, tyParams, Template(parents, self, body))) :: rest
+                collect(c)(clsName.toString, body, body => ClassDef(mods, clsName, tyParams, Template(parents, self, body))) :: rest
             case ModuleDef(mods, objName, Template(parents, self, body)) :: rest =>
-                collect(c)(body, body => ModuleDef(mods, objName, Template(parents, self, body))) :: rest
+                collect(c)(objName.toString, body, body => ModuleDef(mods, objName, Template(parents, self, body))) :: rest
             case _ =>
                 c.error(c.enclosingPosition, "only classes/objects containing parsers can be annotated for debugging")
                 inputs
@@ -32,16 +32,19 @@ private object debuggable {
         q"{..$outputs}"
     }
 
-    private def collect(c: blackbox.Context)(defs: List[c.Tree], recon: List[c.Tree] => c.Tree): c.Tree = {
+    private def collect(c: blackbox.Context)(treeName: String, defs: List[c.Tree], recon: List[c.Tree] => c.Tree): c.Tree = {
         import c.universe._
         val parsleyTy = c.typeOf[Parsley[_]].typeSymbol
         // can't typecheck constructors in a stand-alone block
-        // FIXME: in addition, on 2.12, we need to remove `paramaccessor` modifiers on constructor arguments
-        val noConDefs = defs.filter {
-            case DefDef(_, name, _, _, _, _) => name != TermName("<init>")
-            case _ => true
+        val noConDefs = defs.flatMap {
+            case DefDef(_, name, _, _, _, _) if name == TermName("<init>") => None
+            // in addition, on 2.12, we need to remove `paramaccessor` modifiers on constructor arguments
+            // but due to API incompatibility, we have to use NoFlags...
+            case ValDef(Modifiers(_, privateWithin, annotations), name, tpt, x) =>
+                Some(ValDef(Modifiers(NoFlags, privateWithin, annotations), name, tpt, x))
+            case dfn => Some(dfn)
         }
-        val typeMap = c.typecheck(q"..${noConDefs}", c.TERMmode, silent = true) match {
+        val typeMap = c.typecheck(q"..${noConDefs}", c.TERMmode, silent = false) match {
             // in this case, we want to use the original tree (it's still untyped, as required)
             // but we can process typedDefs into a map from identifiers to inferred types
             case Block(typedDefs, _) =>
@@ -49,28 +52,23 @@ private object debuggable {
                     case ValDef(_, name, tpt, _) => name -> ((Nil, tpt.tpe))
                     case DefDef(_, name, _, args, ret, _) => name -> ((args.flatten.map(_.tpt.tpe), ret.tpe))
                 }.toMap
-            // in this case, we can extract those with annotated type signatures
-            case _ => Map.empty[TermName, (List[Type], Type)]
+            // in this case, we are stuck
+            case _ =>
+                c.error(c.enclosingPosition, s"`$treeName` cannot be typechecked, and so no names can be registered: please report this to the maintainers")
+                Map.empty[TermName, (List[Type], Type)]
         }
         // filter the definitions based on their type from the type map:
-        def filterParsley(t: Tree) = t match {
+        val parsers = defs.flatMap {
             case dfn: ValOrDefDef => typeMap.get(dfn.name) match {
                 case Some((Nil, ty)) if ty.typeSymbol == parsleyTy => Some(dfn.name)
                 case _ => None
             }
             case _ => None
         }
-        val parsers = defs.collect {
-            case t if filterParsley(t).isDefined => filterParsley(t).get // I hate you 2.12
-        }
         // the idea is we inject a call to Collector.registerNames with a constructed
         // map from these identifiers to their compile-time names
         val listOfParsers = q"List(..${parsers.map(tr => q"${Ident(tr)} -> ${tr.toString}")})"
         val registration = q"parsley.debugger.util.Collector.registerNames($listOfParsers.toMap)"
-
-        /*println(registration)
-        println(typeMap)
-        assert(parsers.nonEmpty)*/
         // add the registration as the last statement in the object
         // TODO: in future, we want to modify all `def`s with a top level `opaque` combinator
         // that will require a bit more modification of the overall `body`, unfortunately
