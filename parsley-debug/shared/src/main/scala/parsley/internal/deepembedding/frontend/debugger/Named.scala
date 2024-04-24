@@ -16,7 +16,7 @@ private [parsley] final class Named[A](_p: LazyParsley[A], val name: String) ext
     XAssert.assert(!p.isInstanceOf[Named[_]], "Named parsers should not be nested within each other directly.")
     def make(p: StrictParsley[A]): StrictParsley[A] = p
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visitUnknown(this, context)
-    override private [parsley] def debugName = name
+    override private [parsley] var debugName = name
 }
 
 private [parsley] object Named {

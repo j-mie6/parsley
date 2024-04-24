@@ -5,7 +5,8 @@
  */
 package parsley
 
-import parsley.Parsley.pure
+//TODO: opaque/transparent
+import parsley.Parsley.{transPure => pure}
 import parsley.ap._ // scalastyle:ignore underscore.import
 
 import parsley.internal.deepembedding.frontend

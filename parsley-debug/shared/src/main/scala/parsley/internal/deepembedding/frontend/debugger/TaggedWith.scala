@@ -38,7 +38,7 @@ private [parsley] final class TaggedWith[A](strat: DebugStrategy)(val origin: La
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visitUnknown(this, context)
     // $COVERAGE-ON$
 
-    override private [parsley] def debugName = userAssignedName.getOrElse(origin.debugName)
+    override private [parsley] var debugName = userAssignedName.getOrElse(origin.debugName)
 }
 
 private [parsley] object TaggedWith {
@@ -137,7 +137,7 @@ private [parsley] object TaggedWith {
 
                     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[B] = visitor.visitGeneric(this, context)
 
-                    override private[parsley] def debugName = self.debugName
+                    override private [parsley] var debugName = self.debugName
                 }
             }
         }
@@ -151,7 +151,7 @@ private [parsley] object TaggedWith {
 
                         override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[C] = visitor.visitGeneric(this, context)
 
-                        override private [parsley] def debugName = self.debugName
+                        override private [parsley] var debugName = self.debugName
                     }
                 }
             }
@@ -167,7 +167,7 @@ private [parsley] object TaggedWith {
 
                     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[D] = visitor.visitGeneric(this, context)
 
-                    override private[parsley] def debugName = self.debugName
+                    override private [parsley] var debugName = self.debugName
                 }
             }
         }
@@ -190,7 +190,7 @@ private [parsley] object TaggedWith {
         }
 
         override def visit[A](self: <|>[A], context: ParserTracker)(p: LazyParsley[A], q: LazyParsley[A]): DL[A] = handle2Ary(self, context)(p, q) { (p, q) =>
-            new <|>(p.get, q.get)
+            new <|>(p.get, q.get, self.debugName)
         }
 
         override def visit[A](self: ChainPre[A], context: ParserTracker)(p: LazyParsley[A], op: =>LazyParsley[A => A]): DL[A] = {

@@ -181,10 +181,9 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A]
 
     /** Pretty names for parsers, for internal debugging purposes only. */
-    private [parsley] def debugName: String
-
-    // TODO:
-    private [parsley] def transparent(): Unit = ()
+    private [parsley] var debugName: String
+    private [parsley] def transparent(): Unit = debugName = null
+    private [parsley] def opaque(name: String): Unit = debugName = name
     private [parsley] def isOpaque: Boolean = debugName != null
 
     /** Pretty-prints a combinator tree, for internal debugging purposes only. */

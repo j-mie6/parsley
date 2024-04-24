@@ -15,7 +15,7 @@ import parsley.internal.diagnostics.UserException
 import parsley.internal.deepembedding.{frontend, singletons}
 import parsley.internal.machine.Context
 
-import Parsley.{emptyErr, pure, some}
+import Parsley.{emptyErr, transPure => pure, some}
 import XCompat._ // substituteCo
 
 /**
@@ -160,7 +160,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @return a new parser that behaves the same as this parser, but with the given function `f` applied to its result.
       * @group map
       */
-    def map[B](f: A => B): Parsley[B] = pure(f) <*> this
+    def map[B](f: A => B): Parsley[B] = (pure(f) <*> this).unsafeOpaque("map")
     /** This combinator, pronounced "as", replaces the result of this parser, ignoring the old result.
       *
       * Similar to `map`, except the old result of this parser is not required to
@@ -208,7 +208,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @return a new parser that behaves the same as this parser, but always returns `()` on success.
       * @group map
       */
-    def void: Parsley[Unit] = this.as(())
+    def void: Parsley[Unit] = this.as(()).unsafeOpaque("void")
 
     // BRANCHING COMBINATORS
     /** This combinator, pronounced "or", $or
@@ -232,7 +232,8 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @return a parser which either parses this parser or parses `q`.
       * @group alt
       */
-    def <|>[Aʹ >: A](q: Parsley[Aʹ]): Parsley[Aʹ] = new Parsley(new frontend.<|>(this.internal, q.internal))
+    def <|>[Aʹ >: A](q: Parsley[Aʹ]): Parsley[Aʹ] = this.alt(q, "<|>")
+    @inline private def alt[Aʹ >: A](q: Parsley[Aʹ], name: String): Parsley[Aʹ] = new Parsley(new frontend.<|>(this.internal, q.internal, name))
     /** This combinator, pronounced "or", $or
       *
       * $attemptreason
@@ -256,7 +257,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @note just an alias for `<|>`.
       * @group alt
       */
-    def |[Aʹ >: A](q: Parsley[Aʹ]): Parsley[Aʹ] = this <|> q
+    def |[Aʹ >: A](q: Parsley[Aʹ]): Parsley[Aʹ] = this.alt(q, "|")
     /** This combinator $or
       *
       * $attemptreason
@@ -280,7 +281,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @note just an alias for `<|>`.
       * @group alt
       */
-    def orElse[Aʹ >: A](q: Parsley[Aʹ]): Parsley[Aʹ] = this <|> q
+    def orElse[Aʹ >: A](q: Parsley[Aʹ]): Parsley[Aʹ] = this.alt(q, "orElse")
     /** This combinator, pronounced "or constant", $orconst
       *
       * $attemptreason
@@ -301,7 +302,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @return a parser which either parses this parser or returns `x`.
       * @group alt
       */
-    def </>[Aʹ >: A](x: Aʹ): Parsley[Aʹ] = this <|> pure(x)
+    def </>[Aʹ >: A](x: Aʹ): Parsley[Aʹ] = this.alt(pure(x), "</>")
     /** This combinator, pronounced "sum", wraps this parser's result in `Left` if it succeeds, and parses `q` if it failed '''without''' consuming input,
       * wrapping the result in `Right`.
       *
@@ -327,7 +328,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @return a parser which either parses this parser or parses `q` projecting their results into an `Either[A, B]`.
       * @group alt
       */
-    def <+>[B](q: Parsley[B]): Parsley[Either[A, B]] = this.map(Left(_)) <|> q.map(Right(_))
+    def <+>[B](q: Parsley[B]): Parsley[Either[A, B]] = this.map(Left(_)).unsafeTransparent().alt(q.map(Right(_)).unsafeTransparent(), "<+>")
 
     // SEQUENCING COMBINATORS
     /** This combinator, pronounced "ap", first parses this parser then parses `px`: if both succeed then the function
@@ -698,7 +699,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @return a parser which parses this parser many times and folds the results together with `f` and `k` left-associatively.
       * @group fold
       */
-    def foldLeft[B](k: B)(f: (B, A) => B): Parsley[B] = expr.infix.secretLeft1(pure(k), this, pure(f))
+    def foldLeft[B](k: B)(f: (B, A) => B): Parsley[B] = expr.infix.secretLeft1(pure(k), this, pure(f), "foldLeft")
     /** This combinator will parse this parser '''one''' or more times combining the results with the function `f` and base value `k` from the right.
       *
       * This parser will continue to be parsed until it fails having '''not consumed''' input.
@@ -739,7 +740,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @since 2.1.0
       * @group fold
       */
-    def foldLeft1[B](k: B)(f: (B, A) => B): Parsley[B] = expr.infix.secretLeft1(this.map(f(k, _)), this, pure(f))
+    def foldLeft1[B](k: B)(f: (B, A) => B): Parsley[B] = expr.infix.secretLeft1(this.map(f(k, _)), this, pure(f), "foldLeft1")
     /** This combinator will parse this parser '''one''' or more times combining the results right-associatively with the function `op`.
       *
       * This parser will continue to be parsed until it fails having '''not consumed''' input.
@@ -920,9 +921,13 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
     def withFilter(pred: A => Boolean): Parsley[A] = this.filter(pred)
     // $COVERAGE-ON$
 
-    // hidden methods
+    // hidden methods (TODO: move these?)
     private [parsley] def unsafeTransparent(): Parsley[A] = {
         internal.transparent()
+        this
+    }
+    private [parsley] def unsafeOpaque(name: String): Parsley[A] = {
+        internal.opaque(name)
         this
     }
 }
@@ -1045,7 +1050,8 @@ private [parsley] abstract class ParsleyImpl {
       * @return a parser which consumes no input and produces a value `x`.
       * @group basic
       */
-    final def pure[A](x: A): Parsley[A] = new Parsley(new singletons.Pure(x))
+    final def pure[A](x: A): Parsley[A] = new Parsley(new singletons.Pure(x, "pure"))
+    @inline private [parsley] final def transPure[A](x: A) = new Parsley(new singletons.Pure(x, null))
     /** This combinator produces a '''new''' value everytime it is parsed without having any other effect.
       *
       * When this combinator is ran, no input is required, nor consumed, and
@@ -1126,7 +1132,7 @@ private [parsley] abstract class ParsleyImpl {
       * @return a parser that will parse `p` then possibly parse `q` to transform `p`'s result into a `B`.
       * @group cond
       */
-    final def select[A, B](p: Parsley[Either[A, B]], q: =>Parsley[A => B]): Parsley[B] = branch(p, q, pure(identity[B](_)))
+    final def select[A, B](p: Parsley[Either[A, B]], q: =>Parsley[A => B]): Parsley[B] = branch(p, q, transPure(identity[B](_)))
     /** This combinator parses its argument `p`, but rolls back any consumed input on failure.
       *
       * If the parser `p` succeeds, then `atomic(p)` has no effect. However, if `p` failed,
@@ -1238,7 +1244,7 @@ private [parsley] abstract class ParsleyImpl {
       * @note defined as `pure(())` as a simple convenience.
       * @group basic
       */
-    final val unit: Parsley[Unit] = pure(())
+    final val unit: Parsley[Unit] = new Parsley(new singletons.Pure((), "unit"))
 
     /** This parser only succeeds at the end of the input.
       *
@@ -1315,14 +1321,14 @@ private [parsley] abstract class ParsleyImpl {
       * @group iter
       */
     final def some[A](p: Parsley[A]): Parsley[List[A]] = p <::> many(p)
-    private [parsley] final def some[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = secretSome(p, p, factory)
+    private [parsley] final def some[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = secretSome(p, p, factory).unsafeOpaque("some")
     // This could be generalised to be the new many, where many(p, factory) = secretSome(fresh(factory.newBuilder), p, factory)
     private [parsley] final def secretSome[A, C](init: Parsley[A], p: Parsley[A], factory: Factory[A, C]): Parsley[C] = {
         secretSome(init.map(factory.newBuilder += _), p)
     }
     private [parsley] final def secretSome[A, C](init: Parsley[mutable.Builder[A, C]], p: Parsley[A]): Parsley[C] = {
-        val pf = pure[(mutable.Builder[A, C], A) => mutable.Builder[A, C]](_ += _)
+        val pf = transPure[(mutable.Builder[A, C], A) => mutable.Builder[A, C]](_ += _)
         // Can't use the regular foldLeft1 here, because we need a fresh Builder each time.
-        expr.infix.secretLeft1(init, p, pf).map(_.result())
+        expr.infix.secretLeft1(init, p, pf, null).map(_.result())
     }
 }

@@ -8,7 +8,7 @@ package parsley
 import scala.annotation.tailrec
 import scala.collection.{Factory, mutable}
 
-import parsley.Parsley.{atomic, empty, fresh, many, notFollowedBy, pure, secretSome, select, some, unit}
+import parsley.Parsley.{atomic, empty, fresh, many, notFollowedBy, transPure => pure, secretSome, select, some}
 import parsley.state.{RefMaker, StateCombinators, forP}
 import parsley.syntax.zipped.zippedSyntax2
 
@@ -645,7 +645,7 @@ private [parsley] trait combinator {
       * @return a parser that conditionally parses `thenP` after `condP`.
       * @group condComp
       */
-    final def whenS(condP: Parsley[Boolean])(thenP: =>Parsley[Unit]): Parsley[Unit] = ifS(condP, thenP, unit)
+    final def whenS(condP: Parsley[Boolean])(thenP: =>Parsley[Unit]): Parsley[Unit] = ifS(condP, thenP, pure(()))
 
     /** This combinator verfies that the given parser returns `true`, or else fails.
       *
@@ -661,7 +661,7 @@ private [parsley] trait combinator {
       * @param p the parser that yields the condition value.
       * @group condComp
       */
-    final def guardS(p: Parsley[Boolean]): Parsley[Unit] = ifS(p, unit, empty)
+    final def guardS(p: Parsley[Boolean]): Parsley[Unit] = ifS(p, pure(()), empty)
 
     /** This combinator repeatedly parses `p` so long as it returns `true`.
       *

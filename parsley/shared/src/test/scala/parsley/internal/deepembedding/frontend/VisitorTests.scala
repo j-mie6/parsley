@@ -46,31 +46,21 @@ class VisitorTests extends ParsleyTest {
             override def visitUnknown[A](self: LazyParsley[A], context: Unit): ConstUnit[A] = CUnit
         }
 
-    private def dontExecute(): Nothing =
-        fail("Should not execute.")
+    private def dontExecute(): Nothing = fail("Should not execute.")
 
-    private val dummyParser: LazyParsley[Nothing] =
-        new LazyParsley[Nothing] {
-            override protected def findLetsAux[M[_, +_] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] =
-                dontExecute()
-
-            override protected def preprocess[M[_, +_] : ContOps, R, A_ >: Nothing](implicit lets: LetMap): M[R, StrictParsley[A_]] =
-                dontExecute()
-
-            override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Nothing] =
-                dontExecute()
-
-            override private[parsley] def debugName: String =
-                dontExecute()
-        }
+    private val dummyParser: LazyParsley[Nothing] = new LazyParsley[Nothing] {
+        override protected def findLetsAux[M[_, +_] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] = dontExecute()
+        override protected def preprocess[M[_, +_] : ContOps, R, A_ >: Nothing](implicit lets: LetMap): M[R, StrictParsley[A_]] = dontExecute()
+        override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Nothing] = dontExecute()
+        override private [parsley] var debugName: String = "dummy"
+    }
 
     private val dummyLabelConfig: LabelConfig = NotConfigured
 
     private val dummyCaretWidth: CaretWidth = new FlexibleCaret(0)
 
     private val dummyErrorBuilder: ErrorBuilder[String] = new DefaultErrorBuilder {
-        override def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token =
-            dontExecute()
+        override def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token = dontExecute()
     }
 
     private def dummySFConfig[A](): SpecializedFilterConfig[A] = new BasicFilter[A]
@@ -79,8 +69,7 @@ class VisitorTests extends ParsleyTest {
         def testV: Assertion = p.visit(testVisitor, ()) shouldBe CUnit
     }
 
-    private def dummyRef(): Ref[Unit] =
-        Ref.make[Unit]
+    private def dummyRef(): Ref[Unit] = Ref.make[Unit]
 
     def dontEval: Nothing = fail("Laziness was not maintained.")
     val crash = new PartialFunction[Any, Nothing] {
@@ -101,7 +90,7 @@ class VisitorTests extends ParsleyTest {
         new *>(dummyParser, dontEval).testV
         new <*(dummyParser, dontEval).testV
         new ChainPost(dummyParser, dontEval).testV
-        new Chainl(dummyParser, dontEval, dontEval).testV
+        new Chainl(dummyParser, dontEval, dontEval, "dummy").testV
         new Chainr[Nothing, Nothing](dummyParser, dontEval, crash).testV
         new SepEndBy1(dummyParser, dontEval, null).testV
         new Filter[Any](dummyParser, _ => false, dontEval).testV
@@ -121,7 +110,7 @@ class VisitorTests extends ParsleyTest {
         new SkipComments(SpaceDesc.plain, new ErrorConfig).testV
         new Comment(SpaceDesc.plain, new ErrorConfig).testV
         new Sign(Sign.CombinedType, PlusSignPresence.Optional).testV
-        new NonSpecific("foo", identity[String], _ => true, _ => true, _ => false).testV
+        new NonSpecific("foo", identity[String], "foo", _ => true, _ => true, _ => false).testV
         new CharTok(' ', ' ', dummyLabelConfig).testV
         new SupplementaryCharTok(0, 0, dummyLabelConfig).testV
         new StringTok("bar", 4, dummyLabelConfig).testV
@@ -146,7 +135,7 @@ class VisitorTests extends ParsleyTest {
         new Put(dummyRef(), dummyParser).testV
         new Debug(dummyParser, "fred", false, FullBreak, Seq.empty: @org.typelevel.scalaccompat.annotation.nowarn3).testV
         new DebugError(dummyParser, "plugh", false, dummyErrorBuilder).testV
-        new <|>(dummyParser, dummyParser).testV
+        new <|>(dummyParser, dummyParser, "dummy").testV
         new >>=[Nothing, Nothing](dummyParser, crash).testV
         new Many(dummyParser, null).testV
         new ChainPre(dummyParser, dummyParser).testV

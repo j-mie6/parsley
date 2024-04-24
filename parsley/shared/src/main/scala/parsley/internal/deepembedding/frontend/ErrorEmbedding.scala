@@ -13,7 +13,7 @@ private [parsley] final class ErrorLabel[A](p: LazyParsley[A], label: String, la
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p, label, labels)
 
-    override private [parsley] def debugName = "label"
+    override private [parsley] var debugName = "label"
     // $COVERAGE-ON$
 }
 private [parsley] final class ErrorHide[A](p: LazyParsley[A]) extends Unary[A, A](p) {
@@ -22,7 +22,7 @@ private [parsley] final class ErrorHide[A](p: LazyParsley[A]) extends Unary[A, A
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p)
 
-    override private[parsley] def debugName: String = "errorHide"
+    override private [parsley] var debugName: String = "errorHide"
     // $COVERAGE-ON$
 }
 private [parsley] final class ErrorExplain[A](p: LazyParsley[A], reason: String) extends Unary[A, A](p) {
@@ -31,7 +31,7 @@ private [parsley] final class ErrorExplain[A](p: LazyParsley[A], reason: String)
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p, reason)
 
-    override private[parsley] def debugName = "explain"
+    override private [parsley] var debugName = "explain"
     // $COVERAGE-ON$
 }
 
@@ -41,7 +41,7 @@ private [parsley] final class ErrorAmend[A](p: LazyParsley[A], partial: Boolean)
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p, partial)
 
-    override private[parsley] def debugName = "amend"
+    override private [parsley] var debugName = "amend"
     // $COVERAGE-ON$
 }
 private [parsley] final class ErrorEntrench[A](p: LazyParsley[A]) extends Unary[A, A](p) {
@@ -50,7 +50,7 @@ private [parsley] final class ErrorEntrench[A](p: LazyParsley[A]) extends Unary[
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p)
 
-    override private[parsley] def debugName = "entrench"
+    override private [parsley] var debugName = "entrench"
     // $COVERAGE-ON$
 }
 private [parsley] final class ErrorDislodge[A](n: Int, p: LazyParsley[A]) extends Unary[A, A](p) {
@@ -59,7 +59,7 @@ private [parsley] final class ErrorDislodge[A](n: Int, p: LazyParsley[A]) extend
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(n, p)
 
-    override private[parsley] def debugName = "dislodge"
+    override private [parsley] var debugName = "dislodge"
     // $COVERAGE-ON$
 }
 
@@ -69,6 +69,6 @@ private [parsley] final class ErrorLexical[A](p: LazyParsley[A]) extends Unary[A
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p)
 
-    override private[parsley] def debugName = "markAsToken"
+    override private [parsley] var debugName = "markAsToken"
     // $COVERAGE-ON$
 }

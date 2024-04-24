@@ -5,6 +5,7 @@
  */
 package parsley
 
+//TODO: opaque/transparent
 /** This module contains `ap1` through `ap22`, which allow for the application of a parser returning a function of arity `N` to `N` parsers.
   *
   * The combinators contained in this module all sequence a number of parsers together, but are capable of combining the

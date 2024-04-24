@@ -18,7 +18,7 @@ private [token] class Generic(err: ErrorConfig) {
     private def ofRadix(radix: Int, startDigit: Parsley[Char], digit: Parsley[Char], label: LabelConfig): Parsley[BigInt] = {
         val pf = pure((x: BigInt, d: Char) => x*radix + d.asDigit)
         val trailingDigit = label(digit)
-        parsley.expr.infix.secretLeft1(startDigit.map(d => BigInt(d.asDigit)), trailingDigit, pf)
+        parsley.expr.infix.secretLeft1(startDigit.map(d => BigInt(d.asDigit)), trailingDigit, pf, null) //FIXME: thread name?
     }
 
     private def ofRadix(radix: Int, digit: Parsley[Char], breakChar: Char, label: LabelConfig): Parsley[BigInt] = {
@@ -29,7 +29,7 @@ private [token] class Generic(err: ErrorConfig) {
         val trailingDigit =
             optional(err.labelNumericBreakChar.orElse(label)(breakChar)) *>
             label(digit)
-        parsley.expr.infix.secretLeft1(startDigit.map(d => BigInt(d.asDigit)), trailingDigit, pf)
+        parsley.expr.infix.secretLeft1(startDigit.map(d => BigInt(d.asDigit)), trailingDigit, pf, null) //FIXME: thread name?
     }
 
     // Digits
