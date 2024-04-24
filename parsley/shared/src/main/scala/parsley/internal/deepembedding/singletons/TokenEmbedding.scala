@@ -71,7 +71,7 @@ private [parsley] final class Sign[A](ty: SignType, signPresence: PlusSignPresen
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A => A] = visitor.visit(this, context)(ty, signPresence)
 
-    override private [parsley] var debugName = null // this is never exposed to the top
+    override private [parsley] var debugName: String = null // this is never exposed to the top
     // $COVERAGE-ON$
 }
 
