@@ -25,7 +25,7 @@ private [parsley] final class EscapeMapped(escTrie: Trie[Int], escs: Set[String]
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Int] = visitor.visit(this, context)(escTrie, escs)
 
-    override private[parsley] def prettyName = pretty
+    override private[parsley] def debugName = pretty
     // $COVERAGE-ON$
 }
 
@@ -39,7 +39,7 @@ private [parsley] final class EscapeAtMost(n: Int, radix: Int) extends Singleton
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[BigInt] = visitor.visit(this, context)(n, radix)
 
-    override private[parsley] def prettyName = pretty
+    override private[parsley] def debugName = pretty
     // $COVERAGE-ON$
 }
 
@@ -53,6 +53,6 @@ private [parsley] final class EscapeOneOfExactly(radix: Int, ns: List[Int], inex
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[BigInt] = visitor.visit(this, context)(radix, ns, inexactErr)
 
-    override private [parsley] def prettyName = pretty
+    override private [parsley] def debugName = pretty
     // $COVERAGE-ON$
 }

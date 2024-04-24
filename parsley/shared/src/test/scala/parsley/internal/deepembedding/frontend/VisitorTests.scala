@@ -60,7 +60,7 @@ class VisitorTests extends ParsleyTest {
             override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Nothing] =
                 dontExecute()
 
-            override private[parsley] def prettyName: String =
+            override private[parsley] def debugName: String =
                 dontExecute()
         }
 

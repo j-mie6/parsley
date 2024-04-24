@@ -83,12 +83,12 @@ private class DummyParser extends LazyParsley[Any] {
     override protected def findLetsAux[M[_, +_] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] = Utils.crash()
     override protected def preprocess[M[_, +_] : ContOps, R, A_ >: Any](implicit lets: LetMap): M[R, StrictParsley[A_]] = Utils.crash()
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Any] = visitor.visitUnknown(this, context)
-    override private [parsley] def prettyName = "dummyParser"
+    override private [parsley] def debugName = "dummyParser"
 }
 
 private class <**> extends LazyParsley[Any] {
     override protected def findLetsAux[M[_, +_] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] = Utils.crash()
     override protected def preprocess[M[_, +_] : ContOps, R, A_ >: Any](implicit lets: LetMap): M[R, StrictParsley[A_]] = Utils.crash()
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Any] = visitor.visitUnknown(this, context)
-    override private [parsley] def prettyName = "<**>"
+    override private [parsley] def debugName = "<**>"
 }

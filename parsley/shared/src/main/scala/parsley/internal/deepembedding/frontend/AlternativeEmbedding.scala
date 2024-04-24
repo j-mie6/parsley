@@ -27,6 +27,6 @@ private [parsley] final class <|>[A](p: LazyParsley[A], q: LazyParsley[A]) exten
     // - "orElse" is too wordy.
     // - "or" does not exist as a combinator.
     // We cannot think of any better options at the moment.
-    override private [parsley] def prettyName = "<|>"
+    override private [parsley] def debugName = "<|>"
     // $COVERAGE-ON$
 }

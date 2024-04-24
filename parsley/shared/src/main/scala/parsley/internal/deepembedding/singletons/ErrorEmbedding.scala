@@ -21,7 +21,7 @@ private [parsley] final class Empty private (val width: Int) extends Singleton[N
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Nothing] = visitor.visit(this, context)(width)
 
-    override private[parsley] def prettyName = pretty
+    override private[parsley] def debugName = pretty
     // $COVERAGE-ON$
 }
 
@@ -34,7 +34,7 @@ private [parsley] final class Fail(width: CaretWidth, msgs: String*) extends Sin
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Nothing] = visitor.visit(this, context)(width, msgs)
 
-    override private[parsley] def prettyName = "fail"
+    override private[parsley] def debugName = "fail"
     // $COVERAGE-ON$
 }
 
@@ -47,7 +47,7 @@ private [parsley] final class Unexpected(msg: String, width: CaretWidth) extends
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Nothing] = visitor.visit(this, context)(msg, width)
 
-    override private[parsley] def prettyName = "unexpected"
+    override private[parsley] def debugName = "unexpected"
     // $COVERAGE-ON$
 }
 
@@ -62,7 +62,7 @@ private [parsley] final class VanillaGen[A](gen: parsley.errors.VanillaGen[A]) e
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[((A, Int)) => Nothing] = visitor.visit(this, context)(gen)
 
-    override private[parsley] def prettyName: String = pretty
+    override private[parsley] def debugName: String = pretty
     // $COVERAGE-ON$
 }
 
@@ -76,7 +76,7 @@ private [parsley] final class SpecializedGen[A](gen: parsley.errors.SpecializedG
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[((A, Int)) => Nothing] = visitor.visit(this, context)(gen)
 
-    override private[parsley] def prettyName: String = pretty
+    override private[parsley] def debugName: String = pretty
     // $COVERAGE-ON$
 }
 

@@ -19,7 +19,7 @@ private [parsley] final class Pure[A](private val x: A) extends Singleton[A] {
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(x)
 
-    override private[parsley] def prettyName = "pure"
+    override private[parsley] def debugName = "pure"
     // $COVERAGE-ON$
 }
 
@@ -32,7 +32,7 @@ private [parsley] final class Fresh[A](x: =>A) extends Singleton[A] {
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(x)
 
-    override private[parsley] def prettyName = "fresh"
+    override private[parsley] def debugName = "fresh"
     // $COVERAGE-ON$
 }
 

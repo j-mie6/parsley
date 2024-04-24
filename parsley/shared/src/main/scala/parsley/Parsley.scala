@@ -919,6 +919,12 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       */
     def withFilter(pred: A => Boolean): Parsley[A] = this.filter(pred)
     // $COVERAGE-ON$
+
+    // hidden methods
+    private [parsley] def unsafeTransparent(): Parsley[A] = {
+        internal.transparent()
+        this
+    }
 }
 
 /** This object contains the core "function-style" combinators: all parsers will likely require something from within!

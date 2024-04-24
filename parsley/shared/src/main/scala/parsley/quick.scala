@@ -5,7 +5,7 @@
  */
 package parsley
 
-// FIXME: the groupdescs for duplicate groups need reworking, or the groups split
+//TODO: documentation
 /**
   *
   * @since 5.0.0

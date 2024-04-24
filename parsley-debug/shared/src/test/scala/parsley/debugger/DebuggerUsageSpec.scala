@@ -34,9 +34,9 @@ class DebuggerUsageSpec extends ParsleyTest {
 
     it should "preserve the prettified names of the parsers" in {
         val factory = new Debugging(new DebugContext())
-        new TaggedWith(factory)(named(fresh(()), "foo").internal, null, None).prettyName shouldBe "foo"
-        new TaggedWith(factory)(fresh(()).internal, null, None).prettyName shouldBe "fresh"
-        new TaggedWith(factory)(fresh(()).internal, null, Some("bar")).prettyName shouldBe "bar"
+        new TaggedWith(factory)(named(fresh(()), "foo").internal, null, None).debugName shouldBe "foo"
+        new TaggedWith(factory)(fresh(()).internal, null, None).debugName shouldBe "fresh"
+        new TaggedWith(factory)(fresh(()).internal, null, Some("bar")).debugName shouldBe "bar"
     }
 
     "the debugger runtime" should "preserve the result of parsers" in {

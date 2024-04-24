@@ -35,11 +35,11 @@ private [parsley] object Renamer {
     // This renames the parser if it is present, otherwise gives the default name found earlier.
     def nameOf(userAssignedName: Option[String], p: LazyParsley[_]): String = userAssignedName.getOrElse {
         val extracted = underlying(p)
-        collected.getOrElse(extracted, extracted.prettyName)
+        collected.getOrElse(extracted, extracted.debugName)
     }
 
     // Perform the first step of renaming, a partial rename where only the type name is exposed.
-    @inline def internalName(p: LazyParsley[_]): String = underlying(p).prettyName
+    @inline def internalName(p: LazyParsley[_]): String = underlying(p).debugName
 
     private [parsley] def addNames(names: Map[LazyParsley[_], String]): Unit = collected ++= names
     private [parsley] def addName(par: LazyParsley[_], name: String): Unit = collected.update(par, name)

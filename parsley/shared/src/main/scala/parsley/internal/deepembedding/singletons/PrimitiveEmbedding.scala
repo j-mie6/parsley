@@ -24,7 +24,7 @@ private [parsley] final class Satisfy(private val f: Char => Boolean, val expect
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Char] = visitor.visit(this, context)(f, expected)
 
-    override private[parsley] def prettyName = "satisfy"
+    override private[parsley] def debugName = "satisfy"
     // $COVERAGE-ON$
 }
 
@@ -37,7 +37,7 @@ private [parsley] object Line extends Singleton[Int] {
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Int] = visitor.visit(this, context)
 
-    override private[parsley] def prettyName = pretty
+    override private[parsley] def debugName = pretty
     // $COVERAGE-ON$
 }
 private [parsley] object Col extends Singleton[Int] {
@@ -49,7 +49,7 @@ private [parsley] object Col extends Singleton[Int] {
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Int] = visitor.visit(this, context)
 
-    override private[parsley] def prettyName = pretty
+    override private[parsley] def debugName = pretty
     // $COVERAGE-ON$
 }
 private [parsley] object Offset extends Singleton[Int] {
@@ -61,7 +61,7 @@ private [parsley] object Offset extends Singleton[Int] {
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Int] = visitor.visit(this, context)
 
-    override private[parsley] def prettyName = pretty
+    override private[parsley] def debugName = pretty
     // $COVERAGE-ON$
 }
 
@@ -76,7 +76,7 @@ private [parsley] final class Get[S](ref: Ref[S]) extends Singleton[S] {
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[S] = visitor.visit(this, context)(ref)
 
-    override private[parsley] def prettyName = "Ref.get"
+    override private[parsley] def debugName = "Ref.get"
     // $COVERAGE-ON$
 }
 
