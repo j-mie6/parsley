@@ -26,7 +26,7 @@ private [parsley] final class WhiteSpace(ws: Char => Boolean, desc: SpaceDesc, e
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)(ws, desc, errConfig)
 
-    override private [parsley] var debugName = pretty
+    private [parsley] var debugName = pretty
     // $COVERAGE-ON$
 }
 
@@ -41,7 +41,7 @@ private [parsley] final class SkipComments(desc: SpaceDesc, errConfig: ErrorConf
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)(desc, errConfig)
 
-    override private [parsley] var debugName = "skipComments"
+    private [parsley] var debugName = "skipComments"
     // $COVERAGE-ON$
 }
 
@@ -56,7 +56,7 @@ private [parsley] final class Comment(desc: SpaceDesc, errConfig: ErrorConfig) e
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)(desc, errConfig)
 
-    override private [parsley] var debugName = "comment"
+    private [parsley] var debugName = "comment"
     // $COVERAGE-ON$
 }
 
@@ -71,7 +71,7 @@ private [parsley] final class Sign[A](ty: SignType, signPresence: PlusSignPresen
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A => A] = visitor.visit(this, context)(ty, signPresence)
 
-    override private [parsley] var debugName: String = null // this is never exposed to the top
+    private [parsley] var debugName: String = null // this is never exposed to the top
     // $COVERAGE-ON$
 }
 

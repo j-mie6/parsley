@@ -38,7 +38,7 @@ private [parsley] final class TaggedWith[A](strat: DebugStrategy)(val origin: La
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visitUnknown(this, context)
     // $COVERAGE-ON$
 
-    override private [parsley] var debugName = userAssignedName.getOrElse(origin.debugName)
+    private [parsley] var debugName = userAssignedName.getOrElse(origin.debugName)
 }
 
 private [parsley] object TaggedWith {
@@ -137,7 +137,7 @@ private [parsley] object TaggedWith {
 
                     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[B] = visitor.visitGeneric(this, context)
 
-                    override private [parsley] var debugName = self.debugName
+                    private [parsley] var debugName = self.debugName
                 }
             }
         }
@@ -151,7 +151,7 @@ private [parsley] object TaggedWith {
 
                         override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[C] = visitor.visitGeneric(this, context)
 
-                        override private [parsley] var debugName = self.debugName
+                        private [parsley] var debugName = self.debugName
                     }
                 }
             }
@@ -167,7 +167,7 @@ private [parsley] object TaggedWith {
 
                     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[D] = visitor.visitGeneric(this, context)
 
-                    override private [parsley] var debugName = self.debugName
+                    private [parsley] var debugName = self.debugName
                 }
             }
         }

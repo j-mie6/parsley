@@ -16,7 +16,7 @@ private [parsley] final class Many[A, C](p: LazyParsley[A], factory: Factory[A, 
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[C] = visitor.visit(this, context)(p, factory)
 
-    override private [parsley] var debugName = "many"
+    private [parsley] var debugName = "many"
     // $COVERAGE-ON$
 }
 private [parsley] final class ChainPost[A](p: LazyParsley[A], _op: =>LazyParsley[A => A]) extends Binary[A, A => A, A](p, _op) {
@@ -25,7 +25,7 @@ private [parsley] final class ChainPost[A](p: LazyParsley[A], _op: =>LazyParsley
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p, _op)
 
-    override private [parsley] var debugName = "chain.postfix"
+    private [parsley] var debugName = "chain.postfix"
     // $COVERAGE-ON$
 }
 private [parsley] final class ChainPre[A](p: LazyParsley[A], op: LazyParsley[A => A]) extends LazyParsley[A] {
@@ -41,7 +41,7 @@ private [parsley] final class ChainPre[A](p: LazyParsley[A], op: LazyParsley[A =
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p, op)
 
-    override private [parsley] var debugName = "chain.prefix"
+    private [parsley] var debugName = "chain.prefix"
     // $COVERAGE-ON$
 }
 private [parsley] final class Chainl[A, B](init: LazyParsley[B], p: =>LazyParsley[A], op: =>LazyParsley[(B, A) => B], var debugName: String)
@@ -59,7 +59,7 @@ private [parsley] final class Chainr[A, B](p: LazyParsley[A], op: =>LazyParsley[
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[B] = visitor.visit(this, context)(p, op, wrap)
 
-    override private [parsley] var debugName = "infix.right1"
+    private [parsley] var debugName = "infix.right1"
     // $COVERAGE-ON$
 }
 private [parsley] final class SepEndBy1[A, C](p: LazyParsley[A], sep: =>LazyParsley[_], factory: Factory[A, C]) extends Binary[A, Any, C](p, sep) {
@@ -68,7 +68,7 @@ private [parsley] final class SepEndBy1[A, C](p: LazyParsley[A], sep: =>LazyPars
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[C] = visitor.visit(this, context)(p, sep, factory)
 
-    override private [parsley] var debugName = "sepEndBy1"
+    private [parsley] var debugName = "sepEndBy1"
     // $COVERAGE-ON$
 }
 private [parsley] final class ManyUntil[A, C](body: LazyParsley[Any], factory: Factory[A, C]) extends Unary[Any, C](body) {
@@ -77,7 +77,7 @@ private [parsley] final class ManyUntil[A, C](body: LazyParsley[Any], factory: F
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[C] = visitor.visit(this, context)(body, factory)
 
-    override private [parsley] var debugName = "manyUntil"
+    private [parsley] var debugName = "manyUntil"
     // $COVERAGE-ON$
 }
 private [parsley] final class SkipManyUntil(body: LazyParsley[Any]) extends Unary[Any, Unit](body) {
@@ -86,6 +86,6 @@ private [parsley] final class SkipManyUntil(body: LazyParsley[Any]) extends Unar
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)(body)
 
-    override private [parsley] var debugName = "skipManyUntil"
+    private [parsley] var debugName = "skipManyUntil"
     // $COVERAGE-ON$
 }

@@ -29,7 +29,7 @@ private [parsley] final class SoftKeyword(private [SoftKeyword] val specific: St
         visitor.visit(this, context)(specific, letter, caseSensitive, expected, expectedEnd)
     }
 
-    override private [parsley] var debugName: String = s"softKeyword($specific)"
+    private [parsley] var debugName: String = s"softKeyword($specific)"
     // $COVERAGE-ON$
 }
 
@@ -48,7 +48,7 @@ private [parsley] final class SoftOperator(private [SoftOperator] val specific: 
         visitor.visit(this, context)(specific, letter, ops, expected, expectedEnd)
     }
 
-    override private [parsley] var debugName: String = s"softOperator($specific)"
+    private [parsley] var debugName: String = s"softOperator($specific)"
     // $COVERAGE-ON$
 }
 
