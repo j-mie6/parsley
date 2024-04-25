@@ -9,7 +9,7 @@ import scala.annotation.experimental
 
 import org.scalatest.Assertions.fail
 import parsley.ParsleyTest
-import parsley.debugger.Arithmetic
+import parsley.debugger.DebuggerUsageSpec
 import parsley.debugger.internal.{DebugContext, Renamer}
 import parsley.debugger.util.Collector
 import parsley.internal.deepembedding.backend.StrictParsley
@@ -54,12 +54,11 @@ class RenameSpec extends ParsleyTest {
 
     "the Collector implementations" should "collect names of parsers from objects (on supported platforms)" in {
         if (Collector.isSupported) {
-            //Collector.names(Arithmetic)
-            Renamer.nameOf(None, Arithmetic.prog.internal) shouldBe "prog"
+            Renamer.nameOf(None, DebuggerUsageSpec.Arithmetic.prog.internal) shouldBe "prog"
 
             info("it should also allow overriding the name")
-            Collector.assignName(Arithmetic.prog, "foo")
-            Renamer.nameOf(None, Arithmetic.prog.internal) shouldBe "foo"
+            Collector.assignName(DebuggerUsageSpec.Arithmetic.prog, "foo")
+            Renamer.nameOf(None, DebuggerUsageSpec.Arithmetic.prog.internal) shouldBe "foo"
         } else alert("the current platform does not support Collector")
     }
 

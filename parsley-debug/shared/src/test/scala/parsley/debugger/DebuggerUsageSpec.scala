@@ -8,7 +8,6 @@ package parsley.debugger
 import scala.annotation.experimental
 
 // scalastyle:off underscore.import
-//import DebuggerUsageSpec.Arithmetic
 import org.typelevel.scalaccompat.annotation.unused
 import parsley.Parsley, Parsley._
 import parsley.ParsleyTest
@@ -22,6 +21,7 @@ import parsley.internal.deepembedding.backend.debugger.Debugging
 
 @experimental
 class DebuggerUsageSpec extends ParsleyTest {
+    import DebuggerUsageSpec.Arithmetic
     "the Debugged internal frontend class" should "not allow nesting of Debugged nodes" in {
         val factory = new Debugging(new DebugContext())
         try {
@@ -91,7 +91,7 @@ class DebuggerUsageSpec extends ParsleyTest {
 }
 
 // Look, for some reason the annotation dies if it's nested, I don't know why, it's impossible to diagnose
-//object DebuggerUsageSpec {
+object DebuggerUsageSpec {
     @experimental @parsley.debuggable
     private [parsley] object Arithmetic {
         val int: Parsley[BigInt] = satisfy(_.isDigit).foldLeft1(BigInt(0))((acc, c) => acc * 10 + c.asDigit)
@@ -102,4 +102,4 @@ class DebuggerUsageSpec extends ParsleyTest {
             )
         lazy val prog: Parsley[List[BigInt]] = many(many(satisfy("\r\n".contains(_))) ~> expr)
     }
-//}
+}
