@@ -12,11 +12,13 @@ import scala.reflect.macros.blackbox
   * names for the debugging/diagnostic combinators.
   *
   * @note BE WARNED: this annotation crashes the compiler for objects/classes nested within another type -- this is ok for Scala 3
-  * @note It requires that the
-  * object/class is type-checkable, which due to Scala 2 macro limitations
-  * involes stripping away the enclosing type itself. This might lead to
-  * weird edge-cases: if parsley reports that type-checking failed, you
-  * should report this to the maintainers.
+  * @note It requires that the object/class is type-checkable, which due to Scala 2 macro limitations
+  *       involves stripping away the enclosing type itself. This might lead to
+  *       weird edge-cases: if parsley reports that type-checking failed, you
+  *       should report this to the maintainers.
+  * @note If odd things happen, the easiest way to resolve them is to provide an explicit
+  *       type signature to members of your class/object: this will allow the annotation
+  *       to ignore these during typechecking, side-stepping potential issues.
   *
   * @since 5.0.0
   */
@@ -50,13 +52,16 @@ private object debuggable {
         // can't typecheck constructors in a stand-alone block
         val noConDefs = defs.flatMap {
             case DefDef(_, name, _, _, _, _) if name == TermName("<init>") => None
+            // if the type tree is not empty, then we might as well scratch out the body -- helps remove problem values!
+            case DefDef(mods, name, tyArgs, args, tpt, _) if tpt.nonEmpty => Some(DefDef(mods, name, tyArgs, args, tpt, q"???"))
             // in addition, on 2.12, we need to remove `paramaccessor` modifiers on constructor arguments
             // but due to API incompatibility, we have to use NoFlags...
             case ValDef(Modifiers(_, privateWithin, annotations), name, tpt, x) =>
-                Some(ValDef(Modifiers(NoFlags, privateWithin, annotations), name, tpt, x))
+                // if the type tree is not empty, then we might as well scratch out the body -- helps remove problem values!
+                Some(ValDef(Modifiers(NoFlags, privateWithin, annotations), name, tpt, if (tpt.nonEmpty) q"???" else x))
             case dfn => Some(dfn)
         }
-        val typeMap = c.typecheck(q"..${noConDefs}", c.TERMmode, silent = false) match {
+        val typeMap = c.typecheck(q"..${noConDefs}", c.TERMmode, silent = true) match {
             // in this case, we want to use the original tree (it's still untyped, as required)
             // but we can process typedDefs into a map from identifiers to inferred types
             case Block(typedDefs, _) =>
@@ -66,7 +71,9 @@ private object debuggable {
                 }.toMap
             // in this case, we are stuck
             case _ =>
-                c.error(c.enclosingPosition, s"`$treeName` cannot be typechecked, and so no names can be registered: please report this to the maintainers")
+                if (noConDefs.nonEmpty) {
+                    c.error(c.enclosingPosition, s"`$treeName` cannot be typechecked, and so no names can be registered: please report this to the maintainers")
+                }
                 Map.empty[TermName, (List[Type], Type)]
         }
         // filter the definitions based on their type from the type map:

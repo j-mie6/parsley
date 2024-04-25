@@ -25,3 +25,17 @@ class parsers(val x: Int) {
     def this(f: Float) = this(f.toInt)
     def many[A](p: Parsley[A]): Parsley[List[A]] = Parsley.many(p)
 }
+
+// this tests objects that override something
+abstract class AbsCls {
+    val xs: List[Int]
+    def foo: Int
+}
+
+@experimental @parsley.debuggable
+object Extender extends AbsCls {
+    val p = pure(7)
+    override val xs = List(7)
+    override def foo = 5
+}
+
