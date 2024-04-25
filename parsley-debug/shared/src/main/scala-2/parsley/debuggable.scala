@@ -48,16 +48,18 @@ private object debuggable {
     private def collect(c: blackbox.Context)(treeName: String, defs: List[c.Tree], recon: List[c.Tree] => c.Tree): c.Tree = {
         import c.universe._
         val parsleyTy = c.typeOf[Parsley[_]].typeSymbol
+        val noBody = atPos(c.enclosingPosition)(q"??? : @scala.annotation.nowarn")
         // can't typecheck constructors in a stand-alone block
         val noConDefs = defs.flatMap {
             case DefDef(_, name, _, _, _, _) if name == TermName("<init>") => None
             // in addition, on 2.12, we need to remove `paramaccessor` modifiers on constructor arguments
             case ValDef(Modifiers(_, _, annotations), name, tpt, x) =>
                 // if the type tree is not empty, then we might as well scratch out the body -- helps remove problem values!
-                // just to be safe, we'll also mark them as LAZY to avoid "dead code following construct"
-                Some(ValDef(Modifiers(Flag.LAZY, typeNames.EMPTY, annotations), name, tpt, if (tpt.nonEmpty) q"???" else x))
+                // must use lazy here to fix problems with nested objects, for some reason...
+                Some(ValDef(Modifiers(Flag.LAZY, typeNames.EMPTY, annotations), name, tpt, if (tpt.nonEmpty) noBody else x))
+            // FIXME: probably strip mods from all defdefs as above?
             // if the type tree is not empty, then we might as well scratch out the body -- helps remove problem values!
-            case DefDef(mods, name, tyArgs, args, tpt, _) if tpt.nonEmpty => Some(DefDef(mods, name, tyArgs, args, tpt, q"???"))
+            case DefDef(mods, name, tyArgs, args, tpt, _) if tpt.nonEmpty => Some(DefDef(mods, name, tyArgs, args, tpt, noBody))
             case dfn => Some(dfn)
         }
         val typeMap = c.typecheck(q"..${noConDefs}", c.TERMmode, silent = true) match {

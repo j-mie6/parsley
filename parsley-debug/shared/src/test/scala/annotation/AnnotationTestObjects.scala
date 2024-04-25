@@ -20,7 +20,7 @@ class parsers(val x: Int) {
     val q = p ~> p
     lazy val r: Parsley[Char] = ~r ~> q
     def s = otherParsers.a
-    val y = 7
+    val y = 8
 
     def this(f: Float) = this(f.toInt)
     def many[A](p: Parsley[A]): Parsley[List[A]] = Parsley.many(p)
@@ -38,4 +38,3 @@ object Extender extends AbsCls {
     override val xs = List(7)
     override def foo = 5
 }
-

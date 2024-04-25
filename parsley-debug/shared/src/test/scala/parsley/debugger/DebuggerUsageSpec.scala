@@ -90,7 +90,6 @@ class DebuggerUsageSpec extends ParsleyTest {
     }
 }
 
-// Look, for some reason the annotation dies if it's nested, I don't know why, it's impossible to diagnose
 object DebuggerUsageSpec {
     @experimental @parsley.debuggable
     private [parsley] object Arithmetic {
