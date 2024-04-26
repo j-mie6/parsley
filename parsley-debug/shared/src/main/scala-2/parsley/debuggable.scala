@@ -6,6 +6,7 @@
 package parsley
 
 import scala.annotation.{StaticAnnotation, compileTimeOnly}
+import scala.collection.mutable
 import scala.reflect.macros.blackbox
 
 /** This annotation can be applied to an object or class to record their
@@ -50,19 +51,45 @@ private object debuggable {
         val parsleyTy = c.typeOf[Parsley[_]].typeSymbol
         val noBody = atPos(c.enclosingPosition)(q"??? : @scala.annotation.nowarn")
         // can't typecheck constructors in a stand-alone block
+        // FIXME: we need to patch overloads here: store the set of seen names, then a map from (name, pos) to freshName
+        // these will be used lookup the right name in the typemap later on
+        // the original function will be removed from the body and replaced
+        // this may break the typechecking for the rest of the object, which will need diagnostic checks for
+        // overloaded name use later
+        val seenNames = mutable.Set.empty[TermName]
+        val overloadMap = mutable.Map.empty[(TermName, Position), TermName]
         val noConDefs = defs.flatMap {
             case DefDef(_, name, _, _, _, _) if name == TermName("<init>") => None
             // in addition, on 2.12, we need to remove `paramaccessor` modifiers on constructor arguments
-            case ValDef(Modifiers(_, _, annotations), name, tpt, x) =>
+            case dfn@ValDef(Modifiers(_, _, annotations), name, tpt, x) =>
                 // if the type tree is not empty, then we might as well scratch out the body -- helps remove problem values!
                 // must use lazy here to fix problems with nested objects, for some reason...
-                Some(ValDef(Modifiers(Flag.LAZY, typeNames.EMPTY, annotations), name, tpt, if (tpt.nonEmpty) noBody else x))
+                Some(atPos(dfn.pos)(ValDef(Modifiers(Flag.LAZY, typeNames.EMPTY, annotations), name, tpt, if (tpt.nonEmpty) noBody else x)))
             // FIXME: probably strip mods from all defdefs as above?
             // if the type tree is not empty, then we might as well scratch out the body -- helps remove problem values!
-            case DefDef(mods, name, tyArgs, args, tpt, _) if tpt.nonEmpty => Some(DefDef(mods, name, tyArgs, args, tpt, noBody))
+            case dfn@DefDef(mods, name, tyArgs, args, tpt, body) =>
+                val finalName = if (seenNames.contains(name)) {
+                    // this is an overload, don't panic
+                    val newName = c.freshName(name)
+                    overloadMap += ((name, dfn.pos) -> newName)
+                    newName
+                }
+                else {
+                    seenNames += name
+                    overloadMap += ((name, dfn.pos) -> name)
+                    name
+                }
+                Some(atPos(dfn.pos)(DefDef(mods, finalName, tyArgs, args, tpt, if (tpt.nonEmpty) noBody else body)))
             case dfn => Some(dfn)
         }
-        val typeMap = c.typecheck(q"..${noConDefs}", c.TERMmode, silent = true) match {
+        val classlessBlock = q"..${noConDefs}"
+        val typelessDefs = noConDefs.filter {
+            case ValDef(_, _, tpt, _) => tpt.isEmpty
+            case DefDef(_, _, _, _, tpt, _) => tpt.isEmpty
+            case _ => false
+        }
+        doPreDiagnostics(c)(treeName, typelessDefs)
+        val typeMap = c.typecheck(classlessBlock, c.TERMmode, silent = true) match {
             // in this case, we want to use the original tree (it's still untyped, as required)
             // but we can process typedDefs into a map from identifiers to inferred types
             case Block(typedDefs, _) =>
@@ -73,7 +100,10 @@ private object debuggable {
             // in this case, we are stuck
             case _ =>
                 if (noConDefs.nonEmpty) {
-                    c.error(c.enclosingPosition, s"`$treeName` cannot be typechecked, and so no names can be registered: please report this to the maintainers")
+                    val faultDetermined = doDiagnostics(c)(typelessDefs)
+                    if (!faultDetermined) {
+                        c.error(c.enclosingPosition, s"annotating `$treeName` failed because of a macro typechecking failure, with no identifiable diagnostic; please report to parsley maintainers")
+                    }
                 }
                 Map.empty[TermName, (List[Type], Type)]
         }
@@ -93,5 +123,52 @@ private object debuggable {
         // TODO: in future, we want to modify all `def`s with a top level `opaque` combinator
         // that will require a bit more modification of the overall `body`, unfortunately
         recon(defs :+ registration)
+    }
+
+    private def doDiagnostics(c: blackbox.Context)(dfns: List[c.Tree]) = {
+        var faultDetermined = false
+        for (dfn <- dfns) {
+            val problemFound = reportAnonClass(c)(dfn)
+            faultDetermined ||= problemFound
+            if (problemFound) c.error(dfn.pos, s"this definition needs an explicit type annotation for the debugging annotation to work")
+        }
+        faultDetermined
+    }
+
+    private def doPreDiagnostics(c: blackbox.Context)(enclosingName: String, dfns: List[c.Tree]) = {
+        var problemFound = false
+        for (dfn <- dfns) {
+            val problemFoundDfn = reportUsedEnclosing(c)(enclosingName, dfn)
+            problemFound ||= problemFoundDfn
+            // FIXME: cannot handle overloading
+            if (problemFoundDfn) c.error(dfn.pos, s"this definition needs an explicit type annotation for the debugging annotation to work")
+        }
+        if (problemFound) {
+            c.abort(c.enclosingPosition, "annotation macro aborting before bad bad things happen")
+        }
+    }
+
+    private def reportAnonClass(c: blackbox.Context)(dfn: c.Tree) = {
+        import c.universe._
+        val anonClasses = dfn.filter {
+            case ClassDef(_, TypeName(name), _, _) => name.contains("$anon")
+            case _ => false
+        }
+        for (anonClass <- anonClasses) {
+            c.echo(anonClass.pos, s"anonymous classes don't work properly with `parsley.debuggable`")
+        }
+        anonClasses.nonEmpty
+    }
+
+    private def reportUsedEnclosing(c: blackbox.Context)(enclosingName: String, dfn: c.Tree) = {
+        import c.universe._
+        val badUse = dfn.find {
+            case Ident(TermName(name)) => name == enclosingName
+            case _ => false
+        }
+        for (use <- badUse) {
+            c.echo(use.pos, s"shadowing the enclosing class/object's name for one of its members and using it doesn't work properly")
+        }
+        badUse.nonEmpty
     }
 }

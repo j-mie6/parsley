@@ -38,3 +38,27 @@ object Extender extends AbsCls {
     override val xs = List(7)
     override def foo = 5
 }
+
+abstract class Tokens {
+    def tokens: List[Parsley[String]]
+}
+
+/*@experimental @parsley.debuggable
+private object overloads {
+    def checkNo(symb: String, name: String, reasonGiven: String): Parsley[Nothing] = empty
+    def checkNo(symb: String, reason: String): Parsley[Nothing] = empty
+}*/
+
+/*@experimental @parsley.debuggable
+private object anonClass {
+    class oops {
+        def foo(x: Int): Int
+    }
+
+    val p = new oops {
+        def foo(x: Int) = x + 1
+    }
+
+    val anonClass = pure(6)
+    val x: Parsley[Char] = anonClass ~> char('a')
+}*/
