@@ -95,7 +95,8 @@ object DebuggerUsageSpec {
     private [parsley] object Arithmetic {
         val int: Parsley[BigInt] = satisfy(_.isDigit).foldLeft1(BigInt(0))((acc, c) => acc * 10 + c.asDigit)
         lazy val expr: Parsley[BigInt] =
-            precedence[BigInt](int, char('(') ~> expr <~ char(')'))(
+            // I've put these brackets explicitly, as they put expr into a strict position
+            precedence[BigInt](int, char('(') ~> (expr <~ char(')')))(
                 Ops(InfixL)(char('*') #> (_ * _), char('/') #> (_ / _)),
                 Ops(InfixL)(char('+') #> (_ + _), char('-') #> (_ - _))
             )
