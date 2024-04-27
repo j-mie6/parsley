@@ -43,22 +43,25 @@ abstract class Tokens {
     def tokens: List[Parsley[String]]
 }
 
-/*@experimental @parsley.debuggable
+@experimental @parsley.debuggable
 private object overloads {
-    def checkNo(symb: String, name: String, reasonGiven: String): Parsley[Nothing] = empty
-    def checkNo(symb: String, reason: String): Parsley[Nothing] = empty
-}*/
+    def checkNo(symb: String, name: String, reasonGiven: String): Parsley[Nothing] = checkNo(symb, name, reasonGiven)
+    def checkNo(symb: String, reason: String): Parsley[Nothing] = checkNo(symb, reason)
 
-/*@experimental @parsley.debuggable
+    lazy val p: Parsley[Int] = checkNo("", "", "")
+    lazy val q: Parsley[Int] = checkNo("", "")
+}
+
+@experimental @parsley.debuggable
 private object anonClass {
-    class oops {
+    abstract class oops {
         def foo(x: Int): Int
     }
 
-    val p = new oops {
+    val p: oops = new oops {
         def foo(x: Int) = x + 1
     }
 
     val anonClass = pure(6)
     val x: Parsley[Char] = anonClass ~> char('a')
-}*/
+}

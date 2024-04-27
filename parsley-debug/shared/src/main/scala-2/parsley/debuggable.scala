@@ -49,13 +49,8 @@ private object debuggable {
     private def collect(c: blackbox.Context)(treeName: String, defs: List[c.Tree], recon: List[c.Tree] => c.Tree): c.Tree = {
         import c.universe._
         val parsleyTy = c.typeOf[Parsley[_]].typeSymbol
-        val noBody = atPos(c.enclosingPosition)(q"??? : @scala.annotation.nowarn")
+        lazy val noBody = atPos(c.enclosingPosition)(q"??? : @scala.annotation.nowarn")
         // can't typecheck constructors in a stand-alone block
-        // FIXME: we need to patch overloads here: store the set of seen names, then a map from (name, pos) to freshName
-        // these will be used lookup the right name in the typemap later on
-        // the original function will be removed from the body and replaced
-        // this may break the typechecking for the rest of the object, which will need diagnostic checks for
-        // overloaded name use later
         val seenNames = mutable.Set.empty[TermName]
         val overloadMap = mutable.Map.empty[(TermName, Position), TermName]
         val noConDefs = defs.flatMap {
@@ -79,7 +74,7 @@ private object debuggable {
                     overloadMap += ((name, dfn.pos) -> name)
                     name
                 }
-                Some(atPos(dfn.pos)(DefDef(mods, finalName, tyArgs, args, tpt, if (tpt.nonEmpty) noBody else body)))
+                Some(atPos(dfn.pos)(DefDef(mods, finalName, tyArgs, args, tpt, if (tpt.nonEmpty) q"???" else body)))
             case dfn => Some(dfn)
         }
         val classlessBlock = q"..${noConDefs}"
@@ -100,7 +95,7 @@ private object debuggable {
             // in this case, we are stuck
             case _ =>
                 if (noConDefs.nonEmpty) {
-                    val faultDetermined = doDiagnostics(c)(typelessDefs)
+                    val faultDetermined = doDiagnostics(c)(overloadMap.keys.map(_._1).toSet, typelessDefs)
                     if (!faultDetermined) {
                         c.error(c.enclosingPosition, s"annotating `$treeName` failed because of a macro typechecking failure, with no identifiable diagnostic; please report to parsley maintainers")
                     }
@@ -125,10 +120,11 @@ private object debuggable {
         recon(defs :+ registration)
     }
 
-    private def doDiagnostics(c: blackbox.Context)(dfns: List[c.Tree]) = {
+    private def doDiagnostics(c: blackbox.Context)(overloadings: Set[c.TermName], dfns: List[c.Tree]) = {
         var faultDetermined = false
         for (dfn <- dfns) {
-            val problemFound = reportAnonClass(c)(dfn)
+            var problemFound = reportAnonClass(c)(dfn)
+            problemFound ||= reportOverloading(c)(overloadings, dfn)
             faultDetermined ||= problemFound
             if (problemFound) c.error(dfn.pos, s"this definition needs an explicit type annotation for the debugging annotation to work")
         }
@@ -140,7 +136,6 @@ private object debuggable {
         for (dfn <- dfns) {
             val problemFoundDfn = reportUsedEnclosing(c)(enclosingName, dfn)
             problemFound ||= problemFoundDfn
-            // FIXME: cannot handle overloading
             if (problemFoundDfn) c.error(dfn.pos, s"this definition needs an explicit type annotation for the debugging annotation to work")
         }
         if (problemFound) {
@@ -155,9 +150,21 @@ private object debuggable {
             case _ => false
         }
         for (anonClass <- anonClasses) {
-            c.echo(anonClass.pos, s"anonymous classes don't work properly with `parsley.debuggable`")
+            c.echo(anonClass.pos, "anonymous classes don't work properly with `parsley.debuggable`")
         }
         anonClasses.nonEmpty
+    }
+
+    private def reportOverloading(c: blackbox.Context)(overloadings: Set[c.TermName], dfn: c.Tree) = {
+        import c.universe._
+        val badOverloadings = dfn.filter {
+            case Ident(tn: TermName) => overloadings.contains(tn)
+            case _ => false
+        }
+        for (badOverloading <- badOverloadings) {
+            c.echo(badOverloading.pos, s"overloaded functions defined within annotated object can't be used reliably")
+        }
+        badOverloadings.nonEmpty
     }
 
     private def reportUsedEnclosing(c: blackbox.Context)(enclosingName: String, dfn: c.Tree) = {
