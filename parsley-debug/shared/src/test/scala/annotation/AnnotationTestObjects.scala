@@ -45,11 +45,11 @@ abstract class Tokens {
 
 @experimental @parsley.debuggable
 private object overloads {
-    def checkNo(symb: String, name: String, reasonGiven: String): Parsley[Nothing] = checkNo(symb, name, reasonGiven)
-    def checkNo(symb: String, reason: String): Parsley[Nothing] = checkNo(symb, reason)
+    def foo(x: Int) = pure(x)
+    def foo(s: String) = string(s)
 
-    lazy val p: Parsley[Int] = checkNo("", "", "")
-    lazy val q: Parsley[Int] = checkNo("", "")
+    lazy val p: Parsley[Int] = foo(7)
+    lazy val q: Parsley[String] = foo("hello")
 }
 
 @experimental @parsley.debuggable
