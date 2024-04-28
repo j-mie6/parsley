@@ -99,7 +99,11 @@ private [parsley] trait combinator {
       * @group multi
       * @see [[parsley.Parsley.<|> `<|>`]]
       */
-    final def choice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceRightOption(_ |: _).getOrElse(empty(0)).uo("choice")
+    final def choice[A](ps: Parsley[A]*): Parsley[A] = ps match {
+        case ps if ps.isEmpty => empty
+        case Seq(p)           => p
+        case ps               => ps.reduceRight(_ |: _).uo("choice")
+    }
 
     // This combinator is still used in internal testing, but is a trap for new users
     // it will not be exposed in the API again.

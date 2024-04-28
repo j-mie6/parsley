@@ -130,7 +130,7 @@ abstract class Symbol private[symbol] {
       */
     final val implicits: ImplicitSymbol = new ImplicitSymbol {
         /** @inheritdoc */
-        implicit def implicitSymbol(s: String): Parsley[Unit] = apply(s)
+        implicit def implicitSymbol(s: String): Parsley[Unit] = apply(s).uo(s""""$s"""")
     }
 
     // $COVERAGE-OFF$
