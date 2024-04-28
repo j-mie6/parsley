@@ -128,7 +128,7 @@ abstract class Symbol private[symbol] {
       *
       * @since 4.0.0
       */
-    final val implicits: ImplicitSymbol = new ImplicitSymbol {
+    val implicits: ImplicitSymbol = new ImplicitSymbol {
         /** @inheritdoc */
         implicit def implicitSymbol(s: String): Parsley[Unit] = apply(s).uo(s""""$s"""")
     }
