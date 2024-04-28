@@ -180,7 +180,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @note just an alias for `as`.
       * @group map
       */
-    def #>[B](x: B): Parsley[B] = this.as(x)
+    def #>[B](x: B): Parsley[B] = this.as(x).uo("#>")
     /** This combinator replaces the result of this parser, ignoring the old result.
       *
       * Similar to `map`, except the old result of this parser is not required to
@@ -199,7 +199,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @return a new parser that behaves the same as this parser, but always succeeds with `x` as the result.
       * @group map
       */
-    def as[B](x: B): Parsley[B] = this *> pure(x)
+    def as[B](x: B): Parsley[B] = this.rseq(pure(x), "as")
     /** Replaces the result of this parser with `()`.
       *
       * This combinator is useful when the result of this parser is not required, and the
@@ -234,6 +234,8 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       */
     def <|>[Aʹ >: A](q: Parsley[Aʹ]): Parsley[Aʹ] = this.alt(q, "<|>")
     @inline private def alt[Aʹ >: A](q: Parsley[Aʹ], name: String): Parsley[Aʹ] = new Parsley(new frontend.<|>(this.internal, q.internal, name))
+    // transparent right-associative alt combinator
+    private [parsley] def |:[Aʹ >: A](q: Parsley[Aʹ]): Parsley[Aʹ] = q.alt(this, null)
     /** This combinator, pronounced "or", $or
       *
       * $attemptreason
@@ -362,6 +364,12 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       */
     def <*>[B, C](px: =>Parsley[B])
                  (implicit ev: A <:< (B=>C)): Parsley[C] = new Parsley(new frontend.<*>[B, C](ev.substituteParsley(this).internal, px.internal))
+
+    // transparent version of <*>
+    private [parsley] def ap[B, C](px: =>Parsley[B])(implicit ev: A <:< (B=>C)): Parsley[C] = {
+        new Parsley(new frontend.<*>[B, C](ev.substituteParsley(this).internal, px.internal)).ut() // FIXME: move into node
+    }
+
     /** This combinator, pronounced "reverse ap", first parses this parser then parses `pf`: if both succeed then the value
       * returned by this parser is applied to the function returned by `pf`.
       *
@@ -386,7 +394,12 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @note equivalent to {{{lift2((x, f) => f(x), this, pf)}}}
       * @group seq
       */
-    def <**>[B](pf: =>Parsley[A => B]): Parsley[B] = lift.lift2[A, A=>B, B]((x, f) => f(x), this, pf)
+    def <**>[B](pf: =>Parsley[A => B]): Parsley[B] = lift.lift2[A, A=>B, B]((x, f) => f(x), this, pf).uo("<**>")
+
+    // FIXME: move into nodes
+    @inline private def lseq[B](q: =>Parsley[B], name: String): Parsley[A] = new Parsley(new frontend.<*(this.internal, q.internal)).uo(name)
+    @inline private def rseq[B](q: =>Parsley[B], name: String): Parsley[B] = new Parsley(new frontend.*>(this.internal, q.internal)).uo(name)
+
     /** This combinator, pronounced "then", first parses this parser then parses `q`: if both succeed then the result
       * of `q` is returned.
       *
@@ -405,7 +418,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @return a parser that sequences this parser with `q` and returns `q`'s result.
       * @group seq
       */
-    def *>[B](q: =>Parsley[B]): Parsley[B] = new Parsley(new frontend.*>(this.internal, q.internal))
+    def *>[B](q: =>Parsley[B]): Parsley[B] = this.rseq(q, "*>")
     /** This combinator, pronounced "then discard", first parses this parser then parses `q`: if both succeed then the result
       * of this parser is returned.
       *
@@ -424,7 +437,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @return a parser that sequences this parser with `q` and returns this parser's result.
       * @group seq
       */
-    def <*[B](q: =>Parsley[B]): Parsley[A] = new Parsley(new frontend.<*(this.internal, q.internal))
+    def <*[B](q: =>Parsley[B]): Parsley[A] = this.lseq(q, "<*")
     /** This combinator, pronounced "then", first parses this parser then parses `q`: if both succeed then the result
       * of `q` is returned.
       *
@@ -444,7 +457,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @since 2.4.0
       * @group seq
       */
-    def ~>[B](q: =>Parsley[B]): Parsley[B] = this *> q
+    def ~>[B](q: =>Parsley[B]): Parsley[B] = this.rseq(q, "~>")
     /** This combinator, pronounced "then discard", first parses this parser then parses `q`: if both succeed then the result
       * of this parser is returned.
       *
@@ -464,7 +477,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @since 2.4.0
       * @group seq
       */
-    def <~[B](q: =>Parsley[B]): Parsley[A] = this <* q
+    def <~[B](q: =>Parsley[B]): Parsley[A] = this.lseq(q, "<~")
     /** This combinator, pronounced "prepend", first parses this parser then parses `ps`: if both succeed the result of this
       * parser is prepended onto the result of `ps`.
       *
@@ -484,7 +497,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @note equivalent to {{{lift2(_ +: _, this, ps)}}}
       * @group seq
       */
-    def <+:>[Aʹ >: A](ps: =>Parsley[Seq[Aʹ]]): Parsley[Seq[Aʹ]] = lift.lift2[A, Seq[Aʹ], Seq[Aʹ]](_ +: _, this, ps)
+    def <+:>[Aʹ >: A](ps: =>Parsley[Seq[Aʹ]]): Parsley[Seq[Aʹ]] = lift.lift2[A, Seq[Aʹ], Seq[Aʹ]](_ +: _, this, ps).uo("<+:>")
     /** This combinator, pronounced "cons", first parses this parser then parses `ps`: if both succeed the result of this
       * parser is prepended onto the result of `ps`.
       *
@@ -504,7 +517,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @note equivalent to {{{lift2(_ :: _, this, ps)}}}
       * @group seq
       */
-    def <::>[Aʹ >: A](ps: =>Parsley[List[Aʹ]]): Parsley[List[Aʹ]] = lift.lift2[A, List[Aʹ], List[Aʹ]](_ :: _, this, ps)
+    def <::>[Aʹ >: A](ps: =>Parsley[List[Aʹ]]): Parsley[List[Aʹ]] = lift.lift2[A, List[Aʹ], List[Aʹ]](_ :: _, this, ps).uo("<::>")
     /** This combinator, pronounced "zip", first parses this parser then parses `q`: if both succeed the result of this
       * parser is paired with the result of `q`.
       *
@@ -527,7 +540,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @note equivalent to {{{lift2((_, _), this, q)}}}
       * @group seq
       */
-    def <~>[B](q: =>Parsley[B]): Parsley[(A, B)] = lift.lift2[A, B, (A, B)]((_, _), this, q)
+    def <~>[B](q: =>Parsley[B]): Parsley[(A, B)] = lift.lift2[A, B, (A, B)]((_, _), this, q).uo("<~>")
     /** This combinator first parses this parser then parses `q`: if both succeed the result of this
       * parser is paired with the result of `q`.
       *
@@ -551,7 +564,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @since 2.3.0
       * @group seq
       */
-    def zip[B](q: =>Parsley[B]): Parsley[(A, B)] = this <~> q
+    def zip[B](q: =>Parsley[B]): Parsley[(A, B)] = lift.lift2[A, B, (A, B)]((_, _), this, q).uo("zip")
 
     // FILTERING COMBINATORS
     /** This combinator filters the result of this parser using a given predicate, succeeding only if the predicate returns `true`.
@@ -911,7 +924,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *          the optimiser cannot see that the result of a parser is mutating some value, and may remove it.
       * @group special
       */
-    def impure: Parsley[A] = new Parsley(new frontend.Opaque(this.internal))
+    def impure: Parsley[A] = new Parsley(new frontend.Impure(this.internal))
 
     /** This is an alias for `p.filter(pred)`. It is needed to support for-comprehension syntax with `if`s.
       *
@@ -1028,7 +1041,7 @@ object Parsley extends ParsleyImpl with PlatformSpecific {
           * @return the parser `p`, but guaranteed to be lazy.
           * @group special
           */
-        def unary_~ : Parsley[A] = unit *> p
+        def unary_~ : Parsley[A] = (transPure(()) *> p).ut() // I don't think this needs to appear in debug trace
     }
 }
 private [parsley] abstract class ParsleyImpl {
@@ -1156,7 +1169,7 @@ private [parsley] abstract class ParsleyImpl {
       * @since 4.4.0
       * @group prim
       */
-    final def atomic[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.Attempt(p.internal))
+    final def atomic[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.Atomic(p.internal))
     /** This combinator parses its argument `p`, but does not consume input if it succeeds.
       *
       * If the parser `p` succeeds, then `lookAhead(p)` will roll back any input consumed

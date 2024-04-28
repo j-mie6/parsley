@@ -129,7 +129,7 @@ class VisitorTests extends ParsleyTest {
         new EscapeOneOfExactly(0, Nil, dummySFConfig[Int]()).testV
         new SoftKeyword("corge", Basic(_ => true), false, dummyLabelConfig, "grault").testV
         new SoftOperator("garply", Basic(_ => true), Trie.empty[Unit], dummyLabelConfig, "waldo").testV
-        new Attempt(dummyParser).testV
+        new Atomic(dummyParser).testV
         new Look(dummyParser).testV
         new NotFollowedBy(dummyParser).testV
         new Put(dummyRef(), dummyParser).testV

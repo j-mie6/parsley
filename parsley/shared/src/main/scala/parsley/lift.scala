@@ -5,7 +5,6 @@
  */
 package parsley
 
-//TODO: opaque/transparent
 import parsley.Parsley.{transPure => pure}
 import parsley.ap._ // scalastyle:ignore underscore.import
 
@@ -56,7 +55,7 @@ private [parsley] trait lift {
     final def lift1[T1, R]
         (f: T1 => R,
          p1: Parsley[T1]): Parsley[R] =
-        p1.map(f)
+        p1.map(f).uo("lift1")
     /** $bodyLift
       *
       * @param f $paramLift two.
@@ -84,7 +83,7 @@ private [parsley] trait lift {
     final def lift4[T1, T2, T3, T4, R]
         (f: (T1, T2, T3, T4) => R,
          p1: Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4]): Parsley[R] =
-        ap4(pure(f), p1, p2, p3, p4)
+        ap4(pure(f), p1, p2, p3, p4).uo("lift4")
     /** $bodyLift
       *
       * @param f $paramLift five.
@@ -93,7 +92,7 @@ private [parsley] trait lift {
     final def lift5[T1, T2, T3, T4, T5, R]
         (f: (T1, T2, T3, T4, T5) => R,
          p1: Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5]): Parsley[R] =
-        ap5(pure(f), p1, p2, p3, p4, p5)
+        ap5(pure(f), p1, p2, p3, p4, p5).uo("lift5")
     /** $bodyLift
       *
       * @param f $paramLift six.
@@ -102,7 +101,7 @@ private [parsley] trait lift {
     final def lift6[T1, T2, T3, T4, T5, T6, R]
         (f: (T1, T2, T3, T4, T5, T6) => R,
          p1: Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6]): Parsley[R] =
-        ap6(pure(f), p1, p2, p3, p4, p5, p6)
+        ap6(pure(f), p1, p2, p3, p4, p5, p6).uo("lift6")
     /** $bodyLift
       *
       * @param f $paramLift seven.
@@ -111,7 +110,7 @@ private [parsley] trait lift {
     final def lift7[T1, T2, T3, T4, T5, T6, T7, R]
         (f: (T1, T2, T3, T4, T5, T6, T7) => R,
          p1: Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7]): Parsley[R] =
-        ap7(pure(f), p1, p2, p3, p4, p5, p6, p7)
+        ap7(pure(f), p1, p2, p3, p4, p5, p6, p7).uo("lift7")
     /** $bodyLift
       *
       * @param f $paramLift eight.
@@ -121,7 +120,7 @@ private [parsley] trait lift {
         (f: (T1, T2, T3, T4, T5, T6, T7, T8) => R,
          p1:   Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7],
          p8: =>Parsley[T8]): Parsley[R] =
-        ap8(pure(f), p1, p2, p3, p4, p5, p6, p7, p8)
+        ap8(pure(f), p1, p2, p3, p4, p5, p6, p7, p8).uo("lift8")
     /** $bodyLift
       *
       * @param f $paramLift nine.
@@ -131,7 +130,7 @@ private [parsley] trait lift {
         (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9) => R,
          p1:   Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9]): Parsley[R] =
-        ap9(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9)
+        ap9(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9).uo("lift9")
     /** $bodyLift
       *
       * @param f $paramLift ten.
@@ -141,7 +140,7 @@ private [parsley] trait lift {
         (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10) => R,
          p1:   Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10]): Parsley[R] =
-        ap10(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10)
+        ap10(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10).uo("lift10")
     /** $bodyLift
       *
       * @param f $paramLift eleven.
@@ -151,7 +150,7 @@ private [parsley] trait lift {
         (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11) => R,
          p1:   Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11]): Parsley[R] =
-        ap11(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11)
+        ap11(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11).uo("lift11")
     /** $bodyLift
       *
       * @param f $paramLift twelve.
@@ -161,7 +160,7 @@ private [parsley] trait lift {
         (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12) => R,
          p1:   Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12]): Parsley[R] =
-        ap12(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12)
+        ap12(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12).uo("lift12")
     /** $bodyLift
       *
       * @param f $paramLift thirteen.
@@ -171,7 +170,7 @@ private [parsley] trait lift {
         (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13) => R,
          p1:   Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13]): Parsley[R] =
-        ap13(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13)
+        ap13(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13).uo("lift13")
     /** $bodyLift
       *
       * @param f $paramLift fourteen.
@@ -181,7 +180,7 @@ private [parsley] trait lift {
         (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14) => R,
          p1:   Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14]): Parsley[R] =
-        ap14(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14)
+        ap14(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14).uo("lift14")
     /** $bodyLift
       *
       * @param f $paramLift fifteen.
@@ -192,7 +191,7 @@ private [parsley] trait lift {
          p1:   Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14],
          p15: =>Parsley[T15]): Parsley[R] =
-        ap15(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15)
+        ap15(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15).uo("lift15")
     /** $bodyLift
       *
       * @param f $paramLift sixteen.
@@ -203,7 +202,7 @@ private [parsley] trait lift {
          p1:   Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16]):
-        Parsley[R] = ap16(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16)
+        Parsley[R] = ap16(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16).uo("lift16")
     /** $bodyLift
       *
       * @param f $paramLift seventeen.
@@ -214,7 +213,7 @@ private [parsley] trait lift {
          p1:   Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16], p17: =>Parsley[T17]): Parsley[R] =
-        ap17(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17)
+        ap17(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17).uo("lift17")
     /** $bodyLift
       *
       * @param f $paramLift eighteen.
@@ -225,7 +224,7 @@ private [parsley] trait lift {
          p1:   Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16], p17: =>Parsley[T17], p18: =>Parsley[T18]): Parsley[R] =
-        ap18(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18)
+        ap18(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18).uo("lift18")
     /** $bodyLift
       *
       * @param f $paramLift nineteen.
@@ -236,7 +235,7 @@ private [parsley] trait lift {
          p1:   Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16], p17: =>Parsley[T17], p18: =>Parsley[T18], p19: =>Parsley[T19]): Parsley[R] =
-        ap19(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19)
+        ap19(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19).uo("lift19")
     /** $bodyLift
       *
       * @param f $paramLift twenty.
@@ -247,7 +246,7 @@ private [parsley] trait lift {
          p1:   Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16], p17: =>Parsley[T17], p18: =>Parsley[T18], p19: =>Parsley[T19], p20: =>Parsley[T20]): Parsley[R] =
-        ap20(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20)
+        ap20(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20).uo("lift20")
     /** $bodyLift
       *
       * @param f $paramLift twenty-one.
@@ -258,7 +257,7 @@ private [parsley] trait lift {
          p1:   Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16], p17: =>Parsley[T17], p18: =>Parsley[T18], p19: =>Parsley[T19], p20: =>Parsley[T20], p21: =>Parsley[T21]): Parsley[R] =
-        ap21(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21)
+        ap21(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21).uo("lift21")
     // $COVERAGE-ON$
     /** $bodyLift
       *
@@ -271,6 +270,6 @@ private [parsley] trait lift {
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16], p17: =>Parsley[T17], p18: =>Parsley[T18], p19: =>Parsley[T19], p20: =>Parsley[T20], p21: =>Parsley[T21],
          p22: =>Parsley[T22]): Parsley[R] =
-        ap22(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21, p22)
+        ap22(pure(f), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21, p22).uo("lift22")
     // scalastyle:on parameter.number ensure.single.space.after.token
 }

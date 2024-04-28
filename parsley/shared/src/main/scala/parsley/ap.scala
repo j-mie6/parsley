@@ -5,7 +5,6 @@
  */
 package parsley
 
-//TODO: opaque/transparent
 /** This module contains `ap1` through `ap22`, which allow for the application of a parser returning a function of arity `N` to `N` parsers.
   *
   * The combinators contained in this module all sequence a number of parsers together, but are capable of combining the
@@ -52,7 +51,7 @@ private [parsley] trait ap {
     final def ap1[T1, R]
         (pf: Parsley[T1 => R],
          p1: =>Parsley[T1]): Parsley[R] =
-        pf <*> p1
+        (pf ap p1).uo("ap1")
     /** $bodyAp
       *
       * @param pf $paramAp two.
@@ -62,7 +61,7 @@ private [parsley] trait ap {
     final def ap2[T1, T2, R]
         (pf: Parsley[(T1, T2) => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2]): Parsley[R] =
-        pf.map(_.curried) <*> p1 <*> p2
+        (pf.map(_.curried).ut() ap p1 ap p2).uo("ap2")
     /** $bodyAp
       *
       * @param pf $paramAp three.
@@ -72,7 +71,7 @@ private [parsley] trait ap {
     final def ap3[T1, T2, T3, R]
         (pf: Parsley[(T1, T2, T3) => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3]): Parsley[R] =
-        pf.map(_.curried) <*> p1 <*> p2 <*> p3
+        (pf.map(_.curried).ut() ap p1 ap p2 ap p3).uo("ap3")
     // $COVERAGE-ON$
     // $COVERAGE-OFF$
     /** $bodyAp
@@ -83,7 +82,7 @@ private [parsley] trait ap {
     final def ap4[T1, T2, T3, T4, R]
         (pf: Parsley[(T1, T2, T3, T4) => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4]): Parsley[R] =
-        _ap4(pf.map(_.curried), p1, p2, p3, p4)
+        _ap4(pf.map(_.curried).ut(), p1, p2, p3, p4).uo("ap4")
     /** $bodyAp
       *
       * @param pf $paramAp five.
@@ -92,7 +91,7 @@ private [parsley] trait ap {
     final def ap5[T1, T2, T3, T4, T5, R]
         (pf: Parsley[(T1, T2, T3, T4, T5) => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5]): Parsley[R] =
-        _ap5(pf.map(_.curried), p1, p2, p3, p4, p5)
+        _ap5(pf.map(_.curried).ut(), p1, p2, p3, p4, p5).uo("ap5")
     /** $bodyAp
       *
       * @param pf $paramAp six.
@@ -101,7 +100,7 @@ private [parsley] trait ap {
     final def ap6[T1, T2, T3, T4, T5, T6, R]
         (pf: Parsley[(T1, T2, T3, T4, T5, T6) => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6]): Parsley[R] =
-        _ap6(pf.map(_.curried), p1, p2, p3, p4, p5, p6)
+        _ap6(pf.map(_.curried).ut(), p1, p2, p3, p4, p5, p6).uo("ap6")
     /** $bodyAp
       *
       * @param pf $paramAp seven.
@@ -110,7 +109,7 @@ private [parsley] trait ap {
     final def ap7[T1, T2, T3, T4, T5, T6, T7, R]
         (pf: Parsley[(T1, T2, T3, T4, T5, T6, T7) => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7]): Parsley[R] =
-        _ap7(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7)
+        _ap7(pf.map(_.curried).ut(), p1, p2, p3, p4, p5, p6, p7).uo("ap7")
     /** $bodyAp
       *
       * @param pf $paramAp eight.
@@ -120,7 +119,7 @@ private [parsley] trait ap {
         (pf: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8) => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7],
          p8: =>Parsley[T8]): Parsley[R] =
-        _ap8(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8)
+        _ap8(pf.map(_.curried).ut(), p1, p2, p3, p4, p5, p6, p7, p8).uo("ap8")
     /** $bodyAp
       *
       * @param pf $paramAp nine.
@@ -130,7 +129,7 @@ private [parsley] trait ap {
         (pf: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9) => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9]): Parsley[R] =
-        _ap9(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8, p9)
+        _ap9(pf.map(_.curried).ut(), p1, p2, p3, p4, p5, p6, p7, p8, p9).uo("ap9")
     /** $bodyAp
       *
       * @param pf $paramAp ten.
@@ -140,7 +139,7 @@ private [parsley] trait ap {
         (pf: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10) => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10]): Parsley[R] =
-        _ap10(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10)
+        _ap10(pf.map(_.curried).ut(), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10).uo("ap10")
     /** $bodyAp
       *
       * @param pf $paramAp eleven.
@@ -150,7 +149,7 @@ private [parsley] trait ap {
         (pf: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11) => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11]): Parsley[R] =
-        _ap11(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11)
+        _ap11(pf.map(_.curried).ut(), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11).uo("ap11")
     /** $bodyAp
       *
       * @param pf $paramAp twelve.
@@ -160,7 +159,7 @@ private [parsley] trait ap {
         (pf: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12) => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12]): Parsley[R] =
-        _ap12(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12)
+        _ap12(pf.map(_.curried).ut(), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12).uo("ap12")
     /** $bodyAp
       *
       * @param pf $paramAp thirteen.
@@ -170,7 +169,7 @@ private [parsley] trait ap {
         (pf: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13) => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13]): Parsley[R] =
-        _ap13(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13)
+        _ap13(pf.map(_.curried).ut(), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13).uo("ap13")
     /** $bodyAp
       *
       * @param pf $paramAp fourteen.
@@ -180,7 +179,7 @@ private [parsley] trait ap {
         (pf: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14) => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14]): Parsley[R] =
-        _ap14(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14)
+        _ap14(pf.map(_.curried).ut(), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14).uo("ap14")
     /** $bodyAp
       *
       * @param pf $paramAp fifteen.
@@ -191,7 +190,7 @@ private [parsley] trait ap {
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14],
          p15: =>Parsley[T15]): Parsley[R] =
-        _ap15(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15)
+        _ap15(pf.map(_.curried).ut(), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15).uo("ap15")
     /** $bodyAp
       *
       * @param pf $paramAp sixteen.
@@ -202,7 +201,7 @@ private [parsley] trait ap {
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16]): Parsley[R] =
-        _ap16(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16)
+        _ap16(pf.map(_.curried).ut(), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16).uo("ap16")
     /** $bodyAp
       *
       * @param pf $paramAp seventeen.
@@ -213,7 +212,7 @@ private [parsley] trait ap {
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16], p17: =>Parsley[T17]): Parsley[R] =
-        _ap17(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17)
+        _ap17(pf.map(_.curried).ut(), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17).uo("ap17")
     /** $bodyAp
       *
       * @param pf $paramAp eighteen.
@@ -224,7 +223,7 @@ private [parsley] trait ap {
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16], p17: =>Parsley[T17], p18: =>Parsley[T18]): Parsley[R] =
-        _ap18(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18)
+        _ap18(pf.map(_.curried).ut(), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18).uo("ap18")
     /** $bodyAp
       *
       * @param pf $paramAp nineteen.
@@ -235,7 +234,7 @@ private [parsley] trait ap {
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16], p17: =>Parsley[T17], p18: =>Parsley[T18], p19: =>Parsley[T19]): Parsley[R] =
-        _ap19(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19)
+        _ap19(pf.map(_.curried).ut(), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19).uo("ap19")
     /** $bodyAp
       *
       * @param pf $paramAp twenty.
@@ -246,7 +245,7 @@ private [parsley] trait ap {
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16], p17: =>Parsley[T17], p18: =>Parsley[T18], p19: =>Parsley[T19], p20: =>Parsley[T20]): Parsley[R] =
-        _ap20(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20)
+        _ap20(pf.map(_.curried).ut(), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20).uo("ap20")
     /** $bodyAp
       *
       * @param pf $paramAp twenty-one.
@@ -257,7 +256,7 @@ private [parsley] trait ap {
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16], p17: =>Parsley[T17], p18: =>Parsley[T18], p19: =>Parsley[T19], p20: =>Parsley[T20], p21: =>Parsley[T21]): Parsley[R] =
-        _ap21(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21)
+        _ap21(pf.map(_.curried).ut(), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21).uo("ap21")
     // $COVERAGE-ON$
     /** $bodyAp
       *
@@ -270,102 +269,102 @@ private [parsley] trait ap {
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16], p17: =>Parsley[T17], p18: =>Parsley[T18], p19: =>Parsley[T19], p20: =>Parsley[T20], p21: =>Parsley[T21],
          p22: =>Parsley[T22]): Parsley[R] =
-        _ap22(pf.map(_.curried), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21, p22)
+        _ap22(pf.map(_.curried).ut(), p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21, p22).uo("ap22")
     // INTERNAL HELPERS
     @inline private final def _ap4[T1, T2, T3, T4, R]
         (pf: Parsley[T1 => T2 => T3 => T4 => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4]): Parsley[R] =
-        pf <*> p1 <*> p2 <*> p3 <*> p4
+        pf ap p1 ap p2 ap p3 ap p4
     @inline private final def _ap5[T1, T2, T3, T4, T5, R]
         (pf: Parsley[T1 => T2 => T3 => T4 => T5 => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5]): Parsley[R] =
-        _ap4(pf, p1, p2, p3, p4) <*> p5
+        _ap4(pf, p1, p2, p3, p4) ap p5
     @inline private final def _ap6[T1, T2, T3, T4, T5, T6, R]
         (pf: Parsley[T1 => T2 => T3 => T4 => T5 => T6 => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6]): Parsley[R] =
-        _ap5(pf, p1, p2, p3, p4, p5) <*> p6
+        _ap5(pf, p1, p2, p3, p4, p5) ap p6
     @inline private final def _ap7[T1, T2, T3, T4, T5, T6, T7, R]
         (pf: Parsley[T1 => T2 => T3 => T4 => T5 => T6 => T7 => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7]): Parsley[R] =
-        _ap6(pf, p1, p2, p3, p4, p5, p6) <*> p7
+        _ap6(pf, p1, p2, p3, p4, p5, p6) ap p7
     @inline private final def _ap8[T1, T2, T3, T4, T5, T6, T7, T8, R]
         (pf: Parsley[T1 => T2 => T3 => T4 => T5 => T6 => T7 => T8 => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7],
          p8: =>Parsley[T8]): Parsley[R] =
-        _ap7(pf, p1, p2, p3, p4, p5, p6, p7) <*> p8
+        _ap7(pf, p1, p2, p3, p4, p5, p6, p7) ap p8
     @inline private final def _ap9[T1, T2, T3, T4, T5, T6, T7, T8, T9, R]
         (pf: Parsley[T1 => T2 => T3 => T4 => T5 => T6 => T7 => T8 => T9 => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9]): Parsley[R] =
-        _ap8(pf, p1, p2, p3, p4, p5, p6, p7, p8) <*> p9
+        _ap8(pf, p1, p2, p3, p4, p5, p6, p7, p8) ap p9
     @inline private final def _ap10[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R]
         (pf: Parsley[T1 => T2 => T3 => T4 => T5 => T6 => T7 => T8 => T9 => T10 => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10]): Parsley[R] =
-        _ap9(pf, p1, p2, p3, p4, p5, p6, p7, p8, p9) <*> p10
+        _ap9(pf, p1, p2, p3, p4, p5, p6, p7, p8, p9) ap p10
     @inline private final def _ap11[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, R]
         (pf: Parsley[T1 => T2 => T3 => T4 => T5 => T6 => T7 => T8 => T9 => T10 => T11 => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11]): Parsley[R] =
-        _ap10(pf, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10) <*> p11
+        _ap10(pf, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10) ap p11
     @inline private final def _ap12[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, R]
         (pf: Parsley[T1 => T2 => T3 => T4 => T5 => T6 => T7 => T8 => T9 => T10 => T11 => T12 => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12]): Parsley[R] =
-        _ap11(pf, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11) <*> p12
+        _ap11(pf, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11) ap p12
     @inline private final def _ap13[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, R]
         (pf: Parsley[T1 => T2 => T3 => T4 => T5 => T6 => T7 => T8 => T9 => T10 => T11 => T12 => T13 => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13]): Parsley[R] =
-        _ap12(pf, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12) <*> p13
+        _ap12(pf, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12) ap p13
     @inline private final def _ap14[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, R]
         (pf: Parsley[T1 => T2 => T3 => T4 => T5 => T6 => T7 => T8 => T9 => T10 => T11 => T12 => T13 => T14 => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14]): Parsley[R] =
-        _ap13(pf, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13) <*> p14
+        _ap13(pf, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13) ap p14
     @inline private final def _ap15[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, R]
         (pf: Parsley[T1 => T2 => T3 => T4 => T5 => T6 => T7 => T8 => T9 => T10 => T11 => T12 => T13 => T14 => T15 => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14],
          p15: =>Parsley[T15]): Parsley[R] =
-        _ap14(pf, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14) <*> p15
+        _ap14(pf, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14) ap p15
     @inline private final def _ap16[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, R]
         (pf: Parsley[T1 => T2 => T3 => T4 => T5 => T6 => T7 => T8 => T9 => T10 => T11 => T12 => T13 => T14 => T15 => T16 => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16]): Parsley[R] =
-        _ap15(pf, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15) <*> p16
+        _ap15(pf, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15) ap p16
     @inline private final def _ap17[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, R]
         (pf: Parsley[T1 => T2 => T3 => T4 => T5 => T6 => T7 => T8 => T9 => T10 => T11 => T12 => T13 => T14 => T15 => T16 => T17 => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16], p17: =>Parsley[T17]): Parsley[R] =
-        _ap16(pf, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16) <*> p17
+        _ap16(pf, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16) ap p17
     @inline private final def _ap18[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, R]
         (pf: Parsley[T1 => T2 => T3 => T4 => T5 => T6 => T7 => T8 => T9 => T10 => T11 => T12 => T13 => T14 => T15 => T16 => T17 => T18 => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16], p17: =>Parsley[T17], p18: =>Parsley[T18]): Parsley[R] =
-        _ap17(pf, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17) <*> p18
+        _ap17(pf, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17) ap p18
     @inline private final def _ap19[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, R]
         (pf: Parsley[T1 => T2 => T3 => T4 => T5 => T6 => T7 => T8 => T9 => T10 => T11 => T12 => T13 => T14 => T15 => T16 => T17 => T18 => T19 => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16], p17: =>Parsley[T17], p18: =>Parsley[T18], p19: =>Parsley[T19]): Parsley[R] =
-        _ap18(pf, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18) <*> p19
+        _ap18(pf, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18) ap p19
     @inline private final def _ap20[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, R]
         (pf: Parsley[T1 => T2 => T3 => T4 => T5 => T6 => T7 => T8 => T9 => T10 => T11 => T12 => T13 => T14 => T15 => T16 => T17 => T18 => T19 => T20 => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16], p17: =>Parsley[T17], p18: =>Parsley[T18], p19: =>Parsley[T19], p20: =>Parsley[T20]): Parsley[R] =
-        _ap19(pf, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19) <*> p20
+        _ap19(pf, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19) ap p20
     @inline private final def _ap21[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, R]
         (pf: Parsley[T1 => T2 => T3 => T4 => T5 => T6 => T7 => T8 => T9 => T10 => T11 =>
                      T12 => T13 => T14 => T15 => T16 => T17 => T18 => T19 => T20 => T21 => R],
          p1: =>Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16], p17: =>Parsley[T17], p18: =>Parsley[T18], p19: =>Parsley[T19], p20: =>Parsley[T20], p21: =>Parsley[T21]): Parsley[R] =
-        _ap20(pf, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20) <*> p21
+        _ap20(pf, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20) ap p21
     @inline private final def _ap22[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, R]
         (pf: Parsley[T1 => T2 => T3 => T4 => T5 => T6 => T7 => T8 => T9 => T10 => T11 =>
                      T12 => T13 => T14 => T15 => T16 => T17 => T18 => T19 => T20 => T21 => T22 => R],
@@ -373,6 +372,6 @@ private [parsley] trait ap {
          p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12], p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15],
          p16: =>Parsley[T16], p17: =>Parsley[T17], p18: =>Parsley[T18], p19: =>Parsley[T19], p20: =>Parsley[T20], p21: =>Parsley[T21],
          p22: =>Parsley[T22]): Parsley[R] =
-        _ap21(pf, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21) <*> p22
+        _ap21(pf, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21) ap p22
     // scalastyle:on parameter.number ensure.single.space.after.token
 }

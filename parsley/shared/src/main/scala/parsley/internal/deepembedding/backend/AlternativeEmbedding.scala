@@ -139,7 +139,7 @@ private [backend] object Choice {
         }
         else alt2 match {
             case Pure(x) => alt1 match {
-                case Attempt(u) => scopedState(u, producesResults) {
+                case Atomic(u) => scopedState(u, producesResults) {
                     instrs += new instructions.AlwaysRecoverWith[A](x)
                     if (!producesResults) instrs += instructions.Pop
                     result(())
@@ -159,7 +159,7 @@ private [backend] object Choice {
                                                       (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val merge = state.getLabel(instructions.MergeErrorsAndFail)
         p match {
-            case Attempt(u) => scopedState(u, producesResults) {
+            case Atomic(u) => scopedState(u, producesResults) {
                 instrs += new instructions.RestoreAndPushHandler(merge)
                 rest |> {
                     instrs += instructions.ErrorToHints
@@ -237,7 +237,7 @@ private [backend] object Choice {
         // TODO: This can be done for case insensitive things too, but with duplicated branching
         case t@token.SoftKeyword(s) if t.caseSensitive => Some((s.head, t.expected.asExpectDescs(s), s.codePointCount(0, s.length), backtracks))
         case t@token.SoftOperator(s)             => Some((s.head, t.expected.asExpectDescs(s), s.codePointCount(0, s.length), backtracks))
-        case Attempt(t)                          => tablable(t, backtracks = true)
+        case Atomic(t)                          => tablable(t, backtracks = true)
         case ErrorLabel(t, label, labels)        => tablable(t, backtracks).map {
             case (c, _, width, backtracks) => (c, (label +: labels).map(new ExpectDesc(_)), width, backtracks)
         }

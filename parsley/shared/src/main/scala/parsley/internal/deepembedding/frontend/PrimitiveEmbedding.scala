@@ -11,8 +11,8 @@ import parsley.state.Ref
 
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 
-private [parsley] final class Attempt[A](p: LazyParsley[A]) extends Unary[A, A](p) {
-    override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.Attempt(p)
+private [parsley] final class Atomic[A](p: LazyParsley[A]) extends Unary[A, A](p) {
+    override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.Atomic(p)
 
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p)
@@ -91,8 +91,8 @@ private [parsley] final class Profile[A](p: LazyParsley[A], name: String, profil
     private [parsley] var debugName: String = "profile"
 }
 
-private [parsley] final class Opaque[A](p: LazyParsley[A]) extends Unary[A, A](p) {
-    override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.Opaque(p)
+private [parsley] final class Impure[A](p: LazyParsley[A]) extends Unary[A, A](p) {
+    override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.Impure(p)
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = p.visit(visitor, context)
 

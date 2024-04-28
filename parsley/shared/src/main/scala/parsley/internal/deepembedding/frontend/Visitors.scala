@@ -83,7 +83,7 @@ private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle
                                               expectedEnd: String): U[Unit]
 
     // Primitive parser visitors.
-    def visit[A](self: Attempt[A], context: T)(p: LazyParsley[A]): U[A]
+    def visit[A](self: Atomic[A], context: T)(p: LazyParsley[A]): U[A]
     def visit[A](self: Look[A], context: T)(p: LazyParsley[A]): U[A]
     def visit[A](self: NotFollowedBy[A], context: T)(p: LazyParsley[A]): U[Unit]
     def visit[S](self: Put[S], context: T)(ref: Ref[S], p: LazyParsley[S]): U[Unit]
@@ -226,7 +226,7 @@ private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
                                                        expectedEnd: String): U[Unit] = visitSingleton(self, context)
 
     // Primitive overrides.
-    override def visit[A](self: Attempt[A], context: T)(p: LazyParsley[A]): U[A] = visitUnary(self, context)(p)
+    override def visit[A](self: Atomic[A], context: T)(p: LazyParsley[A]): U[A] = visitUnary(self, context)(p)
     override def visit[A](self: Look[A], context: T)(p: LazyParsley[A]): U[A] = visitUnary(self, context)(p)
     override def visit[A](self: NotFollowedBy[A], context: T)(p: LazyParsley[A]): U[Unit] = visitUnary(self, context)(p)
     override def visit[S](self: Put[S], context: T)(ref: Ref[S], p: LazyParsley[S]): U[Unit] = visitUnary(self, context)(p)

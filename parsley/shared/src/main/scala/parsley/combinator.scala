@@ -99,11 +99,11 @@ private [parsley] trait combinator {
       * @group multi
       * @see [[parsley.Parsley.<|> `<|>`]]
       */
-    final def choice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceRightOption(_ <|> _).getOrElse(empty)
+    final def choice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceRightOption(_ |: _).getOrElse(empty(0)).uo("choice")
 
     // This combinator is still used in internal testing, but is a trap for new users
     // it will not be exposed in the API again.
-    private [parsley] final def atomicChoice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceRightOption((p, q) => atomic(p) <|> q).getOrElse(empty)
+    private [parsley] final def atomicChoice[A](ps: Parsley[A]*): Parsley[A] = choice(ps.map(atomic(_)): _*)
 
     /** This combinator will parse each of `ps` in order, collecting the results.
       *
