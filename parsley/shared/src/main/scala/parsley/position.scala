@@ -39,7 +39,8 @@ private [parsley] trait position {
       *
       * @return a parser that returns the line number the parser is currently at.
       */
-    final val line: Parsley[Int] = new Parsley(singletons.Line)
+    final val line: Parsley[Int] = _line
+    @inline private def _line = new Parsley(singletons.Line)
     /** This parser returns the current column number (starting at 1) of the input without having any other effect.
       *
       * When this combinator is ran, no input is required, nor consumed, and
@@ -59,7 +60,8 @@ private [parsley] trait position {
       * @return a parser that returns the column number the parser is currently at.
       * @note in the presence of wide unicode characters, the value returned may be inaccurate.
       */
-    final val col: Parsley[Int] = new Parsley(singletons.Col)
+    final val col: Parsley[Int] = _col
+    @inline private def _col = new Parsley(singletons.Col)
     /** This parser returns the current line and column numbers (starting at 1) of the input without having any other effect.
       *
       * When this combinator is ran, no input is required, nor consumed, and
@@ -79,10 +81,11 @@ private [parsley] trait position {
       * @return a parser that returns the line and column number the parser is currently at.
       * @note in the presence of wide unicode characters, the column value returned may be inaccurate.
       */
-    final val pos: Parsley[(Int, Int)] = line <~> col
+    final val pos: Parsley[(Int, Int)] = _pos.uo("pos")
+    @inline private def _pos = _line.zip(_col)
 
     // this is subject to change at the slightest notice, do NOT expose
-    private [parsley] final val internalOffset: Parsley[Int] = new Parsley(singletons.Offset)
+    private [parsley] final def internalOffset: Parsley[Int] = new Parsley(singletons.Offset)
 
     /** This parser returns the current offset into the input (starting at 0) without having any other effect.
       *
@@ -124,5 +127,5 @@ private [parsley] trait position {
       * @note the value returned is the number of 16-bit ''characters'' consumed, not unicode codepoints.
       * @since 4.4.0
       */
-    final def withWidth[A](p: Parsley[A]): Parsley[(A, Int)] = (offset, p, offset).zipped((s, x, e) => (x, e-s))
+    final def withWidth[A](p: Parsley[A]): Parsley[(A, Int)] = (internalOffset.ut(), p, internalOffset.ut()).zipped((s, x, e) => (x, e-s)).uo("withWidth")
 }

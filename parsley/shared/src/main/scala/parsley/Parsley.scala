@@ -590,7 +590,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @note $autoAmend
       * @group filter
       */
-    def filter(pred: A => Boolean): Parsley[A] = parsley.errors.combinator.filterWith(this)(pred, emptyErr)
+    def filter(pred: A => Boolean): Parsley[A] = parsley.errors.combinator.filterWith(this)(pred, emptyErr) //TODO: name
     /** This combinator filters the result of this parser using a given predicate, succeeding only if the predicate returns `false`.
       *
       * First, parse this parser. If it succeeds then take its result `x` and apply it to the predicate `pred`. If `pred(x) is
@@ -614,7 +614,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @note $autoAmend
       * @group filter
       */
-    def filterNot(pred: A => Boolean): Parsley[A] = this.filter(!pred(_))
+    def filterNot(pred: A => Boolean): Parsley[A] = this.filter(!pred(_)) //TODO: name
     /** This combinator applies a partial function `pf` to the result of this parser if its result
       * is defined for `pf`, failing if it is not.
       *
@@ -643,7 +643,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @note $autoAmend
       * @group filter
       */
-    def collect[B](pf: PartialFunction[A, B]): Parsley[B] = parsley.errors.combinator.collectWith(this)(pf, emptyErr)
+    def collect[B](pf: PartialFunction[A, B]): Parsley[B] = parsley.errors.combinator.collectWith(this)(pf, emptyErr) //TODO: name
     /** This combinator applies a function `f` to the result of this parser: if it returns a
       * `Some(y)`, `y` is returned, otherwise the parser fails.
       *
@@ -670,7 +670,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @note $autoAmend
       * @group filter
       */
-    def mapFilter[B](f: A => Option[B]): Parsley[B] = parsley.errors.combinator.mapFilterWith(this)(f, emptyErr)
+    def mapFilter[B](f: A => Option[B]): Parsley[B] = parsley.errors.combinator.mapFilterWith(this)(f, emptyErr) //TODO: name
 
     // FOLDING COMBINATORS
     /** This combinator will parse this parser '''zero''' or more times combining the results with the function `f` and base value `k` from the right.
@@ -692,7 +692,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @return a parser which parses this parser many times and folds the results together with `f` and `k` right-associatively.
       * @group fold
       */
-    def foldRight[B](k: B)(f: (A, B) => B): Parsley[B] = chain.prefix(pure(k))(this.map(f.curried))
+    def foldRight[B](k: B)(f: (A, B) => B): Parsley[B] = chain.prefix(pure(k))(this.map(f.curried)) //TODO: name
     /** This combinator will parse this parser '''zero''' or more times combining the results with the function `f` and base value `k` from the left.
       *
       * This parser will continue to be parsed until it fails having '''not consumed''' input.
@@ -735,7 +735,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       */
     def foldRight1[B](k: B)(f: (A, B) => B): Parsley[B] = {
         lift.lift2(f, this, this.foldRight(k)(f))
-    }
+    } //TODO: name
     /** This combinator will parse this parser '''one''' or more times combining the results with the function `f` and base value `k` from the left.
       *
       * This parser will continue to be parsed until it fails having '''not consumed''' input.
@@ -770,7 +770,10 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @since 2.3.0
       * @group fold
       */
-    def reduceRight[B >: A](op: (A, B) => B): Parsley[B] = some(this).map(_.reduceRight(op))
+    def reduceRight[B >: A](op: (A, B) => B): Parsley[B] = {
+        // this cannot be infix.right1 because that combinator only fails gracefully when the op does, which this one never will
+        some(this).map(_.reduceRight(op)) //TODO: name
+    }
     /** This combinator will parse this parser '''zero''' or more times combining the results right-associatively with the function `op`.
       *
       * This parser will continue to be parsed until it fails having '''not consumed''' input.
@@ -788,7 +791,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @since 2.3.0
       * @group fold
       */
-    def reduceRightOption[B >: A](op: (A, B) => B): Parsley[Option[B]] = option(this.reduceRight(op))
+    def reduceRightOption[B >: A](op: (A, B) => B): Parsley[Option[B]] = option(this.reduceRight(op)) //TODO: name
     /** This combinator will parse this parser '''one''' or more times combining the results left-associatively with the function `op`.
       *
       * This parser will continue to be parsed until it fails having '''not consumed''' input.
@@ -805,7 +808,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @since 2.3.0
       * @group fold
       */
-    def reduceLeft[B >: A](op: (B, A) => B): Parsley[B] = infix.left1(this)(pure(op))
+    def reduceLeft[B >: A](op: (B, A) => B): Parsley[B] = infix.left1(this)(pure(op)) //TODO: name
     /** This combinator will parse this parser '''zero''' or more times combining the results left-associatively with the function `op`.
       *
       * This parser will continue to be parsed until it fails having '''not consumed''' input.
@@ -823,7 +826,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @since 2.3.0
       * @group fold
       */
-    def reduceLeftOption[B >: A](op: (B, A) => B): Parsley[Option[B]] = option(this.reduceLeft(op))
+    def reduceLeftOption[B >: A](op: (B, A) => B): Parsley[Option[B]] = option(this.reduceLeft(op)) //TODO: name
 
     // EXPENSIVE SEQUENCING COMBINATORS
     /** This combinator $bind
@@ -884,7 +887,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *       during parse-time.
       * @group monad
       */
-    def flatten[B](implicit ev: A <:< Parsley[B]): Parsley[B] = this.flatMap[B](ev)
+    def flatten[B](implicit ev: A <:< Parsley[B]): Parsley[B] = this.flatMap[B](ev) //TODO: name
 
     /** This combinator ignores the result of this parser and instead returns the input parsed by it.
       *
@@ -1145,7 +1148,7 @@ private [parsley] abstract class ParsleyImpl {
       * @return a parser that will parse `p` then possibly parse `q` to transform `p`'s result into a `B`.
       * @group cond
       */
-    final def select[A, B](p: Parsley[Either[A, B]], q: =>Parsley[A => B]): Parsley[B] = branch(p, q, transPure(identity[B](_)))
+    final def select[A, B](p: Parsley[Either[A, B]], q: =>Parsley[A => B]): Parsley[B] = branch(p, q, transPure(identity[B](_))).uo("select")
     /** This combinator parses its argument `p`, but rolls back any consumed input on failure.
       *
       * If the parser `p` succeeds, then `atomic(p)` has no effect. However, if `p` failed,
@@ -1333,11 +1336,11 @@ private [parsley] abstract class ParsleyImpl {
       * @since 4.5.0
       * @group iter
       */
-    final def some[A](p: Parsley[A]): Parsley[List[A]] = p <::> many(p)
+    final def some[A](p: Parsley[A]): Parsley[List[A]] = (p <::> many(p).ut()).uo("some")
     private [parsley] final def some[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = secretSome(p, p, factory).uo("some")
     // This could be generalised to be the new many, where many(p, factory) = secretSome(fresh(factory.newBuilder), p, factory)
     private [parsley] final def secretSome[A, C](init: Parsley[A], p: Parsley[A], factory: Factory[A, C]): Parsley[C] = {
-        secretSome(init.map(factory.newBuilder += _), p)
+        secretSome(init.map(factory.newBuilder += _).ut(), p)
     }
     private [parsley] final def secretSome[A, C](init: Parsley[mutable.Builder[A, C]], p: Parsley[A]): Parsley[C] = {
         val pf = transPure[(mutable.Builder[A, C], A) => mutable.Builder[A, C]](_ += _)
