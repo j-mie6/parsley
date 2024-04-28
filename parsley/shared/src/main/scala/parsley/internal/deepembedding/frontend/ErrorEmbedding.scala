@@ -69,6 +69,6 @@ private [parsley] final class ErrorLexical[A](p: LazyParsley[A]) extends Unary[A
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p)
 
-    private [parsley] var debugName = null // I don't think this is useful to see in the debug output
+    private [parsley] var debugName: String = null // I don't think this is useful to see in the debug output
     // $COVERAGE-ON$
 }
