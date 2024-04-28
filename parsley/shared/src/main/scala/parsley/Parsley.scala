@@ -160,7 +160,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @return a new parser that behaves the same as this parser, but with the given function `f` applied to its result.
       * @group map
       */
-    def map[B](f: A => B): Parsley[B] = (pure(f) <*> this).unsafeOpaque("map")
+    def map[B](f: A => B): Parsley[B] = (pure(f) <*> this).uo("map")
     /** This combinator, pronounced "as", replaces the result of this parser, ignoring the old result.
       *
       * Similar to `map`, except the old result of this parser is not required to
@@ -208,7 +208,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @return a new parser that behaves the same as this parser, but always returns `()` on success.
       * @group map
       */
-    def void: Parsley[Unit] = this.as(()).unsafeOpaque("void")
+    def void: Parsley[Unit] = this.as(()).uo("void")
 
     // BRANCHING COMBINATORS
     /** This combinator, pronounced "or", $or
@@ -328,7 +328,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @return a parser which either parses this parser or parses `q` projecting their results into an `Either[A, B]`.
       * @group alt
       */
-    def <+>[B](q: Parsley[B]): Parsley[Either[A, B]] = this.map(Left(_)).unsafeTransparent().alt(q.map(Right(_)).unsafeTransparent(), "<+>")
+    def <+>[B](q: Parsley[B]): Parsley[Either[A, B]] = this.map(Left(_)).ut().alt(q.map(Right(_)).ut(), "<+>")
 
     // SEQUENCING COMBINATORS
     /** This combinator, pronounced "ap", first parses this parser then parses `px`: if both succeed then the function
@@ -922,11 +922,11 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
     // $COVERAGE-ON$
 
     // hidden methods (TODO: move these?)
-    private [parsley] def unsafeTransparent(): Parsley[A] = {
+    private [parsley] def ut(): Parsley[A] = {
         internal.transparent()
         this
     }
-    private [parsley] def unsafeOpaque(name: String): Parsley[A] = {
+    private [parsley] def uo(name: String): Parsley[A] = {
         internal.opaque(name)
         this
     }
@@ -1321,7 +1321,7 @@ private [parsley] abstract class ParsleyImpl {
       * @group iter
       */
     final def some[A](p: Parsley[A]): Parsley[List[A]] = p <::> many(p)
-    private [parsley] final def some[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = secretSome(p, p, factory).unsafeOpaque("some")
+    private [parsley] final def some[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = secretSome(p, p, factory).uo("some")
     // This could be generalised to be the new many, where many(p, factory) = secretSome(fresh(factory.newBuilder), p, factory)
     private [parsley] final def secretSome[A, C](init: Parsley[A], p: Parsley[A], factory: Factory[A, C]): Parsley[C] = {
         secretSome(init.map(factory.newBuilder += _), p)
