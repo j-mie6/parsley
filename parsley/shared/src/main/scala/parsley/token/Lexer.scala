@@ -5,7 +5,7 @@
  */
 package parsley.token
 
-import parsley.Parsley, Parsley.{unit, eof, many}
+import parsley.Parsley, Parsley.{eof, many, transPure => pure}
 import parsley.combinator.{sepBy, sepBy1}
 import parsley.errors.combinator.{markAsToken, ErrorMethods}
 import parsley.state.Ref
@@ -281,7 +281,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @param p the token parser to ensure consumes trailing whitespace.
           * @since 4.0.0
           */
-        def apply[A](p: Parsley[A]): Parsley[A] = markAsToken(p) <* space.whiteSpace
+        def apply[A](p: Parsley[A]): Parsley[A] = (markAsToken(p) <* space.whiteSpace).uo("lexeme")
 
         /** $names
           *
@@ -701,8 +701,8 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
       * @since 4.0.0
       */
     def fully[A](p: Parsley[A]): Parsley[A] = {
-        val init = if (desc.spaceDesc.whitespaceIsContextDependent) space.init else unit
-        init *> space.whiteSpace *> p <* eof
+        val init = if (desc.spaceDesc.whitespaceIsContextDependent) space.init else pure(())
+        (((init.ut() *> space.whiteSpace).ut() *> p).ut() <* eof).uo("fully")
     }
 
     /** This object is concerned with special treatment of whitespace.
@@ -737,7 +737,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
                     "Whitespace cannot be initialised unless `spaceDesc.whitespaceIsContextDependent` is true"
                 )
             }
-            wsImpl.set(configuredWhiteSpace)
+            wsImpl.set(configuredWhiteSpace).uo("space.init")
         }
 
         /** This combinator changes how whitespace is parsed by lexemes for the duration of
@@ -777,8 +777,8 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @since 4.0.0
           */
         val whiteSpace: Parsley[Unit] = {
-            if (desc.spaceDesc.whitespaceIsContextDependent) wsImpl.get.flatten
-            else configuredWhiteSpace
+            if (desc.spaceDesc.whitespaceIsContextDependent) wsImpl.get.ut().flatten.ut()
+            else configuredWhiteSpace.ut()
         }
 
         /** This parser skips '''zero''' or more comments.
@@ -791,7 +791,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @since 4.0.0
           */
         lazy val skipComments: Parsley[Unit] = {
-            if (!desc.spaceDesc.supportsComments) unit
+            if (!desc.spaceDesc.supportsComments) pure(())
             else new Parsley(new singletons.SkipComments(desc.spaceDesc, errConfig))
         }
 
