@@ -111,14 +111,6 @@ private [internal] final class Chainl(var label: Int) extends InstrWithLabel {
     // $COVERAGE-ON$
 }
 
-private [instructions] object DualHandler {
-    def popSecondHandlerAndJump(ctx: Context, label: Int): Unit = {
-        ctx.handlers = ctx.handlers.tail
-        ctx.updateCheckOffset()
-        ctx.pc = label
-    }
-}
-
 private [internal] final class ChainrJump(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
@@ -127,7 +119,8 @@ private [internal] final class ChainrJump(var label: Int) extends InstrWithLabel
         val acc = ctx.stack.peek[Any => Any]
         // We perform the acc after the tos function; the tos function is "closer" to the final p
         ctx.stack.exchange((y: Any) => acc(f(x, y)))
-        DualHandler.popSecondHandlerAndJump(ctx, label)
+        ctx.handlers = ctx.handlers.tail
+        ctx.pc = label
     }
 
     // $COVERAGE-OFF$
@@ -138,9 +131,7 @@ private [internal] final class ChainrJump(var label: Int) extends InstrWithLabel
 private [internal] final class ChainrOpHandler(wrap: Any => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
-        val check = ctx.handlers.check
-        ctx.handlers = ctx.handlers.tail
-        ctx.catchNoConsumed(check) {
+        ctx.catchNoConsumed(ctx.handlers.check) {
             ctx.handlers = ctx.handlers.tail
             ctx.addErrorToHintsAndPop()
             val y = ctx.stack.upop()
@@ -163,7 +154,10 @@ private [internal] final class SepEndBy1Jump(var label: Int) extends InstrWithLa
         ctx.stack.pop_() // the bool
         ctx.stack.peek[mutable.Builder[Any, Any]] += x
         ctx.stack.upush(true)
-        DualHandler.popSecondHandlerAndJump(ctx, label)
+        // pop second handler and jump
+        ctx.handlers = ctx.handlers.tail
+        ctx.updateCheckOffset()
+        ctx.pc = label
     }
 
     // $COVERAGE-OFF$

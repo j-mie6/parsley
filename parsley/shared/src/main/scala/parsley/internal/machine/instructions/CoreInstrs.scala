@@ -279,7 +279,7 @@ private [internal] final class RestoreAndPushHandler(var label: Int) extends Ins
     // $COVERAGE-ON$
 }
 
-private [internal] object Refail extends Instr {
+/*private [internal] object Refail extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
         ctx.handlers = ctx.handlers.tail
@@ -289,4 +289,4 @@ private [internal] object Refail extends Instr {
     // $COVERAGE-OFF$
     override def toString: String = "Refail"
     // $COVERAGE-ON$
-}
+}*/

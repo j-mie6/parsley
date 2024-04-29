@@ -115,19 +115,15 @@ private [deepembedding] final class Chainr[A, B](p: StrictParsley[A], op: Strict
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit]= {
         if (producesResults) {
             val body = state.freshLabel()
-            // handler1 is where the check offset is kept
-            val handler1 = state.getLabel(instructions.Refail)
-            val handler2 = state.freshLabel()
+            val handler = state.freshLabel()
             instrs += new instructions.Push(identity[Any] _)
-            instrs += new instructions.PushHandler(handler1)
             instrs += new instructions.Label(body)
             suspend(p.codeGen[M, R](producesResults=true)) >> {
-                instrs += new instructions.PushHandler(handler2)
+                instrs += new instructions.PushHandler(handler)
                 suspend(op.codeGen[M, R](producesResults=true)) |> {
                     instrs += new instructions.ChainrJump(body)
-                    instrs += new instructions.Label(handler2)
+                    instrs += new instructions.Label(handler)
                     instrs += instructions.ChainrOpHandler(wrap)
-                    if (!producesResults) instrs += instructions.Pop
                 }
             }
         }
