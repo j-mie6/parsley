@@ -110,6 +110,8 @@ private [parsley] object TaggedWith {
         extends GenericLazyParsleyIVisitor[ParserTracker, ContWrap[M, R]#DLPM] {
         private type DL[+A] = ContWrap[M, R]#DLPM[A]
 
+        private def visit[A](p: LazyParsley[A], context: ParserTracker) = suspend[M, R, Deferred[LazyParsley[A]]](p.visit(this, context))
+
         // This is the main logic for the visitor: everything else is just plumbing
         private def handlePossiblySeen[A](self: LazyParsley[A], context: ParserTracker)(subParser: =>DL[A]): DL[A] = {
             if (context.hasSeen(self)) result(context.get(self))
@@ -130,15 +132,14 @@ private [parsley] object TaggedWith {
         private def handle2Ary[P[X] <: LazyParsley[X], A, B, C](self: P[A], context: ParserTracker)(p: LazyParsley[B], q: =>LazyParsley[C])
                                                                (constructor: (Deferred[LazyParsley[B]], Deferred[LazyParsley[C]]) => Deferred[P[A]]): DL[A] = {
             handlePossiblySeen[A](self, context) {
-                zipWith(suspend[M, R, Deferred[LazyParsley[B]]](p.visit(this, context)),
-                        suspend[M, R, Deferred[LazyParsley[C]]](q.visit(this, context)))(constructor)
+                zipWith(visit(p, context), visit(q, context))(constructor)
             }
         }
 
         override def visitSingleton[A](self: singletons.Singleton[A], context: ParserTracker): DL[A] = handleNoChildren[A](self, context)
 
         override def visitUnary[A, B](self: Unary[A, B], context: ParserTracker)(p: LazyParsley[A]): DL[B] = handlePossiblySeen[B](self, context) {
-            suspend[M, R, Deferred[LazyParsley[A]]](p.visit(this, context)).map { dbgC => Deferred {
+            visit(p, context).map { dbgC => Deferred {
                 new Unary[A, B](dbgC.get) {
                     override def make(p: StrictParsley[A]): StrictParsley[B] = self.make(p)
                     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[B] = visitor.visitGeneric(this, context)
@@ -149,13 +150,10 @@ private [parsley] object TaggedWith {
 
         override def visitBinary[A, B, C](self: Binary[A, B, C], context: ParserTracker)(l: LazyParsley[A], r: =>LazyParsley[B]): DL[C] = {
             handlePossiblySeen(self, context) {
-                zipWith(suspend[M, R, Deferred[LazyParsley[A]]](l.visit(this, context)),
-                        suspend[M, R, Deferred[LazyParsley[B]]](r.visit(this, context))) { (dbgL, dbgR) => Deferred {
+                zipWith(visit(l, context), visit(r, context)) { (dbgL, dbgR) => Deferred {
                     new Binary[A, B, C](dbgL.get, dbgR.get) {
                         override def make(p: StrictParsley[A], q: StrictParsley[B]): StrictParsley[C] = self.make(p, q)
-
                         override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[C] = visitor.visitGeneric(this, context)
-
                         private [parsley] var debugName = self.debugName
                     }
                 }}
@@ -164,14 +162,10 @@ private [parsley] object TaggedWith {
 
         override def visitTernary[A, B, C, D](self: Ternary[A, B, C, D], context: ParserTracker)
                                              (f: LazyParsley[A], s: =>LazyParsley[B], t: =>LazyParsley[C]): DL[D] = handlePossiblySeen[D](self, context) {
-            zipWith3(suspend[M, R, Deferred[LazyParsley[A]]](f.visit(this, context)),
-                     suspend[M, R, Deferred[LazyParsley[B]]](s.visit(this, context)),
-                     suspend[M, R, Deferred[LazyParsley[C]]](t.visit(this, context))) { (dbgF, dbgS, dbgT) => Deferred {
+            zipWith3(visit(f, context), visit(s, context), visit(t, context)) { (dbgF, dbgS, dbgT) => Deferred {
                 new Ternary[A, B, C, D](dbgF.get, dbgS.get, dbgT.get) {
                     override def make(p: StrictParsley[A], q: StrictParsley[B], r: StrictParsley[C]): StrictParsley[D] = self.make(p, q, r)
-
                     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[D] = visitor.visitGeneric(this, context)
-
                     private [parsley] var debugName = self.debugName
                 }
             }}
@@ -184,7 +178,7 @@ private [parsley] object TaggedWith {
                 // flatMap / >>= produces parsers arbitrarily, so there is no way we'd match by reference.
                 // This is why a map with weak keys is required, so that these entries do not flood the map and
                 // cause a massive memory leak.
-                suspend[M, R, Deferred[LazyParsley[A]]](p.visit(this, context)).map { dbgC => Deferred {
+                visit(p, context).map { dbgC => Deferred {
                     def dbgF(x: A): LazyParsley[B] = {
                         val subvisitor = new DebugInjectingVisitorM[M, LazyParsley[B]](strategy)
                         perform[M, LazyParsley[B]](f(x).visit(subvisitor, context).map(_.get))
@@ -205,13 +199,12 @@ private [parsley] object TaggedWith {
         // the generic unary/binary overrides above cannot handle this properly, as they lose the UsesReg trait
         override def visit[S](self: Put[S], context: ParserTracker)(ref: Ref[S], p: LazyParsley[S]): DL[Unit] = {
             handlePossiblySeen(self, context) {
-                suspend[M, R, Deferred[LazyParsley[S]]](p.visit(this, context)).map(p => Deferred(new Put(ref, p.get)))
+                visit(p, context).map(p => Deferred(new Put(ref, p.get)))
             }
         }
         override def visit[S, A](self: NewReg[S, A], context: ParserTracker)(ref: Ref[S], init: LazyParsley[S], body: =>LazyParsley[A]): DL[A] = {
             handlePossiblySeen(self, context) {
-                zipWith(suspend[M, R, Deferred[LazyParsley[S]]](init.visit(this, context)),
-                        suspend[M, R, Deferred[LazyParsley[A]]](body.visit(this, context))) { (init, body) => Deferred {
+                zipWith(visit(init, context), visit(body, context)) { (init, body) => Deferred {
                     new NewReg(ref, init.get, body.get)
                 }}
             }
@@ -219,8 +212,8 @@ private [parsley] object TaggedWith {
 
         // XXX: This will assume all completely unknown parsers have no children at all (i.e. are Singletons).
         override def visitUnknown[A](self: LazyParsley[A], context: ParserTracker): DL[A] = self match {
-            case d: TaggedWith[A @unchecked] => result[R, Deferred[LazyParsley[A]], M](new Deferred(d)) // No need to debug a parser twice!
-            case n: Named[A @unchecked]      => n.p.visit(this, context).map(_.get).map {
+            case d: TaggedWith[A @unchecked]      => result[R, Deferred[LazyParsley[A]], M](new Deferred(d)) // No need to debug a parser twice!
+            case n: Named[A @unchecked]           => n.p.visit(this, context).map(_.get).map {
                 case tw: TaggedWith[A @unchecked] => new Deferred(tw.withName(n.name))
                 // this should never be the case, because all all opaque combinators will be tagged,
                 // so if it's not tagged it will be transparent, and naming a transparent combinator
@@ -228,7 +221,7 @@ private [parsley] object TaggedWith {
                 // parsley, and parsley does not expose naturally transparent combinators.
                 case _                            => throw new IllegalStateException("a transparent parser has been explicitly named, this is non-sensical")
             }
-            case _                           => handleNoChildren(self, context)
+            case _                                => handleNoChildren(self, context)
         }
     }
     // $COVERAGE-ON$
