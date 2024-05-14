@@ -79,7 +79,7 @@ object generic {
           *
           * @param op the parser that should be parsed before returning `con`.
           */
-        final def from(op: Parsley[_]): Parsley[A] = error(op.as(con).ut()).uo(s"$this.from")
+        infix final def from(op: Parsley[_]): Parsley[A] = error(op.as(con).ut()).uo(s"$this.from")
     }
 
     /** Generic bridge trait for singleton objects that simply return themselves

@@ -199,7 +199,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @return a new parser that behaves the same as this parser, but always succeeds with `x` as the result.
       * @group map
       */
-    def as[B](x: B): Parsley[B] = this.rseq(pure(x), "as")
+    infix def as[B](x: B): Parsley[B] = this.rseq(pure(x), "as")
     /** Replaces the result of this parser with `()`.
       *
       * This combinator is useful when the result of this parser is not required, and the
@@ -283,7 +283,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @note just an alias for `<|>`.
       * @group alt
       */
-    def orElse[Aʹ >: A](q: Parsley[Aʹ]): Parsley[Aʹ] = this.alt(q, "orElse")
+    infix def orElse[Aʹ >: A](q: Parsley[Aʹ]): Parsley[Aʹ] = this.alt(q, "orElse")
     /** This combinator, pronounced "or constant", $orconst
       *
       * $attemptreason
@@ -564,7 +564,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @since 2.3.0
       * @group seq
       */
-    def zip[B](q: =>Parsley[B]): Parsley[(A, B)] = lift.lift2[A, B, (A, B)]((_, _), this, q).uo("zip")
+    infix def zip[B](q: =>Parsley[B]): Parsley[(A, B)] = lift.lift2[A, B, (A, B)]((_, _), this, q).uo("zip")
 
     // FILTERING COMBINATORS
     /** This combinator filters the result of this parser using a given predicate, succeeding only if the predicate returns `true`.
