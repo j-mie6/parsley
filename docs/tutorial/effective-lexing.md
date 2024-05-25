@@ -5,9 +5,9 @@ laika.site.metadata.description = "How to handle low-level tokenisation in a par
 # Effective Lexing
 
 @:callout(info)
-Note that the start of this page describes the underlying fundamentals behind
-lexing with parser combinators, but this is abstracted by the functionality
-at the end.
+Parsley offers a user-friendly API for lexing, which is detailed at the end of this document. We recommend using this API for most purposes.
+
+The initial sections of this document explain the fundamental principles behind lexing with parser combinators.
 @:@
 
 In the previous post, we saw the basic principles behind handling whitespace in a transparent manner.
