@@ -536,10 +536,10 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">debug</span><span>.</span><span class="identifier">_</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> | </span><span class="identifier">atomic</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>) | </span><span class="string-literal">&quot;dead&quot;</span><span>
-</span><span class="comment">// p: Parsley[String] = parsley.Parsley@4541d472
+</span><span class="comment">// p: Parsley[String] = parsley.Parsley@1b9b1a8e
 </span><span class="keyword">val</span><span> </span><span class="identifier">q</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> | (</span><span class="identifier">atomic</span><span>(</span><span class="string-literal">&quot;def&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading def&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;backtrack!&quot;</span><span>) |
                    </span><span class="string-literal">&quot;dead&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;reading dead&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;branch&quot;</span><span>)
-</span><span class="comment">// q: Parsley[String] = parsley.Parsley@3de33
+</span><span class="comment">// q: Parsley[String] = parsley.Parsley@9ac6886
 </span><span>
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;dead&quot;</span><span>)
 </span><span class="comment">// res37: parsley.Result[String, String] = Success(dead)
@@ -587,9 +587,9 @@
 // def notFollowedBy(p: Parsley[_]): Parsley[Unit]
 </span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">eof</span><span> = </span><span class="identifier">notFollowedBy</span><span>(</span><span class="identifier">item</span><span>)
-</span><span class="comment">// eof: Parsley[Unit] = parsley.Parsley@248923ac
+</span><span class="comment">// eof: Parsley[Unit] = parsley.Parsley@1afcb87b
 </span><span class="keyword">val</span><span> </span><span class="identifier">abcOnly</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span> &lt;~ </span><span class="identifier">eof</span><span>
-</span><span class="comment">// abcOnly: Parsley[String] = parsley.Parsley@2181fdfc
+</span><span class="comment">// abcOnly: Parsley[String] = parsley.Parsley@367ed27e
 </span><span>
 </span><span class="identifier">abcOnly</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>)
 </span><span class="comment">// res39: parsley.Result[String, String] = Success(abc)
@@ -600,7 +600,7 @@
 //       ^)
 </span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="string-literal">&quot;abc&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>) &lt;~ </span><span class="identifier">lookAhead</span><span>(</span><span class="string-literal">&quot;!!&quot;</span><span>.</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;!!&quot;</span><span>)).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;lookahead&quot;</span><span>)
-</span><span class="comment">// p: Parsley[String] = parsley.Parsley@733b65bc
+</span><span class="comment">// p: Parsley[String] = parsley.Parsley@20035ea9
 </span><span>
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc!!&quot;</span><span>)
 </span><span class="comment">// &gt;abc&gt; (1, 1): abc!!•
@@ -1017,7 +1017,7 @@
         actually represented by Abstract Syntax Trees. So the solution here is to create a value that can
         reference the parameter <code>p</code>, without needing to pass it around itself. You might wonder if it&#39;s
         possible to make parsers that, say, have a value they pass around. The answer is yes, but it&#39;s quite
-        uncommon to <em>need</em> to do that. For these circumstances, the functionality in <code>parsley.registers</code> is
+        uncommon to <em>need</em> to do that. For these circumstances, the functionality in <code>parsley.state</code> is
         useful, but this is certainly out of scope for this page!</p>
         
         <h4 id="takeaways-3" class="section"><a class="anchor-link left" href="#takeaways-3"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">4.3.1 </span>Takeaways</h4>
