@@ -477,8 +477,8 @@
 
 </span><span class="identifier">charCons</span><span>.</span><span class="identifier">lift</span><span>(</span><span class="identifier">nonzero</span><span>, </span><span class="identifier">many</span><span>(</span><span class="identifier">digit</span><span>))
 </span><span class="type-name">Num</span><span>.</span><span class="identifier">lift</span><span>(</span><span class="identifier">int</span><span>)</span></code></pre>
-        <p>The <code>lift</code> functions work all the way up to 22 arguments (which is a JVM limit). The same goes for
-        the <code>zipped</code> syntax and <code>lift</code> syntax. Don&#39;t forget about <code>&lt;::&gt;</code> as well as its friends <code>&lt;~&gt;</code>,
+        <p>The <code>lift</code> functions work all the way up to 22 arguments (which is the Scala 2 limit on function arguments).
+        The same goes for the <code>zipped</code> syntax and <code>lift</code> syntax. Don&#39;t forget about <code>&lt;::&gt;</code> as well as its friends <code>&lt;~&gt;</code>,
         <code>&lt;*&gt;</code>, and <code>&lt;**&gt;</code>! They all provide a concise way of combining things in (common) special cases.</p>
         <div class="callout info">
           <i class="icofont-laika info">&#xef4e;</i>
