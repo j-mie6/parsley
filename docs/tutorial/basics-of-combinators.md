@@ -847,7 +847,7 @@ morally _infinite_. In Parsley, we must be careful to only work with _finite_ pa
 actually represented by Abstract Syntax Trees. So the solution here is to create a value that can
 reference the parameter `p`, without needing to pass it around itself. You might wonder if it's
 possible to make parsers that, say, have a value they pass around. The answer is yes, but it's quite
-uncommon to _need_ to do that. For these circumstances, the functionality in `parsley.registers` is
+uncommon to _need_ to do that. For these circumstances, the functionality in `parsley.state` is
 useful, but this is certainly out of scope for this page!
 
 #### Takeaways
