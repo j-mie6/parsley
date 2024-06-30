@@ -188,8 +188,8 @@ charCons.lift(nonzero, many(digit))
 Num.lift(int)
 ```
 
-The `lift` functions work all the way up to 22 arguments (which is a JVM limit). The same goes for
-the `zipped` syntax and `lift` syntax. Don't forget about `<::>` as well as its friends `<~>`,
+The `lift` functions work all the way up to 22 arguments (which is the Scala 2 limit on function arguments).
+The same goes for the `zipped` syntax and `lift` syntax. Don't forget about `<::>` as well as its friends `<~>`,
 `<*>`, and `<**>`! They all provide a concise way of combining things in (common) special cases.
 
 @:callout(info)
