@@ -12,8 +12,6 @@ import parsley.internal.errors.ExpectDesc
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 
-import org.typelevel.scalaccompat.annotation.nowarn3
-
 private [internal] final class Satisfies(f: Char => Boolean, expected: Iterable[ExpectDesc]) extends Instr {
     def this(f: Char => Boolean, expected: LabelConfig) = this(f, expected.asExpectDescs)
     override def apply(ctx: Context): Unit = {
@@ -157,7 +155,7 @@ private [internal] object Span extends Instr {
 }
 
 // This instruction holds mutate state, but it is safe to do so, because it's always the first instruction of a DynCall.
-private [parsley] final class CalleeSave(var label: Int, localRegs: Set[Ref[_]] @nowarn3, reqSize: Int, slots: List[(Int, Int)], saveArray: Array[AnyRef])
+private [parsley] final class CalleeSave(var label: Int, localRegs: Set[Ref[_]], reqSize: Int, slots: List[(Int, Int)], saveArray: Array[AnyRef])
     extends InstrWithLabel {
     private def this(label: Int, localRegs: Set[Ref[_]], reqSize: Int, slots: List[Int]) =
         this(label, localRegs, reqSize, slots.zipWithIndex, new Array[AnyRef](slots.length))
@@ -190,7 +188,8 @@ private [parsley] final class CalleeSave(var label: Int, localRegs: Set[Ref[_]] 
             saveArray(idx) = null
         }
         // This is the only way to get them reallocated on the next invocation
-        localRegs.foreach(_.deallocate()): @nowarn3
+        // FIXME: I think this isn't thread-safe, because two flatMaps can simulataneously reallocate?
+        localRegs.foreach(_.deallocate())
     }
 
     private def continue(ctx: Context): Unit = {

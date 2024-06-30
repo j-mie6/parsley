@@ -21,14 +21,9 @@ import parsley.debugger.util.XMap
   * @param parse What attempts to parse have been made?
   * @param children This debug tree node's children.
   */
-private [parsley] case class TransientDebugTree(
-    var name: String = "",
-    var internal: String = "",
-    fullInput: String,
-    var parse: Option[ParseAttempt] = None,
-    var cNumber: Option[Long] = None,
-    children: mutable.Map[String, TransientDebugTree] = new mutable.LinkedHashMap()
-) extends DebugTree {
+private [parsley] class TransientDebugTree(var name: String = "", var internal: String = "", val fullInput: String,
+                                           var parse: Option[ParseAttempt] = None, var cNumber: Option[Long] = None,
+                                           val children: mutable.LinkedHashMap[String, TransientDebugTree] = mutable.LinkedHashMap.empty) extends DebugTree {
     // These are user-facing, and will depend heavily on what the parser looks like.
     // $COVERAGE-OFF$
     override def parserName: String = name
@@ -41,19 +36,13 @@ private [parsley] case class TransientDebugTree(
     override def parseResults: Option[ParseAttempt] = parse
 
     override val nodeChildren: Map[String, DebugTree] = new XMap[String, DebugTree] {
-        // We'll use a copy-on-write methodology for this.
-        override def removed(key: String): Map[String, DebugTree] =
-            children.foldLeft(ListMap.empty[String, DebugTree])((acc, p) => acc + p) - key
-
-        // See above.
-        override def updated[V1 >: DebugTree](key: String, value: V1): Map[String, V1] =
-            children.foldLeft(ListMap.empty[String, V1])((acc, p) => acc + p) + ((key, value))
+        // We'll use a copy-on-write methodology for these two -- remember, ordering is important!
+        override def removed(key: String): Map[String, DebugTree] = ListMap.empty ++ children - key
+        override def updated[V1 >: DebugTree](key: String, value: V1): Map[String, V1] = (ListMap.empty ++ children).updated(key, value)
 
         // For get, size and iterator, we'll just use the mutable map.
         override def get(key: String): Option[DebugTree] = children.get(key)
-
         override def iterator: Iterator[(String, DebugTree)] = children.iterator
-
         override def size: Int = children.size
     }
 
@@ -64,10 +53,8 @@ private [parsley] case class TransientDebugTree(
 
     private [parsley] def augmentInput(startIndex: Int, endIndex: Int): Long = {
         augmentId += 1L
-
         val uuid = augmentId
         augments.append((uuid, (startIndex, endIndex)))
-
         uuid
     }
 
@@ -79,11 +66,8 @@ private [parsley] case class TransientDebugTree(
 
             def basis(int: Int): Int = int - p.fromOffset
 
-            p.copy(
-                inp = ua.foldRight(p.rawInput) { case ((aid, (ast, aen)), st) => st.slice(0, basis(ast)) + s"{$aid}" + st.drop(basis(aen)) },
-            )
+            p.copy(inp = ua.foldRight(p.rawInput) { case ((aid, (ast, aen)), st) => st.slice(0, basis(ast)) + s"{$aid}" + st.drop(basis(aen)) })
         }
-
         this
     }
 }

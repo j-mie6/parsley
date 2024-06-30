@@ -7,8 +7,8 @@ package parsley.token.text
 
 import parsley.Parsley, Parsley.{atomic, empty, pure}
 import parsley.character.{bit, char, digit, hexDigit, octDigit, strings}
-import parsley.combinator.ensure
-import parsley.syntax.zipped.Zipped3
+import parsley.combinator.guardS
+import parsley.syntax.zipped._
 import parsley.token.descriptions.text.{EscapeDesc, NumberOfDigits, NumericEscape}
 import parsley.token.errors.{ErrorConfig, NotConfigured}
 import parsley.token.numeric
@@ -41,8 +41,8 @@ private [token] class OriginalEscape(desc: EscapeDesc, err: ErrorConfig, generic
     // this is a really neat trick :)
     private lazy val atMostReg = parsley.state.Ref.make[Int]
     private def atMost(n: Int, radix: Int, digit: Parsley[Char]): Parsley[BigInt] = {
-        atMostReg.set(n) *> ensure(atMostReg.gets(_ > 0),
-                                   digit <* atMostReg.update(_ - 1)).foldLeft1[BigInt](0)((n, d) => n * radix + d.asDigit)
+        atMostReg.set(n) *>
+        (guardS(atMostReg.gets(_ > 0)) *> digit <* atMostReg.update(_ - 1)).foldLeft1[BigInt](0)((n, d) => n * radix + d.asDigit)
     }
 
     private def exactly(n: Int, full: Int, radix: Int, digit: Parsley[Char], reqDigits: Seq[Int]): Parsley[BigInt] = {
@@ -59,8 +59,8 @@ private [token] class OriginalEscape(desc: EscapeDesc, err: ErrorConfig, generic
             case n :: ns  =>
                 val theseDigits = exactly(digits, m, radix, digit, reqDigits)
                 val restDigits = (
-                        (atomic(go(n-m, n, ns).map(Some(_)) <* digitsParsed.update(_ + digits)))
-                    <|> (digitsParsed.set(digits).as(None))
+                        atomic(go(n-m, n, ns).map(Some(_)) <* digitsParsed.update(_ + digits))
+                    <|> digitsParsed.set(digits).as(None)
                 )
                 (theseDigits, restDigits, digitsParsed.get).zipped[BigInt] {
                     case (x, None, _) => x
@@ -85,7 +85,8 @@ private [token] class OriginalEscape(desc: EscapeDesc, err: ErrorConfig, generic
     private val binaryEscape = fromDesc(radix = 2, desc.binaryEscape, generic.zeroAllowedBinary(NotConfigured), bit)
     private val numericEscape = decimalEscape <|> hexadecimalEscape <|> octalEscape <|> binaryEscape
     val escapeCode = err.labelEscapeEnd(escMapped <|> numericEscape)
-    val escapeBegin = err.labelEscapeSequence(char(desc.escBegin))
+    val escapeBegin = err.labelEscapeSequence(char(desc.escBegin)).void
+    // do not make atomic
     val escapeChar = escapeBegin *> escapeCode
 }
 // $COVERAGE-ON$

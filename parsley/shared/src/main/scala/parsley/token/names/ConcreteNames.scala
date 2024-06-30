@@ -8,7 +8,7 @@ package parsley.token.names
 import parsley.Parsley, Parsley.{atomic, empty, pure}
 import parsley.character.{satisfy, stringOfMany}
 import parsley.errors.combinator.ErrorMethods
-import parsley.syntax.zipped.Zipped2
+import parsley.syntax.zipped._
 import parsley.token.descriptions.{NameDesc, SymbolDesc}
 import parsley.token.errors.ErrorConfig
 import parsley.token.predicate.{Basic, CharPredicate, NotRequired, Unicode}
@@ -23,10 +23,10 @@ import parsley.internal.deepembedding.singletons
   * still be implemented by plain combinators. Go look there!
   */
 private [token] class ConcreteNames(nameDesc: NameDesc, symbolDesc: SymbolDesc, err: ErrorConfig) extends Names {
-    private def keyOrOp(startImpl: CharPredicate, letterImpl: CharPredicate, illegal: String => Boolean,
+    private def keyOrOp(debugName: String, startImpl: CharPredicate, letterImpl: CharPredicate, illegal: String => Boolean,
                         name: String, unexpectedIllegal: String => String) = {
         (startImpl, letterImpl) match {
-            case (Basic(start), Basic(letter)) => new Parsley(new singletons.NonSpecific(name, unexpectedIllegal, start, letter, illegal))
+            case (Basic(start), Basic(letter)) => new Parsley(new singletons.NonSpecific(name, unexpectedIllegal, debugName, start, letter, illegal))
             case _ => atomic {
                 complete(startImpl, letterImpl).unexpectedWhen {
                     case x if illegal(x) => unexpectedIllegal(x)
@@ -48,14 +48,15 @@ private [token] class ConcreteNames(nameDesc: NameDesc, symbolDesc: SymbolDesc, 
         case NotRequired => empty
     }
     override lazy val identifier: Parsley[String] =
-        keyOrOp(nameDesc.identifierStart, nameDesc.identifierLetter, symbolDesc.isReservedName,
+        keyOrOp("identifier", nameDesc.identifierStart, nameDesc.identifierLetter, symbolDesc.isReservedName,
                 err.labelNameIdentifier, err.unexpectedNameIllegalIdentifier)
     override def identifier(startChar: CharPredicate): Parsley[String] = atomic {
         err.filterNameIllFormedIdentifier.filter(identifier)(startChar.startsWith)
     }
 
     override lazy val userDefinedOperator: Parsley[String] =
-        keyOrOp(nameDesc.operatorStart, nameDesc.operatorLetter, symbolDesc.isReservedOp, err.labelNameOperator, err.unexpectedNameIllegalOperator)
+        keyOrOp("userDefinedOperator", nameDesc.operatorStart, nameDesc.operatorLetter, symbolDesc.isReservedOp,
+                err.labelNameOperator, err.unexpectedNameIllegalOperator)
 
     def userDefinedOperator(startChar: CharPredicate, endChar: CharPredicate): Parsley[String] = atomic {
         err.filterNameIllFormedOperator.filter(userDefinedOperator)(x => startChar.startsWith(x) && endChar.endsWith(x))
