@@ -11,7 +11,7 @@ import scala.scalajs.js.annotation.JSGlobal
 import org.typelevel.scalaccompat.annotation.unused
 import parsley.debugger.util.XMutMap
 
-private [debugger] final class XWeakMap[K <: Object, V] extends XMutMap[K, V] { //
+private [parsley] final class XWeakMap[K <: Object, V] extends XMutMap[K, V] { //
     import XWeakMap.WeakMap // scalastyle:ignore import.grouping
 
     private val backing: WeakMap[K, V] = new WeakMap

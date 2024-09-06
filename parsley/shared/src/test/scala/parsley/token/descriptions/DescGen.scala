@@ -55,7 +55,6 @@ object DescGen {
     private val codepointGen = Gen.choose(0, java.lang.Character.MAX_CODE_POINT)
 
     private val literalGen = Gen.containerOf[Set, Char](Gen.oneOf('\'', '\"', '\\'))
-    private val singleGen = Gen.mapOf(Gen.zip(Gen.alphaChar, codepointGen))
     private val multiGen = Gen.mapOf(Gen.zip(Gen.nonEmptyListOf(Gen.alphaChar).map(_.mkString), codepointGen))
 
 
@@ -76,14 +75,12 @@ object DescGen {
 
     val escDescGen = for {
         literals <- literalGen
-        singles <- singleGen
-        multis <- multiGen
-        if !singles.keys.exists(c => multis.contains(s"$c"))
+        mapping <- multiGen
         decimalEscape <- numericEscapeGen(None)
         hexadecimalEscape <- numericEscapeGen(Some('x'))
         octalEscape <- numericEscapeGen(Some('o'))
         binaryEscape <- numericEscapeGen(Some('b'))
         emptyEscape <- Gen.oneOf(None, Some('&'))
         gapsSupported <- Arbitrary.arbitrary[Boolean]
-    } yield EscapeDesc('\\', literals, singles, multis, decimalEscape, hexadecimalEscape, octalEscape, binaryEscape, emptyEscape, gapsSupported)
+    } yield EscapeDesc('\\', literals, mapping, decimalEscape, hexadecimalEscape, octalEscape, binaryEscape, emptyEscape, gapsSupported)
 }

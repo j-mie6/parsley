@@ -20,6 +20,10 @@ import laika.sbt.LaikaPlugin.autoImport._
 import mdoc.MdocPlugin.autoImport._
 
 object ParsleySitePlugin extends AutoPlugin {
+    final val Stable = "stable"
+    final val Dev = "dev"
+    final val EndOfLife = "EOL"
+
     override def requires = TypelevelSitePlugin
 
     override def projectSettings: Seq[Def.Setting[_]] = Seq(
@@ -35,8 +39,11 @@ object ParsleySitePlugin extends AutoPlugin {
                                 SourceLinks(baseUri = s"${scm.browseUrl.toExternalForm}/tree/master/parsley/shared/src/main/scala/", suffix = "scala")).toSeq: _*)
             )
             .withRawContent,  // enable usage of raw HTML,
+        mdocVariables := {
+            mdocVariables.value ++ Map("STABLE_VERSION" -> "4.5.1"),
+        },
         tlSiteHelium := {
-            val notBackport = false || !githubIsWorkflowBuild.value
+            val notBackport = true || !githubIsWorkflowBuild.value
             val githubLink = GenericSiteSettings.githubLink.value
             val apiLink = tlSiteApiUrl.value.map(url => TextLink.external(url.toString, "API"))
             val redirections = redirects.theme(tlBaseVersion.value, githubIsWorkflowBuild.value)
@@ -69,7 +76,7 @@ object ParsleySitePlugin extends AutoPlugin {
                 title = Some("Parsley"),
                 subtitle = Some("A fast and modern parser combinator library for Scala"),
                 latestReleases = Seq(
-                    ReleaseInfo("Latest Stable Release", mdocVariables.value("VERSION")),
+                    ReleaseInfo("Latest Stable Release", mdocVariables.value("STABLE_VERSION")),
                     ReleaseInfo("Latest Dev Pre-Release", mdocVariables.value("PRERELEASE_VERSION")),
                 ),
                 license = Some(licenses.value.head._1),
@@ -114,8 +121,8 @@ object ParsleySitePlugin extends AutoPlugin {
                 def version(v: String, label: String)(path: String = v) =
                     Version(s"$v.x", path).withLabel(label).withFallbackLink(s"api-guide")
                 Versions
-                  .forCurrentVersion(version(tlBaseVersion.value, "stable")().setCanonical)
-                  .withOlderVersions(version("4.4", "stable")())
+                  .forCurrentVersion(version(tlBaseVersion.value, Dev)())
+                  .withOlderVersions(version("4.4", EndOfLife)(), version("4.5", Stable)().setCanonical)
                   .withRenderUnversioned(notBackport)
             }
             .site.themeColors(
@@ -190,12 +197,13 @@ object redirects {
 
     private def redirects(latest: String) = {
         // TODO: this can be made less brittle, surely can be derived from the above configuration?
-        val versions = List("latest", "stable", "4.4.x", "4.4", "4.5.x", "4.5")
+        val versions = List("latest", "stable", "4.4.x", "4.4", "4.5.x", "4.5", /*"5.0.x",*/ "5.0")
         val versionMappings = List(
             "latest" -> latest,
-            "stable" -> "4.4",
+            "stable" -> "4.5",
             "4.4.x" -> "4.4",
             "4.5.x" -> "4.5",
+            //"5.0.x" -> "5.0",
         )
 
         val versioned = (

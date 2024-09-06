@@ -3,12 +3,12 @@ import _root_.parsley.build.mima
 val projectName = "parsley"
 val Scala213 = "2.13.12"
 val Scala212 = "2.12.18"
-val Scala3 = "3.3.1"
+val Scala3 = "3.3.3"
 val Java8 = JavaSpec.temurin("8")
 val JavaLTS = JavaSpec.temurin("11")
 val JavaLatest = JavaSpec.temurin("17")
 
-val mainBranch = "master"
+val mainBranch = "staging/5.0"
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
@@ -16,7 +16,7 @@ val releaseFlags = Seq("-Xdisable-assertions", "-opt:l:method,inline", "-opt-inl
 val noReleaseFlagsScala3 = true // maybe some day this can be turned off...
 
 inThisBuild(List(
-  tlBaseVersion := "4.5",
+  tlBaseVersion := "5.0",
   organization := "com.github.j-mie6",
   organizationName := "Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>",
   startYear := Some(2020), // true start is 2018, but license is from 2020
@@ -31,7 +31,7 @@ inThisBuild(List(
   tlCiHeaderCheck := true,
   githubWorkflowJavaVersions := Seq(Java8, JavaLTS, JavaLatest),
   githubWorkflowAddedJobs += testCoverageJob(githubWorkflowGeneratedCacheSteps.value.toList),
-  //githubWorkflowConcurrency := None,
+  githubWorkflowConcurrency := None, // this allows us to not fail the pipeline on double commit
   // Website Configuration
   tlSitePublishBranch := Some(mainBranch),
 ))
@@ -78,18 +78,6 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     Compile / doc / scalacOptions ++= Seq("-doc-root-content", s"${baseDirectory.value.getPath}/rootdoc.md"),
   )
 
-lazy val docs = project
-  .in(file("site"))
-  .dependsOn(parsley.jvm)
-  .enablePlugins(ParsleySitePlugin)
-  .settings(
-    tlSiteApiModule := Some((parsley.jvm / projectID).value),
-    libraryDependencies ++= Seq(
-        "org.typelevel" %% "cats-core" % "2.10.0",
-        "com.github.j-mie6" %% "parsley-cats" % "1.3.0"
-    ),
-  )
-
 lazy val parsleyDebug = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .withoutSuffixFor(JVMPlatform)
   .crossType(CrossType.Full)
@@ -98,6 +86,24 @@ lazy val parsleyDebug = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .settings(
     name := "parsley-debug",
     commonSettings,
+    scalacOptions ++= {
+        scalaVersion.value match {
+            case Scala213 => Seq("-Ymacro-annotations")
+            case Scala3   => Seq.empty
+            case Scala212 => Seq.empty
+        }
+    },
+    libraryDependencies ++= {
+      // Reflection library choice per Scala version.
+      scalaVersion.value match {
+        case v@Scala212 => Seq(
+            "org.scala-lang" % "scala-reflect" % v,
+            compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
+        )
+        case v@Scala213 => Seq("org.scala-lang" % "scala-reflect" % v)
+        case _          => Seq()
+      }
+    },
 
     tlVersionIntroduced := Map(
       "2.13" -> "4.5.0",
@@ -105,19 +111,21 @@ lazy val parsleyDebug = crossProject(JSPlatform, JVMPlatform, NativePlatform)
       "3"    -> "4.5.0",
     ),
   )
-  .jvmSettings(
-    libraryDependencies ++= {
-      // Reflection library choice per Scala version.
-      CrossVersion.partialVersion(Keys.scalaVersion.value) match {
-        case Some((2, 12)) =>
-          Seq("org.scala-lang" % "scala-reflect" % Scala212)
-        case Some((2, 13)) =>
-          Seq("org.scala-lang" % "scala-reflect" % Scala213)
-        case _             =>
-          // No Scala library for any other version (2.11, 3, etc.).
-          Seq()
-      }
-    }
+
+lazy val docs = project
+  .in(file("site"))
+  .dependsOn(parsley.jvm)
+  .enablePlugins(ParsleySitePlugin)
+  .settings(
+    tlSiteApiModule := Some((parsley.jvm / projectID).value),
+    libraryDependencySchemes ++= Seq(
+        // this helps us when parsley-cats is trailing behind us
+        "com.github.j-mie6" %% "parsley" % VersionScheme.Always,
+    ),
+    libraryDependencies ++= Seq(
+        "org.typelevel" %% "cats-core" % "2.10.0",
+        "com.github.j-mie6" %% "parsley-cats" % "1.3.0"
+    ),
   )
 
 def testCoverageJob(cacheSteps: List[WorkflowStep]) = WorkflowJob(
