@@ -171,7 +171,7 @@
             | </span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;hey&quot;</span><span>).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;hey&quot;</span><span>)
             | </span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;hi&quot;</span><span>).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;hi&quot;</span><span>)
             )
-</span><span class="comment">// hello: parsley.Parsley[String] = parsley.Parsley@383a8a76
+</span><span class="comment">// hello: parsley.Parsley[String] = parsley.Parsley@57bf6b19
 </span><span>
 </span><span class="identifier">debug</span><span>.</span><span class="identifier">disableColourRendering</span><span>()
 
@@ -243,7 +243,7 @@
           .</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;rollback&quot;</span><span>, </span><span class="identifier">r1</span><span> -&gt; </span><span class="string-literal">&quot;r1&quot;</span><span>)
     }
 }
-</span><span class="comment">// p: parsley.Parsley[String] = parsley.Parsley@27d92dd5
+</span><span class="comment">// p: parsley.Parsley[String] = parsley.Parsley@558063b4
 </span><span>
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;hello world&quot;</span><span>)
 </span><span class="comment">// &gt;rollback&gt; (1, 1): hello·
@@ -297,7 +297,7 @@
              ).</span><span class="identifier">debugError</span><span>(</span><span class="string-literal">&quot;many letterOrDigit&quot;</span><span>)
       ~&gt; </span><span class="identifier">many</span><span>(</span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;@&#39;</span><span>).</span><span class="identifier">debugError</span><span>(</span><span class="string-literal">&quot;@&quot;</span><span>)).</span><span class="identifier">debugError</span><span>(</span><span class="string-literal">&quot;many @&quot;</span><span>)
       ~&gt; </span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;#&#39;</span><span>).</span><span class="identifier">debugError</span><span>(</span><span class="string-literal">&quot;#&quot;</span><span>)) | </span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;!&#39;</span><span>).</span><span class="identifier">debugError</span><span>(</span><span class="string-literal">&quot;!&quot;</span><span>)
-</span><span class="comment">// q: parsley.Parsley[Char] = parsley.Parsley@1c8220b3
+</span><span class="comment">// q: parsley.Parsley[Char] = parsley.Parsley@284e9cc8
 </span><span>
 </span><span class="identifier">q</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;$&quot;</span><span>)
 </span><span class="comment">// &gt;many letterOrDigit&gt; (offset 0, line 1, col 1): current hints are Set() (valid at offset 0)
@@ -393,10 +393,10 @@
 </span><span class="identifier">profiler</span><span>.</span><span class="identifier">summary</span><span>()
 </span><span class="comment">// name                    self time   num calls   average self time
 // -----------------------------------------------------------------
-// classic string          32329.1μs       10001             3.232μs
-// voided optimised string  2665.5μs       10000             0.266μs
-// optimised string         8603.7μs       10000             0.860μs
-// voided classic string    3866.0μs       10001             0.386μs
+// classic string          24087.5μs       10001             2.408μs
+// voided optimised string   822.3μs       10000             0.082μs
+// optimised string         7072.3μs       10000             0.707μs
+// voided classic string    2492.5μs       10001             0.249μs
 // -----------------------------------------------------------------</span></code></pre>
         <p>The above example shows that the <code>string</code> combinator is much faster than the &quot;classic&quot; definition
         in terms of <code>traverse</code> and <code>char</code> (not even accounting for its improved error messages!). However,
