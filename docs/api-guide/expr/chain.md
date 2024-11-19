@@ -29,7 +29,7 @@ effect of parsing like:
 
 > <h3>`(((p op p) op p) op p) op p`</h3>
 
-It can also be parded using `chain.right1(p)(op)` to have the
+It can also be parsed using `chain.right1(p)(op)` to have the
 effect of parsing like:
 
 > <h3>`p op (p op (p op (p op p)))`</h3>
