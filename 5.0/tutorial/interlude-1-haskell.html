@@ -538,7 +538,7 @@
         seeing <code>Ops</code> in our precedence, where here we are using <code>SOps</code> and the <code>Levels</code> list. This is
         important, because our AST is far more strongly typed. If we made each layer of the tree the same
         <code>(Expr, Expr) =&gt; Expr</code> shape, then we could use <code>Ops</code> as we&#39;ve been used to in other pages.
-        However, sine I opted to make a more strongly typed tree using subtyping, we have to use the more
+        However, since I opted to make a more strongly typed tree using subtyping, we have to use the more
         complex and general <code>SOps</code> precedence architecture. This has some really nice consequences:</p>
         <p>1) if, say, I removed <code>SOps(InfixR)(Exp &lt;# &quot;^&quot;)</code> from the list, it would no longer compile
         2) if, say, I accidentally said <code>SOps(InfixL)(Exp &lt;# &quot;^&quot;)</code>, then it would no longer compile
