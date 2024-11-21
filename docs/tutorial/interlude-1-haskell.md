@@ -413,7 +413,7 @@ Here we can see a whole bunch of interesting things! Firstly, up to this point w
 seeing `Ops` in our precedence, where here we are using `SOps` and the `Levels` list. This is
 important, because our AST is far more strongly typed. If we made each layer of the tree the same
 `(Expr, Expr) => Expr` shape, then we could use `Ops` as we've been used to in other pages.
-However, sine I opted to make a more strongly typed tree using subtyping, we have to use the more
+However, since I opted to make a more strongly typed tree using subtyping, we have to use the more
 complex and general `SOps` precedence architecture. This has some really nice consequences:
 
 1) if, say, I removed `SOps(InfixR)(Exp <# "^")` from the list, it would no longer compile
