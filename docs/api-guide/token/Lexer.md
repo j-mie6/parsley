@@ -6,10 +6,8 @@ laika.site.metadata.description = "This page describes how Parsley's lexer works
 %}
 
 ```scala mdoc:invisible
-import parsley.token.{Lexer, descriptions, predicate}, descriptions.{LexicalDesc, numeric, text}
+import parsley.token.{Lexer, descriptions, predicate}, descriptions._
 import predicate.CharPredicate
-import numeric._
-import text._
 ```
 
 # Lexer (`parsley.token.Lexer`)

@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package parsley.token.descriptions.text
+package parsley.token.descriptions
 
 import parsley.token.predicate.{CharPredicate, Unicode}
 

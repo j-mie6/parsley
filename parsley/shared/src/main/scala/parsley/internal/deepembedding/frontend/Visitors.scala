@@ -11,7 +11,7 @@ import parsley.debug.{Breakpoint, Profiler}
 import parsley.errors.ErrorBuilder
 import parsley.state.Ref
 import parsley.token.descriptions.SpaceDesc
-import parsley.token.descriptions.numeric.PlusSignPresence
+import parsley.token.descriptions.PlusSignPresence
 import parsley.token.errors.{ErrorConfig, LabelConfig, LabelWithExplainConfig, SpecializedFilterConfig}
 import parsley.token.predicate.CharPredicate
 

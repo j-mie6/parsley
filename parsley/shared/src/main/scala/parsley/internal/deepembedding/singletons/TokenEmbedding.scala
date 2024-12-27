@@ -5,8 +5,7 @@
  */
 package parsley.internal.deepembedding.singletons
 
-import parsley.token.descriptions.SpaceDesc
-import parsley.token.descriptions.numeric.PlusSignPresence
+import parsley.token.descriptions.{PlusSignPresence, SpaceDesc}
 import parsley.token.errors.ErrorConfig
 
 import parsley.internal.deepembedding.Sign.SignType

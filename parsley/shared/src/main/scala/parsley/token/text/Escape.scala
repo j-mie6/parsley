@@ -7,7 +7,7 @@ package parsley.token.text
 
 import parsley.Parsley, Parsley.empty
 import parsley.character.char
-import parsley.token.descriptions.text.{EscapeDesc, NumberOfDigits, NumericEscape}
+import parsley.token.descriptions.{EscapeDesc, NumberOfDigits, NumericEscape}
 import parsley.token.errors.{ErrorConfig, NotConfigured}
 import parsley.token.numeric
 

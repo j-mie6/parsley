@@ -6,7 +6,7 @@
 package parsley.token.numeric
 
 import parsley.Parsley
-import parsley.token.descriptions.numeric.NumericDesc
+import parsley.token.descriptions.NumericDesc
 import parsley.token.errors.{ErrorConfig, LabelWithExplainConfig}
 
 /** This class defines a uniform interface for defining parsers for integer

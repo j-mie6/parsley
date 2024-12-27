@@ -6,7 +6,7 @@
 package parsley.token.numeric
 
 import parsley.Parsley, Parsley.atomic
-import parsley.token.descriptions.numeric.NumericDesc
+import parsley.token.descriptions.NumericDesc
 import parsley.token.errors.ErrorConfig
 
 import org.typelevel.scalaccompat.annotation.unused

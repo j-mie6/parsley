@@ -11,8 +11,6 @@ import parsley.token.predicate.implicits.Basic.charToBasic
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
 
-import parsley.token.descriptions.text._
-
 object DescGen {
     // NAMES
     val identifierLetterGen = Gen.oneOf[CharPredicate](

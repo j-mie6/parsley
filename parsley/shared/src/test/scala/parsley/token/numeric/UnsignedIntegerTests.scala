@@ -9,7 +9,7 @@ import Predef.{ArrowAssoc => _, _}
 
 import parsley.ParsleyTest
 import parsley.token.LexemeImpl
-import parsley.token.descriptions.numeric._
+import parsley.token.descriptions._
 import parsley.token.errors.ErrorConfig
 import org.scalactic.source.Position
 

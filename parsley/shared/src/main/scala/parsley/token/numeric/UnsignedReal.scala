@@ -12,7 +12,7 @@ import parsley.errors.combinator.{amendThenDislodge, entrench}
 import parsley.lift.lift2
 import parsley.state.Ref
 import parsley.syntax.character.charLift
-import parsley.token.descriptions.numeric.{BreakCharDesc, ExponentDesc, NumericDesc}
+import parsley.token.descriptions.{BreakCharDesc, ExponentDesc, NumericDesc}
 import parsley.token.errors.{ErrorConfig, LabelConfig}
 
 private [token] final class UnsignedReal(desc: NumericDesc, err: ErrorConfig, generic: Generic) extends RealParsers(err) {

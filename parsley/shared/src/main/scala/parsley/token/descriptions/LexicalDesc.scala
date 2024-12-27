@@ -17,8 +17,8 @@ package parsley.token.descriptions
   */
 final case class LexicalDesc (nameDesc: NameDesc,
                               symbolDesc: SymbolDesc,
-                              numericDesc: numeric.NumericDesc,
-                              textDesc: text.TextDesc,
+                              numericDesc: NumericDesc,
+                              textDesc: TextDesc,
                               spaceDesc: SpaceDesc)
 
 /** This object contains any preconfigured lexical definitions.
@@ -28,5 +28,5 @@ object LexicalDesc {
     /** Defaults to the plain definitions of each sub-description.
       * @since 4.0.0
       */
-    val plain = LexicalDesc(NameDesc.plain, SymbolDesc.plain, numeric.NumericDesc.plain, text.TextDesc.plain, SpaceDesc.plain)
+    val plain = LexicalDesc(NameDesc.plain, SymbolDesc.plain, NumericDesc.plain, TextDesc.plain, SpaceDesc.plain)
 }

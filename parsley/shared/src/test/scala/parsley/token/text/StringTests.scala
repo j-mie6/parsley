@@ -9,7 +9,7 @@ import scala.Predef.{ArrowAssoc => _, _}
 import parsley.ParsleyTest
 import parsley.token.LexemeImpl
 
-import parsley.token.descriptions.text._
+import parsley.token.descriptions._
 import parsley.token.errors.ErrorConfig
 import parsley.token.predicate._
 import parsley.character.space

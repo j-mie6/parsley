@@ -7,7 +7,7 @@ package parsley.token.text
 
 import parsley.Parsley, Parsley.{empty, some}
 import parsley.character.{char, satisfyMap}
-import parsley.token.descriptions.text.EscapeDesc
+import parsley.token.descriptions.EscapeDesc
 import parsley.token.errors.ErrorConfig
 import parsley.token.predicate.{Basic, CharPredicate, NotRequired, Unicode}
 import parsley.unicode.{satisfyMap => satisfyMapUtf16}

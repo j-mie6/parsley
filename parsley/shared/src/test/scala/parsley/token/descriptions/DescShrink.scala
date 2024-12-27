@@ -7,7 +7,6 @@ package parsley.token.descriptions
 
 import org.scalacheck.Shrink
 
-import parsley.token.descriptions.text._
 import org.typelevel.scalaccompat.annotation._
 
 object DescShrink {

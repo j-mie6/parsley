@@ -8,7 +8,7 @@ package parsley.token.text
 import scala.Predef.{String => SString, ArrowAssoc => _, _}
 import parsley.ParsleyTest
 
-import parsley.token.descriptions.text._
+import parsley.token.descriptions._
 import parsley.token.errors.ErrorConfig
 import org.scalactic.source.Position
 

@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package parsley.token.descriptions.numeric
+package parsley.token.descriptions
 
 /** This class, and its subtypes, describe whether or not the plus sign (`+`) is allowed
   * in a specific position.

@@ -81,8 +81,7 @@ import parsley.Parsley
 
 object lexer {
     import parsley.token.Lexer
-    import parsley.token.descriptions.{LexicalDesc, NameDesc, SymbolDesc, SpaceDesc,
-                                       numeric, text}
+    import parsley.token.descriptions.{LexicalDesc, NameDesc, SymbolDesc, SpaceDesc, NumericDesc, ExponentDesc, EscapeDesc, TextDesc}
     import parsley.token.predicate.{Unicode, Basic}
     import parsley.character.newline
     private val haskellDesc = LexicalDesc(
@@ -97,12 +96,12 @@ object lexer {
             hardOperators = Set("$", "||", "&&", "<", "<=", ">", ">=", "==", "/=", ":",
                                 "++", "+", "-", "*", "/", "^", "."),
         ),
-        numeric.NumericDesc.plain.copy(
-            octalExponentDesc = numeric.ExponentDesc.NoExponents,
-            binaryExponentDesc = numeric.ExponentDesc.NoExponents,
+        NumericDesc.plain.copy(
+            octalExponentDesc = ExponentDesc.NoExponents,
+            binaryExponentDesc = ExponentDesc.NoExponents,
         ),
-        text.TextDesc.plain.copy(
-            escapeSequences = text.EscapeDesc.haskell,
+        TextDesc.plain.copy(
+            escapeSequences = EscapeDesc.haskell,
         ),
         SpaceDesc.plain.copy(
             lineCommentStart = "--",

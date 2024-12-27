@@ -9,7 +9,7 @@ import parsley.Parsley, Parsley.{atomic, empty, pure}
 import parsley.character.{bit, char, digit, hexDigit, octDigit, strings}
 import parsley.combinator.guardS
 import parsley.syntax.zipped._
-import parsley.token.descriptions.text.{EscapeDesc, NumberOfDigits, NumericEscape}
+import parsley.token.descriptions.{EscapeDesc, NumberOfDigits, NumericEscape}
 import parsley.token.errors.{ErrorConfig, NotConfigured}
 import parsley.token.numeric
 

@@ -18,7 +18,7 @@ import parsley.internal.deepembedding.singletons.token.*
 import parsley.internal.errors.{CaretWidth, FlexibleCaret}
 import parsley.state.Ref
 import parsley.token.descriptions.SpaceDesc
-import parsley.token.descriptions.numeric.PlusSignPresence
+import parsley.token.descriptions.PlusSignPresence
 import parsley.token.errors.{ErrorConfig, BasicFilter, LabelConfig, SpecializedFilterConfig}
 import parsley.token.predicate.Basic
 import parsley.token.errors.NotConfigured

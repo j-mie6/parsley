@@ -10,7 +10,7 @@ import parsley.character, character.{isHexDigit, isOctDigit, satisfy}
 import parsley.combinator.optional
 import parsley.errors.combinator.ErrorMethods
 import parsley.syntax.character.charLift
-import parsley.token.descriptions.numeric.{BreakCharDesc, NumericDesc}
+import parsley.token.descriptions.{BreakCharDesc, NumericDesc}
 import parsley.token.errors.{ErrorConfig, LabelConfig}
 
 private [token] class Generic(err: ErrorConfig) {
