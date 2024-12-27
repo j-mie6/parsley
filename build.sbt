@@ -30,7 +30,7 @@ inThisBuild(List(
   tlCiScalafmtCheck := false,
   tlCiHeaderCheck := true,
   githubWorkflowJavaVersions := Seq(Java8, JavaLTS, JavaLatest),
-  //githubWorkflowAddedJobs += testCoverageJob(githubWorkflowGeneratedCacheSteps.value.toList),
+  githubWorkflowAddedJobs += testCoverageJob(githubWorkflowGeneratedCacheSteps.value.toList),
   githubWorkflowConcurrency := None, // this allows us to not fail the pipeline on double commit
   // Website Configuration
   tlSitePublishBranch := Some(mainBranch),
@@ -128,7 +128,7 @@ lazy val docs = project
     ),
   )
 
-/*def testCoverageJob(cacheSteps: List[WorkflowStep]) = WorkflowJob(
+def testCoverageJob(cacheSteps: List[WorkflowStep]) = WorkflowJob(
     id = "coverage",
     name = "Run Test Coverage and Upload",
     cond = Some(s"github.ref == 'refs/heads/$mainBranch' || (github.event_name == 'pull_request' && github.base_ref == '$mainBranch')"),
@@ -148,6 +148,6 @@ lazy val docs = project
                 ).mkString("\n")),
             )
         )
-)*/
+)
 
 def coverageReport(project: String) = s"$${{github.workspace}}/$project/jvm/target/scala-2.13/coverage-report/cobertura.xml:cobertura"
