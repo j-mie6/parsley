@@ -40,7 +40,7 @@ object ParsleySitePlugin extends AutoPlugin {
             )
             .withRawContent,  // enable usage of raw HTML,
         mdocVariables := {
-            mdocVariables.value ++ Map("STABLE_VERSION" -> "4.5.1"),
+            mdocVariables.value ++ Map("STABLE_VERSION" -> "4.5.2"),
         },
         tlSiteHelium := {
             val notBackport = true || !githubIsWorkflowBuild.value
