@@ -381,14 +381,14 @@
         and its sub-components. Let&#39;s make use of this new found power and change up our <code>lexer</code> object one
         last time:</p>
         <pre><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="identifier">lexer</span><span> {
-    </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">token</span><span>.{</span><span class="type-name">Lexer</span><span>, </span><span class="identifier">predicate</span><span>}
+    </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">token</span><span>.{</span><span class="type-name">Lexer</span><span>, </span><span class="type-name">Basic</span><span>}
     </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">token</span><span>.</span><span class="identifier">descriptions</span><span>.{</span><span class="type-name">LexicalDesc</span><span>, </span><span class="type-name">NameDesc</span><span>, </span><span class="type-name">SymbolDesc</span><span>}
 
     </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">desc</span><span> = </span><span class="type-name">LexicalDesc</span><span>.</span><span class="identifier">plain</span><span>.</span><span class="identifier">copy</span><span>(
         </span><span class="identifier">nameDesc</span><span> = </span><span class="type-name">NameDesc</span><span>.</span><span class="identifier">plain</span><span>.</span><span class="identifier">copy</span><span>(
             </span><span class="comment">// Unicode is also possible instead of Basic
-</span><span>            </span><span class="identifier">identifierStart</span><span> = </span><span class="identifier">predicate</span><span>.</span><span class="type-name">Basic</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">isLetter</span><span>),
-            </span><span class="identifier">identifierLetter</span><span> = </span><span class="identifier">predicate</span><span>.</span><span class="type-name">Basic</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">isLetter</span><span>),
+</span><span>            </span><span class="identifier">identifierStart</span><span> = </span><span class="type-name">Basic</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">isLetter</span><span>),
+            </span><span class="identifier">identifierLetter</span><span> = </span><span class="type-name">Basic</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">isLetter</span><span>),
         ),
         </span><span class="identifier">symbolDesc</span><span> = </span><span class="type-name">SymbolDesc</span><span>.</span><span class="identifier">plain</span><span>.</span><span class="identifier">copy</span><span>(
             </span><span class="identifier">hardKeywords</span><span> = </span><span class="type-name">Set</span><span>(</span><span class="string-literal">&quot;negate&quot;</span><span>),
