@@ -57,7 +57,7 @@ private [token] abstract class Lexeme {
   * implementations precisely match the semantics of the originals.
   *
   * @define numeric
-  *     This object contains lexing functionality relevant to the parsing
+  *     These objects contain lexing functionality relevant to the parsing
   *     of numbers. This is sub-divided into different categories:
   *
   *       - integers (both signed and unsigned)
@@ -71,7 +71,7 @@ private [token] abstract class Lexeme {
   *     sizes or precisions.
   *
   * @define text
-  *     This object contains lexing functionality relevant to the parsing
+  *     These object contain lexing functionality relevant to the parsing
   *     of text. This is sub-divided into different categories:
   *
   *       - string literals (both with escapes and raw)
@@ -262,6 +262,21 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
       * parsers are parsed. It is not, however, required that whitespace be
       * present.
       *
+      * @groupname numericg Numeric Parsers
+      * @groupdesc numericg $numeric
+      *
+      * @groupname textg String Literal Parsers
+      * @groupdesc textg $text
+      *
+      * @groupname separatorsg Separators
+      * @groupdesc separatorsg
+      *     These combinators are useful for separating a parser by commonly used
+      *     bits, such as commas.
+      *
+      * @groupname enclosingg Enclosers
+      * @groupdesc enclosingg
+      *     These combinators abstract away different bracket-like constructions.
+      *
       * @since 4.0.0
       */
     object lexeme extends Lexeme {
@@ -292,6 +307,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           *
           * @since 4.5.0
           * @note alias for [[natural `natural`]].
+          * @group numericg
           */
         // $COVERAGE-OFF$
         def unsigned: IntegerParsers = natural
@@ -299,6 +315,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
         /** $natural
           *
           * @since 4.5.0
+          * @group numericg
           */
         val natural: IntegerParsers = new LexemeInteger(nonlexeme.natural, this)
 
@@ -307,6 +324,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @since 4.5.0
           * @note alias for [[integer `integer`]]
           * @see [[unsigned `unsigned`]] for a full description of signed integer configuration
+          * @group numericg
           */
         // $COVERAGE-OFF$
         def signed: IntegerParsers = integer
@@ -315,6 +333,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           *
           * @since 4.5.0
           * @see [[natural `natural`]] for a full description of integer configuration
+          * @group numericg
           */
         val integer: IntegerParsers = new LexemeInteger(nonlexeme.integer, this)
 
@@ -323,6 +342,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @since 4.5.0
           * @note alias for [[real `real`]]
           * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
+          * @group numericg
           */
         // $COVERAGE-OFF$
         def floating: RealParsers = real
@@ -331,45 +351,53 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           *
           * @since 4.5.0
           * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
+          * @group numericg
           */
         val real: RealParsers = new LexemeReal(nonlexeme.real, this, errConfig)
 
         /** $unsignedCombined
           *
           * @since 4.5.0
+          * @group numericg
           */
         val unsignedCombined: CombinedParsers = new LexemeCombined(nonlexeme.unsignedCombined, this, errConfig)
         /** $signedCombined
           *
           * @since 4.5.0
+          * @group numericg
           */
         val signedCombined: CombinedParsers = new LexemeCombined(nonlexeme.signedCombined, this, errConfig)
 
         /** $character
           *
           * @since 4.5.0
+          * @group textg
           */
         def character: CharacterParsers = new LexemeCharacter(nonlexeme.character, this)
         /** $string
           *
           * @since 4.5.0
+          * @group textg
           */
         def string: StringParsers = new LexemeString(nonlexeme.string, this)
         /** $string
           *
           * @note $raw
           * @since 4.5.0
+          * @group textg
           */
         def rawString: StringParsers = new LexemeString(nonlexeme.rawString, this)
         /** $multiString
           *
           * @since 4.5.0
+          * @group textg
           */
         def multiString: StringParsers = new LexemeString(nonlexeme.multiString, this)
         /** $multiString
           *
           * @note $raw
           * @since 4.5.0
+          * @group textg
           */
         def rawMultiString: StringParsers = new LexemeString(nonlexeme.rawMultiString, this)
 
@@ -399,6 +427,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @param p the parser whose results are collected into a list.
           * @return a parser that parses `p` delimited by semi-colons, returning the list of `p`'s results.
           * @since 4.5.0
+          * @group separatorsg
           */
         def semiSep[A](p: Parsley[A]): Parsley[List[A]] = sepBy(p, symbol.semi)
         /**  This combinator parses '''one''' or more occurrences of `p`, separated by semi-colons.
@@ -424,6 +453,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @param p the parser whose results are collected into a list.
           * @return a parser that parses `p` delimited by semi-colons, returning the list of `p`'s results.
           * @since 4.5.0
+          * @group separatorsg
           */
         def semiSep1[A](p: Parsley[A]): Parsley[List[A]] = sepBy1(p, symbol.semi)
         /**  This combinator parses '''zero''' or more occurrences of `p`, separated by commas.
@@ -446,6 +476,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @param p the parser whose results are collected into a list.
           * @return a parser that parses `p` delimited by commas, returning the list of `p`'s results.
           * @since 4.5.0
+          * @group separatorsg
           */
         def commaSep[A](p: Parsley[A]): Parsley[List[A]] = sepBy(p, symbol.comma)
         /**  This combinator parses '''one''' or more occurrences of `p`, separated by commas.
@@ -471,6 +502,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @param p the parser whose results are collected into a list.
           * @return a parser that parses `p` delimited by commas, returning the list of `p`'s results.
           * @since 4.5.0
+          * @group separatorsg
           */
         def commaSep1[A](p: Parsley[A]): Parsley[List[A]] = sepBy1(p, symbol.comma)
 
@@ -493,6 +525,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @param p the parser to parse between parentheses.
           * @return a parser that reads an open parenthesis, then `p`, then a closing parenthesis and returns the result of `p`.
           * @since 4.5.0
+          * @group enclosingg
           */
         def parens[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, symbol.openParen, symbol.closingParen, "parentheses")
         /** This combinator parses a `p` enclosed within braces.
@@ -514,6 +547,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @param p the parser to parse between parentheses.
           * @return a parser that reads an open brace, then `p`, then a closing brace and returns the result of `p`.
           * @since 4.5.0
+          * @group enclosingg
           */
         def braces[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, symbol.openBrace, symbol.closingBrace, "braces")
         /** This combinator parses a `p` enclosed within angle brackets.
@@ -535,6 +569,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @param p the parser to parse between parentheses.
           * @return a parser that reads an open bracket, then `p`, then a closing bracket and returns the result of `p`.
           * @since 4.5.0
+          * @group enclosingg
           */
         def angles[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, symbol.openAngle, symbol.closingAngle, "angle brackets")
         /** This combinator parses a `p` enclosed within square brackets.
@@ -556,6 +591,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @param p the parser to parse between parentheses.
           * @return a parser that reads an open bracket, then `p`, then a closing bracket and returns the result of `p`.
           * @since 4.5.0
+          * @group enclosingg
           */
         def brackets[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, symbol.openSquare, symbol.closingSquare, "square brackets")
 
@@ -582,6 +618,12 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
       * it is desirable to ''not'' consume whitespace after the token to keep the
       * error tight and precise.
       *
+      * @groupname numericg Numeric Parsers
+      * @groupdesc numericg $numeric
+      *
+      * @groupname textg String Literal Parsers
+      * @groupdesc textg $text
+      *
       * @since 4.0.0
       */
     object nonlexeme {
@@ -595,6 +637,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           *
           * @since 4.5.0
           * @note alias for [[natural `natural`]].
+          * @group numericg
           */
         // $COVERAGE-OFF$
         def unsigned: IntegerParsers = natural
@@ -602,6 +645,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
         /** $natural
           *
           * @since 4.5.0
+          * @group numericg
           */
         val natural: IntegerParsers = new UnsignedInteger(desc.numericDesc, errConfig, generic)
 
@@ -610,6 +654,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @since 4.5.0
           * @note alias for [[integer `integer`]]
           * @see [[unsigned `unsigned`]] for a full description of signed integer configuration
+          * @group numericg
           */
         // $COVERAGE-OFF$
         def signed: IntegerParsers = integer
@@ -618,6 +663,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           *
           * @since 4.5.0
           * @see [[natural `natural`]] for a full description of integer configuration
+          * @group numericg
           */
         val integer: IntegerParsers = new SignedInteger(desc.numericDesc, natural, errConfig)
 
@@ -626,6 +672,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @since 4.5.0
           * @note alias for [[real `real`]]
           * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
+          * @group numericg
           */
         // $COVERAGE-OFF$
         def floating: RealParsers = real
@@ -635,17 +682,20 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           *
           * @since 4.5.0
           * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
+          * @group numericg
           */
         val real: RealParsers = new SignedReal(desc.numericDesc, positiveReal, errConfig)
 
         /** $unsignedCombined
           *
           * @since 4.5.0
+          * @group numericg
           */
         val unsignedCombined: CombinedParsers = new UnsignedCombined(desc.numericDesc, natural, positiveReal, errConfig)
         /** $signedCombined
           *
           * @since 4.5.0
+          * @group numericg
           */
         val signedCombined: CombinedParsers = new SignedCombined(desc.numericDesc, unsignedCombined, errConfig)
 
@@ -657,28 +707,33 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
         /** $character
           *
           * @since 4.5.0
+          * @group textg
           */
         val character: CharacterParsers = new ConcreteCharacter(desc.textDesc, escapes, errConfig)
         /** $string
           *
           * @since 4.5.0
+          * @group textg
           */
         val string: StringParsers = new ConcreteString(desc.textDesc.stringEnds, escapeChar, desc.textDesc.graphicCharacter, false, errConfig)
         /** $string
           *
           * @note $raw
           * @since 4.5.0
+          * @group textg
           */
         val rawString: StringParsers = new ConcreteString(desc.textDesc.stringEnds, rawChar, desc.textDesc.graphicCharacter, false, errConfig)
         /** $multiString
           *
           * @since 4.5.0
+          * @group textg
           */
         val multiString: StringParsers = new ConcreteString(desc.textDesc.multiStringEnds, escapeChar, desc.textDesc.graphicCharacter, true, errConfig)
         /** $multiString
           *
           * @note $raw
           * @since 4.5.0
+          * @group textg
           */
         val rawMultiString: StringParsers = new ConcreteString(desc.textDesc.multiStringEnds, rawChar, desc.textDesc.graphicCharacter, true, errConfig)
 
