@@ -243,9 +243,9 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">charLift</span><span>, </span><span class="identifier">stringLift</span><span>}
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">openTag</span><span> = </span><span class="identifier">atomic</span><span>(</span><span class="char-literal">&#39;&lt;&#39;</span><span> &lt;~ </span><span class="identifier">notFollowedBy</span><span>(</span><span class="char-literal">&#39;/&#39;</span><span>))
-</span><span class="comment">// openTag: Parsley[Char] = parsley.Parsley@43510415
+</span><span class="comment">// openTag: Parsley[Char] = parsley.Parsley@3e7875ee
 </span><span class="keyword">val</span><span> </span><span class="identifier">tagName</span><span> = </span><span class="identifier">stringOfSome</span><span>(</span><span class="identifier">letter</span><span>)
-</span><span class="comment">// tagName: Parsley[String] = parsley.Parsley@48e5a9f3
+</span><span class="comment">// tagName: Parsley[String] = parsley.Parsley@65cc9d63
 </span><span>
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">content</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">optional</span><span>(</span><span class="identifier">tag</span><span>)
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">tag</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = (</span><span class="identifier">openTag</span><span> ~&gt; </span><span class="identifier">tagName</span><span> &lt;~ </span><span class="char-literal">&#39;&gt;&#39;</span><span>).</span><span class="identifier">fillRef</span><span> { </span><span class="identifier">name</span><span> =&gt;
@@ -328,7 +328,7 @@
         if the corresponding closing bracket cannot be parsed, it will use an
         unconditional <a href="errors/patterns.html#verified-errors"><em>Verified Error</em></a> to report a message based on the last opened bracket. The results are below:</p>
         <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="identifier">brackets</span><span>
-</span><span class="comment">// p: Parsley[Unit] = parsley.Parsley@71066bf7
+</span><span class="comment">// p: Parsley[Unit] = parsley.Parsley@4e3d1564
 </span><span>
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;()()()&quot;</span><span>)
 </span><span class="comment">// res5: parsley.Result[String, Unit] = Success(())
@@ -407,7 +407,7 @@
     } ~&gt;
     </span><span class="identifier">i</span><span>.</span><span class="identifier">get</span><span> &lt;~ </span><span class="identifier">eof</span><span>
 }
-</span><span class="comment">// abcs: Parsley[Int] = parsley.Parsley@784dd7b4
+</span><span class="comment">// abcs: Parsley[Int] = parsley.Parsley@7abfde8e
 </span><span>
 </span><span class="identifier">abcs</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;aabbcc&quot;</span><span>)
 </span><span class="comment">// res12: parsley.Result[String, Int] = Success(2)
