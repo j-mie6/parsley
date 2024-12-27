@@ -10,6 +10,8 @@ import parsley.character.satisfy
 import parsley.exceptions.ParsleyException
 import parsley.unicode.{satisfy => satisfyUtf16}
 
+import scala.collection.immutable.NumericRange
+
 /** Base class for character predicates.
   * @since 4.0.0
   */
@@ -35,12 +37,42 @@ sealed abstract class CharPredicate {
   * @since 4.0.0
   */
 final case class Unicode(predicate: Int => Boolean) extends CharPredicate {
+    def this(c: Int) = this(_ == c)
+    def this(cs: NumericRange[Int]) = this(cs.contains)
+    def this(cs: Range) = this(cs.contains)
     private [token] override def toBmp = satisfy(c => predicate(c.toInt))
     private [token] override def toUnicode = satisfyUtf16(predicate)
     private [token] override def toNative = toUnicode.void
     private [token] def startsWith(s: String) = s.nonEmpty && predicate(s.codePointAt(0))
     private [token] def endsWith(s: String) = s.nonEmpty && predicate(s.codePointBefore(s.length))
     private [parsley] def asInternalPredicate = new parsley.internal.machine.instructions.token.Unicode(predicate)
+}
+object Unicode {
+    /** Lifts a regular full-width character predicate.
+      * @since 5.0.0
+      */
+    def apply(c: Int): Unicode = new Unicode(_ == c)
+    /** Constructs a predicate for anything in a range of specific unicode codepoints.
+      * @since 5.0.0
+      */
+    def apply(cs: NumericRange[Int]): Unicode = new Unicode(cs.contains)
+    /** Constructs a predicate for anything in a range of specific unicode codepoints.
+      * @since 5.0.0
+      */
+    def apply(cs: Range): Unicode = new Unicode(cs.contains)
+
+    /** Lifts a regular character predicate.
+      * @since 5.0.0
+      */
+    def char(pred: Char => Boolean): Unicode = new Unicode(c => c.isValidChar && pred(c.toChar))
+    /** Constructs a predicate for the specific given character.
+      * @since 5.0.0
+      */
+    def char(c: Char): Unicode = new Unicode(c.toInt)
+    /** Constructs a predicate for anything in a range of specific characters.
+      * @since 5.0.0
+      */
+    def char(cs: NumericRange[Char]): Unicode = char(cs.contains)
 }
 
 /** Basic character predicate, which reads regular Scala 16-bit characters.
@@ -51,6 +83,8 @@ final case class Unicode(predicate: Int => Boolean) extends CharPredicate {
   * @since 4.0.0
   */
 final case class Basic(predicate: Char => Boolean) extends CharPredicate {
+    def this(c: Char) = this(_ == c)
+    def this(cs: NumericRange[Char]) = this(cs.contains)
     private [token] override def toBmp = satisfy(predicate)
     // $COVERAGE-OFF$
     private [token] override def toUnicode =
@@ -60,6 +94,16 @@ final case class Basic(predicate: Char => Boolean) extends CharPredicate {
     private [token] def startsWith(s: String) = s.headOption.exists(predicate)
     private [token] def endsWith(s: String) = s.lastOption.exists(predicate)
     private [parsley] def asInternalPredicate = new parsley.internal.machine.instructions.token.Basic(predicate)
+}
+object Basic {
+    /** Constructs a predicate for the specific given character.
+      * @since 5.0.0
+      */
+    def apply(c: Char): Basic = new Basic(c)
+    /** Constructs a predicate for anything in a range of specific characters.
+      * @since 5.0.0
+      */
+    def apply(cs: NumericRange[Char]): Basic = new Basic(cs)
 }
 
 /** Character predicate that never succeeds.

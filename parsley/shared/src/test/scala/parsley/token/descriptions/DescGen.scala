@@ -6,7 +6,6 @@
 package parsley.token.descriptions
 
 import parsley.token.predicate._
-import parsley.token.predicate.implicits.Basic.charToBasic
 
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
@@ -19,7 +18,7 @@ object DescGen {
         NotRequired,
         Unicode(Character.isLetter(_)),
         Unicode(Character.isLetterOrDigit(_)),
-        '$'
+        Basic('$'),
     )
 
     private val opCharGen = Gen.nonEmptyContainerOf[Set, Char](Gen.oneOf('+', '*', '/', 'a'))

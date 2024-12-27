@@ -12,15 +12,15 @@ import parsley.Parsley.eof
 import parsley.character.string
 
 import token.{descriptions => desc}
-import token.predicate.implicits.Basic._
+import token.predicate.Basic
 
 class TokeniserTests extends ParsleyTest {
     val scala =
         desc.LexicalDesc(
-            desc.NameDesc(identifierStart = ('a' to 'z').toSet ++ ('A' to 'Z').toSet + '_',
-                          identifierLetter = ('a' to 'z').toSet ++ ('A' to 'Z').toSet ++ ('0' to '9').toSet + '_',
-                          operatorStart = Set('+', '-', ':', '/', '*', '='),
-                          operatorLetter = Set('+', '-', '/', '*')),
+            desc.NameDesc(identifierStart = Basic(('a' to 'z').toSet ++ ('A' to 'Z').toSet + '_'),
+                          identifierLetter = Basic(('a' to 'z').toSet ++ ('A' to 'Z').toSet ++ ('0' to '9').toSet + '_'),
+                          operatorStart = Basic(Set('+', '-', ':', '/', '*', '=')),
+                          operatorLetter = Basic(Set('+', '-', '/', '*'))),
             desc.SymbolDesc(hardKeywords = Set("if", "else", "for", "yield", "while", "def", "class",
                                                "trait", "abstract", "override", "val", "var", "lazy"),
                             hardOperators = Set(":", "=", "::", ":="),

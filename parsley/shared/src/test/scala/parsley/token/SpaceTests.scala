@@ -23,7 +23,7 @@ class SpaceTests extends ParsleyTest {
     private def makeSpace(space: SpaceDesc) = makeLexer(space).space
 
     val basicNoComments = SpaceDesc.plain.copy(space = predicate.Basic(Character.isWhitespace))
-    val unicodeNoComments = basicNoComments.copy(space = predicate.Unicode(Character.isWhitespace))
+    val unicodeNoComments = basicNoComments.copy(space = predicate.Unicode(Character.isWhitespace(_)))
 
     "whiteSpace" should "parse spaces when no comments are defined" in cases(makeSpace(basicNoComments).whiteSpace *> string("a")) (
         "a" -> Some("a"),

@@ -49,13 +49,13 @@ class NamesTests extends ParsleyTest {
             "hi" -> Some("hi"),
             "x7" -> Some("x7"),
         )
-        identCases(Unicode(Character.isAlphabetic), Unicode(Character.isLetterOrDigit))(
+        identCases(Unicode(Character.isAlphabetic), Unicode(Character.isLetterOrDigit(_)))(
             "hello1" -> Some("hello1"),
             "7f" -> None,
             "hi" -> Some("hi"),
             "x7" -> Some("x7"),
         )
-        identCases(Basic(_.isLetter), Unicode(Character.isDigit))(
+        identCases(Basic(_.isLetter), Unicode(Character.isDigit(_)))(
             "hello1" -> None,
             "7f" -> None,
             "7" -> None,

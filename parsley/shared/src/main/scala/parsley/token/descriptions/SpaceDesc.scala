@@ -58,7 +58,7 @@ object SpaceDesc {
         lineCommentStart = "",
         lineCommentAllowsEOF = true,
         multiLineNestedComments = false,
-        space = Unicode(Character.isWhitespace),
+        space = Unicode(Character.isWhitespace(_)),
         whitespaceIsContextDependent = false
     )
 }
