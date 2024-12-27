@@ -56,7 +56,6 @@ sealed abstract class Result[+Err, +A] {
       * }}}
       *
       * @note the result must not be a failure.
-      * @throws java.util.NoSuchElementException if the result is a failure.
       * @since 1.7.0
       */
     def get: A
