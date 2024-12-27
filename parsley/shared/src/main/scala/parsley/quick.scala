@@ -5,8 +5,9 @@
  */
 package parsley
 
-//TODO: documentation
-/**
+/** This serves as a quick way of importing everything from `Parsley`, `character`, `position`, `lift`, and `ap`.
+  * Other packages are not included in this, but this should be a good baseline for any non-lexing/expression
+  * parsing work.
   *
   * @since 5.0.0
   *

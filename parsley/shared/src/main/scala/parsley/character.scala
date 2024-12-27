@@ -507,7 +507,7 @@ private [parsley] trait character {
       * @since 4.0.0
       * @group string
       */
-    final def strings(str0: String, strs: String*): Parsley[String] = strings(str0 -> pure(str0), strs.map(s => s -> pure(s)): _*) //TODO: name
+    final def strings(str0: String, strs: String*): Parsley[String] = strings(str0 -> pure(str0), strs.map(s => s -> pure(s)): _*)
 
     /** This combinator tries to parse each of the key-value pairs `kvs` (and `kv0`), until one of them succeeds.
       *
@@ -543,7 +543,7 @@ private [parsley] trait character {
       * @since 4.0.0
       * @group string
       */
-    final def strings[A](kv0: (String, Parsley[A]), kvs: (String, Parsley[A])*): Parsley[A] = { //TODO: name
+    final def strings[A](kv0: (String, Parsley[A]), kvs: (String, Parsley[A])*): Parsley[A] = {
         // this isn't the best we could do: it's possible to eliminate backtracking with a Trie...
         // can this be done in a semantic preserving way without resorting to a new instruction?
         // I don't think it's worth it. Down the line a general Trie-backed optimisation would be
@@ -551,8 +551,8 @@ private [parsley] trait character {
         val ss = kv0 +: kvs
         choice(ss.groupBy(_._1.head).toList.sortBy(_._1).view.map(_._2).flatMap { s =>
             val (sLast, pLast) :: rest = s.toList.sortBy(_._1.length): @unchecked
-            ((string(sLast) *> pLast) :: rest.map { case (s, p) => atomic(string(s)) *> p }).reverse
-        }.toSeq: _*)
+            ((string(sLast).ut() *> pLast.ut()).ut() :: rest.map { case (s, p) => (atomic(string(s).ut()).ut() *> p).ut() }).reverse
+        }.toSeq: _*).uo((kv0._1 +: kvs.map(_._1)).mkString("strings(", ", ", ")"))
     }
 
     /** This parser will parse '''any''' single character from the input, failing if there is no input remaining.

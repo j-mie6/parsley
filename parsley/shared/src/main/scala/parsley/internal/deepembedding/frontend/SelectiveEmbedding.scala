@@ -24,7 +24,7 @@ private [parsley] final class If[A](b: LazyParsley[Boolean], p: =>LazyParsley[A]
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(b, p, q)
 
-    private [parsley] var debugName = "ifP"
+    private [parsley] var debugName = "ifS"
     // $COVERAGE-ON$
 }
 
