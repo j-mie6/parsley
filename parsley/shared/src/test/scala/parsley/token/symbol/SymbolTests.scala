@@ -12,9 +12,9 @@ import parsley.token.LexemeImpl._
 
 import parsley.token.descriptions._
 import parsley.token.errors.ErrorConfig
-import parsley.token.predicate._
 import parsley.character.{spaces, string}
 import org.scalactic.source.Position
+import parsley.token.{Basic, Unicode}
 
 class SymbolTests extends ParsleyTest {
     val errConfig = new ErrorConfig {

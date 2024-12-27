@@ -5,7 +5,7 @@
  */
 package parsley.token.descriptions
 
-import parsley.token.predicate.{CharPred, Unicode}
+import parsley.token.{CharPred, Unicode}
 
 import parsley.internal.collection.immutable.Trie
 

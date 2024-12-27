@@ -41,7 +41,7 @@ different content. As examples (in isolation of surrounding content):
 
 ```scala mdoc:invisible
 import parsley.token.Lexer
-import parsley.token.predicate.{Basic}
+import parsley.token.Basic
 import parsley.token.descriptions.{LexicalDesc, NameDesc}
 
 val lexer = new Lexer(LexicalDesc.plain.copy(

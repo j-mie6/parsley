@@ -86,14 +86,14 @@ keywords and operators), so let's see what the parser is like:
 ```scala mdoc:invisible
 import parsley.Parsley
 object lexer {
-    import parsley.token.{Lexer, predicate}
+    import parsley.token.{Lexer, Basic}
     import parsley.token.descriptions.{LexicalDesc, NameDesc, SymbolDesc}
     import parsley.errors.combinator._
 
     private val desc = LexicalDesc.plain.copy(
         nameDesc = NameDesc.plain.copy(
-            identifierStart = predicate.Basic(_.isLetter),
-            identifierLetter = predicate.Basic(_.isLetter),
+            identifierStart = Basic(_.isLetter),
+            identifierLetter = Basic(_.isLetter),
         ),
         symbolDesc = SymbolDesc.plain.copy(
             hardKeywords = Set("negate", "not", "if", "else", "true", "false"),

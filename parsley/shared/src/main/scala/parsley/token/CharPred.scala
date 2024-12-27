@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package parsley.token.predicate
+package parsley.token
 
 import parsley.Parsley, Parsley.empty
 import parsley.character.satisfy

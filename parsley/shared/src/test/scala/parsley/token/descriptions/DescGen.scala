@@ -5,10 +5,10 @@
  */
 package parsley.token.descriptions
 
-import parsley.token.predicate._
 
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
+import parsley.token.{Unicode, NotRequired, CharPred, Basic}
 
 object DescGen {
     // NAMES

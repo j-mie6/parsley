@@ -6,8 +6,7 @@ laika.site.metadata.description = "This page describes how Parsley's lexer works
 %}
 
 ```scala mdoc:invisible
-import parsley.token.{Lexer, descriptions, predicate}, descriptions._
-import predicate.CharPred
+import parsley.token.{Lexer, descriptions, CharPred, Basic, Unicode}, descriptions._
 ```
 
 # Lexer (`parsley.token.Lexer`)
@@ -285,7 +284,7 @@ This can be restricted to a smaller set than might otherwise have been checked b
 generated:
 
 ```scala mdoc:to-string
-val aboveSpace = predicate.Unicode(_ >= 0x20)
+val aboveSpace = Unicode(_ >= 0x20)
 def stringParsers(graphicChar: CharPred = aboveSpace,
                   escapeDesc: EscapeDesc = EscapeDesc.plain) =
     new Lexer(LexicalDesc.plain.copy(
@@ -296,7 +295,7 @@ def stringParsers(graphicChar: CharPred = aboveSpace,
     )).nonlexeme.string
 
 val fullUnicode = stringParsers(aboveSpace)
-val latin1Limited = stringParsers(predicate.Basic(c => c >= 0x20 && c <= 0xcf))
+val latin1Limited = stringParsers(Basic(c => c >= 0x20 && c <= 0xcf))
 
 fullUnicode.latin1.parse("\"hello α\"")
 latin1Limited.fullUtf16.parse("\"hello α\"")
@@ -391,7 +390,7 @@ change the definition of whitespace (but not comments) within the scope of a giv
 As an example:
 
 ```scala
-val withNewline = predicate.Basic(_.isSpace)
+val withNewline = Basic(_.isSpace)
 val expr = ... | "(" ~> lexer.space.alter(withNewline)(expr) <~ ")"
 ```
 

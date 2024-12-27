@@ -20,7 +20,7 @@ import parsley.state.Ref
 import parsley.token.descriptions.SpaceDesc
 import parsley.token.descriptions.PlusSignPresence
 import parsley.token.errors.{ErrorConfig, BasicFilter, LabelConfig, SpecializedFilterConfig}
-import parsley.token.predicate.Basic
+import parsley.token.Basic
 import parsley.token.errors.NotConfigured
 
 class VisitorTests extends ParsleyTest {

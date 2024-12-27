@@ -13,7 +13,7 @@ import parsley.state.Ref
 import parsley.token.descriptions.SpaceDesc
 import parsley.token.descriptions.PlusSignPresence
 import parsley.token.errors.{ErrorConfig, LabelConfig, LabelWithExplainConfig, SpecializedFilterConfig}
-import parsley.token.predicate.CharPred
+import parsley.token.CharPred
 
 // scalastyle:off underscore.import
 import parsley.internal.collection.immutable.Trie

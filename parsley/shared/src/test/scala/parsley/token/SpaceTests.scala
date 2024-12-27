@@ -22,8 +22,8 @@ class SpaceTests extends ParsleyTest {
     private def makeLexer(space: SpaceDesc) = new Lexer(LexicalDesc.plain.copy(spaceDesc = space))
     private def makeSpace(space: SpaceDesc) = makeLexer(space).space
 
-    val basicNoComments = SpaceDesc.plain.copy(space = predicate.Basic(Character.isWhitespace))
-    val unicodeNoComments = basicNoComments.copy(space = predicate.Unicode(Character.isWhitespace(_)))
+    val basicNoComments = SpaceDesc.plain.copy(space = Basic(Character.isWhitespace(_)))
+    val unicodeNoComments = basicNoComments.copy(space = Unicode(Character.isWhitespace(_)))
 
     "whiteSpace" should "parse spaces when no comments are defined" in cases(makeSpace(basicNoComments).whiteSpace *> string("a")) (
         "a" -> Some("a"),
@@ -101,8 +101,8 @@ class SpaceTests extends ParsleyTest {
         )
     }
 
-    val basicCommentsOnly = basicMixed.copy(space = predicate.NotRequired)
-    val unicodeCommentsOnly = unicodeMixed.copy(space = predicate.NotRequired)
+    val basicCommentsOnly = basicMixed.copy(space = NotRequired)
+    val unicodeCommentsOnly = unicodeMixed.copy(space = NotRequired)
 
     it should "be skipComments with no whitespace allowed" in {
         val basic = makeSpace(basicCommentsOnly)
@@ -244,7 +244,7 @@ class SpaceTests extends ParsleyTest {
     }
 
     it should "initialise space to the default space definition" in {
-        val space = makeSpace(basicDependent.copy(space = predicate.Basic(Set('a'))))
+        val space = makeSpace(basicDependent.copy(space = Basic(Set('a'))))
         cases(space.init *> space.whiteSpace)(
             "aaaaaa" -> Some(()),
             "aaa##hello##" -> Some(()),
@@ -259,13 +259,13 @@ class SpaceTests extends ParsleyTest {
 
     "alter" should "not work if context-dependent whitespace is off" in {
         an [UnsupportedOperationException] should be thrownBy {
-            makeSpace(basicMixed).alter(predicate.NotRequired)(char('a')).parse("")
+            makeSpace(basicMixed).alter(NotRequired)(char('a')).parse("")
         }
     }
 
     it should "temporarily alter how whitespace is parsed" in {
         val space = makeSpace(basicDependent)
-        cases(space.init *> space.whiteSpace *> space.alter(predicate.Basic(Set('a'))) {
+        cases(space.init *> space.whiteSpace *> space.alter(Basic(Set('a'))) {
             char('b') *> space.whiteSpace *> char('b')
         } *> space.whiteSpace)(
             "bb" -> Some(()),
@@ -278,7 +278,7 @@ class SpaceTests extends ParsleyTest {
 
     it should "not restore old whitespace if the given parser fails having consumed input" in {
         val space = makeSpace(basicDependent)
-        val p = space.init *> (atomic(space.alter(predicate.Basic(Set('a')))(char('b') *> space.whiteSpace <* char('b'))) <|> char('b') *> space.whiteSpace)
+        val p = space.init *> (atomic(space.alter(Basic(Set('a')))(char('b') *> space.whiteSpace <* char('b'))) <|> char('b') *> space.whiteSpace)
         cases(p)(
             "baaab" -> Some(()),
             "baaaa" -> Some(()),

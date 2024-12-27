@@ -11,8 +11,8 @@ import parsley.token.LexemeImpl
 
 import parsley.token.descriptions._
 import parsley.token.errors.ErrorConfig
-import parsley.token.predicate._
 import org.scalactic.source.Position
+import parsley.token.{Basic, NotRequired, Unicode}
 
 class CharacterTests extends ParsleyTest {
     val errConfig = new ErrorConfig

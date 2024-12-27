@@ -7,7 +7,7 @@ package parsley.token.names
 
 import parsley.Parsley
 import parsley.token.Lexeme
-import parsley.token.predicate.CharPred
+import parsley.token.CharPred
 
 private [token] class LexemeNames(names: Names, lexeme: Lexeme) extends Names {
     override lazy val identifier: Parsley[String] = lexeme(names.identifier)

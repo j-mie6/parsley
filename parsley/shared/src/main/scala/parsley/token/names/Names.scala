@@ -6,7 +6,7 @@
 package parsley.token.names
 
 import parsley.Parsley
-import parsley.token.predicate.{CharPred, NotRequired}
+import parsley.token.{CharPred, NotRequired}
 
 /** This class defines a uniform interface for defining parsers for user-defined
   * names (identifiers and operators), independent of how whitespace should be

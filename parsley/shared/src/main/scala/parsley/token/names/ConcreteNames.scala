@@ -11,7 +11,7 @@ import parsley.errors.combinator.ErrorMethods
 import parsley.syntax.zipped._
 import parsley.token.descriptions.{NameDesc, SymbolDesc}
 import parsley.token.errors.ErrorConfig
-import parsley.token.predicate.{Basic, CharPred, NotRequired, Unicode}
+import parsley.token.{Basic, CharPred, NotRequired, Unicode}
 import parsley.unicode.{satisfy => satisfyUtf16, stringOfMany => stringOfManyUtf16}
 
 import parsley.internal.deepembedding.singletons

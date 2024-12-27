@@ -15,7 +15,6 @@ import parsley.token.numeric.{CombinedParsers, IntegerParsers,
                               RealParsers,
                               SignedCombined, SignedInteger, SignedReal,
                               UnsignedCombined, UnsignedInteger, UnsignedReal}
-import parsley.token.predicate.{Basic, CharPred, NotRequired, Unicode}
 import parsley.token.symbol.{ConcreteSymbol, LexemeSymbol}
 import parsley.token.text.{CharacterParsers, ConcreteCharacter, ConcreteString,
                            EscapableCharacter, Escape, LexemeCharacter, LexemeString,

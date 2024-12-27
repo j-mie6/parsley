@@ -6,7 +6,7 @@
 package parsley.internal.deepembedding.singletons.token
 
 import parsley.token.errors.LabelWithExplainConfig
-import parsley.token.predicate.CharPred
+import parsley.token.CharPred
 
 import parsley.internal.collection.immutable.Trie
 import parsley.internal.deepembedding.backend.StrictParsley.InstrBuffer

@@ -80,9 +80,8 @@ with the Haskell specification!
 import parsley.Parsley
 
 object lexer {
-    import parsley.token.Lexer
+    import parsley.token.{Lexer, Unicode, Basic}
     import parsley.token.descriptions.{LexicalDesc, NameDesc, SymbolDesc, SpaceDesc, NumericDesc, ExponentDesc, EscapeDesc, TextDesc}
-    import parsley.token.predicate.{Unicode, Basic}
     import parsley.character.newline
     private val haskellDesc = LexicalDesc(
         NameDesc.plain.copy(

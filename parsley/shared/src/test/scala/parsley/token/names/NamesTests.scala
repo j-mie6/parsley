@@ -12,10 +12,10 @@ import parsley.token.LexemeImpl._
 import parsley.token.errors.ErrorConfig
 
 import parsley.token.descriptions._
-import parsley.token.predicate._
 import parsley.character.spaces
 import parsley.{TestError, VanillaError, Named}
 import org.scalactic.source.Position
+import parsley.token.{Unicode, NotRequired, CharPred, Basic}
 
 class NamesTests extends ParsleyTest {
     val errConfig = new ErrorConfig
@@ -49,7 +49,7 @@ class NamesTests extends ParsleyTest {
             "hi" -> Some("hi"),
             "x7" -> Some("x7"),
         )
-        identCases(Unicode(Character.isAlphabetic), Unicode(Character.isLetterOrDigit(_)))(
+        identCases(Unicode(Character.isAlphabetic(_)), Unicode(Character.isLetterOrDigit(_)))(
             "hello1" -> Some("hello1"),
             "7f" -> None,
             "hi" -> Some("hi"),
@@ -67,7 +67,7 @@ class NamesTests extends ParsleyTest {
             "🙂i" -> Some("🙂i"),
             "🙂7" -> Some("🙂7"),
         )
-        identCases(Unicode(Character.isAlphabetic), NotRequired)(
+        identCases(Unicode(Character.isAlphabetic(_)), NotRequired)(
             "x" -> Some("x"),
             "y" -> Some("y"),
             "hi" -> None,

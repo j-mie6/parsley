@@ -12,7 +12,6 @@ import parsley.Parsley.eof
 import parsley.character.string
 
 import token.{descriptions => desc}
-import token.predicate.Basic
 
 class TokeniserTests extends ParsleyTest {
     val scala =
@@ -32,7 +31,7 @@ class TokeniserTests extends ParsleyTest {
                            lineCommentStart = "//",
                            lineCommentAllowsEOF = true,
                            multiLineNestedComments = true,
-                           space = token.predicate.Basic(_.isWhitespace),
+                           space = Basic(_.isWhitespace),
                            whitespaceIsContextDependent = false))
     val scala_ =
         scala.copy(

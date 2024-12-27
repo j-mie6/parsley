@@ -5,7 +5,7 @@
  */
 package parsley.token.descriptions
 
-import parsley.token.predicate.{CharPred, Unicode}
+import parsley.token.{CharPred, Unicode}
 
 /** This class describes how whitespace should be handled lexically.
   *

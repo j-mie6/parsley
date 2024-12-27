@@ -6,7 +6,7 @@
 package parsley.token.text
 
 import parsley.Parsley
-import parsley.token.predicate.{Basic, CharPred, NotRequired, Unicode}
+import parsley.token.{Basic, CharPred, NotRequired, Unicode}
 
 /** This class defines a uniform interface for defining parsers for character
   * literals, independent of how whitespace should be handled after the literal.

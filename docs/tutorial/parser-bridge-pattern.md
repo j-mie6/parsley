@@ -6,14 +6,14 @@ laika.site.metadata.description = "How to abstract away result construction from
 ```scala mdoc:invisible
 import parsley.Parsley
 object lexer {
-    import parsley.token.{Lexer, predicate}
+    import parsley.token.{Lexer, Basic}
     import parsley.token.descriptions.{LexicalDesc, NameDesc, SymbolDesc}
 
     private val desc = LexicalDesc.plain.copy(
         nameDesc = NameDesc.plain.copy(
             // Unicode is also possible instead of Basic
-            identifierStart = predicate.Basic(_.isLetter),
-            identifierLetter = predicate.Basic(_.isLetter),
+            identifierStart = Basic(_.isLetter),
+            identifierLetter = Basic(_.isLetter),
         ),
         symbolDesc = SymbolDesc.plain.copy(
             hardKeywords = Set("negate", "let", "in"),
@@ -259,14 +259,14 @@ These `apply` methods are referred to as **_bridge constructors_**. Let's get wo
 ```scala mdoc:reset:invisible
 import parsley.Parsley
 object lexer {
-    import parsley.token.{Lexer, predicate}
+    import parsley.token.{Lexer, Basic}
     import parsley.token.descriptions.{LexicalDesc, NameDesc, SymbolDesc}
 
     private val desc = LexicalDesc.plain.copy(
         nameDesc = NameDesc.plain.copy(
             // Unicode is also possible instead of Basic
-            identifierStart = predicate.Basic(_.isLetter),
-            identifierLetter = predicate.Basic(_.isLetter),
+            identifierStart = Basic(_.isLetter),
+            identifierLetter = Basic(_.isLetter),
         ),
         symbolDesc = SymbolDesc.plain.copy(
             hardKeywords = Set("negate", "let", "in"),
@@ -734,13 +734,13 @@ file:
 
 ```scala mdoc
 object lexer {
-    import parsley.token.{Lexer, predicate}
+    import parsley.token.{Lexer, Basic}
     import parsley.token.descriptions.{LexicalDesc, NameDesc, SymbolDesc}
 
     private val desc = LexicalDesc.plain.copy(
         nameDesc = NameDesc.plain.copy(
-            identifierStart = predicate.Basic(_.isLetter),
-            identifierLetter = predicate.Basic(_.isLetter),
+            identifierStart = Basic(_.isLetter),
+            identifierLetter = Basic(_.isLetter),
         ),
         symbolDesc = SymbolDesc.plain.copy(
             hardKeywords = Set("negate", "let", "in"),

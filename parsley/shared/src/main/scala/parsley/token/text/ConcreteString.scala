@@ -11,7 +11,7 @@ import parsley.combinator.{choice, skipManyUntil}
 import parsley.errors.combinator.ErrorMethods
 import parsley.syntax.zipped._
 import parsley.token.errors.{ErrorConfig, LabelConfig, LabelWithExplainConfig}
-import parsley.token.predicate.CharPred
+import parsley.token.CharPred
 
 private [token] final class ConcreteString(ends: Set[(String, String)], stringChar: StringCharacter, isGraphic: CharPred,
                                            allowsAllSpace: Boolean, err: ErrorConfig) extends StringParsers {

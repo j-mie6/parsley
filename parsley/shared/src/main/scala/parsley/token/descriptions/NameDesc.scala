@@ -5,7 +5,7 @@
  */
 package parsley.token.descriptions
 
-import parsley.token.predicate.{CharPred, NotRequired}
+import parsley.token.{CharPred, NotRequired}
 
 /** The class describes how name-like things are described lexically.
   *
