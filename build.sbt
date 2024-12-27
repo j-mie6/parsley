@@ -1,12 +1,12 @@
 import _root_.parsley.build.mima
 
 val projectName = "parsley"
-val Scala213 = "2.13.12"
+val Scala213 = "2.13.15"
 val Scala212 = "2.12.18"
 val Scala3 = "3.3.3"
-val Java8 = JavaSpec.temurin("8")
-val JavaLTS = JavaSpec.temurin("11")
-val JavaLatest = JavaSpec.temurin("17")
+val Java11 = JavaSpec.temurin("11")
+val Java17 = JavaSpec.temurin("17")
+val Java21 = JavaSpec.temurin("21")
 
 val mainBranch = "staging/5.0"
 
@@ -29,7 +29,7 @@ inThisBuild(List(
   tlCiReleaseBranches := Seq(mainBranch),
   tlCiScalafmtCheck := false,
   tlCiHeaderCheck := true,
-  githubWorkflowJavaVersions := Seq(Java8, JavaLTS, JavaLatest),
+  githubWorkflowJavaVersions := Seq(Java11, Java17, Java21),
   githubWorkflowAddedJobs += testCoverageJob(githubWorkflowGeneratedCacheSteps.value.toList),
   githubWorkflowConcurrency := None, // this allows us to not fail the pipeline on double commit
   // Website Configuration
@@ -135,7 +135,7 @@ def testCoverageJob(cacheSteps: List[WorkflowStep]) = WorkflowJob(
     steps =
         WorkflowStep.Checkout ::
         WorkflowStep.SetupSbt ::
-        WorkflowStep.SetupJava(List(JavaLTS)) :::
+        WorkflowStep.SetupJava(List(Java11)) :::
         cacheSteps ::: List(
             WorkflowStep.Sbt(name = Some("Generate coverage report"), commands = List("coverage", "parsley / test", "parsleyDebug / test", "coverageReport")),
             WorkflowStep.Use(
