@@ -32,8 +32,7 @@ private [token] abstract class Lexeme {
     def apply[A](p: Parsley[A]): Parsley[A]
 }
 
-// TODO: flatten out `numeric` and `text` (and `enclosing` and `separators`) for 5.0.0? wouldn't do much damage,
-// we can use documentation tags to group them in the high-level docs again :)
+// TODO: grouping for numeric and text? we can use documentation tags to group them in the high-level docs again :)
 /** This class provides a large selection of functionality concerned
   * with lexing.
   *
@@ -763,7 +762,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
                     "Whitespace cannot be altered unless `spaceDesc.whitespaceIsContextDependent` is true"
                 )
             }
-            wsImpl.rollback(wsImpl.setDuring(whiteSpace(newSpace))(within))
+            wsImpl.rollback(wsImpl.setDuring(whiteSpace(newSpace))(whiteSpace ~> within))
         }
 
         /** This parser skips '''zero''' or more (insignificant) whitespace characters as well as comments.
