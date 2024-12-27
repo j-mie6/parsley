@@ -68,7 +68,7 @@ private [token] abstract class Specific extends Instr {
 private [internal] final class SoftKeyword(protected val specific: String, letter: CharPredicate, protected val caseSensitive: Boolean,
                                            protected val expected: Iterable[ExpectItem], protected val reason: Option[String],
                                            expectedEnd: Iterable[ExpectDesc]) extends Specific {
-    def this(specific: String, letter: predicate.CharPredicate, caseSensitive: Boolean, expected: LabelWithExplainConfig, expectedEnd: String) = {
+    def this(specific: String, letter: predicate.CharPred, caseSensitive: Boolean, expected: LabelWithExplainConfig, expectedEnd: String) = {
         this(if (caseSensitive) specific else specific.toLowerCase,
              letter.asInternalPredicate,
              caseSensitive,
@@ -94,7 +94,7 @@ private [internal] final class SoftKeyword(protected val specific: String, lette
 private [internal] final class SoftOperator(protected val specific: String, letter: CharPredicate, ops: Trie[Unit],
                                             protected val expected: Iterable[ExpectItem], protected val reason: Option[String],
                                             expectedEnd: Iterable[ExpectDesc]) extends Specific {
-    def this(specific: String, letter: predicate.CharPredicate, ops: Trie[Unit], expected: LabelWithExplainConfig, expectedEnd: String) = {
+    def this(specific: String, letter: predicate.CharPred, ops: Trie[Unit], expected: LabelWithExplainConfig, expectedEnd: String) = {
         this(specific, letter.asInternalPredicate, ops, expected.asExpectItems(specific), expected.asReason, Some(new ExpectDesc(expectedEnd)))
     }
     protected val caseSensitive = true

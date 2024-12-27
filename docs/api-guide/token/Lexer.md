@@ -7,7 +7,7 @@ laika.site.metadata.description = "This page describes how Parsley's lexer works
 
 ```scala mdoc:invisible
 import parsley.token.{Lexer, descriptions, predicate}, descriptions._
-import predicate.CharPredicate
+import predicate.CharPred
 ```
 
 # Lexer (`parsley.token.Lexer`)
@@ -286,7 +286,7 @@ generated:
 
 ```scala mdoc:to-string
 val aboveSpace = predicate.Unicode(_ >= 0x20)
-def stringParsers(graphicChar: CharPredicate = aboveSpace,
+def stringParsers(graphicChar: CharPred = aboveSpace,
                   escapeDesc: EscapeDesc = EscapeDesc.plain) =
     new Lexer(LexicalDesc.plain.copy(
         textDesc = TextDesc.plain.copy(

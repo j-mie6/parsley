@@ -5,7 +5,7 @@
  */
 package parsley.token.descriptions
 
-import parsley.token.predicate.{CharPredicate, Unicode}
+import parsley.token.predicate.{CharPred, Unicode}
 
 /** This class describes how whitespace should be handled lexically.
   *
@@ -24,7 +24,7 @@ final case class SpaceDesc (lineCommentStart: String,
                             multiLineCommentStart: String,
                             multiLineCommentEnd: String,
                             multiLineNestedComments: Boolean,
-                            space: CharPredicate,
+                            space: CharPred,
                             whitespaceIsContextDependent: Boolean) {
     require(multiLineCommentStart.nonEmpty == multiLineCommentEnd.nonEmpty, "multi-line comments must describe both start and end")
     require(multiLineCommentStart.isEmpty || lineCommentStart.isEmpty || !lineCommentStart.startsWith(multiLineCommentStart),

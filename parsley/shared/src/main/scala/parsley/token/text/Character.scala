@@ -6,7 +6,7 @@
 package parsley.token.text
 
 import parsley.Parsley
-import parsley.token.predicate.{Basic, CharPredicate, NotRequired, Unicode}
+import parsley.token.predicate.{Basic, CharPred, NotRequired, Unicode}
 
 /** This class defines a uniform interface for defining parsers for character
   * literals, independent of how whitespace should be handled after the literal.
@@ -107,7 +107,7 @@ private [text] object CharacterParsers {
     final val MaxAscii = 0x7f
     final val MaxLatin1 = 0xff
 
-    def letter(terminalLead: Char, allowsAllSpace: Boolean, isGraphic: CharPredicate): CharPredicate = isGraphic match {
+    def letter(terminalLead: Char, allowsAllSpace: Boolean, isGraphic: CharPred): CharPred = isGraphic match {
         case Unicode(g) if allowsAllSpace => Unicode(c => c != terminalLead.toInt && (g(c) || c.toChar.isWhitespace))
         case Unicode(g)                   => Unicode(c => c != terminalLead.toInt && g(c))
         case Basic(g) if allowsAllSpace   => Basic(c => c != terminalLead && (g(c) || c.toChar.isWhitespace))

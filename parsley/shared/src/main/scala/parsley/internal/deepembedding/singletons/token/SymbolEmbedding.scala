@@ -6,7 +6,7 @@
 package parsley.internal.deepembedding.singletons.token
 
 import parsley.token.errors.LabelWithExplainConfig
-import parsley.token.predicate.CharPredicate
+import parsley.token.predicate.CharPred
 
 import parsley.internal.collection.immutable.Trie
 import parsley.internal.deepembedding.backend.StrictParsley.InstrBuffer
@@ -14,7 +14,7 @@ import parsley.internal.deepembedding.frontend.LazyParsleyIVisitor
 import parsley.internal.deepembedding.singletons.Singleton
 import parsley.internal.machine.instructions
 
-private [parsley] final class SoftKeyword(private [SoftKeyword] val specific: String, letter: CharPredicate, val caseSensitive: Boolean,
+private [parsley] final class SoftKeyword(private [SoftKeyword] val specific: String, letter: CharPred, val caseSensitive: Boolean,
                                           val expected: LabelWithExplainConfig, expectedEnd: String) extends Singleton[Unit] {
     // $COVERAGE-OFF$
     override def pretty: String = s"softKeyword($specific)"
@@ -33,7 +33,7 @@ private [parsley] final class SoftKeyword(private [SoftKeyword] val specific: St
     // $COVERAGE-ON$
 }
 
-private [parsley] final class SoftOperator(private [SoftOperator] val specific: String, letter: CharPredicate, ops: Trie[Unit],
+private [parsley] final class SoftOperator(private [SoftOperator] val specific: String, letter: CharPred, ops: Trie[Unit],
                                            val expected: LabelWithExplainConfig, expectedEnd: String) extends Singleton[Unit] {
     // $COVERAGE-OFF$
     override def pretty: String = s"softOperator($specific)"

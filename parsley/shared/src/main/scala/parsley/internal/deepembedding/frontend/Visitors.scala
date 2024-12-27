@@ -13,7 +13,7 @@ import parsley.state.Ref
 import parsley.token.descriptions.SpaceDesc
 import parsley.token.descriptions.PlusSignPresence
 import parsley.token.errors.{ErrorConfig, LabelConfig, LabelWithExplainConfig, SpecializedFilterConfig}
-import parsley.token.predicate.CharPredicate
+import parsley.token.predicate.CharPred
 
 // scalastyle:off underscore.import
 import parsley.internal.collection.immutable.Trie
@@ -72,12 +72,12 @@ private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle
     def visit(self: EscapeAtMost, context: T)(n: Int, radix: Int): U[BigInt]
     def visit(self: EscapeOneOfExactly, context: T)(radix: Int, ns: List[Int], ie: SpecializedFilterConfig[Int]): U[BigInt]
     def visit(self: SoftKeyword, context: T)(specific: String,
-                                             letter: CharPredicate,
+                                             letter: CharPred,
                                              caseSensitive: Boolean,
                                              expected: LabelWithExplainConfig,
                                              expectedEnd: String): U[Unit]
     def visit(self: SoftOperator, context: T)(specific: String,
-                                              letter: CharPredicate,
+                                              letter: CharPred,
                                               ops: Trie[Unit],
                                               expected: LabelWithExplainConfig,
                                               expectedEnd: String): U[Unit]
@@ -215,12 +215,12 @@ private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
         visitSingleton(self, context)
     }
     override def visit(self: SoftKeyword, context: T)(specific: String,
-                                                      letter: CharPredicate,
+                                                      letter: CharPred,
                                                       caseSensitive: Boolean,
                                                       expected: LabelWithExplainConfig,
                                                       expectedEnd: String): U[Unit] = visitSingleton(self, context)
     override def visit(self: SoftOperator, context: T)(specific: String,
-                                                       letter: CharPredicate,
+                                                       letter: CharPred,
                                                        ops: Trie[Unit],
                                                        expected: LabelWithExplainConfig,
                                                        expectedEnd: String): U[Unit] = visitSingleton(self, context)

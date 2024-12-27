@@ -15,7 +15,7 @@ import parsley.token.numeric.{CombinedParsers, IntegerParsers,
                               RealParsers,
                               SignedCombined, SignedInteger, SignedReal,
                               UnsignedCombined, UnsignedInteger, UnsignedReal}
-import parsley.token.predicate.{Basic, CharPredicate, NotRequired, Unicode}
+import parsley.token.predicate.{Basic, CharPred, NotRequired, Unicode}
 import parsley.token.symbol.{ConcreteSymbol, LexemeSymbol}
 import parsley.token.text.{CharacterParsers, ConcreteCharacter, ConcreteString,
                            EscapableCharacter, Escape, LexemeCharacter, LexemeString,
@@ -811,7 +811,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           *       given parser fails having consumed input.
           * @since 4.0.0
           */
-        def alter[A](newSpace: CharPredicate)(within: =>Parsley[A]): Parsley[A] = {
+        def alter[A](newSpace: CharPred)(within: =>Parsley[A]): Parsley[A] = {
             if (!desc.spaceDesc.whitespaceIsContextDependent) {
                 throw new UnsupportedOperationException( // scalastyle:ignore throw
                     "Whitespace cannot be altered unless `spaceDesc.whitespaceIsContextDependent` is true"
@@ -850,7 +850,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
         }
 
         private def configuredWhiteSpace: Parsley[Unit] = whiteSpace(desc.spaceDesc.space)
-        private def whiteSpace(impl: CharPredicate): Parsley[Unit] = impl match {
+        private def whiteSpace(impl: CharPred): Parsley[Unit] = impl match {
             case NotRequired => skipComments
             case Basic(ws) => new Parsley(new singletons.WhiteSpace(ws, desc.spaceDesc, errConfig))
             // satisfyUtf16 is effectively hidden, and so is Comment

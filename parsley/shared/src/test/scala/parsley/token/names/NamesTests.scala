@@ -26,19 +26,19 @@ class NamesTests extends ParsleyTest {
 
     val plainNames = makeSymbol(plainName, plainSym)
 
-    def identCases(start: CharPredicate, letter: CharPredicate, sensitive: Boolean = true)(tests: (String, Option[String], Position)*): Unit = {
+    def identCases(start: CharPred, letter: CharPred, sensitive: Boolean = true)(tests: (String, Option[String], Position)*): Unit = {
         cases(makeSymbol(plainName.copy(identifierStart = start, identifierLetter = letter), plainSym.copy(caseSensitive = sensitive)).identifier)(tests: _*)
     }
 
-    def opCases(start: CharPredicate, letter: CharPredicate)(tests: (String, Option[String], Position)*): Unit = {
+    def opCases(start: CharPred, letter: CharPred)(tests: (String, Option[String], Position)*): Unit = {
         cases(makeSymbol(plainName.copy(operatorStart = start, operatorLetter = letter), plainSym).userDefinedOperator)(tests: _*)
     }
 
-    def identCases(start: CharPredicate, letter: CharPredicate, refStart: CharPredicate)(tests: (String, Option[String], Position)*): Unit = {
+    def identCases(start: CharPred, letter: CharPred, refStart: CharPred)(tests: (String, Option[String], Position)*): Unit = {
         cases(makeSymbol(plainName.copy(identifierStart = start, identifierLetter = letter), plainSym).identifier(refStart))(tests: _*)
     }
 
-    def opCases(start: CharPredicate, letter: CharPredicate, refStart: CharPredicate, refEnd: CharPredicate)(tests: (String, Option[String], Position)*): Unit = {
+    def opCases(start: CharPred, letter: CharPred, refStart: CharPred, refEnd: CharPred)(tests: (String, Option[String], Position)*): Unit = {
         cases(makeSymbol(plainName.copy(operatorStart = start, operatorLetter = letter), plainSym).userDefinedOperator(refStart, refEnd))(tests: _*)
     }
 

@@ -12,7 +12,7 @@ import org.scalacheck.Arbitrary
 
 object DescGen {
     // NAMES
-    val identifierLetterGen = Gen.oneOf[CharPredicate](
+    val identifierLetterGen = Gen.oneOf[CharPred](
         Basic(_.isLetter),
         Basic(_.isLetterOrDigit),
         NotRequired,

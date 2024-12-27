@@ -15,7 +15,7 @@ import scala.collection.immutable.NumericRange
 /** Base class for character predicates.
   * @since 4.0.0
   */
-sealed abstract class CharPredicate {
+sealed abstract class CharPred {
     private [token] def toBmp: Parsley[Char]
     private [token] def toUnicode: Parsley[Int]
     private [token] def toNative: Parsley[Unit]
@@ -36,10 +36,10 @@ sealed abstract class CharPredicate {
   *
   * @since 4.0.0
   */
-final case class Unicode(predicate: Int => Boolean) extends CharPredicate {
+final case class Unicode(predicate: Int => Boolean) extends CharPred {
     def this(c: Int) = this(_ == c)
-    def this(cs: NumericRange[Int]) = this(cs.contains)
-    def this(cs: Range) = this(cs.contains)
+    def this(cs: NumericRange[Int]) = this(cs.contains(_))
+    def this(cs: Range) = this(cs.contains(_))
     private [token] override def toBmp = satisfy(c => predicate(c.toInt))
     private [token] override def toUnicode = satisfyUtf16(predicate)
     private [token] override def toNative = toUnicode.void
@@ -51,15 +51,15 @@ object Unicode {
     /** Lifts a regular full-width character predicate.
       * @since 5.0.0
       */
-    def apply(c: Int): Unicode = new Unicode(_ == c)
+    def apply(c: Int): Unicode = new Unicode(c)
     /** Constructs a predicate for anything in a range of specific unicode codepoints.
       * @since 5.0.0
       */
-    def apply(cs: NumericRange[Int]): Unicode = new Unicode(cs.contains)
+    def apply(cs: NumericRange[Int]): Unicode = new Unicode(cs)
     /** Constructs a predicate for anything in a range of specific unicode codepoints.
       * @since 5.0.0
       */
-    def apply(cs: Range): Unicode = new Unicode(cs.contains)
+    def apply(cs: Range): Unicode = new Unicode(cs)
 
     /** Lifts a regular character predicate.
       * @since 5.0.0
@@ -72,7 +72,7 @@ object Unicode {
     /** Constructs a predicate for anything in a range of specific characters.
       * @since 5.0.0
       */
-    def char(cs: NumericRange[Char]): Unicode = char(cs.contains)
+    def char(cs: NumericRange[Char]): Unicode = char(cs.contains(_))
 }
 
 /** Basic character predicate, which reads regular Scala 16-bit characters.
@@ -82,9 +82,9 @@ object Unicode {
   *
   * @since 4.0.0
   */
-final case class Basic(predicate: Char => Boolean) extends CharPredicate {
+final case class Basic(predicate: Char => Boolean) extends CharPred {
     def this(c: Char) = this(_ == c)
-    def this(cs: NumericRange[Char]) = this(cs.contains)
+    def this(cs: NumericRange[Char]) = this(cs.contains(_))
     private [token] override def toBmp = satisfy(predicate)
     // $COVERAGE-OFF$
     private [token] override def toUnicode =
@@ -110,7 +110,7 @@ object Basic {
   *
   * @since 4.0.0
   */
-case object NotRequired extends CharPredicate {
+case object NotRequired extends CharPred {
     private [token] override def toBmp = empty
     private [token] override def toUnicode = empty
     private [token] override def toNative = empty

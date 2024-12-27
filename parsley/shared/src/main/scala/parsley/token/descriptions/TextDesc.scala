@@ -5,7 +5,7 @@
  */
 package parsley.token.descriptions
 
-import parsley.token.predicate.{CharPredicate, Unicode}
+import parsley.token.predicate.{CharPred, Unicode}
 
 import parsley.internal.collection.immutable.Trie
 
@@ -221,7 +221,7 @@ final case class TextDesc (escapeSequences: EscapeDesc,
                            characterLiteralEnd: Char,
                            stringEnds: Set[(String, String)],
                            multiStringEnds: Set[(String, String)],
-                           graphicCharacter: CharPredicate) {
+                           graphicCharacter: CharPred) {
     require(stringEnds.forall { case (begin, end) => begin.nonEmpty && end.nonEmpty }, "string ends cannot be empty")
     require(multiStringEnds.forall { case (begin, end) => begin.nonEmpty && end.nonEmpty }, "multiline string ends cannot be empty")
 }
