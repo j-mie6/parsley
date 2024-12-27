@@ -47,7 +47,7 @@ private [token] class OriginalEscape(desc: EscapeDesc, err: ErrorConfig, generic
 
     private def exactly(n: Int, full: Int, radix: Int, digit: Parsley[Char], reqDigits: Seq[Int]): Parsley[BigInt] = {
         err.filterEscapeCharRequiresExactDigits(radix, reqDigits).injectSnd.collect(atMost(n, radix, digit) <~> atMostReg.gets(full - _)) {
-            case (num, n) if n == full => num
+            case (num, `full`) => num
         }
     }
 
@@ -56,10 +56,10 @@ private [token] class OriginalEscape(desc: EscapeDesc, err: ErrorConfig, generic
         val reqDigits@(m :: ms) = (n :: ns).sorted: @unchecked // make this a precondition of the description?
         def go(digits: Int, m: Int, ns: List[Int]): Parsley[BigInt] = ns match {
             case Nil => exactly(digits, m, radix, digit, reqDigits) <* digitsParsed.set(digits)
-            case n :: ns  =>
+            case i :: ns  =>
                 val theseDigits = exactly(digits, m, radix, digit, reqDigits)
                 val restDigits = (
-                        atomic(go(n-m, n, ns).map(Some(_)) <* digitsParsed.update(_ + digits))
+                        atomic(go(i-m, i, ns).map(Some(_)) <* digitsParsed.update(_ + digits))
                     <|> digitsParsed.set(digits).as(None)
                 )
                 (theseDigits, restDigits, digitsParsed.get).zipped[BigInt] {
