@@ -30,7 +30,7 @@ inThisBuild(List(
   tlCiScalafmtCheck := false,
   tlCiHeaderCheck := true,
   githubWorkflowJavaVersions := Seq(Java8, JavaLTS, JavaLatest),
-  githubWorkflowAddedJobs += testCoverageJob(githubWorkflowGeneratedCacheSteps.value.toList),
+  //githubWorkflowAddedJobs += testCoverageJob(githubWorkflowGeneratedCacheSteps.value.toList),
   githubWorkflowConcurrency := None, // this allows us to not fail the pipeline on double commit
   // Website Configuration
   tlSitePublishBranch := Some(mainBranch),
@@ -128,12 +128,13 @@ lazy val docs = project
     ),
   )
 
-def testCoverageJob(cacheSteps: List[WorkflowStep]) = WorkflowJob(
+/*def testCoverageJob(cacheSteps: List[WorkflowStep]) = WorkflowJob(
     id = "coverage",
     name = "Run Test Coverage and Upload",
     cond = Some(s"github.ref == 'refs/heads/$mainBranch' || (github.event_name == 'pull_request' && github.base_ref == '$mainBranch')"),
     steps =
         WorkflowStep.Checkout ::
+        WorkflowStep.SetupSbt ::
         WorkflowStep.SetupJava(List(JavaLTS)) :::
         cacheSteps ::: List(
             WorkflowStep.Sbt(name = Some("Generate coverage report"), commands = List("coverage", "parsley / test", "parsleyDebug / test", "coverageReport")),
@@ -141,10 +142,12 @@ def testCoverageJob(cacheSteps: List[WorkflowStep]) = WorkflowJob(
                 name = Some("Upload coverage to Code Climate"),
                 ref = UseRef.Public(owner = "paambaati", repo = "codeclimate-action", ref = "v3.2.0"),
                 env = Map("CC_TEST_REPORTER_ID" -> "c1f669dece75a1d69bf0dc45a682d64837badc112b8098271ccc0dca1bbc7a09"),
-                // FIXME: Surely, there's a better method for multiple report locations than a multiline string (or using \n as a separator).
-                params = Map("coverageLocations" ->
-                  """${{github.workspace}}/parsley/jvm/target/scala-2.13/coverage-report/cobertura.xml:cobertura
-                    |${{github.workspace}}/parsley-debug/jvm/target/scala-2.13/coverage-report/cobertura.xml:cobertura""".stripMargin),
+                params = Map("coverageLocations" -> Seq(
+                    coverageReport("parsley"),
+                    coverageReport("parsley-debug"),
+                ).mkString("\n")),
             )
         )
-)
+)*/
+
+def coverageReport(project: String) = s"$${{github.workspace}}/$project/jvm/target/scala-2.13/coverage-report/cobertura.xml:cobertura"
