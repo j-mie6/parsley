@@ -1,7 +1,7 @@
 import _root_.parsley.build.mima
 
 val projectName = "parsley"
-val Scala213 = "2.13.12"
+val Scala213 = "2.13.15"
 val Scala212 = "2.12.18"
 val Scala3 = "3.3.3"
 val Java8 = JavaSpec.temurin("8")
@@ -45,9 +45,9 @@ lazy val commonSettings = Seq(
 
   resolvers ++= Opts.resolver.sonatypeOssReleases, // Will speed up MiMA during fast back-to-back releases
   libraryDependencies ++= Seq(
-    "org.scalatest" %%% "scalatest" % "3.2.17" % Test,
-    "org.scalacheck" %%% "scalacheck" % "1.17.0" % Test,
-    "org.scalatestplus" %%% "scalacheck-1-17" % "3.2.15.0" % Test,
+    "org.scalatest" %%% "scalatest" % "3.2.19" % Test,
+    "org.scalacheck" %%% "scalacheck" % "1.18.1" % Test,
+    "org.scalatestplus" %%% "scalacheck-1-17" % "3.2.18.0" % Test,
   ),
 
   Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oI"),
