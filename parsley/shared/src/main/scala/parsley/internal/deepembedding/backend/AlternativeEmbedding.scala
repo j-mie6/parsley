@@ -50,12 +50,12 @@ private [deepembedding] final class Choice[A](private [backend] val alt1: Strict
             alts.addOne(p)
             alts.stealAll(alts_)
             ret
-        case Choice(_, Choice(alt1, alt2, alts: SinglyLinkedList[StrictParsley[A]]), alts_) =>
+        case Choice(_, Choice(alt1_, alt2_, alts: SinglyLinkedList[StrictParsley[A]]), alts_) =>
             assume(!alts.exists(_.isInstanceOf[Choice[_]]), "alts can never contain a choice")
             assume(!alts_.exists(_.isInstanceOf[Choice[_]]), "alts_ can never contain a choice")
-            this.alt2 = alt1
+            this.alt2 = alt1_
             this.alts = alts
-            alts.prependOne(alt2)
+            alts.prependOne(alt2_)
             alts.stealAll(alts_)
             this
         case _ => this
