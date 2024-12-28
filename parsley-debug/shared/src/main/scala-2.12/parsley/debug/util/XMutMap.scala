@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package parsley.debugger.util
+package parsley.debug.util
 
 import scala.collection.mutable
 

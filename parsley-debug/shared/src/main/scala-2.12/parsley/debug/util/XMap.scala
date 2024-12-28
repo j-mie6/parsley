@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package parsley.debugger.util
+package parsley.debug.util
 
 // This is used to give Scala 2.12 access to "removed" and "updated".
 // Ideally, this would be done via scala-collection-compat, but that requires integrating ScalaFix.
