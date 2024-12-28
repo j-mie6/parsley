@@ -121,11 +121,11 @@ jobs:
 
       - name: Make target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/staging/5.0')
-        run: mkdir -p parsley-debug/jvm/target parsley-debug/native/target parsley/native/target parsley/jvm/target parsley-debug/js/target parsley/js/target project/target
+        run: mkdir -p parsley-debug/jvm/target unidoc/target parsley-debug/native/target parsley/native/target parsley/jvm/target parsley-debug/js/target parsley/js/target project/target
 
       - name: Compress target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/staging/5.0')
-        run: tar cf targets.tar parsley-debug/jvm/target parsley-debug/native/target parsley/native/target parsley/jvm/target parsley-debug/js/target parsley/js/target project/target
+        run: tar cf targets.tar parsley-debug/jvm/target unidoc/target parsley-debug/native/target parsley/native/target parsley/jvm/target parsley-debug/js/target parsley/js/target project/target
 
       - name: Upload target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/staging/5.0')
