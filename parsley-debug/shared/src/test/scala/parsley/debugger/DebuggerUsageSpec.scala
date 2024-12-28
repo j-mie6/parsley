@@ -23,7 +23,7 @@ import parsley.internal.deepembedding.backend.debugger.Debugging
 class DebuggerUsageSpec extends ParsleyTest {
     import DebuggerUsageSpec.Arithmetic
     "the Debugged internal frontend class" should "not allow nesting of Debugged nodes" in {
-        val factory = new Debugging(new DebugContext())
+        val factory = new Debugging(new DebugContext(parsley.debugger.combinator.DefaultStringRules))
         try {
             val _ = new TaggedWith(factory)(new TaggedWith(factory)(fresh(()).internal, null, None), null, None)
             fail("Debugged nodes have been nested")
@@ -33,7 +33,7 @@ class DebuggerUsageSpec extends ParsleyTest {
     }
 
     it should "preserve the prettified names of the parsers" in {
-        val factory = new Debugging(new DebugContext())
+        val factory = new Debugging(new DebugContext(parsley.debugger.combinator.DefaultStringRules))
         new TaggedWith(factory)(named(fresh(()), "foo").internal, null, None).debugName shouldBe "foo"
         new TaggedWith(factory)(fresh(()).internal, null, None).debugName shouldBe "fresh"
         new TaggedWith(factory)(fresh(()).internal, null, Some("bar")).debugName shouldBe "bar"

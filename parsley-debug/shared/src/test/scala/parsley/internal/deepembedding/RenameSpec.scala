@@ -39,7 +39,7 @@ class RenameSpec extends ParsleyTest {
 
     it should "pass through Debugged parsers and get the inner parser's name" in {
         val symbolic = new <**>
-        val debugged = new TaggedWith[Any](new Debugging(new DebugContext()))(symbolic, symbolic, None)
+        val debugged = new TaggedWith[Any](new Debugging(new DebugContext(parsley.debugger.combinator.DefaultStringRules)))(symbolic, symbolic, None)
 
         Renamer.nameOf(None, debugged) shouldBe "<**>"
     }

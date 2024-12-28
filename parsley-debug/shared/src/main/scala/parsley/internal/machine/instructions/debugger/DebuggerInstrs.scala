@@ -58,8 +58,8 @@ private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Instr 
         dbgCtx.addParseAttempt {
             val res =
                 if (success) Some(ctx.stack.upeek match {
-                    case f if dbgCtx.toStringRules.exists(_(f)) => f.toString // Closures and lambdas are expensive!
-                    case x                                      => x
+                    case f if dbgCtx.shouldString(f) => f.toString // Closures and lambdas are expensive!
+                    case x                           => x
                 }) else None
             new ParseAttempt(inp = input, fof = prevOffset, tof = currentOff, fps = prevPos, tps = (ctx.line, ctx.col), scs = success, res = res)
         }

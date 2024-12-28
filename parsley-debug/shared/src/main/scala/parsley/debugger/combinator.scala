@@ -14,16 +14,39 @@ import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.deepembedding.frontend.debugger.{TaggedWith, Named}
 import parsley.internal.deepembedding.backend.debugger.{CheckDivergence, Debugging}
 
-/** This object contains the two main debug combinators, `attachDebugger` and `attachWithFrontend`.
+/** This object contains the combinators for attaching debuggers to parsers.
   *
   * @since 4.5.0
   */
 object combinator {
-    // By default, we don't want closures stored as themselves.
-    private [debugger] val defaultRules: Seq[Any => Boolean] = Seq(_.isInstanceOf[Function[_, _]])
+    /** Returns true for any function type, which we ideally don't store as a string */
+    val DefaultStringRules: PartialFunction[Any, Boolean] = {
+        case _ : Function1[_, _] => true
+        case _ : Function2[_, _, _] => true
+        case _ : Function3[_, _, _, _] => true
+        case _ : Function4[_, _, _, _, _] => true
+        case _ : Function5[_, _, _, _, _, _] => true
+        case _ : Function6[_, _, _, _, _, _, _] => true
+        case _ : Function7[_, _, _, _, _, _, _, _] => true
+        case _ : Function8[_, _, _, _, _, _, _, _, _] => true
+        case _ : Function9[_, _, _, _, _, _, _, _, _, _] => true
+        case _ : Function10[_, _, _, _, _, _, _, _, _, _, _] => true
+        case _ : Function11[_, _, _, _, _, _, _, _, _, _, _, _] => true
+        case _ : Function12[_, _, _, _, _, _, _, _, _, _, _, _, _] => true
+        case _ : Function13[_, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
+        case _ : Function14[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
+        case _ : Function15[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
+        case _ : Function16[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
+        case _ : Function17[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
+        case _ : Function18[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
+        case _ : Function19[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
+        case _ : Function20[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
+        case _ : Function21[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
+        case _ : Function22[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
+    }
 
     /** Shorthand representation of a pair of a tree extraction function and a debugged parser. */
-    private type DebuggedPair[+A] = (() => DebugTree, Parsley[A])
+    private [parsley] type DebuggedPair[+A] = (() => DebugTree, Parsley[A])
 
     /** Attaches a debugger to a parser, returning a reference to the debug tree produced by
       * the parser's parse tree formed as it runs.
@@ -77,7 +100,7 @@ object combinator {
       * @tparam A Output type of original parser.
       * @return A pair of the finalised tree, and the instrumented parser.
       */
-    private [parsley] def attachDebugger[A](parser: Parsley[A], toStringRules: Seq[Any => Boolean]): DebuggedPair[A] = {
+    private [parsley] def attachDebugger[A](parser: Parsley[A], toStringRules: PartialFunction[Any, Boolean]): DebuggedPair[A] = {
         val context: DebugContext = new DebugContext(toStringRules)
 
         val attached: LazyParsley[A] = TaggedWith.tagRecursively(parser.internal, new Debugging(context))
@@ -110,7 +133,7 @@ object combinator {
       * @tparam A Output type of original parser.
       * @return A pair of the finalised tree, and the instrumented parser.
       */
-    private [parsley] def attachDebugger[A](parser: Parsley[A]): DebuggedPair[A] = attachDebugger[A](parser, defaultRules)
+    private [parsley] def attachDebugger[A](parser: Parsley[A]): DebuggedPair[A] = attachDebugger[A](parser, DefaultStringRules)
 
     // $COVERAGE-OFF$
     /* Create a closure that freshly attaches a debugger to a parser every time it is called.
@@ -126,7 +149,7 @@ object combinator {
       *
       * @return Generator closure for debugged versions of the input parser.
       */
-    //private def attachReusable[A](parser: Parsley[A], toStringRules: Seq[Any => Boolean]): () => DebuggedPair[A] = () => attachDebugger[A](parser, toStringRules)
+    //private def attachReusable[A](parser: Parsley[A], toStringRules: PartialFunction[Any, Boolean]): () => DebuggedPair[A] = () => attachDebugger[A](parser, toStringRules)
 
     /* Create a closure that freshly attaches a debugger to a parser every time it is called.
       * This is used for creating debugged parsers that can be used as children to multiple parent
@@ -171,7 +194,7 @@ object combinator {
       * @return A modified parser which will ask the frontend to process the produced debug tree after
       *         a call to [[Parsley.parse]] is made.
       */
-    def attach[A](parser: Parsley[A], frontend: DebugFrontend, toStringRules: Seq[Any => Boolean]): Parsley[A] = {
+    def attach[A](parser: Parsley[A], frontend: DebugFrontend, toStringRules: PartialFunction[Any, Boolean]): Parsley[A] = {
         val (tree, attached) = attachDebugger(parser, toStringRules)
 
         // Ideally, this should run 'attached', and render the tree regardless of the parser's success.
@@ -204,7 +227,7 @@ object combinator {
       *         a call to [[Parsley.parse]] is made.
       *
       */
-    def attach[A](parser: Parsley[A], frontend: DebugFrontend): Parsley[A] = attach[A](parser, frontend, defaultRules)
+    def attach[A](parser: Parsley[A], frontend: DebugFrontend): Parsley[A] = attach[A](parser, frontend, DefaultStringRules)
 
     /** Create a closure that freshly attaches a debugger and a tree-processing frontend to a parser every
       * time it is called.
@@ -213,7 +236,7 @@ object combinator {
       *
       * @return Generator closure for frontend-debugged versions of the input parser.
       */
-    def attachReusable[A](parser: Parsley[A], frontend: =>ReusableFrontend, toStringRules: Seq[Any => Boolean]): () => Parsley[A] = {
+    def attachReusable[A](parser: Parsley[A], frontend: =>ReusableFrontend, toStringRules: PartialFunction[Any, Boolean]): () => Parsley[A] = {
         () => attach(parser, frontend, toStringRules)
     }
 
@@ -230,7 +253,7 @@ object combinator {
       *   has more information on its usage.
       * @return Generator closure for frontend-debugged versions of the input parser.
       */
-    def attachReusable[A](parser: Parsley[A], frontend: =>ReusableFrontend): () => Parsley[A] = attachReusable[A](parser, frontend, defaultRules)
+    def attachReusable[A](parser: Parsley[A], frontend: =>ReusableFrontend): () => Parsley[A] = attachReusable[A](parser, frontend, DefaultStringRules)
 
     /* Attach a debugger and an implicitly-available frontend in which the debug tree should be
       * processed with.
@@ -240,7 +263,7 @@ object combinator {
       *   [[parsley.debugger.combinator$.attachWithFrontend[A](parser:parsley\.Parsley[A],frontend:parsley\.debugger\.frontend\.DebugFrontend,toStringRules* attachWithFrontend]]
       *   for more information.
       */
-    /*def attach[A](parser: Parsley[A], toStringRules: Seq[Any => Boolean])(implicit frontend: DebugFrontend): Parsley[A] = {
+    /*def attach[A](parser: Parsley[A], toStringRules: PartialFunction[Any, Boolean])(implicit frontend: DebugFrontend): Parsley[A] = {
         attach(parser, frontend, toStringRules)
     }*/
 
@@ -270,16 +293,16 @@ object combinator {
 
     /** Dot accessor versions of the combinators.  */
     implicit class DebuggerOps[A](par: Parsley[A]) {
-        //def attachDebugger(toStringRules: Seq[Any => Boolean]): DebuggedPair[A] = combinator.attachDebugger(par, toStringRules)
-        //def attachReusable(toStringRules: Seq[Any => Boolean]): () => DebuggedPair[A] = combinator.attachReusable(par, toStringRules)
-        def attach(frontend: DebugFrontend, toStringRules: Seq[Any => Boolean]): Parsley[A] = combinator.attach(par, frontend, toStringRules)
-        def attachReusable(frontend: =>ReusableFrontend, toStringRules: Seq[Any => Boolean]): () => Parsley[A] =
+        //def attachDebugger(toStringRules: PartialFunction[Any, Boolean]): DebuggedPair[A] = combinator.attachDebugger(par, toStringRules)
+        //def attachReusable(toStringRules: PartialFunction[Any, Boolean]): () => DebuggedPair[A] = combinator.attachReusable(par, toStringRules)
+        def attach(frontend: DebugFrontend, toStringRules: PartialFunction[Any, Boolean]): Parsley[A] = combinator.attach(par, frontend, toStringRules)
+        def attachReusable(frontend: =>ReusableFrontend, toStringRules: PartialFunction[Any, Boolean]): () => Parsley[A] =
             combinator.attachReusable(par, frontend, toStringRules)
-        //def attach(toStringRules: Seq[Any => Boolean])(implicit frontend: DebugFrontend): Parsley[A] = combinator.attach(par, toStringRules)
+        //def attach(toStringRules: PartialFunction[Any, Boolean])(implicit frontend: DebugFrontend): Parsley[A] = combinator.attach(par, toStringRules)
         //def attachDebugger: DebuggedPair[A] = combinator.attachDebugger(par, defaultRules)
         //def attachReusable: () => DebuggedPair[A] = combinator.attachReusable(par, defaultRules)
-        def attach(frontend: DebugFrontend): Parsley[A] = combinator.attach(par, frontend, defaultRules)
-        def attachReusable(frontend: =>ReusableFrontend): () => Parsley[A] = combinator.attachReusable(par, frontend, defaultRules)
+        def attach(frontend: DebugFrontend): Parsley[A] = combinator.attach(par, frontend, DefaultStringRules)
+        def attachReusable(frontend: =>ReusableFrontend): () => Parsley[A] = combinator.attachReusable(par, frontend, DefaultStringRules)
         //def attach(implicit frontend: DebugFrontend): Parsley[A] = combinator.attach(par, defaultRules)
         def named(name: String): Parsley[A] = combinator.named(par, name)
     }
