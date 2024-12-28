@@ -27,7 +27,7 @@ sealed trait DebugView {
       * @param input The full input of the parse.
       * @param tree  Debug tree to render.
       */
-    private [debugger] def process(input: =>String, tree: =>DebugTree): Unit
+    private [debugger] def render(input: =>String, tree: =>DebugTree): Unit
 }
 object DebugView {
     /** Signifies that the debug view inheriting from this can be used multiple times.
@@ -44,18 +44,18 @@ object DebugView {
       */
     trait SingleUse extends DebugView {
         private var hasBeenRun = false
-        final override private[debugger] def process(input: =>String, tree: =>DebugTree): Unit = {
+        final override private[debugger] def render(input: =>String, tree: =>DebugTree): Unit = {
             if (hasBeenRun) {
                 // XXX: There isn't really another way to enforce not running a stateful frontend more than once that isn't just "do nothing".
                 //      Especially since doing nothing turns that action into a silent error, which is generally less preferable to "loud"
                 //      errors. Failing fast may be better for some frontends.
                 throw new XIllegalStateException("Stateful frontend has already been run.").except // scalastyle:ignore throw
             } else {
-                processImpl(input, tree)
+                renderImpl(input, tree)
                 hasBeenRun = true
             }
         }
-        /** The implementation of the process method above */
-        private[debugger] def processImpl(input: =>String, tree: =>DebugTree): Unit
+        /** The implementation of the render method above */
+        private[debugger] def renderImpl(input: =>String, tree: =>DebugTree): Unit
     }
 }

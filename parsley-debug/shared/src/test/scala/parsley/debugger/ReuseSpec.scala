@@ -15,11 +15,11 @@ class ReuseSpec extends ParsleyTest {
     it should "throw when run multiple times, only if the view is marked as single-use" in {
         // Dummy values.
         val reusable: DebugView.Reusable = new DebugView.Reusable {
-            override private [debugger] def process(input: => String, tree: => DebugTree): Unit = ()
+            override private [debugger] def render(input: => String, tree: => DebugTree): Unit = ()
         }
 
         val singleUse: DebugView.SingleUse = new DebugView.SingleUse {
-            override private [debugger] def processImpl(input: => String, tree: => DebugTree): Unit = ()
+            override private [debugger] def renderImpl(input: => String, tree: => DebugTree): Unit = ()
         }
 
         val tree: DebugTree = new DebugTree {
@@ -37,14 +37,14 @@ class ReuseSpec extends ParsleyTest {
         }
 
         info("it should not throw when running a reusable frontend multiple times")
-        reusable.process("bar", tree): @unused
-        reusable.process("bar", tree): @unused
+        reusable.render("bar", tree): @unused
+        reusable.render("bar", tree): @unused
 
         // The first run should not throw.
-        singleUse.process("bar", tree): @unused
+        singleUse.render("bar", tree): @unused
         info("it should throw when running a single-use frontend multiple times")
         try {
-            singleUse.process("bar", tree): @unused
+            singleUse.render("bar", tree): @unused
 
             fail("single-use frontend did not throw an exception after running multiple times")
         } catch {

@@ -201,7 +201,7 @@ object combinator {
             val frozen = tree()
             val input = frozen.fullInput
 
-            view.process(input, frozen)
+            view.render(input, frozen)
         }.impure
 
         atomic(attached <* renderer) <|> (renderer *> empty)
