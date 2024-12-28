@@ -3,13 +3,13 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package parsley.debugger.frontend
+package parsley.debugger
 
 import java.io.{OutputStream, PrintStream}
 
 import scala.annotation.tailrec
 
-import parsley.debugger.{DebugTree, ParseAttempt}
+import frontend.ReusableFrontend
 
 /** A (reusable) console pretty-printer for the debugger.
   *
@@ -34,7 +34,7 @@ object ConsolePrettyPrinter extends ReusableFrontend with ConsolePrettyPrinter {
     }
 }
 
-private [frontend] sealed trait ConsolePrettyPrinter extends ReusableFrontend {
+private [debugger] sealed trait ConsolePrettyPrinter extends ReusableFrontend {
     protected val out: PrintStream
     override private [debugger] def process(input: =>String, tree: =>DebugTree): Unit = {
         out.println(s"${tree.parserName}'s parse tree for input:\n\n$input\n\n")
