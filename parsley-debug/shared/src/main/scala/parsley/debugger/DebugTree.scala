@@ -20,7 +20,7 @@ package parsley.debugger
   *
   * @since 4.5.0
   */
-trait DebugTree extends Iterable[DebugTree] {
+private [debugger] abstract class DebugTree extends Iterable[DebugTree] {
     /** The name of the parser that made this node. */
     def parserName: String
 
@@ -66,7 +66,7 @@ trait DebugTree extends Iterable[DebugTree] {
     }
 }
 
-object DebugTree {
+private [debugger] object DebugTree {
     def unapply(dt: DebugTree): Some[(String, String, Option[Long], String, Option[ParseAttempt], Map[String, DebugTree])] = {
         Some((dt.parserName, dt.internalName, dt.childNumber, dt.fullInput, dt.parseResults, dt.nodeChildren))
     }

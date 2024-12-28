@@ -11,7 +11,7 @@ import parsley.debugger.internal.XIllegalStateException
 /** A common interface for a debug frontend for a debugger to present the debug tree. Inherit from
   * one of the two provided subtraits to use.
   *
-  * Any compliant implementation that handles all nodes of a [[parsley.debugger.DebugTree]] can be
+  * Any compliant implementation that handles all nodes of a `parsley.debugger.DebugTree` can be
   * used in place of any other implementation (e.g. a serialiser to JSON, a GUI, etc.).
   *
   * If a frontend is reusable, one can implement it as either an `object` or a `class`, but an `object`

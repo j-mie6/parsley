@@ -13,7 +13,7 @@ import ParseAttempt._ // scalastyle:ignore underscore.import
   *
   * @since 4.5.0
   */
-final class ParseAttempt private [parsley] (inp: Input, fof: Offset, tof: Offset, fps: Pos, tps: Pos, scs: Success, res: Result) {
+private [parsley] final class ParseAttempt private [parsley] (inp: Input, fof: Offset, tof: Offset, fps: Pos, tps: Pos, scs: Success, res: Result) {
     /** The input parsed, as raw text. */
     val rawInput: Input = inp
 
