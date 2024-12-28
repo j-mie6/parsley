@@ -26,37 +26,12 @@ import parsley.debugger.internal.XIllegalStateException
   * @since 4.5.0
   */
 sealed trait DebugFrontend {
-    // Is this frontend stateful (and should only be able to run once)?
-    protected [frontend] val reusable: Boolean
-
-    // Tracks if this frontend has run already.
-    private var hasRun: Boolean = false
-
-    // This function localises the use of synchronized down to this expression only.
-    @inline private def hasBeenRun: Boolean = this.synchronized {
-        (reusable && hasRun) || { hasRun = true; false }
-    }
-
     /** Process a debug tree using whatever the frontend is doing to present the tree in some way.
       *
       * @param input The full input of the parse.
       * @param tree  Debug tree to process.
       */
-    final def process(input: => String, tree: => DebugTree): Unit = {
-        if (hasBeenRun) {
-            // XXX: There isn't really another way to enforce not running a stateful frontend more than once that isn't just "do nothing".
-            //      Especially since doing nothing turns that action into a silent error, which is generally less preferable to "loud"
-            //      errors. Failing fast may be better for some frontends.
-            throw new XIllegalStateException("Stateful frontend has already been run.").except // scalastyle:ignore throw
-        } else {
-            processImpl(input, tree)
-        }
-    }
-
-    /** The actual method that does the processing of the tree.
-      * Override this to process a tree in a custom way.
-      */
-    protected def processImpl(input: => String, tree: => DebugTree): Unit
+    private [debugger] def process(input: =>String, tree: => DebugTree): Unit
 }
 
 /** Signifies that the frontend inheriting from this can be used multiple times.
@@ -64,9 +39,7 @@ sealed trait DebugFrontend {
   * @see [[DebugFrontend]]
   * @since 4.5.0
   */
-trait ReusableFrontend extends DebugFrontend {
-    override protected [frontend] final val reusable: Boolean = false
-}
+trait ReusableFrontend extends DebugFrontend
 
 /** Signifies that the frontend inheriting from this can only be run once.
   *
@@ -74,5 +47,18 @@ trait ReusableFrontend extends DebugFrontend {
   * @since 4.5.0
   */
 trait SingleUseFrontend extends DebugFrontend {
-    override protected [frontend] final val reusable: Boolean = true
+    private var hasBeenRun = false
+    final override private[debugger] def process(input: => String, tree: => DebugTree): Unit = {
+        if (hasBeenRun) {
+            // XXX: There isn't really another way to enforce not running a stateful frontend more than once that isn't just "do nothing".
+            //      Especially since doing nothing turns that action into a silent error, which is generally less preferable to "loud"
+            //      errors. Failing fast may be better for some frontends.
+            throw new XIllegalStateException("Stateful frontend has already been run.").except // scalastyle:ignore throw
+        } else {
+            processImpl(input, tree)
+            hasBeenRun = true
+        }
+    }
+    /** The implementation of the process method above */
+    private[debugger] def processImpl(input: => String, tree: => DebugTree): Unit
 }

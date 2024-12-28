@@ -16,11 +16,11 @@ class ReuseSpec extends ParsleyTest {
     it should "throw when run multiple times, only if the frontend is marked as single-use" in {
         // Dummy values.
         val reusable: ReusableFrontend = new ReusableFrontend {
-            override protected def processImpl(input: => String, tree: => DebugTree): Unit = ()
+            override private [debugger] def process(input: => String, tree: => DebugTree): Unit = ()
         }
 
         val singleUse: SingleUseFrontend = new SingleUseFrontend {
-            override protected def processImpl(input: => String, tree: => DebugTree): Unit = ()
+            override private [debugger] def processImpl(input: => String, tree: => DebugTree): Unit = ()
         }
 
         val tree: DebugTree = new DebugTree {
