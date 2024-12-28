@@ -31,7 +31,7 @@ import scala.quoted.*
                 val listOfParsers = Expr.ofList {
                     parsers.map(tr => Expr.ofTuple((Ident(tr).asExprOf[parsley.Parsley[?]], Expr(tr.name)))).toList
                 }
-                val registration = '{parsley.debugger.util.Collector.registerNames($listOfParsers.toMap)}.asTerm
+                val registration = '{parsley.debug.util.Collector.registerNames($listOfParsers.toMap)}.asTerm
 
                 // add the registration as the last statement in the object
                 // TODO: in future, we want to modify all `def`s with a top level `opaque` combinator

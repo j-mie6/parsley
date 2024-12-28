@@ -6,7 +6,7 @@
 package parsley
 
 import scala.annotation.experimental
-import parsley.debugger.internal.Renamer
+import parsley.debug.internal.Renamer
 
 @experimental
 class AnnotationTest extends ParsleyTest {

@@ -5,8 +5,8 @@
  */
 package parsley.internal.machine.instructions.debug
 
-import parsley.debugger.ParseAttempt
-import parsley.debugger.internal.{DebugContext, DivergenceContext}
+import parsley.debug.ParseAttempt
+import parsley.debug.internal.{DebugContext, DivergenceContext}
 
 import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.machine.Context

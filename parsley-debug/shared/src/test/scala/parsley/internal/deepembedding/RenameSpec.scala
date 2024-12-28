@@ -9,14 +9,14 @@ import scala.annotation.experimental
 
 import org.scalatest.Assertions.fail
 import parsley.ParsleyTest
-import parsley.debugger.internal.{DebugContext, Renamer}
-import parsley.debugger.util.Collector
+import parsley.debug.internal.{DebugContext, Renamer}
+import parsley.debug.util.Collector
 import parsley.internal.deepembedding.backend.StrictParsley
 import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor, LetFinderState, LetMap}
-import parsley.internal.deepembedding.frontend.debugger.TaggedWith
+import parsley.internal.deepembedding.frontend.debug.TaggedWith
 import parsley.token.Lexer
 import parsley.token.descriptions.LexicalDesc
-import parsley.internal.deepembedding.backend.debugger.Debugging
+import parsley.internal.deepembedding.backend.debug.Debugging
 
 @experimental
 class RenameSpec extends ParsleyTest {
@@ -39,7 +39,7 @@ class RenameSpec extends ParsleyTest {
 
     it should "pass through Debugged parsers and get the inner parser's name" in {
         val symbolic = new <**>
-        val debugged = new TaggedWith[Any](new Debugging(new DebugContext(parsley.debugger.combinator.DefaultStringRules)))(symbolic, symbolic, None)
+        val debugged = new TaggedWith[Any](new Debugging(new DebugContext(parsley.debug.combinator.DefaultStringRules)))(symbolic, symbolic, None)
 
         Renamer.nameOf(None, debugged) shouldBe "<**>"
     }

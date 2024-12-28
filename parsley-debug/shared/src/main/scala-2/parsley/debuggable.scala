@@ -113,7 +113,7 @@ private object debuggable {
         // the idea is we inject a call to Collector.registerNames with a constructed
         // map from these identifiers to their compile-time names
         val listOfParsers = q"List(..${parsers.map(tr => q"${Ident(tr)} -> ${tr.toString}")})"
-        val registration = q"parsley.debugger.util.Collector.registerNames($listOfParsers.toMap)"
+        val registration = q"parsley.debug.util.Collector.registerNames($listOfParsers.toMap)"
         // add the registration as the last statement in the object
         // TODO: in future, we want to modify all `def`s with a top level `opaque` combinator
         // that will require a bit more modification of the overall `body`, unfortunately

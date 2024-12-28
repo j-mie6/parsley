@@ -11,9 +11,9 @@ import org.typelevel.scalaccompat.annotation.unused
 import parsley.Parsley
 import parsley.ParsleyTest
 import parsley.combinator.ifS
-import parsley.debugger.combinator.attachDebugger
+import parsley.debug.combinator.attachDebugger
 import parsley.expr.chain
-import parsley.internal.deepembedding.frontend.debugger.TaggedWith
+import parsley.internal.deepembedding.frontend.debug.TaggedWith
 import parsley.internal.deepembedding.singletons
 
 class TotalAttachmentSpec extends ParsleyTest {
