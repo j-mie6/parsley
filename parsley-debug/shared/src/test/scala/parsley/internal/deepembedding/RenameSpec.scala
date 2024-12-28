@@ -9,7 +9,6 @@ import scala.annotation.experimental
 
 import org.scalatest.Assertions.fail
 import parsley.ParsleyTest
-import parsley.debugger.DebuggerUsageSpec
 import parsley.debugger.internal.{DebugContext, Renamer}
 import parsley.debugger.util.Collector
 import parsley.internal.deepembedding.backend.StrictParsley
@@ -52,7 +51,7 @@ class RenameSpec extends ParsleyTest {
         Renamer.nameOf(Some("knownName"), exampleParser) shouldBe "knownName"
     }
 
-    "the Collector implementations" should "collect names of parsers from objects (on supported platforms)" in {
+    /*"the Collector implementations" should "collect names of parsers from objects (on supported platforms)" in {
         if (Collector.isSupported) {
             Renamer.nameOf(None, DebuggerUsageSpec.Arithmetic.prog.internal) shouldBe "prog"
 
@@ -60,7 +59,7 @@ class RenameSpec extends ParsleyTest {
             Collector.assignName(DebuggerUsageSpec.Arithmetic.prog, "foo")
             Renamer.nameOf(None, DebuggerUsageSpec.Arithmetic.prog.internal) shouldBe "foo"
         } else alert("the current platform does not support Collector")
-    }
+    }*/
 
     it should "collect names of parsers from lexers (on supported platforms)" in {
         val lexer = new Lexer(LexicalDesc.plain)

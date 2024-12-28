@@ -5,7 +5,7 @@
  */
 package parsley.debugger.util
 
-import scala.annotation.nowarn
+//import scala.annotation.nowarn
 
 import parsley.Parsley
 import parsley.debugger.internal.Renamer
@@ -13,51 +13,46 @@ import parsley.token.Lexer
 
 import parsley.internal.deepembedding.frontend.LazyParsley
 
-/** Attempt to collect all the fields in a class or object that contain a
-  * parser of type [[parsley.Parsley]], or from a [[parsley.token.Lexer]].
-  *
-  * This information is used later in the debug tree-building process to rename certain parsers
-  * so that they do not end up being named things like "packageanon".
-  *
-  * You only need to run this once per parser-holding object.
+/** This is an internal class that is used by `parsley.debuggable` annotation to
+  * perform the naming for the parsers. Until the lexer has proper naming built into
+  * parsley itself, you might want to use [[Collector.lexer]] to extract meaningful
+  * names for your lexer combinators; however, this will be removed in future.
   *
   * @since 4.5.0
   */
 object Collector {
-    /** Collect names of parsers from an object.
+     /* Collect names of parsers from an object.
       *
       * @note For Scala 3 on the JVM, it is advised that all parsers in objects being introspected are
       *       marked `public`, as otherwise, a semi-deprecated call to `setAccessible` will be called on
       *       a private object, which may be restricted or removed in a future version of the JVM. It may
-      *       be advised to manually name one's parsers (to be debugged) using [[assignName]] or
+      *       be advised to manually name one's parsers (to be debugged) using
       *       [[parsley.debugger.combinator.named]] if that warning is not desirable.
       */
-    @deprecated("The functionality of this class has been subsumed by the `parsley.debuggable` annotation", "5.0.0-M7")
+    /*
     def names(obj: Any): Unit = {
-        collectDefault() // Runs only once, ever, for a program execution.
+        //collectDefault()
         Renamer.addNames(XCollector.collectNames(obj))
-    }
+    }*/
 
+    /** This is an internal method used by the `parsley.debuggable` annotation */
     def registerNames(names: Map[Parsley[_], String]): Unit = {
-        Renamer.addNames(names.map {
-            case (k, v) => k.internal -> v
-        })
+        Renamer.addNames(names.map { case (k, v) => k.internal -> v })
     }
 
     /** Collect names of parsers from a [[parsley.token.Lexer]].
       *
       * @note For Scala 3 on the JVM, this may trigger a warning about `setAccessible` for private members
       *       being deprecated.
-      * @see [[names]] for more information regarding the warning.
       */
     //@deprecated("This functionality has been absorbed into parsley itself", "5.0.0-M7")
     def lexer(lexer: Lexer): Unit = {
-        collectDefault()
+        //collectDefault()
         Renamer.addNames(XCollector.collectLexer(lexer))
     }
 
     // $COVERAGE-OFF$
-    /** Manually add a name for a parser by reference.
+    /* Manually add a name for a parser by reference.
       *
       * Can also be used if a more informative name for a parser is wanted.
       * In this case, use this method after using [[names]] or [[lexer]] to override the automatically
@@ -65,31 +60,32 @@ object Collector {
       *
       * @note Names assigned using this will take precedence over names assigned using [[parsley.debugger.combinator.named]].
       */
-    def assignName(par: Parsley[_], name: String): Unit = Renamer.addName(par.internal, name)
+    //def assignName(par: Parsley[_], name: String): Unit = Renamer.addName(par.internal, name)
 
     /** Does the implementation of the collector for the current Scala platform actually work in
       * automatically finding parsers in objects and getting their field names as written in your
       * parser code?
       *
-      * @note Manually named parsers using [[assignName]] or [[parsley.debugger.combinator.named]]
+      * @note Manually named parsers using [[parsley.debugger.combinator.named]]
       *       will still work regardless if the platform is supported or not.
       */
     @inline def isSupported: Boolean = XCollector.supported
 
-    /** Collect the names of Parsley's various default singleton parsers. */
-    private var defaultCollected: Boolean = false
+    /* Collect the names of Parsley's various default singleton parsers. */
+    // this is now done via uo()
+    /*private var defaultCollected: Boolean = false
     private def collectDefault(): Unit = if (isSupported) {
         this.synchronized {
             if (!defaultCollected) {
                 defaultCollected = true
 
-                names(parsley.character): @nowarn
-                names(parsley.combinator): @nowarn
-                names(parsley.Parsley): @nowarn
-                names(parsley.position): @nowarn
+                names(parsley.character)//: @nowarn
+                names(parsley.combinator)//: @nowarn
+                names(parsley.Parsley)//: @nowarn
+                names(parsley.position)//: @nowarn
             }
         }
-    }
+    }*/
     // $COVERAGE-ON$
 }
 

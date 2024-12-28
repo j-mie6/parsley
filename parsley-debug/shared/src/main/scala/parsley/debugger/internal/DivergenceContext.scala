@@ -76,15 +76,13 @@ private [parsley] final class DivergenceContext {
         s"""
            |Left-recursion has been detected in the given parser; however, there is not
            |enough information to determine the cycle. To get the full cycle diagnostic,
-           |please use `parsley.debugger.util.Collector` to populate the name information
-           |(this is ${if (parsley.debugger.util.Collector.isSupported) "supported" else "not supported"} on your platform).
+           |please use `parsley.debuggable` annotation to populate the name information.
            |
            |For example, if your parsers are exposed (publically) in an object called
-           |`foo`, you should run:
+           |`foo`, you should write:
            |
-           |> parsley.debugger.util.Collector.names(foo)
+           |> @parsley.debuggable object foo { ... }
            |
-           |Do this before running the `detectDivergence(foo.[...]).parse([...])` call.
            |Alternatively, you can give individual parser fragments names by using the
            |`named` combinator, which will cause them to appear along the path.
            |""".stripMargin
