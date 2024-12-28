@@ -8,7 +8,7 @@ package parsley.debugger
 /** The tree representing a parser's parse tree (its parser execution path).
   *
   * Initially unpopulated, it will be populated with information regarding the parser, such as
-  * what it is (if it is a primitive such as [[parsley.internal.deepembedding.singletons.Pure]],
+  * what it is (if it is a primitive such as `parsley.internal.deepembedding.singletons.Pure`,
   * or a user-defined named parser if names are collected) as the parser itself runs on some input.
   *
   * Any tree node will store the input it has parsed (or attempted to parse) as well as its

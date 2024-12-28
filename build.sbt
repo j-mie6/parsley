@@ -36,7 +36,7 @@ inThisBuild(List(
   tlSitePublishBranch := Some(mainBranch),
 ))
 
-lazy val root = tlCrossRootProject.aggregate(parsley, parsleyDebug)
+lazy val root = tlCrossRootProject.aggregate(parsley, parsleyDebug, unidocs)
 
 // These settings are shared between all projects.
 lazy val commonSettings = Seq(
@@ -111,6 +111,17 @@ lazy val parsleyDebug = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     ),
   )
 
+// this allows us to publish a unified doc for parsley and parsley-debug
+lazy val unidocs = project
+  .in(file("unidoc"))
+  .enablePlugins(TypelevelUnidocPlugin)
+  .settings(
+    name := "parsley-docs",
+    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(parsley.jvm, parsleyDebug.jvm),
+    Compile / doc / scalacOptions ++= Seq("-groups", "-doc-root-content", s"${baseDirectory.value.getParentFile.getPath}/parsley/rootdoc.md"),
+  )
+
+// This is used for the website
 lazy val docs = project
   .in(file("site"))
   .dependsOn(parsley.jvm)
