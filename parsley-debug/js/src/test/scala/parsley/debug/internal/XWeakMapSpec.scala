@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package parsley.debugger.internal
+package parsley.debug.internal
 
 import parsley.ParsleyTest
 
