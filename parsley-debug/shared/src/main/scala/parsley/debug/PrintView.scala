@@ -15,6 +15,7 @@ import scala.annotation.tailrec
   * on attaching debuggers to find out how to prevent that.
   *
   * @since 5.0.0
+  * @group debugview
   */
 object PrintView extends DebugView.Reusable with PrintView {
     override protected val out: PrintStream = Console.out

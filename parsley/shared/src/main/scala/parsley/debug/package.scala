@@ -18,16 +18,29 @@ import parsley.internal.deepembedding.frontend
   *     These are the debugging combinators, which are enabled by bringing these implicit classes
   *     into scope. These are part of base parsley.
   *
+  * @groupprio debugcomb 2
+  * @groupname debugcomb (parsley-debug) Debug Combinators
+  * @groupdesc debugcomb
+  *     These are additional debug combinators added by `parsley-debug`,
+  *     which allow the attachment of a debug-view, or otherwise use of specialist
+  *     debuggers like `detectDivergence`.
+  *
+  * @groupprio debugview 4
+  * @groupname debugview (parsley-debug) Debug Views
+  * @groupdesc debugview
+  *     These are implementations of renderers for debug traces for `parsley-debug`.
+  *
+  * @groupprio ctrl 5
+  * @groupname ctrl (Vanilla) Debug Control
+  * @groupdesc ctrl
+  *     These methods can control how the debug mechanism functions in a general way.
+  *
   * @groupprio break 10
-  * @groupname break Breakpoints
+  * @groupname break (Vanilla) Breakpoints
   * @groupdesc break
   *     These can be used to control how the `debug` combinator operates: when a breakpoint is used
   *     it can halt the execution of the combinator and print out information about the parsers state.
   *
-  * @groupprio ctrl 5
-  * @groupname ctrl Debug Control
-  * @groupdesc ctrl
-  *     These methods can control how the debug mechanism functions in a general way.
   */
 package object debug {
     // $COVERAGE-OFF$

@@ -16,6 +16,7 @@ import parsley.internal.deepembedding.backend.debug.{CheckDivergence, Debugging}
 /** This object contains the combinators for attaching debuggers to parsers.
   *
   * @since 4.5.0
+  * @group debugcomb
   */
 object combinator {
     /** Shorthand representation of a pair of a tree extraction function and a debugged parser. */

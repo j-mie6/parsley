@@ -20,6 +20,7 @@ import parsley.debug.internal.XIllegalStateException
   * implement single-use views as a `class` of some sort inheriting from [[DebugView.SingleUse]].
   *
   * @since 5.0.0
+  * @group debugview
   */
 sealed trait DebugView {
     /** Render a debug tree.
@@ -29,6 +30,7 @@ sealed trait DebugView {
       */
     private [debug] def render(input: =>String, tree: =>DebugTree): Unit
 }
+/** @group debugview */
 object DebugView {
     /** Signifies that the debug view inheriting from this can be used multiple times.
       *
