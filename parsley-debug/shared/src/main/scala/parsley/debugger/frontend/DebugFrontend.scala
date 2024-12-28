@@ -31,7 +31,7 @@ sealed trait DebugFrontend {
       * @param input The full input of the parse.
       * @param tree  Debug tree to process.
       */
-    private [debugger] def process(input: =>String, tree: => DebugTree): Unit
+    private [debugger] def process(input: =>String, tree: =>DebugTree): Unit
 }
 
 /** Signifies that the frontend inheriting from this can be used multiple times.
@@ -48,7 +48,7 @@ trait ReusableFrontend extends DebugFrontend
   */
 trait SingleUseFrontend extends DebugFrontend {
     private var hasBeenRun = false
-    final override private[debugger] def process(input: => String, tree: => DebugTree): Unit = {
+    final override private[debugger] def process(input: =>String, tree: =>DebugTree): Unit = {
         if (hasBeenRun) {
             // XXX: There isn't really another way to enforce not running a stateful frontend more than once that isn't just "do nothing".
             //      Especially since doing nothing turns that action into a silent error, which is generally less preferable to "loud"
@@ -60,5 +60,5 @@ trait SingleUseFrontend extends DebugFrontend {
         }
     }
     /** The implementation of the process method above */
-    private[debugger] def processImpl(input: => String, tree: => DebugTree): Unit
+    private[debugger] def processImpl(input: =>String, tree: =>DebugTree): Unit
 }

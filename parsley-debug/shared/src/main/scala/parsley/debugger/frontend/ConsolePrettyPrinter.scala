@@ -11,14 +11,15 @@ import scala.annotation.tailrec
 
 import parsley.debugger.{DebugTree, ParseAttempt}
 
-/** A console pretty-printer for the debugger.
+/** A (reusable) console pretty-printer for the debugger.
   *
   * It is recommended that all memory-heavy types (e.g. closures) are not stored explicitly. Consult the documentation
   * on attaching debuggers to find out how to prevent that.
   *
   * @since 5.0.0
   */
-object ConsolePrettyPrinter extends ConsolePrettyPrinter(Console.out) {
+object ConsolePrettyPrinter extends ReusableFrontend with ConsolePrettyPrinter {
+    override protected val out: PrintStream = Console.out
     /** Create a string pretty-printer that outputs to an arbitrary place
       *
       * @since 5.0.0
@@ -28,29 +29,28 @@ object ConsolePrettyPrinter extends ConsolePrettyPrinter(Console.out) {
       *
       * @since 5.0.0
       */
-    def apply(out: PrintStream): ReusableFrontend = new ConsolePrettyPrinter(out)
+    def apply(print: PrintStream): ReusableFrontend = new ConsolePrettyPrinter {
+        override protected val out: PrintStream = print
+    }
 }
 
-private [frontend] sealed class ConsolePrettyPrinter private[frontend] (out: PrintStream) extends ReusableFrontend {
-    override private [debugger] def process(input: => String, tree: => DebugTree): Unit = {
+private [frontend] sealed trait ConsolePrettyPrinter extends ReusableFrontend {
+    protected val out: PrintStream
+    override private [debugger] def process(input: =>String, tree: =>DebugTree): Unit = {
         out.println(s"${tree.parserName}'s parse tree for input:\n\n$input\n\n")
         pretty(tree)
     }
 
     private def bury(str: String, withMark: Boolean, indents: Vector[String]): Unit = out.println {
-        if (indents.isEmpty) str
-        else if (withMark) s"${indents.init.mkString}+-$str"
-        else s"${indents.mkString}$str"
+        indents match {
+            case is :+ _ if withMark => s"${is.mkString}+-$str"
+            case is => s"${is.mkString}$str"
+        }
     }
 
-    private def pretty(dt: DebugTree): Unit = pretty(dt, Vector.empty)
-
-    private def pretty(dt: DebugTree, indents: Vector[String]): Unit = {
-        val uname =
-            if (dt.parserName != dt.internalName)
-                s"${dt.parserName} (${dt.internalName}${if (dt.childNumber.isDefined) s" (${dt.childNumber.get})" else ""})"
-            else
-                s"${dt.internalName}${if (dt.childNumber.isDefined) s" (${dt.childNumber.get})" else ""}"
+    private def pretty(dt: DebugTree, indents: Vector[String] = Vector.empty): Unit = {
+        val childName = dt.childNumber.fold("")(n => s"($n)")
+        val uname = if (dt.parserName != dt.internalName) s"${dt.parserName} (${dt.internalName}$childName)" else s"${dt.internalName}$childName"
         val results = dt.parseResults.map(printParseAttempt).mkString
 
         bury(s"[ $uname ]: $results", withMark = true, indents)
@@ -59,7 +59,7 @@ private [frontend] sealed class ConsolePrettyPrinter private[frontend] (out: Pri
 
     // Print a parse attempt in a human-readable way.
     private def printParseAttempt(attempt: ParseAttempt): String = {
-        val status = if (attempt.success) s"Success - [ ${attempt.result.get} ]" else "Failure"
+        val status = attempt.result.fold("Failure")(x => s"Success - [ $x ]")
         s"""(\"${attempt.rawInput}\" [${attempt.fromPos} -> ${attempt.toPos}], $status)"""
     }
 

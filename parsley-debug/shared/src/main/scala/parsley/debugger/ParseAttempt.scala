@@ -5,16 +5,14 @@
  */
 package parsley.debugger
 
-import parsley.XAssert
-
 import ParseAttempt._ // scalastyle:ignore underscore.import
 
 /** A representation of the attempts a parser has made during parse-time.
   *
   * @since 4.5.0
   */
-private [parsley] final class ParseAttempt private [parsley] (inp: Input, fof: Offset, tof: Offset, fps: Pos, tps: Pos, scs: Success, res: Result) {
-    /** The input parsed, as raw text. */
+private [parsley] final class ParseAttempt private [parsley] (inp: Input, fof: Offset, tof: Offset, fps: Pos, tps: Pos, res: Result) {
+    /** The input parsed, as raw text. */ //TODO: I think this can be removed as it can be derived from the full input...
     val rawInput: Input = inp
 
     /** This offset is where the parse attempt started in the input. */
@@ -33,7 +31,7 @@ private [parsley] final class ParseAttempt private [parsley] (inp: Input, fof: O
       *
       * @note [[success]] if and only if [[result]] is defined (contains a value).
       */
-    val success: Success = scs
+    def success: Success = result.isDefined
 
     /** If this parse attempt was successful, what did it return? It is guaranteed that `result.isDefined` is true
       * if and only if the attempt is successful.
@@ -42,12 +40,9 @@ private [parsley] final class ParseAttempt private [parsley] (inp: Input, fof: O
       */
     val result: Result = res
 
-    // Make sure this class has not been used improperly.
-    XAssert.assert(success == result.isDefined)
-
     // Utility copy method only to be used internally.
     private [parsley] def copy(inp: Input = rawInput, fof: Offset = fromOffset, tof: Offset = toOffset, fps: Pos = fromPos, tps: Pos = toPos,
-                               scs: Success = success, res: Result = result): ParseAttempt = new ParseAttempt(inp, fof, tof, fps, tps, scs, res)
+                               res: Result = result): ParseAttempt = new ParseAttempt(inp, fof, tof, fps, tps, res)
 }
 
 // Ideally, this would be public. However, that introduces potential binary incompatibilities later down the line

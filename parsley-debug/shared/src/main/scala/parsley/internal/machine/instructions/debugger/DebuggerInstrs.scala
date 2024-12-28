@@ -61,7 +61,7 @@ private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Instr 
                     case f if dbgCtx.shouldString(f) => f.toString // Closures and lambdas are expensive!
                     case x                           => x
                 }) else None
-            new ParseAttempt(inp = input, fof = prevOffset, tof = currentOff, fps = prevPos, tps = (ctx.line, ctx.col), scs = success, res = res)
+            new ParseAttempt(inp = input, fof = prevOffset, tof = currentOff, fps = prevPos, tps = (ctx.line, ctx.col), res = res)
         }
 
         dbgCtx.pop()
