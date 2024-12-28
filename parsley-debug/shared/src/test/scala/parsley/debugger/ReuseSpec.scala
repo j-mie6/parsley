@@ -3,23 +3,22 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package parsley.debugger.frontend
+package parsley.debugger
 
 import org.typelevel.scalaccompat.annotation.unused
 import parsley.ParsleyTest
-import parsley.debugger.{DebugTree, ParseAttempt}
 
 //noinspection ConvertExpressionToSAM
 class ReuseSpec extends ParsleyTest {
-    behavior of "the DebugFrontend class and its re-usability / single-use enforcement"
+    behavior of "the DebugView class and its re-usability / single-use enforcement"
 
-    it should "throw when run multiple times, only if the frontend is marked as single-use" in {
+    it should "throw when run multiple times, only if the view is marked as single-use" in {
         // Dummy values.
-        val reusable: ReusableFrontend = new ReusableFrontend {
+        val reusable: DebugView.Reusable = new DebugView.Reusable {
             override private [debugger] def process(input: => String, tree: => DebugTree): Unit = ()
         }
 
-        val singleUse: SingleUseFrontend = new SingleUseFrontend {
+        val singleUse: DebugView.SingleUse = new DebugView.SingleUse {
             override private [debugger] def processImpl(input: => String, tree: => DebugTree): Unit = ()
         }
 

@@ -7,7 +7,6 @@ package parsley.debugger
 
 import parsley.Parsley
 import parsley.Parsley.{atomic, empty, fresh}
-import parsley.debugger.frontend.{DebugFrontend, ReusableFrontend}
 import parsley.debugger.internal.{DebugContext, DivergenceContext}
 
 import parsley.internal.deepembedding.frontend.LazyParsley
@@ -171,30 +170,30 @@ object combinator {
     /** Attach a debugger and an explicitly-available frontend in which the debug tree should be
       * proessed with.
       *
-      * You would normally obtain a [[parsley.debugger.frontend.DebugFrontend]] frontend from its
+      * You would normally obtain a [[parsley.debugger.DebugView]] from its
       * respective package as either a static object or an instance object depending on whether the
       * renderer stores state. In the latter case, it is better to regenerate the frontend with
-      * every new debugged parser. The frontend can be reusable (i.e. inherits from
-      * [[parsley.debugger.frontend.ReusableFrontend]]) or single-use (i.e. inherits from
-      * [[parsley.debugger.frontend.SingleUseFrontend]]).
+      * every new debugged parser. The view can be reusable (i.e. inherits from
+      * [[parsley.debugger.DebugView.Reusable]]) or single-use (i.e. inherits from
+      * [[parsley.debugger.DebugView.SingleUse]]).
       *
-      * The instrumented parser will automatically call the frontend to render the debug tree, so it
+      * The instrumented parser will automatically call the view to render the debug tree, so it
       * may be recommended that you only use this with smaller parsers as large parsers may cause
-      * large amounts of memory to be used for processing the tree.
+      * large amounts of memory to be used for rendering the tree.
       *
       * @note Do not run a parser through this combinator multiple times.
       *
       * @param parser The parser to debug.
-      * @param frontend The frontend instance to render with.
+      * @param view The debug view instance to render with.
       * @param toStringRules If a parser's result matches any of the predicates in this sequence, it
       *                      will get turned into a string before storing in the debug tree. This is
       *                      usually for memory-usage optimisation. By default, all function-like
       *                      objects will be converted into strings, as closures are expensive to store.
       * @tparam A Output type of parser.
-      * @return A modified parser which will ask the frontend to process the produced debug tree after
+      * @return A modified parser which will ask the view to render the produced debug tree after
       *         a call to [[Parsley.parse]] is made.
       */
-    def attach[A](parser: Parsley[A], frontend: DebugFrontend, toStringRules: PartialFunction[Any, Boolean]): Parsley[A] = {
+    def attach[A](parser: Parsley[A], view: DebugView, toStringRules: PartialFunction[Any, Boolean]): Parsley[A] = {
         val (tree, attached) = attachDebugger(parser, toStringRules)
 
         // Ideally, this should run 'attached', and render the tree regardless of the parser's success.
@@ -202,7 +201,7 @@ object combinator {
             val frozen = tree()
             val input = frozen.fullInput
 
-            frontend.process(input, frozen)
+            view.process(input, frozen)
         }.impure
 
         atomic(attached <* renderer) <|> (renderer *> empty)
@@ -218,29 +217,29 @@ object combinator {
       * @note Do not run a parser through this combinator multiple times.
       * @see
       *   The other overload of this method
-      *   ([[parsley.debugger.combinator$.attach[A](parser:parsley\.Parsley[A],frontend:parsley\.debugger\.frontend\.DebugFrontend,toStringRules* attachDebugger]])
+      *   ([[parsley.debugger.combinator$.attach[A](parser:parsley\.Parsley[A],view:parsley\.debugger\.DebugView,toStringRules* attachDebugger]])
       *   has more information on its usage.
       * @param parser The parser to debug.
-      * @param frontend The frontend instance to render with.
+      * @param view The debug view instance to render with.
       * @tparam A Output type of parser.
-      * @return A modified parser which will ask the frontend to process the produced debug tree after
+      * @return A modified parser which will ask the view to render the produced debug tree after
       *         a call to [[Parsley.parse]] is made.
       *
       */
-    def attach[A](parser: Parsley[A], frontend: DebugFrontend): Parsley[A] = attach[A](parser, frontend, DefaultStringRules)
+    def attach[A](parser: Parsley[A], view: DebugView): Parsley[A] = attach[A](parser, view, DefaultStringRules)
 
-    /** Create a closure that freshly attaches a debugger and a tree-processing frontend to a parser every
+    /** Create a closure that freshly attaches a debugger and a tree-rendering view to a parser every
       * time it is called.
       *
       * @note Do not run a parser through this combinator multiple times.
       *
-      * @return Generator closure for frontend-debugged versions of the input parser.
+      * @return Generator closure for view-debugged versions of the input parser.
       */
-    def attachReusable[A](parser: Parsley[A], frontend: =>ReusableFrontend, toStringRules: PartialFunction[Any, Boolean]): () => Parsley[A] = {
-        () => attach(parser, frontend, toStringRules)
+    def attachReusable[A](parser: Parsley[A], view: =>DebugView.Reusable, toStringRules: PartialFunction[Any, Boolean]): () => Parsley[A] = {
+        () => attach(parser, view, toStringRules)
     }
 
-    /** Create a closure that freshly attaches a debugger and a tree-processing frontend to a parser every
+    /** Create a closure that freshly attaches a debugger and a tree-rendering view to a parser every
       * time it is called.
       *
       * This assumes the default rules of converting only lambdas and closures into strings when
@@ -249,11 +248,11 @@ object combinator {
       * @note Do not run a parser through this combinator multiple times.
       * @see
       *   The other overload of this method
-      *   ([[parsley.debugger.combinator$.attachReusable[A](parser:parsley\.Parsley[A],frontend:=>parsley\.debugger\.frontend\.ReusableFrontend,toStringRules* attachDebugger]])
+      *   ([[parsley.debugger.combinator$.attachReusable[A](parser:parsley\.Parsley[A],view:=>parsley\.debugger\.DebugView\.Reusable,toStringRules* attachDebugger]])
       *   has more information on its usage.
-      * @return Generator closure for frontend-debugged versions of the input parser.
+      * @return Generator closure for view-debugged versions of the input parser.
       */
-    def attachReusable[A](parser: Parsley[A], frontend: =>ReusableFrontend): () => Parsley[A] = attachReusable[A](parser, frontend, DefaultStringRules)
+    def attachReusable[A](parser: Parsley[A], view: =>DebugView.Reusable): () => Parsley[A] = attachReusable[A](parser, view, DefaultStringRules)
 
     /* Attach a debugger and an implicitly-available frontend in which the debug tree should be
       * processed with.
@@ -295,15 +294,15 @@ object combinator {
     implicit class DebuggerOps[A](par: Parsley[A]) {
         //def attachDebugger(toStringRules: PartialFunction[Any, Boolean]): DebuggedPair[A] = combinator.attachDebugger(par, toStringRules)
         //def attachReusable(toStringRules: PartialFunction[Any, Boolean]): () => DebuggedPair[A] = combinator.attachReusable(par, toStringRules)
-        def attach(frontend: DebugFrontend, toStringRules: PartialFunction[Any, Boolean]): Parsley[A] = combinator.attach(par, frontend, toStringRules)
-        def attachReusable(frontend: =>ReusableFrontend, toStringRules: PartialFunction[Any, Boolean]): () => Parsley[A] =
-            combinator.attachReusable(par, frontend, toStringRules)
-        //def attach(toStringRules: PartialFunction[Any, Boolean])(implicit frontend: DebugFrontend): Parsley[A] = combinator.attach(par, toStringRules)
+        def attach(view: DebugView, toStringRules: PartialFunction[Any, Boolean]): Parsley[A] = combinator.attach(par, view, toStringRules)
+        def attachReusable(view: =>DebugView.Reusable, toStringRules: PartialFunction[Any, Boolean]): () => Parsley[A] =
+            combinator.attachReusable(par, view, toStringRules)
+        //def attach(toStringRules: PartialFunction[Any, Boolean])(implicit view: DebugView): Parsley[A] = combinator.attach(par, toStringRules)
         //def attachDebugger: DebuggedPair[A] = combinator.attachDebugger(par, defaultRules)
         //def attachReusable: () => DebuggedPair[A] = combinator.attachReusable(par, defaultRules)
-        def attach(frontend: DebugFrontend): Parsley[A] = combinator.attach(par, frontend, DefaultStringRules)
-        def attachReusable(frontend: =>ReusableFrontend): () => Parsley[A] = combinator.attachReusable(par, frontend, DefaultStringRules)
-        //def attach(implicit frontend: DebugFrontend): Parsley[A] = combinator.attach(par, defaultRules)
+        def attach(view: DebugView): Parsley[A] = combinator.attach(par, view, DefaultStringRules)
+        def attachReusable(view: =>DebugView.Reusable): () => Parsley[A] = combinator.attachReusable(par, view, DefaultStringRules)
+        //def attach(implicit view: DebugFrontend): Parsley[A] = combinator.attach(par, defaultRules)
         def named(name: String): Parsley[A] = combinator.named(par, name)
     }
     // $COVERAGE-ON$

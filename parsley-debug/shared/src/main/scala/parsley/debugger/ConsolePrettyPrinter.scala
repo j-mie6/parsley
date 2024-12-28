@@ -9,8 +9,6 @@ import java.io.{OutputStream, PrintStream}
 
 import scala.annotation.tailrec
 
-import frontend.ReusableFrontend
-
 /** A (reusable) console pretty-printer for the debugger.
   *
   * It is recommended that all memory-heavy types (e.g. closures) are not stored explicitly. Consult the documentation
@@ -18,23 +16,23 @@ import frontend.ReusableFrontend
   *
   * @since 5.0.0
   */
-object ConsolePrettyPrinter extends ReusableFrontend with ConsolePrettyPrinter {
+object ConsolePrettyPrinter extends DebugView.Reusable with ConsolePrettyPrinter {
     override protected val out: PrintStream = Console.out
     /** Create a string pretty-printer that outputs to an arbitrary place
       *
       * @since 5.0.0
       */
-    def apply(out: OutputStream): ReusableFrontend = apply(new PrintStream(out))
+    def apply(out: OutputStream): DebugView.Reusable = apply(new PrintStream(out))
     /** Create a string pretty-printer that outputs to an arbitrary place
       *
       * @since 5.0.0
       */
-    def apply(print: PrintStream): ReusableFrontend = new ConsolePrettyPrinter {
+    def apply(print: PrintStream): DebugView.Reusable = new ConsolePrettyPrinter {
         override protected val out: PrintStream = print
     }
 }
 
-private [debugger] sealed trait ConsolePrettyPrinter extends ReusableFrontend {
+private [debugger] sealed trait ConsolePrettyPrinter extends DebugView.Reusable {
     protected val out: PrintStream
     override private [debugger] def process(input: =>String, tree: =>DebugTree): Unit = {
         out.println(s"${tree.parserName}'s parse tree for input:\n\n$input\n\n")
