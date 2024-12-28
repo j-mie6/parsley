@@ -13,7 +13,7 @@ import parsley.internal.deepembedding.backend.{CodeGenState, StrictParsley, Unar
 import parsley.internal.deepembedding.backend.StrictParsley.InstrBuffer
 import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.machine.instructions.{Label, Pop}
-import parsley.internal.machine.instructions.debugger.{AddAttemptAndLeave, DropSnapshot, EnterParser, TakeSnapshot}
+import parsley.internal.machine.instructions.debug.{AddAttemptAndLeave, DropSnapshot, EnterParser, TakeSnapshot}
 
 // TODO: rename to TagFactory? this file can then be called Tags
 // this should probably be split out into its own file as well

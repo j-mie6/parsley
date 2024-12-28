@@ -18,32 +18,6 @@ import parsley.internal.deepembedding.backend.debugger.{CheckDivergence, Debuggi
   * @since 4.5.0
   */
 object combinator {
-    /** Returns true for any function type, which we ideally don't store as a string */
-    val DefaultStringRules: PartialFunction[Any, Boolean] = {
-        case _ : Function1[_, _] => true
-        case _ : Function2[_, _, _] => true
-        case _ : Function3[_, _, _, _] => true
-        case _ : Function4[_, _, _, _, _] => true
-        case _ : Function5[_, _, _, _, _, _] => true
-        case _ : Function6[_, _, _, _, _, _, _] => true
-        case _ : Function7[_, _, _, _, _, _, _, _] => true
-        case _ : Function8[_, _, _, _, _, _, _, _, _] => true
-        case _ : Function9[_, _, _, _, _, _, _, _, _, _] => true
-        case _ : Function10[_, _, _, _, _, _, _, _, _, _, _] => true
-        case _ : Function11[_, _, _, _, _, _, _, _, _, _, _, _] => true
-        case _ : Function12[_, _, _, _, _, _, _, _, _, _, _, _, _] => true
-        case _ : Function13[_, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
-        case _ : Function14[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
-        case _ : Function15[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
-        case _ : Function16[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
-        case _ : Function17[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
-        case _ : Function18[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
-        case _ : Function19[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
-        case _ : Function20[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
-        case _ : Function21[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
-        case _ : Function22[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
-    }
-
     /** Shorthand representation of a pair of a tree extraction function and a debugged parser. */
     private [parsley] type DebuggedPair[+A] = (() => DebugTree, Parsley[A])
 
@@ -167,8 +141,7 @@ object combinator {
     //private def attachReusable[A](parser: Parsley[A]): () => DebuggedPair[A] = attachReusable[A](parser, defaultRules)
 
     // TODO: fix docs by incorporating some of the base stuff above
-    /** Attach a debugger and an explicitly-available frontend in which the debug tree should be
-      * proessed with.
+    /** Attach a debugger to be rendered via a given view. This view will render whenever the parser produces debug content.
       *
       * You would normally obtain a [[parsley.debugger.DebugView]] from its
       * respective package as either a static object or an instance object depending on whether the
@@ -207,9 +180,7 @@ object combinator {
         atomic(attached <* renderer) <|> (renderer *> empty)
     }
 
-    /** Attach a debugger and an explicitly-available frontend in which the debug tree should be
-      * processed with. This frontend will also be called automatically with any debug trees produced
-      * by the parser.
+    /** Attach a debugger to be rendered via a given view. This view will render whenever the parser produces debug content.
       *
       * This assumes the default rules of converting only lambdas and closures into strings when
       * storing in the output debug tree.
@@ -306,4 +277,30 @@ object combinator {
         def named(name: String): Parsley[A] = combinator.named(par, name)
     }
     // $COVERAGE-ON$
+
+    /** Returns true for any function type, which we ideally don't store as a string */
+    val DefaultStringRules: PartialFunction[Any, Boolean] = {
+        case _ : Function1[_, _] => true
+        case _ : Function2[_, _, _] => true
+        case _ : Function3[_, _, _, _] => true
+        case _ : Function4[_, _, _, _, _] => true
+        case _ : Function5[_, _, _, _, _, _] => true
+        case _ : Function6[_, _, _, _, _, _, _] => true
+        case _ : Function7[_, _, _, _, _, _, _, _] => true
+        case _ : Function8[_, _, _, _, _, _, _, _, _] => true
+        case _ : Function9[_, _, _, _, _, _, _, _, _, _] => true
+        case _ : Function10[_, _, _, _, _, _, _, _, _, _, _] => true
+        case _ : Function11[_, _, _, _, _, _, _, _, _, _, _, _] => true
+        case _ : Function12[_, _, _, _, _, _, _, _, _, _, _, _, _] => true
+        case _ : Function13[_, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
+        case _ : Function14[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
+        case _ : Function15[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
+        case _ : Function16[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
+        case _ : Function17[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
+        case _ : Function18[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
+        case _ : Function19[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
+        case _ : Function20[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
+        case _ : Function21[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
+        case _ : Function22[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] => true
+    }
 }

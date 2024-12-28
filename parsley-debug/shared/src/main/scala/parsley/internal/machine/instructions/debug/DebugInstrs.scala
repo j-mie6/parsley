@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package parsley.internal.machine.instructions.debugger
+package parsley.internal.machine.instructions.debug
 
 import parsley.debugger.ParseAttempt
 import parsley.debugger.internal.{DebugContext, DivergenceContext}

@@ -12,7 +12,7 @@ of what parsers take the most time to execute.
 The combinators themselves are all contained within `parsley.debug.DebugCombinators`.
 
 @:callout(info)
-*The Scaladoc for this page can be found at [`parsley.debug`](@:api(parsley.debug$)) and [`parsley.debug.DebugCombinators`](@:api(parsley.debug$$DebugCombinators))*
+*The Scaladoc for this page can be found at [`parsley.debug`](@:api(parsley.debug)) and [`parsley.debug.DebugCombinators`](@:api(parsley.debug.DebugCombinators))*
 @:@
 
 ## Debugging Problematic Parsers (`debug`)
