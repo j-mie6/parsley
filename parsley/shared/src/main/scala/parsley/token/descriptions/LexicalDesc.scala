@@ -8,6 +8,8 @@ package parsley.token.descriptions
 /** This class describes the aggregation of a bunch of different
   * sub-configurations for lexing a specific language.
   *
+  * @note Documentation for the parameters is found in the `copy` or companion `apply`.
+  *
   * @param nameDesc the description of name-like lexemes
   * @param symbolDesc the description of specific symbolic lexemes
   * @param numericDesc the description of numeric literals
@@ -34,7 +36,9 @@ final class LexicalDesc private (val nameDesc: NameDesc,
         new LexicalDesc(nameDesc, symbolDesc, numericDesc, textDesc, spaceDesc)
 }
 
-/** This object contains any preconfigured lexical definitions.
+/** This object contains any preconfigured lexical definitions and
+  * a way of constructing a complete description.
+  * 
   * @since 4.0.0
   */
 object LexicalDesc {
