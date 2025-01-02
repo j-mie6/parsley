@@ -15,7 +15,6 @@ to provide meaningful names for this functionality.
 The combinator we are interested in is called `parsley.debug.combinator.detectDivergence`, which
 wraps the top-level parser.
 
-<!-- We can't use macro annotations on 2.13 within mdoc, it seems, so do it manually -->
 ```scala mdoc:invisible
 class debuggable extends scala.annotation.StaticAnnotation()
 ```
