@@ -124,7 +124,7 @@ lazy val unidocs = project
 // This is used for the website
 lazy val docs = project
   .in(file("site"))
-  .dependsOn(parsley.jvm)
+  .dependsOn(parsley.jvm, parsleyDebug.jvm)
   .enablePlugins(ParsleySitePlugin)
   .settings(
     tlSiteApiModule := Some((parsley.jvm / projectID).value),

@@ -76,7 +76,7 @@ private [parsley] final class DivergenceContext {
         s"""
            |Left-recursion has been detected in the given parser; however, there is not
            |enough information to determine the cycle. To get the full cycle diagnostic,
-           |please use `parsley.debuggable` annotation to populate the name information.
+           |please use the `parsley.debuggable` annotation to populate the name information.
            |
            |For example, if your parsers are exposed (publically) in an object called
            |`foo`, you should write:
@@ -108,7 +108,7 @@ private [parsley] final class DivergenceContext {
             if (stateFree) throw new ParsleyException(LeftRecursion(cycle2.map(_._1)))
             else throw new ParsleyException(LeftRecursion(cycle2.map {
                 // this is horrid, but it'll (TODO: some day allow for watched references like in `debug`?)
-                case (name, regs) => s"$name (with state ${regs.zipWithIndex})"
+                case (name, regs) => s"$name (with state $regs)"
             }))
         }
     }
@@ -131,7 +131,7 @@ private [parsley] final class DivergenceContext {
             if (couldRefine.nonEmpty)
             s"""
                |
-               |More precise names for ${couldRefine.mkString(" and ")} can be sourced using Collector.names
+               |More precise names for ${couldRefine.mkString(" and ")} can be sourced using @parsley.debuggable
                |or the `named` combinator.""".stripMargin
             else ""
 

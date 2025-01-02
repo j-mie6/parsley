@@ -56,8 +56,7 @@ the typer often crashes! There are a few different things that I've observed can
 certainly not exhaustive):
 
 * Anonymous class instances being typechecked will crash.
-* The use of overloaded methods with the annotated object doesn't
-  necessarily work correctly.
+* The use of overloaded methods with the annotated object doesn't necessarily work correctly.
 * You must not shadow the enclosing class/object's name as one of its values.
 
 The annotation can mostly check for these things for you. However, if it complains, it is up to you
