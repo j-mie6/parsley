@@ -63,7 +63,7 @@ efficiently, in theory this is still left-recursion, it is just called *hidden l
 
 ```scala
 def many(p: Parsley[A]): Parsley[List[A]] = {
-    lazy val rec: Parsley[List[A]] = p <:> rec | pure(Nil)
+    lazy val rec: Parsley[List[A]] = p <::> rec | pure(Nil)
     rec
 }
 ```
