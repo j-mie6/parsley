@@ -120,7 +120,7 @@ private [parsley] final class DivergenceContext {
         // no point talking about the state cycle if there is no changes
         val stateFree = cycle.distinct.size == 1
         // if the states do form a cycle, we should report the cycle
-        lazy val cycleStr = cycle.mkString("\n")
+        lazy val cycleStr = cycle.map(_.mkString("(", ", ", ")")).mkString("\n")
         val stateNote = if (!stateFree) s"\nand adjusts the state in a cyclic way, as follows:\n\n$cycleStr" else "."
 
         // if the names are only internal, we should direct the user to either use the collector or use the
