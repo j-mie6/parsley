@@ -7,7 +7,6 @@ package parsley.debug.internal
 
 import scala.collection.mutable
 
-import org.typelevel.scalaccompat.annotation.unused
 import parsley.XAssert
 import parsley.debug.ParseAttempt
 import parsley.internal.deepembedding.frontend.LazyParsley
@@ -44,7 +43,7 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
         XAssert.assert(!(ch.size > 1), s"The root tree has somehow gained multiple children. (${ch.size})")
 
         // This should never fail.
-        ch.collectFirst { case (_, x) => x }.get
+        ch.valuesIterator.next()
     }
 
     // Add an attempt of parsing at the current stack point.
@@ -92,6 +91,6 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
         assert(builderStack.nonEmpty, "Parser stack underflow on pop.")
         // $COVERAGE-ON$
         // Remove first parser off stack, as if returning from that parser.
-        val _ = builderStack.remove(0).applyInputAugments(): @unused
+        builderStack.remove(0).applyInputAugments()
     }
 }

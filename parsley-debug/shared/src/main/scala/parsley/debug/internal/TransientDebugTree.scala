@@ -58,7 +58,7 @@ private [parsley] class TransientDebugTree(var name: String = "", var internal: 
         uuid
     }
 
-    private [parsley] def applyInputAugments(): TransientDebugTree = {
+    private [parsley] def applyInputAugments(): Unit = {
         parse = parse.map { p =>
             // Augments are single-use.
             val ua = augments.toList
@@ -66,8 +66,10 @@ private [parsley] class TransientDebugTree(var name: String = "", var internal: 
 
             def basis(int: Int): Int = int - p.fromOffset
 
-            p.copy(inp = ua.foldRight(p.rawInput) { case ((aid, (ast, aen)), st) => st.slice(0, basis(ast)) + s"{$aid}" + st.drop(basis(aen)) })
+            p.copy(inp = ua.foldRight(p.rawInput) {
+                // FIXME: don't augment input that wasn't an exact match (i.e. failed)
+                case ((aid, (ast, aen)), st) => s"${st.take(basis(ast))}{$aid}${st.drop(basis(aen))}"
+            })
         }
-        this
     }
 }

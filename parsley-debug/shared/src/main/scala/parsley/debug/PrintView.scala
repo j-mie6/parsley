@@ -18,7 +18,7 @@ import scala.annotation.tailrec
   * @group debugview
   */
 object PrintView extends DebugView.Reusable with PrintView {
-    override protected val out: PrintStream = Console.out
+    override protected def out: PrintStream = Console.out
     /** Create a string pretty-printer that outputs to an arbitrary place
       *
       * @since 5.0.0
@@ -29,12 +29,14 @@ object PrintView extends DebugView.Reusable with PrintView {
       * @since 5.0.0
       */
     def apply(print: PrintStream): DebugView.Reusable = new PrintView {
+        // this could be a file-handle, so we override as a val
         override protected val out: PrintStream = print
     }
 }
 
 private [debug] sealed trait PrintView extends DebugView.Reusable {
-    protected val out: PrintStream
+    // this could be a stream that updates, like Console.out, so eval on demand by default
+    protected def out: PrintStream
     override private [debug] def render(input: =>String, tree: =>DebugTree): Unit = {
         out.println(s"${tree.parserName}'s parse tree for input:\n\n$input\n\n")
         pretty(tree)

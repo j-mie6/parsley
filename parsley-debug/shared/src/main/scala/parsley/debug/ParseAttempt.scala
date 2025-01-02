@@ -12,7 +12,7 @@ import ParseAttempt._ // scalastyle:ignore underscore.import
   * @since 4.5.0
   */
 private [parsley] final class ParseAttempt private [parsley] (inp: Input, fof: Offset, tof: Offset, fps: Pos, tps: Pos, res: Result) {
-    /** The input parsed, as raw text. */ //TODO: I think this can be removed as it can be derived from the full input...
+    /** The input parsed, as raw text. */ //TODO: I think this can be removed as it can be derived from the full input... (apparently, these are used for the "augments")
     val rawInput: Input = inp
 
     /** This offset is where the parse attempt started in the input. */
