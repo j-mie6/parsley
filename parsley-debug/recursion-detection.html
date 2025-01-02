@@ -250,29 +250,29 @@
 </span><span class="comment">// parsley.exceptions.ParsleyException: 
 // Left-recursion has been detected in the given parser. The trace is as follows:
 // 
-// p (with state List(false, 0))
-// p (with state List(false, 1))
-// p (with state List(false, 2))
-// p (with state List(false, 3))
-// p (with state List(false, 4))
-// p (with state List(false, 5))
-// p (with state List(false, 6))
-// p (with state List(false, 7))
-// p (with state List(false, 8))
-// p (with state List(false, 9))
-// q (with state List(false, 0))
-// p (with state List(true, 0))
-// p (with state List(true, 1))
-// p (with state List(true, 2))
-// p (with state List(true, 3))
-// p (with state List(true, 4))
-// p (with state List(true, 5))
-// p (with state List(true, 6))
-// p (with state List(true, 7))
-// p (with state List(true, 8))
-// p (with state List(true, 9))
-// q (with state List(true, 0))
-// p (with state List(false, 0))
+// p (with state (0, false))
+// p (with state (1, false))
+// p (with state (2, false))
+// p (with state (3, false))
+// p (with state (4, false))
+// p (with state (5, false))
+// p (with state (6, false))
+// p (with state (7, false))
+// p (with state (8, false))
+// p (with state (9, false))
+// q (with state (0, false))
+// p (with state (0, true))
+// p (with state (1, true))
+// p (with state (2, true))
+// p (with state (3, true))
+// p (with state (4, true))
+// p (with state (5, true))
+// p (with state (6, true))
+// p (with state (7, true))
+// p (with state (8, true))
+// p (with state (9, true))
+// q (with state (0, true))
+// p (with state (0, false))
 // 
 // For readability, all non-named combinators have been stripped out -- to see more,
 // use the `named` combinator to tag parts of the parser you want to see appear in
@@ -282,7 +282,7 @@
 // 	at repl.MdocSession$MdocApp$$anonfun$3.apply(recursion-detection.md:87)</span></code></pre>
         <p>Unfortunately, at the moment there is no way to name the references, but this is future work. Regardless,
         this time, the cycle shows the state snapshots that lead to the loop in the parser; namely, when
-        the counter hits <code>0</code> again and the toggle is reset to <code>false</code>, we enter out initial state, and the
+        the counter hits <code>0</code> again and the toggle is reset to <code>false</code>, we enter our initial state, and the
         parser is killed.</p>
         <p>Obviously, if this were just an infinite loop of the form <code>lazy val p: Parsley[Unit] = counter.update(_ + 1) ~&gt; p</code>, then <code>detectDivergence</code> cannot detect this until <code>counter</code> overflows! The system isn&#39;t fool proof,
         obviously, since this would mean solving the general halting problem, but it works for any non-stateful
