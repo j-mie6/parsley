@@ -56,8 +56,8 @@ detectDivergence(many(unit)).parse("")
 ```
 
 The `many` combinator reads zero-or-more things. When given something that doesn't consume input,
-it will succeed reading that parser, then loop back round and try starting to read it again. This
-is, as you might expect, exactly where it left of last iteration. As such, `detectDivergence` can
+it will succeed reading that parser, then loop back round and try to read it again. This
+is, as you might expect, exactly where it left off last iteration. As such, `detectDivergence` can
 also detect this kind of looping as well. While `parsley` implements `many` and friends more
 efficiently, in theory this is still left-recursion, it is just called *hidden left-recursion*:
 
