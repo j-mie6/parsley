@@ -110,7 +110,7 @@ detectDivergence(stateful.top).parse("")
 
 Unfortunately, at the moment there is no way to name the references, but this is future work. Regardless,
 this time, the cycle shows the state snapshots that lead to the loop in the parser; namely, when
-the counter hits `0` again and the toggle is reset to `false`, we enter out initial state, and the
+the counter hits `0` again and the toggle is reset to `false`, we enter our initial state, and the
 parser is killed.
 
 Obviously, if this were just an infinite loop of the form `lazy val p: Parsley[Unit] = counter.update(_ + 1) ~> p`, then `detectDivergence` cannot detect this until `counter` overflows! The system isn't fool proof,

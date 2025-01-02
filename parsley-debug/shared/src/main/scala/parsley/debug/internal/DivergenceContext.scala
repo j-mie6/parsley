@@ -108,7 +108,7 @@ private [parsley] final class DivergenceContext {
             if (stateFree) throw new ParsleyException(LeftRecursion(cycle2.map(_._1)))
             else throw new ParsleyException(LeftRecursion(cycle2.map {
                 // this is horrid, but it'll (TODO: some day allow for watched references like in `debug`?)
-                case (name, regs) => s"$name (with state $regs)"
+                case (name, regs) => s"$name (with state ${regs.mkString("(", ", ", ")")})"
             }))
         }
     }
