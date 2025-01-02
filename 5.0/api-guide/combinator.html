@@ -123,6 +123,8 @@
     <li class="level2 nav-leaf"><a href="../tutorial/interlude-1-haskell.html">Interlude 1: Building a Parser for Haskell</a></li>
     <li class="level2 nav-leaf"><a href="../tutorial/customising-error-messages.html">Customising Error Messages</a></li>
     <li class="level2 nav-leaf"><a href="../tutorial/advanced-error-messages.html">Advanced Error Messages</a></li>
+    <li class="level1 nav-header">parsley-debug</li>
+    <li class="level2 nav-leaf"><a href="../parsley-debug/debuggable.html"><code>@parsley.debuggable</code></a></li>
     <li class="level1 nav-header">Related Projects</li>
     <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/parsley-cats">parsley-cats</a></li>
     <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/gigaparsec">gigaparsec (Haskell)</a></li>
@@ -177,7 +179,7 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.{</span><span class="identifier">manyTill</span><span>}
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">comment</span><span> = </span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;//&quot;</span><span>) ~&gt; </span><span class="identifier">manyTill</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>)
-</span><span class="comment">// comment: parsley.Parsley[List[Char]] = parsley.Parsley@646131d
+</span><span class="comment">// comment: parsley.Parsley[List[Char]] = parsley.Parsley@28ece06f
 </span><span class="identifier">comment</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;// this is a comment</span><span class="escape-sequence">\n</span><span class="string-literal">&quot;</span><span>)
 </span><span class="comment">// res0: parsley.Result[String, List[Char]] = Success(List( , t, h, i, s,  , i, s,  , a,  , c, o, m, m, e, n, t))</span></code></pre>
         

@@ -7,13 +7,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Typelevel Laika + Parsley Theme" />
     
-    <title>Position Combinators (parsley.position)</title>
+    <title>@parsley.debuggable</title>
     
     
     <meta name="author" content="parsley contributors"/>
     
     
-    <meta name="description" content="This page describes how to get position information."/>
+    <meta name="description" content="The debuggable annotation."/>
     
     
     
@@ -29,7 +29,7 @@
     <link rel="stylesheet" type="text/css" href="../../css/parsley-style.css" />
     <script src="../../helium/site/laika-helium.js"></script>
     <script src="../../helium/site/laika-versions.js"></script>
-    <script>initVersions("../../", "/api-guide/position.html", "5.0", null);</script>
+    <script>initVersions("../../", "/parsley-debug/debuggable.html", "5.0", null);</script>
     
     <script> /* for avoiding page load transitions */ </script>
   </head>
@@ -92,28 +92,28 @@
     <li class="level1 nav-leaf"><a href="../../home.html">Home</a></li>
     <li class="level1 nav-leaf"><a href="../faq.html">FAQ</a></li>
     <li class="level1 nav-leaf"><a href="../cheatsheet.html">Cheatsheet</a></li>
-    <li class="level1 nav-node"><a href="index.html">Understanding the API</a></li>
-    <li class="level2 nav-leaf"><a href="Parsley.html"><code>parsley.Parsley</code></a></li>
-    <li class="level2 nav-leaf"><a href="character.html"><code>parsley.character</code></a></li>
-    <li class="level2 nav-leaf"><a href="combinator.html"><code>parsley.combinator</code></a></li>
-    <li class="level2 nav-leaf"><a href="generic.html"><code>parsley.generic</code></a></li>
-    <li class="level2 nav-leaf"><a href="syntax.html"><code>parsley.syntax</code></a></li>
-    <li class="level2 active nav-leaf"><a href="#"><code>parsley.position</code></a></li>
-    <li class="level2 nav-leaf"><a href="state.html"><code>parsley.state</code></a></li>
-    <li class="level2 nav-leaf"><a href="debug.html"><code>parsley.debug</code></a></li>
+    <li class="level1 nav-node"><a href="../api-guide/">Understanding the API</a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/Parsley.html"><code>parsley.Parsley</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/character.html"><code>parsley.character</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/combinator.html"><code>parsley.combinator</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/generic.html"><code>parsley.generic</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/syntax.html"><code>parsley.syntax</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/position.html"><code>parsley.position</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/state.html"><code>parsley.state</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/debug.html"><code>parsley.debug</code></a></li>
     <li class="level2 nav-header"><code>parsley.expr</code></li>
-    <li class="level3 nav-leaf"><a href="expr/chain.html"><code>chain</code></a></li>
-    <li class="level3 nav-leaf"><a href="expr/infix.html"><code>infix</code></a></li>
-    <li class="level3 nav-leaf"><a href="expr/precedence.html"><code>precedence</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/expr/chain.html"><code>chain</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/expr/infix.html"><code>infix</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/expr/precedence.html"><code>precedence</code></a></li>
     <li class="level2 nav-header"><code>parsley.token</code></li>
-    <li class="level3 nav-leaf"><a href="token/Lexer.html"><code>Lexer</code></a></li>
-    <li class="level3 nav-leaf"><a href="token/descriptions.html"><code>descriptions</code></a></li>
-    <li class="level3 nav-leaf"><a href="token/errors.html"><code>errors</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/token/Lexer.html"><code>Lexer</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/token/descriptions.html"><code>descriptions</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/token/errors.html"><code>errors</code></a></li>
     <li class="level2 nav-header"><code>parsley.errors</code></li>
-    <li class="level3 nav-leaf"><a href="errors/combinator.html"><code>combinator</code></a></li>
-    <li class="level3 nav-leaf"><a href="errors/patterns.html"><code>patterns</code></a></li>
-    <li class="level3 nav-leaf"><a href="errors/ErrorBuilder.html"><code>ErrorBuilder</code></a></li>
-    <li class="level3 nav-leaf"><a href="errors/tokenextractors.html"><code>tokenextractors</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/errors/combinator.html"><code>combinator</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/errors/patterns.html"><code>patterns</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/errors/ErrorBuilder.html"><code>ErrorBuilder</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/errors/tokenextractors.html"><code>tokenextractors</code></a></li>
     <li class="level1 nav-node"><a href="../tutorial/">Parser Combinator Tutorial</a></li>
     <li class="level2 nav-leaf"><a href="../tutorial/basics-of-combinators.html">Basics of Combinators</a></li>
     <li class="level2 nav-leaf"><a href="../tutorial/building-expression-parsers.html">Building Expression Parsers</a></li>
@@ -124,7 +124,7 @@
     <li class="level2 nav-leaf"><a href="../tutorial/customising-error-messages.html">Customising Error Messages</a></li>
     <li class="level2 nav-leaf"><a href="../tutorial/advanced-error-messages.html">Advanced Error Messages</a></li>
     <li class="level1 nav-header">parsley-debug</li>
-    <li class="level2 nav-leaf"><a href="../parsley-debug/debuggable.html"><code>@parsley.debuggable</code></a></li>
+    <li class="level2 active nav-leaf"><a href="#"><code>@parsley.debuggable</code></a></li>
     <li class="level1 nav-header">Related Projects</li>
     <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/parsley-cats">parsley-cats</a></li>
     <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/gigaparsec">gigaparsec (Haskell)</a></li>
@@ -136,36 +136,75 @@
 
       
 <nav id="page-nav">
-  <p class="header"><a href="#"><code>parsley.position</code></a></p>
+  <p class="header"><a href="#"><code>@parsley.debuggable</code></a></p>
 
   <ul class="nav-list">
-    <li class="level1 nav-leaf"><a href="#position-extraction">Position Extraction</a></li>
-    <li class="level1 nav-leaf"><a href="#offset-extraction">Offset Extraction</a></li>
+    <li class="level1 nav-leaf"><a href="#how-to-use">How to use</a></li>
+    <li class="level1 nav-leaf"><a href="#scala-2-woes">Scala 2 Woes</a></li>
   </ul>
 
-  <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/staging/5.0/docs/api-guide/position.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
+  <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/staging/5.0/docs/parsley-debug/debuggable.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
 </nav>
 
 
       <main class="content">
 
-        <h1 id="position-combinators-parsley-position" class="title">Position Combinators (<code>parsley.position</code>)</h1>
-        <p>During a parse, position information is tracked and recorded by <code>parsley</code>.
-        The <code>parsley.position</code> module contains combinators that can access this
-        information so that it can be used in the construction of the results.</p>
-        <div class="callout info">
-          <i class="icofont-laika info">&#xef4e;</i>
-          <p><em>The Scaladoc for this page can be found at <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M9/parsley/position$.html"><code>parsley.position</code></a>.</em></p>
+        <h1 id="debugging-annotation-parsley-debuggable" class="title">Debugging Annotation <code>@parsley.debuggable</code></h1>
+        <p>Compared with the <a href="../api-guide/debug.html#debugging-problematic-parsers-debug">basic debugging</a> combinators
+        found in <em>vanilla</em> <code>parsley</code>, the <code>parsley-debug</code> library is designed to work as a more complete
+        system. The key part of this system from the <code>parsley</code>-end is the <code>@debuggable</code> annotation, which
+        is used to collect up the names of your parsers so that they appear in the debugger views in the
+        form you defined them in.</p>
+        <div class="callout warning">
+          <i class="icofont-laika warning">&#xf026;</i>
+          <p>This annotation relies on Scala&#39;s <em>macro</em> system. This means that its implementation is dependent
+          on the version of Scala being used. Scala 3&#39;s implementation is far more stable, but requires the
+          <code>@experimental</code> annotation to use (or the <code>-experimental</code> compiler flag) until
+          macro annotations are standard.</p>
+          <p>For Scala 2, there are some caveats to the annotation dicussed below. For Scala 2.13, you must
+          enable the <code>-Ymacro-annotation</code> flag, and for Scala 2.12 you must use the <code>org.scalamacros:paradise</code>
+          compiler plugin.</p>
         </div>
         
-        <h2 id="position-extraction" class="section"><a class="anchor-link left" href="#position-extraction"><i class="icofont-laika link">&#xef71;</i></a>Position Extraction</h2>
-        <p>The <code>line</code> and <code>col</code> parsers will extract the line and column respectively. In
-        <code>parsley</code>, the first line and column are both 1. For convenience, the <code>pos</code>
-        parser is defined as <code>line.zip(col)</code>.</p>
+        <h2 id="how-to-use" class="section"><a class="anchor-link left" href="#how-to-use"><i class="icofont-laika link">&#xef71;</i></a>How to use</h2>
+        <p>Using <code>@debuggable</code> is very easy! Assuming your parsers are kept in either one or more <code>class</code>es or <code>object</code>s,
+        just simply annotate them with the annotation, and you&#39;re good to go.</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">quick</span><span>.*
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">debuggable</span><span>
+
+</span><span class="annotation">@debuggable</span><span> </span><span class="comment">// (or @experimental @debuggable for Scala 3)
+</span><span class="keyword">object</span><span> </span><span class="identifier">parsers</span><span> {
+    </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;a&#39;</span><span>)
+    </span><span class="keyword">val</span><span> </span><span class="identifier">q</span><span> = </span><span class="identifier">p</span><span> ~&gt; </span><span class="identifier">digit</span><span>
+    </span><span class="keyword">val</span><span> </span><span class="identifier">r</span><span> = </span><span class="identifier">p</span><span> &lt;~&gt; </span><span class="identifier">q</span><span>
+
+    </span><span class="comment">// there can be more in here, including a `def main` method.
+</span><span>}</span></code></pre>
+        <p>What you will find, as a result, is that if you use the <code>parsley-debug</code> debugging functionality,
+        the names <code>p</code>, <code>q</code>, and <code>r</code> will automatically appear in the outputs.</p>
         
-        <h2 id="offset-extraction" class="section"><a class="anchor-link left" href="#offset-extraction"><i class="icofont-laika link">&#xef71;</i></a>Offset Extraction</h2>
-        <p>The <code>offset</code> parser can be used to obtain the raw underlying offset of
-        a parser, which can be used for calculations on the number of characters (not codepoints) a parser consumes, but should not be used to derive positions themselves.</p>
+        <h2 id="scala-2-woes" class="section"><a class="anchor-link left" href="#scala-2-woes"><i class="icofont-laika link">&#xef71;</i></a>Scala 2 Woes</h2>
+        <p>The way this macro works is by demanding the values within the annotated <code>object</code> or <code>class</code> that
+        have type <code>Parsley[?]</code> and adding all of them to an internal map accessible via the
+        <code>parsley.debug.util.Collector</code> API. In Scala 3, the tree provided to the annotation macro is
+        already typechecked, so this query is effortless and works very robustly. In Scala 2, the tree
+        provided is not typechecked; this means that the annotation has to send the AST to the typer within
+        the compiler to obtain the information it needs.</p>
+        <p>The problem is that, because of the various transformations that have happened to the AST already,
+        the typer often crashes! There are a few different things that I&#39;ve observed can cause this (it&#39;s
+        certainly not exhaustive):</p>
+        <ul>
+          <li>Anonymous class instances being typechecked will crash.</li>
+          <li>The use of overloaded methods with the annotated object doesn&#39;t
+          necessarily work correctly.</li>
+          <li>You must not shadow the enclosing class/object&#39;s name as one of its values.</li>
+        </ul>
+        <p>The annotation can mostly check for these things for you. However, if it complains, it is up to you
+        to fix it! This is easy: just add explicit type signatures. When you do this, <code>debuggable</code> will
+        behind the scenes remove the body of the definition (replacing it with <code>???</code>), removing scope for
+        screwing with the typer (which is unnecessary, because we already have the type).</p>
+        <p>Obviously, this is really not ideal, and when things do go wrong it can be quite spectatular. This
+        is why I <strong>absolutely 100% recommend using <em>Scala 3</em></strong>.</p>
 
         
 <hr class="footer-rule"/>

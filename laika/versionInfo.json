@@ -26,6 +26,7 @@
     { "path": "/api-guide/token/errors.html", "versions": ["4.4","4.5","5.0"] },
     { "path": "/cheatsheet.html", "versions": ["4.4","4.5","5.0"] },
     { "path": "/faq.html", "versions": ["4.4","4.5","5.0"] },
+    { "path": "/parsley-debug/debuggable.html", "versions": ["5.0"] },
     { "path": "/tutorial/advanced-error-messages.html", "versions": ["4.4","4.5","5.0"] },
     { "path": "/tutorial/basics-of-combinators.html", "versions": ["4.4","4.5","5.0"] },
     { "path": "/tutorial/building-expression-parsers.html", "versions": ["4.4","4.5","5.0"] },

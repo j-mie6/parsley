@@ -123,6 +123,8 @@
     <li class="level2 nav-leaf"><a href="../../tutorial/interlude-1-haskell.html">Interlude 1: Building a Parser for Haskell</a></li>
     <li class="level2 nav-leaf"><a href="../../tutorial/customising-error-messages.html">Customising Error Messages</a></li>
     <li class="level2 nav-leaf"><a href="../../tutorial/advanced-error-messages.html">Advanced Error Messages</a></li>
+    <li class="level1 nav-header">parsley-debug</li>
+    <li class="level2 nav-leaf"><a href="../../parsley-debug/debuggable.html"><code>@parsley.debuggable</code></a></li>
     <li class="level1 nav-header">Related Projects</li>
     <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/parsley-cats">parsley-cats</a></li>
     <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/gigaparsec">gigaparsec (Haskell)</a></li>
@@ -214,7 +216,7 @@
         </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Mul</span><span>),
         </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Add</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Sub</span><span>)
     )
-</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@3f57ffda
+</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@12bd3373
 </span><span>
 </span><span class="identifier">expr</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;x+5*y&quot;</span><span>)
 </span><span class="comment">// res0: parsley.Result[String, Expr] = Success(Add(Var(x),Mul(Num(5),Var(y))))</span></code></pre>
@@ -294,7 +296,7 @@
         </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Mul</span><span>) :+
         </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span class="identifier">as</span><span> </span><span class="type-name">Add</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Sub</span><span>)
     }
-</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@39a762d3
+</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@7f45c9d8
 </span><span>
 </span><span class="identifier">expr</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;x+5*y&quot;</span><span>)
 </span><span class="comment">// res1: parsley.Result[String, Expr] = Success(Add(Var(x),Mul(Num(5),Var(y))))</span></code></pre>
