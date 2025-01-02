@@ -35,6 +35,10 @@ private [parsley] class TransientDebugTree(var name: String = "", var internal: 
     // The pair stores the input the parser attempted to parse and its success.
     override def parseResults: Option[ParseAttempt] = parse
 
+    // FIXME: doesn't this repeatedly remake the tree? when is this called?
+    // TODO: I'm pretty sure nothing ever uses this as a map! this could be a list
+    // which would be far more efficient (it also appears that nothing ever uses the keys?)
+    // TODO: move the name into the DebugTree or remove them entirely...
     override val nodeChildren: Map[String, DebugTree] = new XMap[String, DebugTree] {
         // We'll use a copy-on-write methodology for these two -- remember, ordering is important!
         override def removed(key: String): Map[String, DebugTree] = ListMap.empty ++ children - key
@@ -64,10 +68,16 @@ private [parsley] class TransientDebugTree(var name: String = "", var internal: 
             val ua = augments.toList
             augments.clear()
 
-            def basis(int: Int): Int = int - p.fromOffset
+            def basis(n: Int): Int = n - p.fromOffset
 
             p.copy(inp = ua.foldRight(p.rawInput) {
-                // FIXME: don't augment input that wasn't an exact match (i.e. failed)
+                // don't augment input when the consumption was rolled-back
+                case ((aid, (_, aen)), st) if aen > p.toOffset =>
+                    // remove the UID from the child (ew gross, there has to be a better way to do this?!)
+                    children.valuesIterator.find(_.cNumber.contains(aid)).foreach { t =>
+                        t.cNumber = None
+                    }
+                    st
                 case ((aid, (ast, aen)), st) => s"${st.take(basis(ast))}{$aid}${st.drop(basis(aen))}"
             })
         }

@@ -81,7 +81,8 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
         newTree.name = Renamer.nameOf(userAssignedName, parser)
         newTree.internal = Renamer.internalName(parser)
 
-        builderStack.head.children(newTree.name + "-#" + nextUid()) = newTree
+        val uid = nextUid()
+        builderStack.head.children(s"${newTree.name}-#$uid") = newTree
         builderStack.prepend(newTree)
     }
 
