@@ -125,6 +125,7 @@
     <li class="level2 nav-leaf"><a href="../tutorial/advanced-error-messages.html">Advanced Error Messages</a></li>
     <li class="level1 nav-header">parsley-debug</li>
     <li class="level2 active nav-leaf"><a href="#"><code>@parsley.debuggable</code></a></li>
+    <li class="level2 nav-leaf"><a href="../../parsley-debug/recursion-detection.html">Detecting Left Recursion</a></li>
     <li class="level1 nav-header">Related Projects</li>
     <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/parsley-cats">parsley-cats</a></li>
     <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/gigaparsec">gigaparsec (Haskell)</a></li>
@@ -195,8 +196,7 @@
         certainly not exhaustive):</p>
         <ul>
           <li>Anonymous class instances being typechecked will crash.</li>
-          <li>The use of overloaded methods with the annotated object doesn&#39;t
-          necessarily work correctly.</li>
+          <li>The use of overloaded methods with the annotated object doesn&#39;t necessarily work correctly.</li>
           <li>You must not shadow the enclosing class/object&#39;s name as one of its values.</li>
         </ul>
         <p>The annotation can mostly check for these things for you. However, if it complains, it is up to you
