@@ -125,6 +125,9 @@
     <li class="level2 nav-leaf"><a href="../tutorial/advanced-error-messages.html">Advanced Error Messages</a></li>
     <li class="level1 nav-header">parsley-debug</li>
     <li class="level2 nav-leaf"><a href="../parsley-debug/debuggable.html"><code>@parsley.debuggable</code></a></li>
+    <li class="level2 nav-leaf"><a href="../parsley-debug/attachment.html">Attaching Debugger Views</a></li>
+    <li class="level2 nav-header">Debug Views</li>
+    <li class="level3 nav-leaf"><a href="../parsley-debug/debug-views/PrintView.html"><code>PrintView</code></a></li>
     <li class="level2 nav-leaf"><a href="../../parsley-debug/recursion-detection.html">Detecting Left Recursion</a></li>
     <li class="level1 nav-header">Related Projects</li>
     <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/parsley-cats">parsley-cats</a></li>
@@ -174,7 +177,7 @@
             | </span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;hey&quot;</span><span>).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;hey&quot;</span><span>)
             | </span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;hi&quot;</span><span>).</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;hi&quot;</span><span>)
             )
-</span><span class="comment">// hello: parsley.Parsley[String] = parsley.Parsley@4b480b46
+</span><span class="comment">// hello: parsley.Parsley[String] = parsley.Parsley@31e348b1
 </span><span>
 </span><span class="identifier">debug</span><span>.</span><span class="identifier">disableColorRendering</span><span>()
 
@@ -246,7 +249,7 @@
           .</span><span class="identifier">debug</span><span>(</span><span class="string-literal">&quot;rollback&quot;</span><span>, </span><span class="identifier">r1</span><span> -&gt; </span><span class="string-literal">&quot;r1&quot;</span><span>)
     }
 }
-</span><span class="comment">// p: parsley.Parsley[String] = parsley.Parsley@26989144
+</span><span class="comment">// p: parsley.Parsley[String] = parsley.Parsley@5dcd2fb0
 </span><span>
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;hello world&quot;</span><span>)
 </span><span class="comment">// &gt;rollback&gt; (1, 1): hello·
@@ -300,7 +303,7 @@
              ).</span><span class="identifier">debugError</span><span>(</span><span class="string-literal">&quot;many letterOrDigit&quot;</span><span>)
       ~&gt; </span><span class="identifier">many</span><span>(</span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;@&#39;</span><span>).</span><span class="identifier">debugError</span><span>(</span><span class="string-literal">&quot;@&quot;</span><span>)).</span><span class="identifier">debugError</span><span>(</span><span class="string-literal">&quot;many @&quot;</span><span>)
       ~&gt; </span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;#&#39;</span><span>).</span><span class="identifier">debugError</span><span>(</span><span class="string-literal">&quot;#&quot;</span><span>)) | </span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;!&#39;</span><span>).</span><span class="identifier">debugError</span><span>(</span><span class="string-literal">&quot;!&quot;</span><span>)
-</span><span class="comment">// q: parsley.Parsley[Char] = parsley.Parsley@7f1fc457
+</span><span class="comment">// q: parsley.Parsley[Char] = parsley.Parsley@7bc20d61
 </span><span>
 </span><span class="identifier">q</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;$&quot;</span><span>)
 </span><span class="comment">// &gt;many letterOrDigit&gt; (offset 0, line 1, col 1): current hints are Set() (valid at offset 0)
@@ -398,10 +401,10 @@
 </span><span class="identifier">profiler</span><span>.</span><span class="identifier">summary</span><span>()
 </span><span class="comment">// name                    self time   num calls   average self time
 // -----------------------------------------------------------------
-// classic string          2900482.0μs     10001           290.019μs
-// voided optimised string     690.6μs     10000             0.069μs
-// optimised string           9801.1μs     10000             0.980μs
-// voided classic string      2252.8μs     10001             0.225μs
+// classic string          2770819.4μs     10001           277.054μs
+// voided optimised string    1015.8μs     10000             0.101μs
+// optimised string           7804.1μs     10000             0.780μs
+// voided classic string      4305.5μs     10001             0.430μs
 // -----------------------------------------------------------------</span></code></pre>
         <p>The above example shows that the <code>string</code> combinator is much faster than the &quot;classic&quot; definition
         in terms of <code>traverse</code> and <code>char</code> (not even accounting for its improved error messages!). However,

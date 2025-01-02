@@ -7,13 +7,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Typelevel Laika + Parsley Theme" />
     
-    <title>Configuring the Lexer (parsley.token.descriptions)</title>
+    <title>PrintView</title>
     
     
     <meta name="author" content="parsley contributors"/>
     
     
-    <meta name="description" content="This page describes how to configure a custom language."/>
+    <meta name="description" content="The built-in view for plain console debugging"/>
     
     
     
@@ -29,25 +29,7 @@
     <link rel="stylesheet" type="text/css" href="../../../css/parsley-style.css" />
     <script src="../../../helium/site/laika-helium.js"></script>
     <script src="../../../helium/site/laika-versions.js"></script>
-    <script type="module">
-
-import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-mermaid.initialize({ 
-  startOnLoad: true,
-  theme: "base",
-  themeVariables: {
-    'darkMode': dark,
-    'primaryColor': dark ? '#202025' : '#e3f2e3', 
-    'primaryTextColor': dark ? '#96dec4' : '#095609',
-    'primaryBorderColor': dark ? '#2e2f30' : '#3ca43c',
-    'lineColor': dark ? '#96dec4' : '#095609',
-    'background': dark ? '#242526' : '#fbfefb',
-  }
-});
-
-</script>
-    <script>initVersions("../../../", "/api-guide/token/descriptions.html", "5.0", null);</script>
+    <script>initVersions("../../../", "/parsley-debug/debug-views/PrintView.html", "5.0", null);</script>
     
     <script> /* for avoiding page load transitions */ </script>
   </head>
@@ -110,28 +92,28 @@ mermaid.initialize({
     <li class="level1 nav-leaf"><a href="../../../home.html">Home</a></li>
     <li class="level1 nav-leaf"><a href="../../faq.html">FAQ</a></li>
     <li class="level1 nav-leaf"><a href="../../cheatsheet.html">Cheatsheet</a></li>
-    <li class="level1 nav-node"><a href="../">Understanding the API</a></li>
-    <li class="level2 nav-leaf"><a href="../Parsley.html"><code>parsley.Parsley</code></a></li>
-    <li class="level2 nav-leaf"><a href="../character.html"><code>parsley.character</code></a></li>
-    <li class="level2 nav-leaf"><a href="../combinator.html"><code>parsley.combinator</code></a></li>
-    <li class="level2 nav-leaf"><a href="../generic.html"><code>parsley.generic</code></a></li>
-    <li class="level2 nav-leaf"><a href="../syntax.html"><code>parsley.syntax</code></a></li>
-    <li class="level2 nav-leaf"><a href="../position.html"><code>parsley.position</code></a></li>
-    <li class="level2 nav-leaf"><a href="../state.html"><code>parsley.state</code></a></li>
-    <li class="level2 nav-leaf"><a href="../debug.html"><code>parsley.debug</code></a></li>
+    <li class="level1 nav-node"><a href="../../api-guide/">Understanding the API</a></li>
+    <li class="level2 nav-leaf"><a href="../../api-guide/Parsley.html"><code>parsley.Parsley</code></a></li>
+    <li class="level2 nav-leaf"><a href="../../api-guide/character.html"><code>parsley.character</code></a></li>
+    <li class="level2 nav-leaf"><a href="../../api-guide/combinator.html"><code>parsley.combinator</code></a></li>
+    <li class="level2 nav-leaf"><a href="../../api-guide/generic.html"><code>parsley.generic</code></a></li>
+    <li class="level2 nav-leaf"><a href="../../api-guide/syntax.html"><code>parsley.syntax</code></a></li>
+    <li class="level2 nav-leaf"><a href="../../api-guide/position.html"><code>parsley.position</code></a></li>
+    <li class="level2 nav-leaf"><a href="../../api-guide/state.html"><code>parsley.state</code></a></li>
+    <li class="level2 nav-leaf"><a href="../../api-guide/debug.html"><code>parsley.debug</code></a></li>
     <li class="level2 nav-header"><code>parsley.expr</code></li>
-    <li class="level3 nav-leaf"><a href="../expr/chain.html"><code>chain</code></a></li>
-    <li class="level3 nav-leaf"><a href="../expr/infix.html"><code>infix</code></a></li>
-    <li class="level3 nav-leaf"><a href="../expr/precedence.html"><code>precedence</code></a></li>
+    <li class="level3 nav-leaf"><a href="../../api-guide/expr/chain.html"><code>chain</code></a></li>
+    <li class="level3 nav-leaf"><a href="../../api-guide/expr/infix.html"><code>infix</code></a></li>
+    <li class="level3 nav-leaf"><a href="../../api-guide/expr/precedence.html"><code>precedence</code></a></li>
     <li class="level2 nav-header"><code>parsley.token</code></li>
-    <li class="level3 nav-leaf"><a href="Lexer.html"><code>Lexer</code></a></li>
-    <li class="level3 active nav-leaf"><a href="#"><code>descriptions</code></a></li>
-    <li class="level3 nav-leaf"><a href="errors.html"><code>errors</code></a></li>
+    <li class="level3 nav-leaf"><a href="../../api-guide/token/Lexer.html"><code>Lexer</code></a></li>
+    <li class="level3 nav-leaf"><a href="../../api-guide/token/descriptions.html"><code>descriptions</code></a></li>
+    <li class="level3 nav-leaf"><a href="../../api-guide/token/errors.html"><code>errors</code></a></li>
     <li class="level2 nav-header"><code>parsley.errors</code></li>
-    <li class="level3 nav-leaf"><a href="../errors/combinator.html"><code>combinator</code></a></li>
-    <li class="level3 nav-leaf"><a href="../errors/patterns.html"><code>patterns</code></a></li>
-    <li class="level3 nav-leaf"><a href="../errors/ErrorBuilder.html"><code>ErrorBuilder</code></a></li>
-    <li class="level3 nav-leaf"><a href="../errors/tokenextractors.html"><code>tokenextractors</code></a></li>
+    <li class="level3 nav-leaf"><a href="../../api-guide/errors/combinator.html"><code>combinator</code></a></li>
+    <li class="level3 nav-leaf"><a href="../../api-guide/errors/patterns.html"><code>patterns</code></a></li>
+    <li class="level3 nav-leaf"><a href="../../api-guide/errors/ErrorBuilder.html"><code>ErrorBuilder</code></a></li>
+    <li class="level3 nav-leaf"><a href="../../api-guide/errors/tokenextractors.html"><code>tokenextractors</code></a></li>
     <li class="level1 nav-node"><a href="../../tutorial/">Parser Combinator Tutorial</a></li>
     <li class="level2 nav-leaf"><a href="../../tutorial/basics-of-combinators.html">Basics of Combinators</a></li>
     <li class="level2 nav-leaf"><a href="../../tutorial/building-expression-parsers.html">Building Expression Parsers</a></li>
@@ -142,10 +124,10 @@ mermaid.initialize({
     <li class="level2 nav-leaf"><a href="../../tutorial/customising-error-messages.html">Customising Error Messages</a></li>
     <li class="level2 nav-leaf"><a href="../../tutorial/advanced-error-messages.html">Advanced Error Messages</a></li>
     <li class="level1 nav-header">parsley-debug</li>
-    <li class="level2 nav-leaf"><a href="../../parsley-debug/debuggable.html"><code>@parsley.debuggable</code></a></li>
-    <li class="level2 nav-leaf"><a href="../../parsley-debug/attachment.html">Attaching Debugger Views</a></li>
+    <li class="level2 nav-leaf"><a href="../debuggable.html"><code>@parsley.debuggable</code></a></li>
+    <li class="level2 nav-leaf"><a href="../attachment.html">Attaching Debugger Views</a></li>
     <li class="level2 nav-header">Debug Views</li>
-    <li class="level3 nav-leaf"><a href="../../parsley-debug/debug-views/PrintView.html"><code>PrintView</code></a></li>
+    <li class="level3 active nav-leaf"><a href="#"><code>PrintView</code></a></li>
     <li class="level2 nav-leaf"><a href="../../../parsley-debug/recursion-detection.html">Detecting Left Recursion</a></li>
     <li class="level1 nav-header">Related Projects</li>
     <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/parsley-cats">parsley-cats</a></li>
@@ -158,90 +140,91 @@ mermaid.initialize({
 
       
 <nav id="page-nav">
-  <p class="header"><a href="#"><code>descriptions</code></a></p>
+  <p class="header"><a href="#"><code>PrintView</code></a></p>
 
   <ul class="nav-list">
-    <li class="level1 nav-leaf"><a href="#diagram-of-dependencies">Diagram of Dependencies</a></li>
+    <li class="level1 nav-leaf"><a href="#configuration">Configuration</a></li>
+    <li class="level1 nav-leaf"><a href="#what-does-it-look-like">What does it look like?</a></li>
   </ul>
 
-  <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/staging/5.0/docs/api-guide/token/descriptions.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
+  <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/staging/5.0/docs/parsley-debug/debug-views/PrintView.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
 </nav>
 
 
       <main class="content">
 
-        <h1 id="configuring-the-lexer-parsley-token-descriptions" class="title">Configuring the Lexer (<code>parsley.token.descriptions</code>)</h1>
-        <p>The <a href="Lexer.html#lexer-parsley-token-lexer"><code>Lexer</code></a> is configured primarily by providing it a
-        <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M9/parsley/token/descriptions/LexicalDesc.html"><code>LexicalDesc</code></a>. This is a structure built up
-        of many substructures that each configure a specific part of the overall functionality available.
-        In general, many parts of this hierarchy have &quot;sensible defaults&quot; in the form of their <code>plain</code> value
-        within their companion objects; these document what choices were made in each individual case. There
-        may also be some values crafted to adhere to some specific language specification; for instance,
-        <code>EscapeDesc.haskell</code> describes escape characters that adhere to the Haskell Report.</p>
-        <p>This page does not aim to document everything that is configurable within <code>LexicalDesc</code>, but it will
-        outline the general design and how things slot together.</p>
+        <h1 id="printview-parsley-debug" class="title"><code>PrintView</code> (<code>parsley-debug</code>)</h1>
+        <p>The core <code>parsley-debug</code> library contains one view, namely <code>PrintView</code>. This can be
+        used in place of more advanced functionality present in the other &quot;companion&quot; libraries.
+        It is perhaps less featureful than the &quot;vanilla&quot; <code>.debug</code> combinator, which supports breakpoints,
+        but does work cross platform and across all Scala versions. The advantage over <code>.debug</code>, of course,
+        is that for large-scale debugging, <code>@debuggable</code> is far more ergonomic to apply to a whole parser,
+        and gives more intermediate information. With no internal state, this view is reusable, however,
+        concurrent executions within a parser (if used with <code>attachReusable</code>) may interleave and be confusing.</p>
+        <div class="callout info">
+          <i class="icofont-laika info">&#xef4e;</i>
+          <p>Please see the <a href="../debuggable.html"><code>@parsley.debuggable</code></a> page first, as this is used
+          to provide meaningful names for this functionality.</p>
+        </div>
         
-        <h2 id="diagram-of-dependencies" class="section"><a class="anchor-link left" href="#diagram-of-dependencies"><i class="icofont-laika link">&#xef71;</i></a>Diagram of Dependencies</h2>
-        <p>The hierarchy of types involved with lexical configuration can be daunting. The following diagram
-        illustrates both the &quot;has-a&quot; and &quot;is-a&quot; relationships between the types. For instance, <code>TextDesc</code>
-        contains an <code>EscapeDesc</code>, and <code>NumericEscape</code> may be implemented by either <code>NumericEscape.Illegal</code> or
-        <code>NumericEscape.Supported</code>.</p>
-        <pre class="mermaid">classDiagram
-direction LR
+        <h2 id="configuration" class="section"><a class="anchor-link left" href="#configuration"><i class="icofont-laika link">&#xef71;</i></a>Configuration</h2>
+        <p>The <code>PrintView</code> configuration is very simple. By default, the <code>PrintView</code> object will print the
+        debug trace directly to <code>Console.out</code>. It is possible to use the <code>PrintView.apply</code> methods to
+        produce new views that print their output elsewhere: for instance to a file.</p>
+        
+        <h2 id="what-does-it-look-like" class="section"><a class="anchor-link left" href="#what-does-it-look-like"><i class="icofont-laika link">&#xef71;</i></a>What does it look like?</h2>
+        <p>As an example, here is the trace without <code>@debuggable</code>:</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">quick</span><span>.*
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">debug</span><span>.</span><span class="identifier">combinator</span><span>.*
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">debug</span><span>.</span><span class="type-name">PrintView</span><span>
 
-LexicalDesc *-- NumericDesc
-LexicalDesc *-- NameDesc
-LexicalDesc *-- SpaceDesc
-LexicalDesc *-- SymbolDesc
-LexicalDesc *-- TextDesc
-
-TextDesc *-- EscapeDesc
-EscapeDesc *-- NumericEscape
-`NumericEscape.Illegal` --|&gt; NumericEscape
-`NumericEscape.Supported` --|&gt; NumericEscape
-`NumericEscape.Supported` *-- NumberOfDigits
-`NumberOfDigits.AtMost` --|&gt; NumberOfDigits
-`NumberOfDigits.Exactly` --|&gt; NumberOfDigits
-`NumberOfDigits.Unbounded` --|&gt; NumberOfDigits
-
-ExponentDesc --* NumericDesc
-`ExponentDesc.Supported` --|&gt; ExponentDesc
-`ExponentDesc.NoExponents` --|&gt; ExponentDesc
-NumericDesc *-- BreakCharDesc
-`ExponentDesc.Supported` *-- PlusSignPresence
-
-BreakCharDesc &lt;|-- `BreakCharDesc.Supported`
-BreakCharDesc &lt;|-- `BreakCharDesc.NoBreakChar`
-
-PlusSignPresence &lt;|-- `PlusSignPresence.Illegal`
-PlusSignPresence &lt;|-- `PlusSignPresence.Optional`
-PlusSignPresence &lt;|-- `PlusSignPrecense.Required`
-NumericDesc *-- PlusSignPresence</pre>
-        <p>The types in the diagram that have alternative implements are as follows:</p>
-        <ul>
-          <li><code>BreakDescChar</code>: used to describe whether or not numeric literals can contain meaningless
-          &quot;break characters&quot;, like <code>_</code>. It can either be <code>NoBreakChar</code>, which disallows them; or
-          <code>Supported</code>, which will specify the character and whether it is legal to appear after a non-decimal
-          prefix like hexadecimal <code>0x</code>.</li>
-          <li><code>PlusSignPresence</code>: used to describe whether or not a <code>+</code> is allowed in numeric literals, which
-          appears for the start of numeric literals and floating-point exponents. It can either be <code>Required</code>,
-          which means either a <code>+</code> or <code>-</code> must always be written; <code>Optional</code>, which means a <code>+</code> can be written;
-          or <code>Illegal</code>, which means only a <code>-</code> can appear.</li>
-          <li><code>ExponentDesc</code>: used to describe how an exponent is formed for different bases of floating point
-          literals. It can either be <code>Supported</code>, in which case it will indicate whether it is compulsory,
-          what characters can start it, what the numeric base of the exponent number itself is, and then
-          what the <code>PlusSignPresence</code> is, as above; otherwise, it is <code>NoExponents</code>, which means that the
-          exponent notation is not supported for a specific numeric base.</li>
-          <li><code>NumericEscape</code>: used to describe whether or not numeric escape sequences are allowed in string and
-          character literals. It either be <code>Illegal</code>, which means there are no numeric escapes; or <code>Supported</code>,
-          which means that the prefix, <code>NumberOfDigits</code>, and the maximum value of the escape must all be
-          specified.</li>
-          <li><code>NumberOfDigits</code>: used by the above <code>NumericEscape</code> to determine how many digits can appear within
-          a numeric escape literal. These can be one of: <code>Unbounded</code>, which means there can be any well-formed
-          number as the escape; <code>AtMost</code>, which puts an upper limit on the number of digits that can appear;
-          or <code>Exactly</code>, which details one or more exact numbers of digits that could appear, for instance,
-          some languages allow for numeric escapes with exactly 2, 4, or 6 digits in them only.</li>
-        </ul>
+</span><span class="keyword">val</span><span> </span><span class="identifier">hello</span><span> = ( </span><span class="identifier">atomic</span><span>(</span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;hello&quot;</span><span>))
+            | (</span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;hey&quot;</span><span>)
+             | </span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;hi&quot;</span><span>))
+            )
+</span><span class="comment">// hello: Parsley[String] = parsley.Parsley@2a5b106f
+</span><span>
+</span><span class="identifier">hello</span><span>.</span><span class="identifier">attach</span><span>(</span><span class="type-name">PrintView</span><span>).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;hey&quot;</span><span>)
+</span><span class="comment">// |&#39;s parse tree for input:
+// 
+// hey
+// 
+// 
+// [ | ]: (&quot;{1}&quot; [(1,1) -&gt; (1,4)], Success - [ hey ])
+// |
+// +-[ atomic ]: (&quot;{1}&quot; [(1,1) -&gt; (1,1)], Failure)
+// | |
+// | +-[ string(hello)(1) ]: (&quot;he&quot; [(1,1) -&gt; (1,3)], Failure)
+// |
+// +-[ |(1) ]: (&quot;{1}&quot; [(1,1) -&gt; (1,4)], Success - [ hey ])
+//   |
+//   +-[ string(hey)(1) ]: (&quot;hey&quot; [(1,1) -&gt; (1,4)], Success - [ hey ])
+// res0: parsley.Result[String, String] = Success(hey)
+</span><span>
+</span><span class="identifier">hello</span><span>.</span><span class="identifier">attach</span><span>(</span><span class="type-name">PrintView</span><span>).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;hi&quot;</span><span>)
+</span><span class="comment">// |&#39;s parse tree for input:
+// 
+// hi
+// 
+// 
+// [ | ]: (&quot;{1}&quot; [(1,1) -&gt; (1,2)], Failure)
+// |
+// +-[ atomic ]: (&quot;{1}&quot; [(1,1) -&gt; (1,1)], Failure)
+// | |
+// | +-[ string(hello)(1) ]: (&quot;h&quot; [(1,1) -&gt; (1,2)], Failure)
+// |
+// +-[ |(1) ]: (&quot;{1}&quot; [(1,1) -&gt; (1,2)], Failure)
+//   |
+//   +-[ string(hey)(1) ]: (&quot;h&quot; [(1,1) -&gt; (1,2)], Failure)
+// res1: parsley.Result[String, String] = Failure((line 1, column 1):
+//   unexpected &quot;hi&quot;
+//   expected &quot;hello&quot; or &quot;hey&quot;
+//   &gt;hi
+//    ^^)</span></code></pre>
+        <p>As you can see, without an <code>@debuggable</code> annotation, this just prints the names of the combinators
+        used to construct the parser, which is ok here, but would be undecipherable for more complex parsers.
+        The rendering style is slightly different to the vanilla combinator as well, rendering in a tree
+        shape as opposed to using explicit entry/exit markers.</p>
 
         
 <hr class="footer-rule"/>

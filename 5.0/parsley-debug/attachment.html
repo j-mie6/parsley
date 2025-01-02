@@ -7,13 +7,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Typelevel Laika + Parsley Theme" />
     
-    <title>Understanding the API</title>
+    <title>Attaching Debugger Views</title>
     
     
     <meta name="author" content="parsley contributors"/>
     
     
-    <meta name="description" content="This page outlines the API guide."/>
+    <meta name="description" content="How attachment works for debug views."/>
     
     
     
@@ -29,7 +29,7 @@
     <link rel="stylesheet" type="text/css" href="../../css/parsley-style.css" />
     <script src="../../helium/site/laika-helium.js"></script>
     <script src="../../helium/site/laika-versions.js"></script>
-    <script>initVersions("../../", "/api-guide/index.html", "5.0", null);</script>
+    <script>initVersions("../../", "/parsley-debug/attachment.html", "5.0", null);</script>
     
     <script> /* for avoiding page load transitions */ </script>
   </head>
@@ -92,28 +92,28 @@
     <li class="level1 nav-leaf"><a href="../../home.html">Home</a></li>
     <li class="level1 nav-leaf"><a href="../faq.html">FAQ</a></li>
     <li class="level1 nav-leaf"><a href="../cheatsheet.html">Cheatsheet</a></li>
-    <li class="level1 active nav-node"><a href="#">Understanding the API</a></li>
-    <li class="level2 nav-leaf"><a href="Parsley.html"><code>parsley.Parsley</code></a></li>
-    <li class="level2 nav-leaf"><a href="character.html"><code>parsley.character</code></a></li>
-    <li class="level2 nav-leaf"><a href="combinator.html"><code>parsley.combinator</code></a></li>
-    <li class="level2 nav-leaf"><a href="generic.html"><code>parsley.generic</code></a></li>
-    <li class="level2 nav-leaf"><a href="syntax.html"><code>parsley.syntax</code></a></li>
-    <li class="level2 nav-leaf"><a href="position.html"><code>parsley.position</code></a></li>
-    <li class="level2 nav-leaf"><a href="state.html"><code>parsley.state</code></a></li>
-    <li class="level2 nav-leaf"><a href="debug.html"><code>parsley.debug</code></a></li>
+    <li class="level1 nav-node"><a href="../api-guide/">Understanding the API</a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/Parsley.html"><code>parsley.Parsley</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/character.html"><code>parsley.character</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/combinator.html"><code>parsley.combinator</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/generic.html"><code>parsley.generic</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/syntax.html"><code>parsley.syntax</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/position.html"><code>parsley.position</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/state.html"><code>parsley.state</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/debug.html"><code>parsley.debug</code></a></li>
     <li class="level2 nav-header"><code>parsley.expr</code></li>
-    <li class="level3 nav-leaf"><a href="expr/chain.html"><code>chain</code></a></li>
-    <li class="level3 nav-leaf"><a href="expr/infix.html"><code>infix</code></a></li>
-    <li class="level3 nav-leaf"><a href="expr/precedence.html"><code>precedence</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/expr/chain.html"><code>chain</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/expr/infix.html"><code>infix</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/expr/precedence.html"><code>precedence</code></a></li>
     <li class="level2 nav-header"><code>parsley.token</code></li>
-    <li class="level3 nav-leaf"><a href="token/Lexer.html"><code>Lexer</code></a></li>
-    <li class="level3 nav-leaf"><a href="token/descriptions.html"><code>descriptions</code></a></li>
-    <li class="level3 nav-leaf"><a href="token/errors.html"><code>errors</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/token/Lexer.html"><code>Lexer</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/token/descriptions.html"><code>descriptions</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/token/errors.html"><code>errors</code></a></li>
     <li class="level2 nav-header"><code>parsley.errors</code></li>
-    <li class="level3 nav-leaf"><a href="errors/combinator.html"><code>combinator</code></a></li>
-    <li class="level3 nav-leaf"><a href="errors/patterns.html"><code>patterns</code></a></li>
-    <li class="level3 nav-leaf"><a href="errors/ErrorBuilder.html"><code>ErrorBuilder</code></a></li>
-    <li class="level3 nav-leaf"><a href="errors/tokenextractors.html"><code>tokenextractors</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/errors/combinator.html"><code>combinator</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/errors/patterns.html"><code>patterns</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/errors/ErrorBuilder.html"><code>ErrorBuilder</code></a></li>
+    <li class="level3 nav-leaf"><a href="../api-guide/errors/tokenextractors.html"><code>tokenextractors</code></a></li>
     <li class="level1 nav-node"><a href="../tutorial/">Parser Combinator Tutorial</a></li>
     <li class="level2 nav-leaf"><a href="../tutorial/basics-of-combinators.html">Basics of Combinators</a></li>
     <li class="level2 nav-leaf"><a href="../tutorial/building-expression-parsers.html">Building Expression Parsers</a></li>
@@ -124,10 +124,10 @@
     <li class="level2 nav-leaf"><a href="../tutorial/customising-error-messages.html">Customising Error Messages</a></li>
     <li class="level2 nav-leaf"><a href="../tutorial/advanced-error-messages.html">Advanced Error Messages</a></li>
     <li class="level1 nav-header">parsley-debug</li>
-    <li class="level2 nav-leaf"><a href="../parsley-debug/debuggable.html"><code>@parsley.debuggable</code></a></li>
-    <li class="level2 nav-leaf"><a href="../parsley-debug/attachment.html">Attaching Debugger Views</a></li>
+    <li class="level2 nav-leaf"><a href="debuggable.html"><code>@parsley.debuggable</code></a></li>
+    <li class="level2 active nav-leaf"><a href="#">Attaching Debugger Views</a></li>
     <li class="level2 nav-header">Debug Views</li>
-    <li class="level3 nav-leaf"><a href="../parsley-debug/debug-views/PrintView.html"><code>PrintView</code></a></li>
+    <li class="level3 nav-leaf"><a href="debug-views/PrintView.html"><code>PrintView</code></a></li>
     <li class="level2 nav-leaf"><a href="../../parsley-debug/recursion-detection.html">Detecting Left Recursion</a></li>
     <li class="level1 nav-header">Related Projects</li>
     <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/parsley-cats">parsley-cats</a></li>
@@ -139,44 +139,56 @@
     <div id="container">
 
       
+<nav id="page-nav">
+  <p class="header"><a href="#">Attaching Debugger Views</a></p>
+
+  <ul class="nav-list">
+    <li class="level1 nav-leaf"><a href="#debugview"><code>DebugView</code></a></li>
+    <li class="level1 nav-leaf"><a href="#attach-and-attachreusable"><code>attach</code> and <code>attachReusable</code></a></li>
+  </ul>
+
+  <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/staging/5.0/docs/parsley-debug/attachment.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
+</nav>
+
 
       <main class="content">
 
-        <h1 id="understanding-the-api" class="title">Understanding the API</h1>
+        <h1 id="attaching-debugger-views" class="title">Attaching Debugger Views</h1>
+        <p>The new functionality in <code>parsley-debug</code> involves attaching a debugger to a parser
+        that will be ran. There are two combinators to do this found in <code>parsley.debug.combinator</code>:
+        <code>attach</code>, and <code>attachReusable</code>. Before we see these, it will be useful to understand how
+        <code>DebugView</code>s work.</p>
+        <div class="callout info">
+          <i class="icofont-laika info">&#xef4e;</i>
+          <p>By importing <code>parsley.debug.combinator.DebuggerOps</code>, you will have access to the
+          method-style implementation of these combinators.</p>
+        </div>
         
+        <h2 id="debugview" class="section"><a class="anchor-link left" href="#debugview"><i class="icofont-laika link">&#xef71;</i></a><code>DebugView</code></h2>
+        <p>The <code>DebugView.SingleUse</code> and <code>DebugView.Reusable</code> traits represent renderers for debug information.
+        By default, <code>parsley-debug</code> includes <code>PrintView</code>, which can be used to &quot;render&quot; debug information
+        out onto the console, or perhaps to a file (or any <code>PrintStream</code>/<code>OutputStream</code>). The reusability
+        aspect refers to whether or not multiple such views can work simultaneously: see <code>attachReusable</code>
+        below.</p>
+        <p>The views themselves do not necessarily have to directly render the debugging content themselves,
+        they could be remote connections, for instance; but the point is that they are what is attached
+        to a specific parser. When the parser is ran, the debug combinator collects the information, and
+        the view processes that information in some way. This process is done via <em>attachment</em>.</p>
         
-        <h2 id="main-classes-and-packages" class="section"><a class="anchor-link left" href="#main-classes-and-packages"><i class="icofont-laika link">&#xef71;</i></a>Main Classes and Packages</h2>
-        <p>In <code>parsley</code>, everything resides within the <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M9/parsley.html">parsley</a> package, and the major entry point is
-        <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M9/parsley/Parsley.html"><code>parsley.Parsley</code></a>.
-        There are a few modules of note:</p>
-        <ul>
-          <li><a href="Parsley.html"><code>parsley.Parsley</code></a>:
-          contains some of the basic and primitive combinators (at least those that aren&#39;t methods on
-          parsers).</li>
-          <li><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M9/parsley/combinator$.html"><code>parsley.combinator</code></a>:
-          contains handy combinators, this should be your first port of call
-          when you want to do something but are not sure a combinator exists for it. At the very
-          least, the <code>eof</code> combinator is very common.</li>
-          <li><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M9/parsley/character$.html"><code>parsley.character</code></a>:
-          contains a variety of combinators which deal with characters, key ones include <code>char</code>,
-          <code>satisfy</code> and <code>string</code>.</li>
-          <li><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M9/parsley/syntax$.html"><code>parsley.syntax</code></a>:
-          contains the very useful implicit conversion combinators. In particular, importing <code>charLift</code>
-          and <code>stringLift</code> allows you write character and string literals as if they were parsers
-          themselves. There are also implicit classes here which extend functions of any arity with a
-          corresponding <code>.lift</code> method, instead of using the <code>liftN</code> functions.</li>
-          <li><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M9/parsley/expr$.html"><code>parsley.expr</code></a>:
-          contains the machinery needed to generate expression parsers for you based, at its simplest, on
-          a table of operators in order of precedence. This is <em>well</em> worth a look (this is covered in
-          detail in <a href="../tutorial/building-expression-parsers.html#building-expression-parsers">Building Expression Parsers</a>.</li>
-          <li><a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M9/parsley/token$.html"><code>parsley.token</code></a>:
-          contains a bunch of functionality for performing common lexing tasks, which is <em>very</em> configurable.
-          These parsers may also be optimised for performance.</li>
-        </ul>
-        
-        <h3 id="using-parsley-token-for-lexing" class="section"><a class="anchor-link left" href="#using-parsley-token-for-lexing"><i class="icofont-laika link">&#xef71;</i></a>Using <code>parsley.token</code> for Lexing</h3>
-        <p>Unlike Haskell libraries like <code>megaparsec</code> and <code>parsec</code>, <code>parsley</code> does not
-        tie the lexing functionality to the Haskell Report, instead supporting a superset of the functionality. The functionality is provided to the user by <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M9/parsley/token/Lexer.html">Lexer</a>, and this must be provided an value of type <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M9/parsley/token/descriptions/LexicalDesc.html">LexicalDesc</a>, which provides all the configuration necessary to describe the language and make the parsers.</p>
+        <h2 id="attach-and-attachreusable" class="section"><a class="anchor-link left" href="#attach-and-attachreusable"><i class="icofont-laika link">&#xef71;</i></a><code>attach</code> and <code>attachReusable</code></h2>
+        <p>The <code>attach</code> combinator takes a <code>DebugView</code> (reusable or otherwise) and optionally a &quot;string rules&quot;
+        function, which determines whether or not a value is eagerly turned into a string or preserved in
+        its original form within the internal &quot;<code>DebugTree</code>&quot;. In return, you get a new parser, which will
+        feed debugging information to the provided <code>DebugView</code>.</p>
+        <div class="callout warning">
+          <i class="icofont-laika warning">&#xf026;</i>
+          <p>You should only use the parser returned by <code>attach</code> in one place! If you want to debug a parser
+          that appears in more than one place, you must use <code>attachReusable</code>.</p>
+        </div>
+        <p>In contrast, <code>attachReusable</code> is similar, but takes a <em>by-name</em> <code>DebugView</code>, which may be recreated
+        each use, and returns a function that produces new <code>Parsley</code> values. The idea is that if you need
+        to use the parser in more than one place, you call the function more than once to produce independently
+        bound parsers.</p>
 
         
 <hr class="footer-rule"/>

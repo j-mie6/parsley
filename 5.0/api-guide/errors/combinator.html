@@ -125,6 +125,9 @@
     <li class="level2 nav-leaf"><a href="../../tutorial/advanced-error-messages.html">Advanced Error Messages</a></li>
     <li class="level1 nav-header">parsley-debug</li>
     <li class="level2 nav-leaf"><a href="../../parsley-debug/debuggable.html"><code>@parsley.debuggable</code></a></li>
+    <li class="level2 nav-leaf"><a href="../../parsley-debug/attachment.html">Attaching Debugger Views</a></li>
+    <li class="level2 nav-header">Debug Views</li>
+    <li class="level3 nav-leaf"><a href="../../parsley-debug/debug-views/PrintView.html"><code>PrintView</code></a></li>
     <li class="level2 nav-leaf"><a href="../../../parsley-debug/recursion-detection.html">Detecting Left Recursion</a></li>
     <li class="level1 nav-header">Related Projects</li>
     <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/parsley-cats">parsley-cats</a></li>
@@ -313,7 +316,7 @@
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="type-name">ErrorMethods</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">digit</span><span> = </span><span class="identifier">satisfy</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">isDigit</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;digit&quot;</span><span>)
-</span><span class="comment">// digit: parsley.Parsley[Char] = parsley.Parsley@57207e70
+</span><span class="comment">// digit: parsley.Parsley[Char] = parsley.Parsley@63a873a4
 </span><span class="identifier">digit</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;a&quot;</span><span>)
 </span><span class="comment">// res9: parsley.Result[String, Char] = Failure((line 1, column 1):
 //   unexpected &quot;a&quot;
@@ -331,7 +334,7 @@
         error message properly lines up with the point the input was at when it
         entered the combinator - otherwise, the label may be inaccurate. For example:</p>
         <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">twoDigits</span><span> = (</span><span class="identifier">digit</span><span> *&gt; </span><span class="identifier">digit</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;two digits&quot;</span><span>)
-</span><span class="comment">// twoDigits: parsley.Parsley[Char] = parsley.Parsley@26f526c3
+</span><span class="comment">// twoDigits: parsley.Parsley[Char] = parsley.Parsley@7d6f7118
 </span><span class="identifier">twoDigits</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;a&quot;</span><span>)
 </span><span class="comment">// res10: parsley.Result[String, Char] = Failure((line 1, column 1):
 //   unexpected &quot;a&quot;
