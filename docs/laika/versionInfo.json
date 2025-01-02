@@ -35,5 +35,6 @@
     { "path": "/tutorial/index.html", "versions": ["4.4", "4.5", "5.0"] },
     { "path": "/tutorial/interlude-1-haskell.html", "versions": ["4.4", "4.5", "5.0"] },
     { "path": "/tutorial/parser-bridge-pattern.html", "versions": ["4.4", "4.5", "5.0"] }
+    { "path": "/parsley-debug/debuggable.html", "versions": ["5.0"]}
   ]
 }

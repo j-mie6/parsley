@@ -31,7 +31,6 @@ object ParsleySitePlugin extends AutoPlugin {
         tlSiteKeepFiles := true,
         laikaExtensions ++= Seq(
             Extensions.backticksToCode,
-            //Extensions.noVersionedIndex, // FIXME: evil extension breaks version selection, dunno why yet
         ),
         laikaConfig :=  LaikaConfig.defaults.withConfigValue(
             LinkConfig.empty.addApiLinks(tlSiteApiUrl.value.map(url => ApiLinks(baseUri = url.toExternalForm)).toSeq: _*)
@@ -337,20 +336,6 @@ object Extensions {
         case (fmt, Text(Ticked(tickless), opt)) => fmt.withoutIndentation(_.textElement("code", Text(tickless).withOptions(opt)))
         // page title
         case (isTitleText(fmt), TemplateString(Ticked(tickless), opt)) => fmt.text(tickless)
-    }
-
-    val noVersionedIndex: ExtensionBundle = new ExtensionBundle {
-        val description: String = "intercepts versioning paths for index.html"
-        override def extendPathTranslator = {
-            case context => createTranslator(context.baseTranslator)
-        }
-    }
-
-    private def createTranslator(delegate: PathTranslator): PathTranslator = new PathTranslator {
-        override def translate(input: Path): Path = if (input.name == "index.html") input else delegate.translate(input)
-        override def translate(input: RelativePath): RelativePath = if (input.name == "index.html") input else delegate.translate(input)
-        override def getAttributes(path: Path): Option[PathAttributes] = delegate.getAttributes(path)
-        override def forReferencePath(path: Path): PathTranslator = createTranslator(delegate.forReferencePath(path))
     }
 
     private object isTitleText {
