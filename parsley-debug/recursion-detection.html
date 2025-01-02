@@ -210,8 +210,8 @@
 // 	at repl.MdocSession$MdocApp$$anonfun$2.apply(recursion-detection.md:49)
 // 	at repl.MdocSession$MdocApp$$anonfun$2.apply(recursion-detection.md:49)</span></code></pre>
         <p>The <code>many</code> combinator reads zero-or-more things. When given something that doesn&#39;t consume input,
-        it will succeed reading that parser, then loop back round and try starting to read it again. This
-        is, as you might expect, exactly where it left of last iteration. As such, <code>detectDivergence</code> can
+        it will succeed reading that parser, then loop back round and try to read it again. This
+        is, as you might expect, exactly where it left off last iteration. As such, <code>detectDivergence</code> can
         also detect this kind of looping as well. While <code>parsley</code> implements <code>many</code> and friends more
         efficiently, in theory this is still left-recursion, it is just called <em>hidden left-recursion</em>:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">many</span><span>(</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">List</span><span>[</span><span class="type-name">A</span><span>]] = {
