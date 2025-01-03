@@ -15,6 +15,11 @@ The combinators themselves are all contained within `parsley.debug.DebugCombinat
 *The Scaladoc for this page can be found at [`parsley.debug`](@:api(parsley.debug)) and [`parsley.debug.DebugCombinators`](@:api(parsley.debug.DebugCombinators))*
 @:@
 
+@:callout(info)
+For a more comprehensive debugging system, check out the `parsley-debug` library, which has its own
+section on the navigation bar.
+@:@
+
 ## Debugging Problematic Parsers (`debug`)
 The most common quick debugging combinator is `debug`, which at its simplest prints some information
 on entering and exiting a combinator:
