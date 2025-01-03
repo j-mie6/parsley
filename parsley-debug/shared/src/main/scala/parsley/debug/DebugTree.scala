@@ -51,24 +51,24 @@ private [debug] abstract class DebugTree extends Iterable[DebugTree] {
       *
       * Those internal names are not represented if checking [[parserName]].
       */
-    def nodeChildren: Map[String, DebugTree]
+    def nodeChildren: List[DebugTree]
 
 // $COVERAGE-OFF$
     /** Provides a depth-first view of the tree as an iterator. */
-    override def iterator: Iterator[DebugTree] = Iterator(this) ++ nodeChildren.values.flatMap(_.iterator)
+    override def iterator: Iterator[DebugTree] = Iterator(this) ++ nodeChildren.flatMap(_.iterator)
 
-    override def toString: String = {
+    /*override def toString: String = {
         val possibleChildNumber = childNumber.map(", " + _.toString).getOrElse("")
         val hasSuccess          = parseResults.exists(_.success)
         val keys                = nodeChildren.keys
 
         s"DebugTree { name: $parserName ($internalName$possibleChildNumber), success: $hasSuccess, children: $keys }"
-    }
+    }*/
 }
 
-private [debug] object DebugTree {
+/*private [debug] object DebugTree {
     def unapply(dt: DebugTree): Some[(String, String, Option[Long], String, Option[ParseAttempt], Map[String, DebugTree])] = {
         Some((dt.parserName, dt.internalName, dt.childNumber, dt.fullInput, dt.parseResults, dt.nodeChildren))
     }
-}
+}*/
 // $COVERAGE-ON$

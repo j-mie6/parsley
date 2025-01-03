@@ -31,7 +31,7 @@ class ReuseSpec extends ParsleyTest {
 
             override def parseResults: Option[ParseAttempt] = None
 
-            override def nodeChildren: Map[String, DebugTree] = Map.empty
+            override def nodeChildren: List[DebugTree] = Nil
 
             override def fullInput: String = "bar"
         }

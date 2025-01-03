@@ -55,7 +55,7 @@ private [debug] sealed trait PrintView extends DebugView.Reusable {
         val results = dt.parseResults.map(printParseAttempt).mkString
 
         bury(s"[ $uname ]: $results", withMark = true, indents)
-        printChildren(dt, indents, dt.nodeChildren.toList)
+        printChildren(dt, indents, dt.nodeChildren)
     }
 
     // Print a parse attempt in a human-readable way.
@@ -65,11 +65,11 @@ private [debug] sealed trait PrintView extends DebugView.Reusable {
     }
 
     // Print all the children, remembering to add a blank indent for the last child.
-    @tailrec private def printChildren(dt: DebugTree, indents: Vector[String], children: List[(String, DebugTree)]): Unit = children match {
-        case List((_, t)) =>
+    @tailrec private def printChildren(dt: DebugTree, indents: Vector[String], children: List[DebugTree]): Unit = children match {
+        case List(t) =>
             bury("|", withMark = false, indents)
             pretty(t, indents :+ "  ")
-        case (_, t) :: xs =>
+        case t :: xs =>
             bury("|", withMark = false, indents)
             pretty(t, indents :+ "| ")
             printChildren(dt, indents, xs)

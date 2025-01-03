@@ -39,7 +39,7 @@ private [parsley] class TransientDebugTree(var name: String = "", var internal: 
     // TODO: I'm pretty sure nothing ever uses this as a map! this could be a list
     // which would be far more efficient (it also appears that nothing ever uses the keys?)
     // TODO: move the name into the DebugTree or remove them entirely...
-    override val nodeChildren: Map[String, DebugTree] = new XMap[String, DebugTree] {
+    override def nodeChildren: List[DebugTree] = new XMap[String, DebugTree] {
         // We'll use a copy-on-write methodology for these two -- remember, ordering is important!
         override def removed(key: String): Map[String, DebugTree] = ListMap.empty ++ children - key
         override def updated[V1 >: DebugTree](key: String, value: V1): Map[String, V1] = (ListMap.empty ++ children).updated(key, value)
@@ -48,7 +48,7 @@ private [parsley] class TransientDebugTree(var name: String = "", var internal: 
         override def get(key: String): Option[DebugTree] = children.get(key)
         override def iterator: Iterator[(String, DebugTree)] = children.iterator
         override def size: Int = children.size
-    }
+    }.values.toList
 
     // Factors out inputs or results for parsers with children.
     private type Augment  = (Long, (Int, Int))
