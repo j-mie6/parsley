@@ -42,21 +42,17 @@ private [debug] abstract class DebugTree extends Iterable[DebugTree] {
 
     /** What are the child debug nodes for this node?
       *
-      * The map provided by the implementation should be a linked map in order to preserve the
-      * order of child parser occurrences within each parser.
-      *
-      * Internally, child nodes are given an arbitrary numeric suffix to disambiguate them in the map
-      * if multiple child nodes have the same parser name. This also allows one to traverse the tree
-      * down specific nodes via keys.
-      *
-      * Those internal names are not represented if checking [[parserName]].
+      * To preserve the order of child parser occurrences within each parser, this necessarily
+      * must be a sequence: List is convenient for processing.
       */
     def nodeChildren: List[DebugTree]
 
 // $COVERAGE-OFF$
     /** Provides a depth-first view of the tree as an iterator. */
-    override def iterator: Iterator[DebugTree] = Iterator(this) ++ nodeChildren.flatMap(_.iterator)
+    override def iterator: Iterator[DebugTree] = Iterator(this) ++ nodeChildren.iterator.flatMap(_.iterator)
 
+    // this isn't needed, but apparently the only place where the keys were referenced in the internal
+    // maps...
     /*override def toString: String = {
         val possibleChildNumber = childNumber.map(", " + _.toString).getOrElse("")
         val hasSuccess          = parseResults.exists(_.success)
@@ -65,10 +61,4 @@ private [debug] abstract class DebugTree extends Iterable[DebugTree] {
         s"DebugTree { name: $parserName ($internalName$possibleChildNumber), success: $hasSuccess, children: $keys }"
     }*/
 }
-
-/*private [debug] object DebugTree {
-    def unapply(dt: DebugTree): Some[(String, String, Option[Long], String, Option[ParseAttempt], Map[String, DebugTree])] = {
-        Some((dt.parserName, dt.internalName, dt.childNumber, dt.fullInput, dt.parseResults, dt.nodeChildren))
-    }
-}*/
 // $COVERAGE-ON$

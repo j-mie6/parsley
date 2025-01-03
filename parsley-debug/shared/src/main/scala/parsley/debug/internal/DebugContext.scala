@@ -43,7 +43,7 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
         XAssert.assert(!(ch.size > 1), s"The root tree has somehow gained multiple children. (${ch.size})")
 
         // This should never fail.
-        ch.valuesIterator.next()
+        ch.head
     }
 
     // Add an attempt of parsing at the current stack point.
@@ -69,11 +69,11 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
     }
 
     // Unique parser IDs.
-    private var uid = -1L
+    /*private var uid = -1L
     private def nextUid(): Long = {
         uid += 1L
         uid
-    }
+    }*/
 
     // Push a new parser onto the parser callstack.
     def push(fullInput: String, parser: LazyParsley[_], userAssignedName: Option[String]): Unit = {
@@ -81,8 +81,9 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
         newTree.name = Renamer.nameOf(userAssignedName, parser)
         newTree.internal = Renamer.internalName(parser)
 
-        val uid = nextUid()
-        builderStack.head.children(s"${newTree.name}-#$uid") = newTree
+        //val uid = nextUid()
+        //builderStack.head.children(s"${newTree.name}-#$uid") = newTree
+        builderStack.head.children += newTree
         builderStack.prepend(newTree)
     }
 
