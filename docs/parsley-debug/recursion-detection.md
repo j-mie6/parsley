@@ -26,6 +26,7 @@ import parsley.debug.combinator.detectDivergence
 
 @debuggable
 object parsers {
+    lazy val top: Parsley[Unit] = p.void // simplifies the cycle, see #247
     lazy val p: Parsley[Unit] = char('a').void | s ~> q
     lazy val q: Parsley[Unit] = sepBy1(r, string(",")).void
     lazy val r: Parsley[Unit] = many(p).void
@@ -36,10 +37,10 @@ object parsers {
 parsley.debug.util.Collector.registerNames(Map(parsers.p -> "p", parsers.q -> "q", parsers.r -> "r"))
 ```
 
-While `parsers.p.parse("a")` would work fine, consider what happens if we pass the empty string:
+While `parsers.top.parse("a")` would work fine, consider what happens if we pass the empty string:
 
 ```scala mdoc:crash
-detectDivergence(parsers.p).parse("")
+detectDivergence(parsers.top).parse("")
 ```
 
 Thankfully, the `detectDivergence` combinator can detect that this will cause an issue, and provides
