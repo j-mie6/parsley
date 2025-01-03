@@ -175,27 +175,28 @@
 
 </span><span class="annotation">@debuggable</span><span>
 </span><span class="keyword">object</span><span> </span><span class="identifier">parsers</span><span> {
-    </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;a&#39;</span><span>).</span><span class="identifier">void</span><span> | </span><span class="identifier">s</span><span> ~&gt; </span><span class="identifier">q</span><span>
+    </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">top</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">p</span><span>.</span><span class="identifier">void</span><span> </span><span class="comment">// simplifies the cycle, see #247
+</span><span>    </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;a&#39;</span><span>).</span><span class="identifier">void</span><span> | </span><span class="identifier">s</span><span> ~&gt; </span><span class="identifier">q</span><span>
     </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">q</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">sepBy1</span><span>(</span><span class="identifier">r</span><span>, </span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;,&quot;</span><span>)).</span><span class="identifier">void</span><span>
     </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">r</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">many</span><span>(</span><span class="identifier">p</span><span>).</span><span class="identifier">void</span><span>
     </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">s</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">unit</span><span>
 }</span></code></pre>
-        <p>While <code>parsers.p.parse(&quot;a&quot;)</code> would work fine, consider what happens if we pass the empty string:</p>
-        <pre><code class="nohighlight"><span class="identifier">detectDivergence</span><span>(</span><span class="identifier">parsers</span><span>.</span><span class="identifier">p</span><span>).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;&quot;</span><span>)
+        <p>While <code>parsers.top.parse(&quot;a&quot;)</code> would work fine, consider what happens if we pass the empty string:</p>
+        <pre><code class="nohighlight"><span class="identifier">detectDivergence</span><span>(</span><span class="identifier">parsers</span><span>.</span><span class="identifier">top</span><span>).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;&quot;</span><span>)
 </span><span class="comment">// parsley.exceptions.ParsleyException: 
 // Left-recursion has been detected in the given parser. The trace is as follows:
 // 
-// r
 // p
 // q
 // r
+// p
 // 
 // For readability, all non-named combinators have been stripped out -- to see more,
 // use the `named` combinator to tag parts of the parser you want to see appear in
 // the trace.
 // 
-// 	at repl.MdocSession$MdocApp$$anonfun$1.apply(recursion-detection.md:39)
-// 	at repl.MdocSession$MdocApp$$anonfun$1.apply(recursion-detection.md:39)</span></code></pre>
+// 	at repl.MdocSession$MdocApp$$anonfun$1.apply(recursion-detection.md:40)
+// 	at repl.MdocSession$MdocApp$$anonfun$1.apply(recursion-detection.md:40)</span></code></pre>
         <p>Thankfully, the <code>detectDivergence</code> combinator can detect that this will cause an issue, and provides
         some insight into what that might be. If you follow that trace out carefully, you&#39;ll see that these
         four calls form a cycle where no input is consumed before you get back to the start again: this is
@@ -210,8 +211,8 @@
 // 
 // More precise names for the body and the loop can be sourced using @parsley.debuggable
 // or the `named` combinator.
-// 	at repl.MdocSession$MdocApp$$anonfun$2.apply(recursion-detection.md:49)
-// 	at repl.MdocSession$MdocApp$$anonfun$2.apply(recursion-detection.md:49)</span></code></pre>
+// 	at repl.MdocSession$MdocApp$$anonfun$2.apply(recursion-detection.md:50)
+// 	at repl.MdocSession$MdocApp$$anonfun$2.apply(recursion-detection.md:50)</span></code></pre>
         <p>The <code>many</code> combinator reads zero-or-more things. When given something that doesn&#39;t consume input,
         it will succeed reading that parser, then loop back round and try to read it again. This
         is, as you might expect, exactly where it left off last iteration. As such, <code>detectDivergence</code> can
@@ -253,36 +254,36 @@
 </span><span class="comment">// parsley.exceptions.ParsleyException: 
 // Left-recursion has been detected in the given parser. The trace is as follows:
 // 
-// p (with state (0, false))
-// p (with state (1, false))
-// p (with state (2, false))
-// p (with state (3, false))
-// p (with state (4, false))
-// p (with state (5, false))
-// p (with state (6, false))
-// p (with state (7, false))
-// p (with state (8, false))
-// p (with state (9, false))
-// q (with state (0, false))
-// p (with state (0, true))
-// p (with state (1, true))
-// p (with state (2, true))
-// p (with state (3, true))
-// p (with state (4, true))
-// p (with state (5, true))
-// p (with state (6, true))
-// p (with state (7, true))
-// p (with state (8, true))
-// p (with state (9, true))
-// q (with state (0, true))
-// p (with state (0, false))
+// p (with state (false, 0))
+// p (with state (false, 1))
+// p (with state (false, 2))
+// p (with state (false, 3))
+// p (with state (false, 4))
+// p (with state (false, 5))
+// p (with state (false, 6))
+// p (with state (false, 7))
+// p (with state (false, 8))
+// p (with state (false, 9))
+// q (with state (false, 0))
+// p (with state (true, 0))
+// p (with state (true, 1))
+// p (with state (true, 2))
+// p (with state (true, 3))
+// p (with state (true, 4))
+// p (with state (true, 5))
+// p (with state (true, 6))
+// p (with state (true, 7))
+// p (with state (true, 8))
+// p (with state (true, 9))
+// q (with state (true, 0))
+// p (with state (false, 0))
 // 
 // For readability, all non-named combinators have been stripped out -- to see more,
 // use the `named` combinator to tag parts of the parser you want to see appear in
 // the trace.
 // 
-// 	at repl.MdocSession$MdocApp$$anonfun$3.apply(recursion-detection.md:87)
-// 	at repl.MdocSession$MdocApp$$anonfun$3.apply(recursion-detection.md:87)</span></code></pre>
+// 	at repl.MdocSession$MdocApp$$anonfun$3.apply(recursion-detection.md:88)
+// 	at repl.MdocSession$MdocApp$$anonfun$3.apply(recursion-detection.md:88)</span></code></pre>
         <p>Unfortunately, at the moment there is no way to name the references, but this is future work. Regardless,
         this time, the cycle shows the state snapshots that lead to the loop in the parser; namely, when
         the counter hits <code>0</code> again and the toggle is reset to <code>false</code>, we enter our initial state, and the
@@ -319,8 +320,8 @@
 // Alternatively, you can give individual parser fragments names by using the
 // `named` combinator, which will cause them to appear along the path.
 // 
-// 	at repl.MdocSession$MdocApp$$anonfun$5.apply(recursion-detection.md:115)
-// 	at repl.MdocSession$MdocApp$$anonfun$5.apply(recursion-detection.md:115)</span></code></pre>
+// 	at repl.MdocSession$MdocApp$$anonfun$5.apply(recursion-detection.md:116)
+// 	at repl.MdocSession$MdocApp$$anonfun$5.apply(recursion-detection.md:116)</span></code></pre>
         <p>Unfortunately, the annotation cannot see into nested definitions, only top-level ones. In this case,
         we can use the <code>named</code> combinator from <code>parsley.debug.combinator</code> to explicitly name <code>p</code> (via <code>named(p, &quot;p&quot;)</code>), or you may be able to get away with something like:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="annotation">@debuggable</span><span>
