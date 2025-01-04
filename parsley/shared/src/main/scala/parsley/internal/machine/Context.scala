@@ -14,7 +14,6 @@ import parsley.Success
 import parsley.XAssert._
 import parsley.errors.ErrorBuilder
 
-import parsley.internal.diagnostics.RegisterOutOfBoundsException
 import parsley.internal.errors.{CaretWidth, ExpectItem, LineBuilder, UnexpectDesc}
 import parsley.internal.machine.errors.{ClassicFancyError, DefuncError, DefuncHints, EmptyHints,
                                         ErrorItemBuilder, ExpectedError, ExpectedErrorWithReason, UnexpectedError}
@@ -125,15 +124,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     }
     // $COVERAGE-ON$
 
-    private [parsley] def run[Err: ErrorBuilder, A](): Result[Err, A] = {
-        try go[Err, A]()
-        catch {
-            // additional diagnostic checks
-            // $COVERAGE-OFF$
-            case RegisterOutOfBoundsException(err) => throw err // scalastyle:ignore throw
-            // $COVERAGE-ON$
-        }
-    }
+    private [parsley] def run[Err: ErrorBuilder, A](): Result[Err, A] = go[Err, A]()
     @tailrec private def go[Err: ErrorBuilder, A](): Result[Err, A] = {
         //println(pretty)
         if (running) { // this is the likeliest branch, so should be executed with fewest comparisons

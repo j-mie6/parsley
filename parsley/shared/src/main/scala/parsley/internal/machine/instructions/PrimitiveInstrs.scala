@@ -5,7 +5,6 @@
  */
 package parsley.internal.machine.instructions
 
-//import parsley.state.Ref
 import parsley.token.errors.LabelConfig
 
 import parsley.internal.errors.ExpectDesc
@@ -153,76 +152,6 @@ private [internal] object Span extends Instr {
     override def toString: String = "Span"
     // $COVERAGE-ON$
 }
-
-// FIXME: this isn't re-entrant, the stack allows us to tell, but the persisted
-// references are shared across nested visits. Is the reference deallocation idea also screwy?
-// perhaps deallocation only occurs when we have an empty restore stack (I think this is true,
-// because deallocation allows for the reference to be remapped later, but we always want the
-// same mapping for a let-bound parser)
-// TODO: unit test to demonstrate the above issue!
-// This instruction holds mutable state, but it is safe to do so, because it's always the first instruction of a DynCall.
-/*private [parsley] final class CalleeSave(var label: Int, localRefs: Set[Ref[_]], reqSize: Int, slots: List[(Int, Int)], saveArray: Array[AnyRef])
-    extends InstrWithLabel {
-    private def this(label: Int, localRefs: Set[Ref[_]], reqSize: Int, slots: List[Int]) =
-        this(label, localRefs, reqSize, slots.zipWithIndex, new Array[AnyRef](slots.length))
-    // this filters out the slots to ensure we only do callee-save on registers that might exist in the parent
-    def this(label: Int, localRefs: Set[Ref[_]], reqSize: Int, slots: List[Int], numRegsInContext: Int) =
-        this(label, localRefs, reqSize, slots.takeWhile(_ < numRegsInContext))
-    private var oldRegs: Array[AnyRef] = null
-
-    private def save(ctx: Context): Unit = {
-        for ((slot, idx) <- slots) {
-            saveArray(idx) = ctx.regs(slot)
-            ctx.regs(slot) = null
-        }
-        // If this is known to increase the size of the register pool, then we need to keep the old array to the side
-        if (reqSize > ctx.regs.size) {
-            oldRegs = ctx.regs
-            ctx.regs = java.util.Arrays.copyOf(oldRegs, reqSize)
-        }
-    }
-
-    private def restore(ctx: Context): Unit = {
-        if (oldRegs != null) {
-            java.lang.System.arraycopy(ctx.regs, 0, oldRegs, 0, oldRegs.size)
-            ctx.regs = oldRegs
-            oldRegs = null
-        }
-        for ((slot, idx) <- slots) {
-            ctx.regs(slot) = saveArray(idx)
-            saveArray(idx) = null
-        }
-        // This is the only way to get them reallocated on the next invocation
-        // FIXME: I think this isn't thread-safe, because two flatMaps can simulataneously reallocate?
-        localRefs.foreach(_.deallocate())
-    }
-
-    private def continue(ctx: Context): Unit = {
-        ctx.handlers = ctx.handlers.tail
-        if (ctx.good) ctx.pc = label
-        else ctx.fail()
-    }
-
-    override def apply(ctx: Context): Unit = {
-        val inUse = !ctx.good || ctx.stack.pop[Boolean]()
-        // Second-entry, callee-restore and either jump or fail
-        if (inUse) {
-            restore(ctx)
-            continue(ctx)
-        }
-        // Entry for the first time, register as a handle, callee-save and inc
-        else {
-            ensureRegularInstruction(ctx)
-            save(ctx)
-            ctx.pushHandler(ctx.pc)
-            ctx.inc()
-        }
-    }
-
-    // $COVERAGE-OFF$
-    override def toString: String = s"CalleeSave($label, newSz = $reqSize, slotsToSave = $slots)"
-    // $COVERAGE-ON$
-}*/
 
 private [parsley] final class ExpandRefs(newSz: Int) extends Instr {
     override def apply(ctx: Context): Unit = {

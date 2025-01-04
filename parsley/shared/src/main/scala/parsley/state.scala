@@ -285,10 +285,6 @@ object state {
             assert(!allocated)
             this._v = v
         }
-        private [parsley] def deallocate(): Unit = {
-            assert((new Throwable).getStackTrace.exists(_.getClassName == "parsley.internal.machine.instructions.CalleeSave"))
-            _v = -1
-        }
         //override def toString: String = s"Reg(${if (allocated) addr else "unallocated"})"
     }
 

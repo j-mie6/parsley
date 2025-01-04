@@ -43,14 +43,13 @@ private [deepembedding] trait StrictParsley[+A] {
       * @param state the code generator state
       * @return the final array of instructions for this parser
       */
-    final private [deepembedding] def generateInstructions[M[_, +_]: ContOps](numRegsUsedByParent: Int, minRef: Int, usedRefs: Set[Ref[_]],
-                                                                              bodyMap: Map[Let[_], StrictParsley[_]])
+    final private [deepembedding] def generateInstructions[M[_, +_]: ContOps](minRef: Int, usedRefs: Set[Ref[_]], bodyMap: Map[Let[_], StrictParsley[_]])
                                                                             (implicit state: CodeGenState): Array[Instr] = {
         implicit val instrs: InstrBuffer = newInstrBuffer
         perform {
-            generateCalleeSave[M, Array[Instr]](numRegsUsedByParent, minRef, this.codeGen(producesResults = true), usedRefs) |> {
-                // When `numRegsUsedByParent` is -1 this is top level, otherwise it is a flatMap
-                instrs += (if (numRegsUsedByParent >= 0) instructions.Return else instructions.Halt)
+            generateCalleeSave[M, Array[Instr]](minRef, this.codeGen(producesResults = true), usedRefs) |> {
+                // When `minRef` is -1 this is top level, otherwise it is a flatMap
+                instrs += (if (minRef >= 0) instructions.Return else instructions.Halt)
                 val letRets = finaliseLets(bodyMap)
                 generateHandlers(state.handlers)
                 finaliseInstrs(instrs, state.nlabels, letRets)
@@ -132,26 +131,14 @@ private [deepembedding] object StrictParsley {
       * @param instrs the instruction buffer
       * @param state the code generation state, for label generation
       */
-    private def generateCalleeSave[M[_, +_], R](@scala.annotation.unused numRegsUsedByParent: Int, minRef: Int, bodyGen: =>M[R, Unit], usedRefs: Set[Ref[_]])
-                                               (implicit instrs: InstrBuffer, @scala.annotation.unused state: CodeGenState): M[R, Unit] = {
-        //val reqRegs = usedRefs.size
+    private def generateCalleeSave[M[_, +_], R](minRef: Int, bodyGen: =>M[R, Unit], usedRefs: Set[Ref[_]])(implicit instrs: InstrBuffer): M[R, Unit] = {
+        // TODO: check for reference conflict
         val localRegs = usedRefs.filterNot(_.allocated)
         val totalSlotsRequired = allocateRegisters(minRef, localRegs)
-        //val calleeSaveRequired = numRegsUsedByParent >= 0 // if this is -1, then we are the top level and have no parent, otherwise it needs to be done
-        val refExpandRequired = minRef >= 0 // if this is -1, then we are the top level and have no parent, otherwise it needs to be done
-        if (refExpandRequired && localRegs.nonEmpty) {
-            //val end = state.freshLabel()
-            //val calleeSave = state.freshLabel()
-            //instrs += new instructions.Push(false) // callee-save is not active
-            //instrs += new instructions.Label(calleeSave)
-            //instrs += new instructions.CalleeSave(end, localRegs, reqRegs, allocatedRegs, numRegsUsedByParent)
-            //bodyGen
-                //instrs += new instructions.Push(true) // callee-save is active
-                //instrs += new instructions.Jump(calleeSave)
-                //instrs += new instructions.Label(end)
+        // if this is -1, then we are the top level and have no parent, otherwise it needs to be done
+        if (minRef >= 0 && localRegs.nonEmpty) {
             instrs += new instructions.ExpandRefs(totalSlotsRequired)
         }
-        //else bodyGen
         bodyGen
     }
 

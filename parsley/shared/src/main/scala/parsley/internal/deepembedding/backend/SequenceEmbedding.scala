@@ -95,7 +95,6 @@ private [deepembedding] final class >>=[A, B](val p: StrictParsley[A], private [
         suspend(p.codeGen[M, R](producesResults = true)) |> {
             instrs += instructions.DynCall[A] { (x, refsSz) =>
                 val q = f(x)
-                q.demandCalleeSave(state.numRegs)
                 q.setMinReferenceAllocation(refsSz)
                 if (implicitly[ContOps[M]].isStackSafe) q.overflows()
                 q.instrs
