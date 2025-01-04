@@ -156,12 +156,15 @@ private [internal] object Span extends Instr {
 
 // FIXME: this isn't re-entrant, the stack allows us to tell, but the persisted
 // references are shared across nested visits. Is the reference deallocation idea also screwy?
-// perhaps deallocation only occurs when we have an empty restore stack?
+// perhaps deallocation only occurs when we have an empty restore stack (I think this is true,
+// because deallocation allows for the reference to be remapped later, but we always want the
+// same mapping for a let-bound parser)
+// TODO: unit test to demonstrate the above issue!
 // This instruction holds mutable state, but it is safe to do so, because it's always the first instruction of a DynCall.
-private [parsley] final class CalleeSave(var label: Int, localRegs: Set[Ref[_]], reqSize: Int, slots: List[(Int, Int)], saveArray: Array[AnyRef])
+private [parsley] final class CalleeSave(var label: Int, localRefs: Set[Ref[_]], reqSize: Int, slots: List[(Int, Int)], saveArray: Array[AnyRef])
     extends InstrWithLabel {
-    private def this(label: Int, localRegs: Set[Ref[_]], reqSize: Int, slots: List[Int]) =
-        this(label, localRegs, reqSize, slots.zipWithIndex, new Array[AnyRef](slots.length))
+    private def this(label: Int, localRefs: Set[Ref[_]], reqSize: Int, slots: List[Int]) =
+        this(label, localRefs, reqSize, slots.zipWithIndex, new Array[AnyRef](slots.length))
     // this filters out the slots to ensure we only do callee-save on registers that might exist in the parent
     def this(label: Int, localRefs: Set[Ref[_]], reqSize: Int, slots: List[Int], numRegsInContext: Int) =
         this(label, localRefs, reqSize, slots.takeWhile(_ < numRegsInContext))
@@ -191,7 +194,7 @@ private [parsley] final class CalleeSave(var label: Int, localRegs: Set[Ref[_]],
         }
         // This is the only way to get them reallocated on the next invocation
         // FIXME: I think this isn't thread-safe, because two flatMaps can simulataneously reallocate?
-        localRegs.foreach(_.deallocate())
+        localRefs.foreach(_.deallocate())
     }
 
     private def continue(ctx: Context): Unit = {

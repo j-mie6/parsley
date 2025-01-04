@@ -161,11 +161,11 @@ private [deepembedding] object StrictParsley {
         if (calleeSaveRequired && localRegs.nonEmpty) {
             val end = state.freshLabel()
             val calleeSave = state.freshLabel()
-            instrs += new instructions.Push(false)
+            instrs += new instructions.Push(false) // callee-save is not active
             instrs += new instructions.Label(calleeSave)
             instrs += new instructions.CalleeSave(end, localRegs, reqRegs, allocatedRegs, numRegsUsedByParent)
             bodyGen |> {
-                instrs += new instructions.Push(true)
+                instrs += new instructions.Push(true) // callee-save is active
                 instrs += new instructions.Jump(calleeSave)
                 instrs += new instructions.Label(end)
             }
