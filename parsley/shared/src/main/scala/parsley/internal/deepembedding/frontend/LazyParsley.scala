@@ -233,11 +233,10 @@ private [deepembedding] class LetFinderState {
     /** Has the given parser never been analysed before? */
     private [frontend] def notProcessedBefore(p: LazyParsley[_]): Boolean = _preds(p) == 1
 
-    // TODO: I think this can just drop the !_recs(p) constraint and it'll just work? (check whether recs get a pred bump)
-    /** Returns all the non-recursive parsers which are referenced two or more times across the tree. */
+    /** Returns all the parsers which are referenced two or more times across the tree. */
     private [frontend] def lets: Iterable[LazyParsley[_]] = _preds.toSeq.view.collect {
-        case (p, refs) if refs >= 2 && !_recs(p) => p
-    } ++ recs
+        case (p, refs) if refs >= 2 => p
+    }
     /** Returns all the recursive parsers in the tree */
     private [frontend] lazy val recs: Set[LazyParsley[_]] = _recs.toSet
     /** Returns all the registers used by the parser */
