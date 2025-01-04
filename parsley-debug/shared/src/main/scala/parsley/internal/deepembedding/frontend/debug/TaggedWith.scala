@@ -16,17 +16,17 @@ import parsley.state.Ref
 import parsley.internal.deepembedding.{singletons, Cont, ContOps, Id}
 import parsley.internal.deepembedding.ContOps.{perform, result, suspend, zipWith, zipWith3, ContAdapter}
 import parsley.internal.deepembedding.backend.StrictParsley
-import parsley.internal.deepembedding.backend.debug.DebugStrategy
+import parsley.internal.deepembedding.backend.debug.TagFactory
 import parsley.internal.deepembedding.frontend._ // scalastyle:ignore underscore.import
 
 // Wrapper class signifying debugged classes
 // TODO: the origin is needed to figure out the name later on... but couldn't we resolve the name here and avoid forwarding on to the backend (send string instead)?
 // FIXME: this clobbers the register allocator, apparently?
-private [parsley] final class TaggedWith[A](strat: DebugStrategy)(val origin: LazyParsley[A], val subParser: LazyParsley[A], userAssignedName: Option[String])
+private [parsley] final class TaggedWith[A](factory: TagFactory)(val origin: LazyParsley[A], val subParser: LazyParsley[A], userAssignedName: Option[String])
     extends LazyParsley[A] {
     XAssert.assert(!origin.isInstanceOf[TaggedWith[_]], "Tagged parsers should not be nested within each other directly.")
 
-    def make(p: StrictParsley[A]): StrictParsley[A] = strat.create(origin, p, userAssignedName)
+    def make(p: StrictParsley[A]): StrictParsley[A] = factory.create(origin, p, userAssignedName)
 
     override def findLetsAux[M[_, +_] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] = suspend(subParser.findLets(seen))
     override def preprocess[M[_, +_] : ContOps, R, A_ >: A](implicit lets: LetMap): M[R, StrictParsley[A_]] = {
@@ -34,7 +34,7 @@ private [parsley] final class TaggedWith[A](strat: DebugStrategy)(val origin: La
     }
 
     // $COVERAGE-OFF$
-    private [frontend] def withName(name: String): TaggedWith[A] = new TaggedWith(strat)(origin, subParser, Some(name))
+    private [frontend] def withName(name: String): TaggedWith[A] = new TaggedWith(factory)(origin, subParser, Some(name))
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visitUnknown(this, context)
     // $COVERAGE-ON$
 
@@ -43,17 +43,17 @@ private [parsley] final class TaggedWith[A](strat: DebugStrategy)(val origin: La
 
 private [parsley] object TaggedWith {
     // Run this to inject the debugger itself.
-    def tagRecursively[A](parser: LazyParsley[A], strategy: DebugStrategy): LazyParsley[A] = {
+    def tagRecursively[A](parser: LazyParsley[A], factory: TagFactory): LazyParsley[A] = {
         // XXX: A weak map is needed so that memory leaks will not be caused by flatMap parsers.
         //      We want a decent amount of initial space to speed up debugging larger parsers slightly.
         val tracker: ParserTracker = new ParserTracker(new XWeakMap)
         if (parser.isCps) {
             implicit val ops: ContOps[Cont.Impl] = Cont.ops
-            val visitor = new DebugInjectingVisitorM[Cont.Impl, LazyParsley[A]](strategy)
+            val visitor = new DebugInjectingVisitorM[Cont.Impl, LazyParsley[A]](factory)
             visitWithM[Cont.Impl, A](parser, tracker, visitor)
         } else {
             implicit val ops: ContOps[Id.Impl] = Id.ops
-            val visitor = new DebugInjectingVisitorM[Id.Impl, LazyParsley[A]](strategy)
+            val visitor = new DebugInjectingVisitorM[Id.Impl, LazyParsley[A]](factory)
             visitWithM[Id.Impl, A](parser, tracker, visitor)
         }
     }
@@ -106,7 +106,7 @@ private [parsley] object TaggedWith {
     // to use the trampoline ( https://en.wikipedia.org/wiki/Trampoline_(computing) ) to ensure that all calls are
     // turned into heap thunks instead of stack frames.
     // $COVERAGE-OFF$
-    private final class DebugInjectingVisitorM[M[_, +_]: ContOps, R](strategy: DebugStrategy)
+    private final class DebugInjectingVisitorM[M[_, +_]: ContOps, R](strategy: TagFactory)
         extends GenericLazyParsleyIVisitor[ParserTracker, ContWrap[M, R]#DLPM] {
         private type DL[+A] = ContWrap[M, R]#DLPM[A]
 

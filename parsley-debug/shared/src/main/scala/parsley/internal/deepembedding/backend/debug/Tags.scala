@@ -15,19 +15,17 @@ import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.machine.instructions.{Label, Pop}
 import parsley.internal.machine.instructions.debug.{AddAttemptAndLeave, DropSnapshot, EnterParser, TakeSnapshot}
 
-// TODO: rename to TagFactory? this file can then be called Tags
-// this should probably be split out into its own file as well
-private [deepembedding] sealed abstract class DebugStrategy {
+private [deepembedding] sealed abstract class TagFactory {
     def create[A](origin: LazyParsley[A], p: StrictParsley[A], userAssignedName: Option[String]): StrictParsley[A]
 }
 
-private [parsley] final class Debugging(dbgCtx: DebugContext) extends DebugStrategy {
+private [parsley] final class Debugging(dbgCtx: DebugContext) extends TagFactory {
     def create[A](origin: LazyParsley[A], p: StrictParsley[A], userAssignedName: Option[String]): StrictParsley[A] = {
         new Debugged(origin, p, userAssignedName)(dbgCtx)
     }
 }
 
-private [parsley] final class CheckDivergence(dtx: DivergenceContext) extends DebugStrategy {
+private [parsley] final class CheckDivergence(dtx: DivergenceContext) extends TagFactory {
     def create[A](origin: LazyParsley[A], p: StrictParsley[A], userAssignedName: Option[String]): StrictParsley[A] = {
         new DivergenceChecker(origin, p, userAssignedName)(dtx)
     }
