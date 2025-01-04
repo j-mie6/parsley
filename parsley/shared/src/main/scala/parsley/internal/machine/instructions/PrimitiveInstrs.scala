@@ -154,7 +154,10 @@ private [internal] object Span extends Instr {
     // $COVERAGE-ON$
 }
 
-// This instruction holds mutate state, but it is safe to do so, because it's always the first instruction of a DynCall.
+// FIXME: this isn't re-entrant, the stack allows us to tell, but the persisted
+// references are shared across nested visits. Is the reference deallocation idea also screwy?
+// perhaps deallocation only occurs when we have an empty restore stack?
+// This instruction holds mutable state, but it is safe to do so, because it's always the first instruction of a DynCall.
 private [parsley] final class CalleeSave(var label: Int, localRegs: Set[Ref[_]], reqSize: Int, slots: List[(Int, Int)], saveArray: Array[AnyRef])
     extends InstrWithLabel {
     private def this(label: Int, localRegs: Set[Ref[_]], reqSize: Int, slots: List[Int]) =
@@ -162,7 +165,6 @@ private [parsley] final class CalleeSave(var label: Int, localRegs: Set[Ref[_]],
     // this filters out the slots to ensure we only do callee-save on registers that might exist in the parent
     def this(label: Int, localRefs: Set[Ref[_]], reqSize: Int, slots: List[Int], numRegsInContext: Int) =
         this(label, localRefs, reqSize, slots.takeWhile(_ < numRegsInContext))
-    private var inUse = false
     private var oldRegs: Array[AnyRef] = null
 
     private def save(ctx: Context): Unit = {
@@ -199,17 +201,16 @@ private [parsley] final class CalleeSave(var label: Int, localRegs: Set[Ref[_]],
     }
 
     override def apply(ctx: Context): Unit = {
+        val inUse = !ctx.good || ctx.stack.pop[Boolean]()
         // Second-entry, callee-restore and either jump or fail
         if (inUse) {
             restore(ctx)
-            inUse = false
             continue(ctx)
         }
         // Entry for the first time, register as a handle, callee-save and inc
         else {
             ensureRegularInstruction(ctx)
             save(ctx)
-            inUse = true
             ctx.pushHandler(ctx.pc)
             ctx.inc()
         }
