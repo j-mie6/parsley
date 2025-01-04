@@ -104,36 +104,15 @@ private [deepembedding] object StrictParsley {
       * @param regs the set of all registers used by a specific parser
       * @return the list of slots that have been freshly allocated to
       */
-    private def allocateRegisters(minRef: Int, unallocatedRegs: Set[Ref[_]], regs: Set[Ref[_]]): List[Int] = {
+    private def allocateRegisters(minRef: Int, unallocatedRegs: Set[Ref[_]]): Int = {
         // Global registers cannot occupy the same slot as another global register
         // In a flatMap, that means a newly discovered global register must be allocated to a new slot: this may resize the register pool
-        assert(unallocatedRegs == regs.filterNot(_.allocated))
-        if (unallocatedRegs.nonEmpty) {
-            /*val usedSlots = regs.collect {
-                case reg if reg.allocated => reg.addr
-            }*/
-            val minSlot = math.max(minRef, 0)
-            val freeSlots = minSlot until (minSlot + unallocatedRegs.size)//(0 until regs.size).filterNot(usedSlots)
-            applyAllocation(unallocatedRegs, freeSlots)
+        var nextSlot = math.max(minRef, 0)
+        for (reg <- unallocatedRegs) {
+            reg.allocate(nextSlot)
+            nextSlot += 1
         }
-        else Nil
-    }
-
-    /** Given a set of unallocated registers and a supply of unoccupied slots, allocates each
-      * register to one of the slots.
-      *
-      * @param regs the set of registers that require allocation
-      * @param freeSlots the supply of slots that are currently not in-use
-      * @return the slots that were used for allocation
-      */
-    private def applyAllocation(refs: Set[Ref[_]], freeSlots: Iterable[Int]): List[Int] = {
-        val allocatedSlots = mutable.ListBuffer.empty[Int]
-        // TODO: For scala 2.12, use lazyZip and foreach!
-        for ((ref, addr) <- refs.zip(freeSlots)) {
-            ref.allocate(addr)
-            allocatedSlots += addr
-        }
-        allocatedSlots.toList
+        nextSlot
     }
 
     /** If required, generates callee-save around a main body of instructions.
@@ -153,25 +132,27 @@ private [deepembedding] object StrictParsley {
       * @param instrs the instruction buffer
       * @param state the code generation state, for label generation
       */
-    private def generateCalleeSave[M[_, +_]: ContOps, R](numRegsUsedByParent: Int, minRef: Int, bodyGen: =>M[R, Unit], usedRefs: Set[Ref[_]])
-                                                       (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
-        val reqRegs = usedRefs.size
+    private def generateCalleeSave[M[_, +_], R](@scala.annotation.unused numRegsUsedByParent: Int, minRef: Int, bodyGen: =>M[R, Unit], usedRefs: Set[Ref[_]])
+                                               (implicit instrs: InstrBuffer, @scala.annotation.unused state: CodeGenState): M[R, Unit] = {
+        //val reqRegs = usedRefs.size
         val localRegs = usedRefs.filterNot(_.allocated)
-        val allocatedRegs = allocateRegisters(minRef, localRegs, usedRefs)
-        val calleeSaveRequired = numRegsUsedByParent >= 0 // if this is -1, then we are the top level and have no parent, otherwise it needs to be done
-        if (calleeSaveRequired && localRegs.nonEmpty) {
-            val end = state.freshLabel()
-            val calleeSave = state.freshLabel()
-            instrs += new instructions.Push(false) // callee-save is not active
-            instrs += new instructions.Label(calleeSave)
-            instrs += new instructions.CalleeSave(end, localRegs, reqRegs, allocatedRegs, numRegsUsedByParent)
-            bodyGen |> {
-                instrs += new instructions.Push(true) // callee-save is active
-                instrs += new instructions.Jump(calleeSave)
-                instrs += new instructions.Label(end)
-            }
+        val totalSlotsRequired = allocateRegisters(minRef, localRegs)
+        //val calleeSaveRequired = numRegsUsedByParent >= 0 // if this is -1, then we are the top level and have no parent, otherwise it needs to be done
+        val refExpandRequired = minRef >= 0 // if this is -1, then we are the top level and have no parent, otherwise it needs to be done
+        if (refExpandRequired && localRegs.nonEmpty) {
+            //val end = state.freshLabel()
+            //val calleeSave = state.freshLabel()
+            //instrs += new instructions.Push(false) // callee-save is not active
+            //instrs += new instructions.Label(calleeSave)
+            //instrs += new instructions.CalleeSave(end, localRegs, reqRegs, allocatedRegs, numRegsUsedByParent)
+            //bodyGen
+                //instrs += new instructions.Push(true) // callee-save is active
+                //instrs += new instructions.Jump(calleeSave)
+                //instrs += new instructions.Label(end)
+            instrs += new instructions.ExpandRefs(totalSlotsRequired)
         }
-        else bodyGen
+        //else bodyGen
+        bodyGen
     }
 
     /** Generates each of the shared, non-recursive, parsers that have been ''used'' by

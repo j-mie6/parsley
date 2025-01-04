@@ -230,7 +230,7 @@ class CoreTests extends ParsleyTest {
         val p = "hello :)".makeRef(r2 => q *> q *> r2.get)
         p.parse("aa") shouldBe Success("hello :)")
     }
-    they should "be preserved by callee-save in flatMap" ignore {
+    they should "be preserved by callee-save in flatMap" in {
         val p = "hello world".makeRef(r2 => {
             6.makeRef(r1 => {
                 unit.flatMap(_ => 4.makeRef(_ => r2.set("hi"))) *>
@@ -239,7 +239,7 @@ class CoreTests extends ParsleyTest {
         })
         p.parse("") shouldBe Success((6, "hi"))
     }
-    they should "be preserved by callee-save in flatMap even when it fails" ignore {
+    they should "be preserved by callee-save in flatMap even when it fails" in {
         val p = "hello world".makeRef(r2 => {
             6.makeRef(r1 => {
                 combinator.optional(unit.flatMap(_ => r2.set("hi") *> 4.makeRef(_ => Parsley.empty))) *>
@@ -392,7 +392,7 @@ class CoreTests extends ParsleyTest {
         q.parse("aaaabbb") shouldBe a [Success[_]]
     }
 
-    "flatMap" should "consistently generate a callee-save instruction if needed" ignore {
+    "flatMap" should "consistently generate a callee-save instruction if needed" in {
         import parsley.state._
         val r = Ref.make[Int]
         val p = unit.flatMap { _ =>

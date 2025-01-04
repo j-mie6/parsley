@@ -5,7 +5,7 @@
  */
 package parsley.internal.machine.instructions
 
-import parsley.state.Ref
+//import parsley.state.Ref
 import parsley.token.errors.LabelConfig
 
 import parsley.internal.errors.ExpectDesc
@@ -161,7 +161,7 @@ private [internal] object Span extends Instr {
 // same mapping for a let-bound parser)
 // TODO: unit test to demonstrate the above issue!
 // This instruction holds mutable state, but it is safe to do so, because it's always the first instruction of a DynCall.
-private [parsley] final class CalleeSave(var label: Int, localRefs: Set[Ref[_]], reqSize: Int, slots: List[(Int, Int)], saveArray: Array[AnyRef])
+/*private [parsley] final class CalleeSave(var label: Int, localRefs: Set[Ref[_]], reqSize: Int, slots: List[(Int, Int)], saveArray: Array[AnyRef])
     extends InstrWithLabel {
     private def this(label: Int, localRefs: Set[Ref[_]], reqSize: Int, slots: List[Int]) =
         this(label, localRefs, reqSize, slots.zipWithIndex, new Array[AnyRef](slots.length))
@@ -222,4 +222,13 @@ private [parsley] final class CalleeSave(var label: Int, localRefs: Set[Ref[_]],
     // $COVERAGE-OFF$
     override def toString: String = s"CalleeSave($label, newSz = $reqSize, slotsToSave = $slots)"
     // $COVERAGE-ON$
+}*/
+
+private [parsley] final class ExpandRefs(newSz: Int) extends Instr {
+    override def apply(ctx: Context): Unit = {
+        if (newSz > ctx.regs.size) {
+            ctx.regs = java.util.Arrays.copyOf(ctx.regs, newSz)
+        }
+        ctx.inc()
+    }
 }
