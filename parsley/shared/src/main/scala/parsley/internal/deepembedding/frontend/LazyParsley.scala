@@ -46,6 +46,14 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
       */
     private [deepembedding] def demandCalleeSave(numRegs: Int): Unit = numRegsUsedByParent = numRegs
 
+    /** This parser is the result of a `flatMap` operation, and as such may need to expand
+      * the refs set. If so, it needs to know what the minimum free slot is according to
+      * the context.
+      *
+      * @param minRef the smallest ref we are allowed to allocate to.
+      */
+    private [deepembedding] def setMinReferenceAllocation(minRef: Int): Unit = this.minRef = minRef
+
     // Internals
     // To ensure that stack-overflow cannot occur during the processing of particularly
     // large parsers, the entire internals of the "frontend" and "backend" of parsley is
@@ -82,7 +90,8 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     final private var cps = false
     final private [deepembedding] def isCps: Boolean = cps
     /** how many registers are used by the ''parent'' of this combinator (this combinator is part of a `flatMap` when this is not -1) */
-    final private var numRegsUsedByParent = -1
+    /*@deprecated("this is no longer needed", "5.0.0-M10")*/ final private var numRegsUsedByParent = -1
+    final private var minRef = -1
 
     /** Computes the instructions associated with this parser as well as the number of
       * registers it requires in a (possibly) stack-safe way.
@@ -115,7 +124,7 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
                 implicit val letMap: LetMap = LetMap(letFinderState.lets, letFinderState.recs)
                 for { sp <- this.optimised } yield {
                     implicit val state: backend.CodeGenState = new backend.CodeGenState(letFinderState.numRegs)
-                    sp.generateInstructions(numRegsUsedByParent, usedRefs, letMap.bodies)
+                    sp.generateInstructions(numRegsUsedByParent, minRef, usedRefs, letMap.bodies)
                 }
             }
         }, letFinderState.numRegs)

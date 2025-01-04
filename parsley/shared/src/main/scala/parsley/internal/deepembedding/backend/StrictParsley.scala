@@ -43,12 +43,12 @@ private [deepembedding] trait StrictParsley[+A] {
       * @param state the code generator state
       * @return the final array of instructions for this parser
       */
-    final private [deepembedding] def generateInstructions[M[_, +_]: ContOps](numRegsUsedByParent: Int, usedRefs: Set[Ref[_]],
+    final private [deepembedding] def generateInstructions[M[_, +_]: ContOps](numRegsUsedByParent: Int, minRef: Int, usedRefs: Set[Ref[_]],
                                                                               bodyMap: Map[Let[_], StrictParsley[_]])
                                                                             (implicit state: CodeGenState): Array[Instr] = {
         implicit val instrs: InstrBuffer = newInstrBuffer
         perform {
-            generateCalleeSave[M, Array[Instr]](numRegsUsedByParent, this.codeGen(producesResults = true), usedRefs) |> {
+            generateCalleeSave[M, Array[Instr]](numRegsUsedByParent, minRef, this.codeGen(producesResults = true), usedRefs) |> {
                 // When `numRegsUsedByParent` is -1 this is top level, otherwise it is a flatMap
                 instrs += (if (numRegsUsedByParent >= 0) instructions.Return else instructions.Halt)
                 val letRets = finaliseLets(bodyMap)
@@ -104,15 +104,16 @@ private [deepembedding] object StrictParsley {
       * @param regs the set of all registers used by a specific parser
       * @return the list of slots that have been freshly allocated to
       */
-    private def allocateRegisters(unallocatedRegs: Set[Ref[_]], regs: Set[Ref[_]]): List[Int] = {
+    private def allocateRegisters(minRef: Int, unallocatedRegs: Set[Ref[_]], regs: Set[Ref[_]]): List[Int] = {
         // Global registers cannot occupy the same slot as another global register
         // In a flatMap, that means a newly discovered global register must be allocated to a new slot: this may resize the register pool
         assert(unallocatedRegs == regs.filterNot(_.allocated))
         if (unallocatedRegs.nonEmpty) {
-            val usedSlots = regs.collect {
+            /*val usedSlots = regs.collect {
                 case reg if reg.allocated => reg.addr
-            }
-            val freeSlots = (0 until regs.size).filterNot(usedSlots)
+            }*/
+            val minSlot = math.max(minRef, 0)
+            val freeSlots = minSlot until (minSlot + unallocatedRegs.size)//(0 until regs.size).filterNot(usedSlots)
             applyAllocation(unallocatedRegs, freeSlots)
         }
         else Nil
@@ -152,11 +153,11 @@ private [deepembedding] object StrictParsley {
       * @param instrs the instruction buffer
       * @param state the code generation state, for label generation
       */
-    private def generateCalleeSave[M[_, +_]: ContOps, R](numRegsUsedByParent: Int, bodyGen: =>M[R, Unit], usedRefs: Set[Ref[_]])
+    private def generateCalleeSave[M[_, +_]: ContOps, R](numRegsUsedByParent: Int, minRef: Int, bodyGen: =>M[R, Unit], usedRefs: Set[Ref[_]])
                                                        (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val reqRegs = usedRefs.size
         val localRegs = usedRefs.filterNot(_.allocated)
-        val allocatedRegs = allocateRegisters(localRegs, usedRefs)
+        val allocatedRegs = allocateRegisters(minRef, localRegs, usedRefs)
         val calleeSaveRequired = numRegsUsedByParent >= 0 // if this is -1, then we are the top level and have no parent, otherwise it needs to be done
         if (calleeSaveRequired && localRegs.nonEmpty) {
             val end = state.freshLabel()
