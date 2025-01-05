@@ -9,18 +9,18 @@ Parsley is distributed on Maven Central, and can be added to your project via:
 
 ```scala
 // SBT
-libraryDependencies += "com.github.j-mie6" %% "parsley" % "4.5.2"
+libraryDependencies += "com.github.j-mie6" %% "parsley" % "4.5.3"
 
 // scala-cli
---dependency com.github.j-mie6::parsley:4.5.2
+--dependency com.github.j-mie6::parsley:4.5.3
 // or in file
-//> using dep com.github.j-mie6::parsley:4.5.2
+//> using dep com.github.j-mie6::parsley:4.5.3
 
 // mill
-ivy"com.github.j-mie6::parsley:4.5.2"
+ivy"com.github.j-mie6::parsley:4.5.3"
 ```
 
-Documentation can be found [**here**](https://javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest/index.html)
+Documentation can be found [**here**](https://javadoc.io/doc/com.github.j-mie6/parsley-docs_2.13/latest/index.html)
 
 If you're a `cats` user, you may also be interested in using [`parsley-cats`](https://github.com/j-mie6/parsley-cats)<a href="https://typelevel.org/cats/"><img src="https://typelevel.org/cats/img/cats-badge.svg" height="40px" align="right" alt="Cats friendly" /></a>
 to augment `parsley` with instances for various `cats` typeclasses:
