@@ -93,10 +93,9 @@ private [deepembedding] final class >>=[A, B](val p: StrictParsley[A], private [
     }
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         suspend(p.codeGen[M, R](producesResults = true)) |> {
-            instrs += instructions.DynCall[A] { x =>
+            instrs += instructions.DynCall[A] { (x, refsSz) =>
                 val p = f(x)
-                // FIXME: suppress results within p, then can remove pop
-                p.demandCalleeSave(state.numRegs)
+                p.setMinReferenceAllocation(refsSz)
                 if (implicitly[ContOps[M]].isStackSafe) p.overflows()
                 p.instrs
             }
