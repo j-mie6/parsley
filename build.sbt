@@ -126,6 +126,7 @@ def testCoverageJob(cacheSteps: List[WorkflowStep]) = WorkflowJob(
     cond = Some(s"github.ref == 'refs/heads/$mainBranch' || (github.event_name == 'pull_request' && github.base_ref == '$mainBranch')"),
     steps =
         WorkflowStep.Checkout ::
+        WorkflowStep.SetupSbt ::
         WorkflowStep.SetupJava(List(JavaLTS)) :::
         cacheSteps ::: List(
             WorkflowStep.Sbt(name = Some("Generate coverage report"), commands = List("coverage", "parsley / test", "parsleyDebug / test", "coverageReport")),
