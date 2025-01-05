@@ -295,13 +295,12 @@ object state {
         /** This function creates a new (global) reference of a given type.
           *
           * The reference created by this function is not allocated to any specific parser until it has been
-          * used by a parser. It should not be used with multiple different parsers.
+          * used by a parser. It should not be used with multiple different parsers: while this ''may'' work,
+          * there is a chance that two such references collide in allocation, which is undefined behaviour.
           *
           * @tparam A the type to be contained in this reference during runtime
           * @return a new reference which can contain the given type.
-          * @note references created in this manner ''must'' be initialised in the top-level parser and not
-          *       inside a `flatMap`, as this may make them corrupt other references. They should be used with
-          *       caution. It is recommended to use `makeRef` and `fillRef` where possible.
+          * @note They should be used with caution. It is recommended to use `makeRef` and `fillRef` where possible.
           * @since 2.2.0
           */
         def make[A]: Ref[A] = new Ref
