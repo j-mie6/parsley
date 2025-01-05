@@ -37,7 +37,7 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     // $COVERAGE-ON$
 
     // The instructions used to execute this parser along with the number of registers it uses
-    final private [parsley] lazy val (instrs: Array[Instr], numRegs: Int) = computeInstrs
+    final private [parsley] lazy val (instrs: Array[Instr], numRefs: Int) = computeInstrs
 
     /** This parser is the result of a `flatMap` operation, and as such may need to expand
       * the refs set. If so, it needs to know what the minimum free slot is according to
@@ -115,11 +115,11 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
                 val usedRefs: Set[Ref[_]] = letFinderState.usedRefs
                 implicit val letMap: LetMap = LetMap(letFinderState.lets, letFinderState.recs)
                 for { sp <- this.optimised } yield {
-                    implicit val state: backend.CodeGenState = new backend.CodeGenState(letFinderState.numRegs)
+                    implicit val state: backend.CodeGenState = new backend.CodeGenState(letFinderState.numRefs)
                     sp.generateInstructions(minRef, usedRefs, letMap.bodies)
                 }
             }
-        }, letFinderState.numRegs)
+        }, letFinderState.numRefs)
     }
 
     // Pass 1
@@ -243,7 +243,7 @@ private [deepembedding] class LetFinderState {
     /** Returns all the registers used by the parser */
     private [frontend] def usedRefs: Set[Ref[_]] = _usedRefs.toSet
     /** Returns the number of registers used by the parser */
-    private [frontend] def numRegs: Int = _usedRefs.size
+    private [frontend] def numRefs: Int = _usedRefs.size
 }
 
 /** Represents a map of let-bound lazy parsers to their strict equivalents. */
