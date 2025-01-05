@@ -118,9 +118,11 @@ private [deepembedding] object StrictParsley {
       */
     private def allocateAndExpandRefs(minRef: Int, usedRefs: Set[Ref[_]])(implicit instrs: InstrBuffer): Unit = {
         var nextSlot = math.max(minRef, 0)
-        for (r <- usedRefs if !r.allocated) {
-            r.allocate(nextSlot)
-            nextSlot += 1
+        usedRefs.foreach { (r: Ref[_]) =>
+            if (!r.allocated) {
+                r.allocate(nextSlot)
+                nextSlot += 1
+            }
         }
         val totalSlotsRequired = nextSlot
         // if this is -1, then we are the top level and have no parent, otherwise it needs to be done
