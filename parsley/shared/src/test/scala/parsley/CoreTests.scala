@@ -392,7 +392,7 @@ class CoreTests extends ParsleyTest {
         q.parse("aaaabbb") shouldBe a [Success[_]]
     }
 
-    "flatMap" should "consistently generate a callee-save instruction if needed" ignore {
+    "flatMap" should "consistently generate a callee-save instruction if needed" in {
         import parsley.state._
         val r = Ref.make[Int]
         val p = unit.flatMap { _ =>
@@ -400,19 +400,6 @@ class CoreTests extends ParsleyTest {
         }
         (unit.flatMap(_ => r.set(0)) *> p *> p).parse("") shouldBe Success(2)
     }
-    /*it should "correct nest callee-saving" in {
-        import parsley.state._
-        // outer sets up a saved reference within middle, that doesn't use it
-        // it uses its own. Inner sibling is under a flatMap, so not visible for
-        // middle, uses the global. After its done and changed global state,
-        // the second call to middle needs to calleeSave that, which is not
-        // what would happen...
-        lazy val inner = ???
-        lazy val middle = ???
-        lazy val outer = 0.makeReg { r =>
-
-        }
-    }*/
 
     "span" should "return all the input parsed by a parser, exactly as it was" in {
         import parsley.character.whitespaces
