@@ -9,6 +9,7 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 
 import parsley.XAssert._
+import parsley.exceptions.CorruptedReferenceException
 import parsley.state.Ref
 
 import parsley.internal.collection.mutable.ResizableArray
@@ -96,24 +97,6 @@ private [deepembedding] object StrictParsley {
     /** Make a fresh instruction buffer */
     private def newInstrBuffer: InstrBuffer = new ResizableArray()
 
-    /** Given a set of in-use registers, this function will allocate those that are currented
-      * unallocated, giving them addresses not currently in use by the allocated registers
-      *
-      * @param unallocatedRegs the set of registers that need allocating
-      * @param regs the set of all registers used by a specific parser
-      * @return the list of slots that have been freshly allocated to
-      */
-    private def allocateRegisters(minRef: Int, unallocatedRegs: Set[Ref[_]]): Int = {
-        // Global registers cannot occupy the same slot as another global register
-        // In a flatMap, that means a newly discovered global register must be allocated to a new slot: this may resize the register pool
-        var nextSlot = math.max(minRef, 0)
-        for (reg <- unallocatedRegs) {
-            reg.allocate(nextSlot)
-            nextSlot += 1
-        }
-        nextSlot
-    }
-
     /** If required, generates callee-save around a main body of instructions.
       *
       * This is needed when using `flatMap`, as it is unaware of the register
@@ -132,11 +115,18 @@ private [deepembedding] object StrictParsley {
       * @param state the code generation state, for label generation
       */
     private def generateCalleeSave[M[_, +_], R](minRef: Int, bodyGen: =>M[R, Unit], usedRefs: Set[Ref[_]])(implicit instrs: InstrBuffer): M[R, Unit] = {
-        // TODO: check for reference conflict
-        val localRegs = usedRefs.filterNot(_.allocated)
-        val totalSlotsRequired = allocateRegisters(minRef, localRegs)
+        var nextSlot = math.max(minRef, 0)
+        for (r <- usedRefs if !r.allocated) {
+            r.allocate(nextSlot)
+            nextSlot += 1
+        }
+        // check that no two references have the same address!
+        if (usedRefs.groupBy(_.addr).valuesIterator.exists(_.size > 1)) {
+            throw new CorruptedReferenceException() // scalastyle:ignore throw
+        }
+        val totalSlotsRequired = nextSlot
         // if this is -1, then we are the top level and have no parent, otherwise it needs to be done
-        if (minRef >= 0 && localRegs.nonEmpty) {
+        if (minRef >= 0 && (minRef < totalSlotsRequired)) {
             instrs += new instructions.ExpandRefs(totalSlotsRequired)
         }
         bodyGen
