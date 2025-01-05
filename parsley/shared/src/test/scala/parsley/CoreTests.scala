@@ -396,10 +396,10 @@ class CoreTests extends ParsleyTest {
     "flatMap" should "consistently generate a callee-save instruction if needed" in {
         import parsley.state._
         val r = Ref.make[Int]
-        val p = pure(7).flatMap { _ =>
-            r.set(4) *> r.get
+        val p = unit.flatMap { _ =>
+            r.update(_ + 1) *> r.get
         }
-        (p *> p).parse("") shouldBe Success(4)
+        (unit.flatMap(_ => r.set(0)) *> p *> p).parse("") shouldBe Success(2)
     }
 
     "span" should "return all the input parsed by a parser, exactly as it was" in {
