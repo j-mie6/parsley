@@ -273,7 +273,7 @@ be constructed from the results. However, it may also be desirable to override t
 *templated* `apply` to perform additional checks. This basically means that you
 can add in a `filter`-like combinator after the data has been constructed to validate
 that the thing you've constructed is actually correct. As an example, it turns out that
-Scala only allows tuples with a maximum of 22 elements:
+Scala 2 only allows tuples with a maximum of 22 elements:
 
 ```scala mdoc:fail
 val oops = (1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3)
