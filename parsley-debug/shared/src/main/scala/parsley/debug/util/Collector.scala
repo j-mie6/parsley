@@ -36,7 +36,7 @@ object Collector {
     }*/
 
     /** This is an internal method used by the `parsley.debuggable` annotation */
-    def registerNames(names: Map[Parsley[_], String]): Unit = {
+    def registerNames(names: Map[Parsley[?], String]): Unit = {
         Renamer.addNames(names.map { case (k, v) => k.internal -> v })
     }
 
@@ -98,10 +98,10 @@ object Collector {
 // $COVERAGE-OFF$
 private [parsley] abstract class CollectorImpl {
     /** Collect names of parsers from an object. */
-    def collectNames(obj: Any): Map[LazyParsley[_], String]
+    def collectNames(obj: Any): Map[LazyParsley[?], String]
 
     /** Collect names of parsers from a [[parsley.token.Lexer]]. */
-    def collectLexer(lexer: Lexer): Map[LazyParsley[_], String]
+    def collectLexer(lexer: Lexer): Map[LazyParsley[?], String]
 
     /** Does the current platform's [[CollectorImpl]] actually get parsers from objects? */
     val supported: Boolean
@@ -109,9 +109,9 @@ private [parsley] abstract class CollectorImpl {
     // Try grabbing a parser from a LazyParsley or Parsley instance.
     // XXX: Doing a direct type test with match will cause Parsley objects to be instantiated.
     // XXX: Using a match-case expression without @unchecked causes an error in CI as these matches are not exhaustive.
-    protected def tryExtract(par: Any): LazyParsley[_] = (par: @unchecked) match {
-        case l: LazyParsley[_] => l
-        case p: Parsley[_]     => p.internal
+    protected def tryExtract(par: Any): LazyParsley[?] = (par: @unchecked) match {
+        case l: LazyParsley[?] => l
+        case p: Parsley[?]     => p.internal
     }
 
     // All of these objects inside a lexer are exposed, so are easy to collect parser names from.

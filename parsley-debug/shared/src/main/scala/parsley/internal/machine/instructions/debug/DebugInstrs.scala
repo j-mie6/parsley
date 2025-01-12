@@ -16,7 +16,7 @@ import parsley.internal.machine.XAssert._
 import parsley.internal.machine.stacks.Stack.StackExt
 
 // Enter into the scope of a parser in the current context.
-private [internal] class EnterParser(var label: Int, origin: LazyParsley[_], userAssignedName: Option[String])(dbgCtx: DebugContext) extends InstrWithLabel {
+private [internal] class EnterParser(var label: Int, origin: LazyParsley[?], userAssignedName: Option[String])(dbgCtx: DebugContext) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         // Uncomment to debug entries and exits.
@@ -76,7 +76,7 @@ private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Instr 
     // $COVERAGE-ON$
 }
 
-private [internal] class TakeSnapshot(var label: Int, origin: LazyParsley[_], userAssignedName: Option[String])(dtx: DivergenceContext) extends InstrWithLabel {
+private [internal] class TakeSnapshot(var label: Int, origin: LazyParsley[?], userAssignedName: Option[String])(dtx: DivergenceContext) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         val handler = ctx.handlers

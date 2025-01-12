@@ -13,7 +13,7 @@ import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor
 // $COVERAGE-OFF$
 // Wrapper parser class indicating explicitly named parsers.
 private [parsley] final class Named[A](_p: LazyParsley[A], val name: String) extends Unary[A, A](_p) {
-    XAssert.assert(!p.isInstanceOf[Named[_]], "Named parsers should not be nested within each other directly.")
+    XAssert.assert(!p.isInstanceOf[Named[?]], "Named parsers should not be nested within each other directly.")
     def make(p: StrictParsley[A]): StrictParsley[A] = p
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visitUnknown(this, context)
     private [parsley] var debugName = name

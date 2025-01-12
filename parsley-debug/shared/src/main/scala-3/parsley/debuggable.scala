@@ -18,7 +18,7 @@ import scala.quoted.*
   * @since 5.0.0
   */
 @experimental class debuggable extends MacroAnnotation {
-    def transform(using Quotes)(tree: quotes.reflect.Definition): List[quotes.reflect.Definition] = {
+    override def transform(using Quotes)(tree: quotes.reflect.Definition, companion: Option[quotes.reflect.Definition]): List[quotes.reflect.Definition] = {
         import quotes.reflect.*
         tree match {
             case cls@ClassDef(clsName, constr, parents, selfOpt, body) =>

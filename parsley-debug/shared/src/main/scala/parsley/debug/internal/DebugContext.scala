@@ -76,7 +76,7 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
     }*/
 
     // Push a new parser onto the parser callstack.
-    def push(fullInput: String, parser: LazyParsley[_], userAssignedName: Option[String]): Unit = {
+    def push(fullInput: String, parser: LazyParsley[?], userAssignedName: Option[String]): Unit = {
         val newTree = new TransientDebugTree(fullInput = fullInput)
         newTree.name = Renamer.nameOf(userAssignedName, parser)
         newTree.internal = Renamer.internalName(parser)

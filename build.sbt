@@ -4,6 +4,7 @@ val projectName = "parsley"
 val Scala213 = "2.13.14"
 val Scala212 = "2.12.18"
 val Scala3 = "3.3.3"
+val Scala35 = "3.5.2"
 val Java11 = JavaSpec.temurin("11")
 val Java17 = JavaSpec.temurin("17")
 val Java21 = JavaSpec.temurin("21")
@@ -84,11 +85,12 @@ lazy val parsleyDebug = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .dependsOn(parsley % "compile->compile;test->test") // Forwards the test classes to this project. Needed for ParsleyTest.
   .settings(
     name := "parsley-debug",
+    crossScalaVersions := Seq(Scala213, Scala212, Scala35),
     commonSettings,
     scalacOptions ++= {
         scalaVersion.value match {
             case Scala213 => Seq("-Ymacro-annotations")
-            case Scala3   => Seq.empty
+            case Scala35  => Seq.empty
             case Scala212 => Seq.empty
         }
     },

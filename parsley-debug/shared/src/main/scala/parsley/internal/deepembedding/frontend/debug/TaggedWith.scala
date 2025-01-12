@@ -24,11 +24,11 @@ import parsley.internal.deepembedding.frontend._ // scalastyle:ignore underscore
 // FIXME: this clobbers the register allocator, apparently?
 private [parsley] final class TaggedWith[A](factory: TagFactory)(val origin: LazyParsley[A], val subParser: LazyParsley[A], userAssignedName: Option[String])
     extends LazyParsley[A] {
-    XAssert.assert(!origin.isInstanceOf[TaggedWith[_]], "Tagged parsers should not be nested within each other directly.")
+    XAssert.assert(!origin.isInstanceOf[TaggedWith[?]], "Tagged parsers should not be nested within each other directly.")
 
     def make(p: StrictParsley[A]): StrictParsley[A] = factory.create(origin, p, userAssignedName)
 
-    override def findLetsAux[M[_, +_] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] = suspend(subParser.findLets(seen))
+    override def findLetsAux[M[_, +_] : ContOps, R](seen: Set[LazyParsley[?]])(implicit state: LetFinderState): M[R, Unit] = suspend(subParser.findLets(seen))
     override def preprocess[M[_, +_] : ContOps, R, A_ >: A](implicit lets: LetMap): M[R, StrictParsley[A_]] = {
         for (p <- suspend[M, R, StrictParsley[A]](subParser.optimised[M, R, A])) yield make(p)
     }
@@ -61,14 +61,14 @@ private [parsley] object TaggedWith {
     // This map tracks seen parsers to prevent infinitely recursive parsers from overflowing the stack (and ties
     // the knot for these recursive parsers).
     // Use maps with weak keys or don't pass this into a >>= parser.
-    private final class ParserTracker(val map: mutable.Map[LazyParsley[_], ParsleyPromise[_]]) {
+    private final class ParserTracker(val map: mutable.Map[LazyParsley[?], ParsleyPromise[?]]) {
         def put[A](par: LazyParsley[A]): ParsleyPromise[A] = {
             val prom = new ParsleyPromise[A]
             map(par) = prom
             prom
         }
         def get[A](par: LazyParsley[A]): Deferred[LazyParsley[A]] = map(par).get.asInstanceOf[Deferred[LazyParsley[A]]]
-        def hasSeen(par: LazyParsley[_]): Boolean = map.contains(par)
+        def hasSeen(par: LazyParsley[?]): Boolean = map.contains(par)
     }
 
     // these two classes are used to allow for parsers to be added into the ParserTracker map without
@@ -78,7 +78,7 @@ private [parsley] object TaggedWith {
     // instead, the lazy box is opened in the by-name parameters of constructed nodes, which ensures
     // that the traversal completes before the promise is checked.
     private final class ParsleyPromise[A] {
-        private var value: Deferred[LazyParsley[A]] = _
+        private var value: Deferred[LazyParsley[A]] = null
         def get: Deferred[LazyParsley[A]] = Deferred {
             if (value == null) throw new NoSuchElementException("fetched empty promise value")
             value.get
@@ -93,7 +93,7 @@ private [parsley] object TaggedWith {
     }
 
     // Keeping this around for easy access to LPM.
-    @unused private [this] final class ContWrap[M[_, +_], R] {
+    @unused private final class ContWrap[M[_, +_], R] {
         type LPM[+A] = M[R, LazyParsley[A]]
         type DLPM[+A] = M[R, Deferred[LazyParsley[A]]]
     }
