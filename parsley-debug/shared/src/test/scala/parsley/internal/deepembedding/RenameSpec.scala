@@ -26,7 +26,7 @@ class RenameSpec extends ParsleyTest {
     }
 
     it should "rename a parser it is aware of" in {
-        val exampleParser: LazyParsley[_] = new DummyParser
+        val exampleParser: LazyParsley[?] = new DummyParser
         Renamer.addNames(Map((exampleParser, "exampleParser")))
 
         Renamer.nameOf(None, exampleParser) shouldBe "exampleParser"
@@ -45,7 +45,7 @@ class RenameSpec extends ParsleyTest {
     }
 
     it should "override a known name if a parser is named." in {
-        val exampleParser: LazyParsley[_] = new DummyParser
+        val exampleParser: LazyParsley[?] = new DummyParser
         Renamer.addNames(Map((exampleParser, "exampleParser")))
 
         Renamer.nameOf(Some("knownName"), exampleParser) shouldBe "knownName"
@@ -78,14 +78,14 @@ object Utils {
 // These are dummy parsers used for the above tests.
 // We don't actually care that they don't implement anything.
 private class DummyParser extends LazyParsley[Any] {
-    override protected def findLetsAux[M[_, +_] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] = Utils.crash()
+    override protected def findLetsAux[M[_, +_] : ContOps, R](seen: Set[LazyParsley[?]])(implicit state: LetFinderState): M[R, Unit] = Utils.crash()
     override protected def preprocess[M[_, +_] : ContOps, R, A_ >: Any](implicit lets: LetMap): M[R, StrictParsley[A_]] = Utils.crash()
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Any] = visitor.visitUnknown(this, context)
     private [parsley] var debugName = "dummyParser"
 }
 
 private class <**> extends LazyParsley[Any] {
-    override protected def findLetsAux[M[_, +_] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] = Utils.crash()
+    override protected def findLetsAux[M[_, +_] : ContOps, R](seen: Set[LazyParsley[?]])(implicit state: LetFinderState): M[R, Unit] = Utils.crash()
     override protected def preprocess[M[_, +_] : ContOps, R, A_ >: Any](implicit lets: LetMap): M[R, StrictParsley[A_]] = Utils.crash()
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Any] = visitor.visitUnknown(this, context)
     private [parsley] var debugName = "<**>"

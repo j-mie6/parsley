@@ -7,7 +7,6 @@ package parsley.internal.deepembedding.frontend
 
 import scala.util.Random
 
-import org.typelevel.scalaccompat.annotation.unused
 import parsley.Parsley
 import parsley.ParsleyTest
 import parsley.combinator.ifS
@@ -62,14 +61,14 @@ class TotalAttachmentSpec extends ParsleyTest {
 
         override def visitUnary[A, B](self: Unary[A, B], parentIsTag: Boolean)(p: LazyParsley[A]): ConstUnit[B] =
             if (parentIsTag  == self.isOpaque) {
-                visitUnknown(p, parentIsTag = false): @unused
+                visitUnknown(p, parentIsTag = false)
                 CUnit
             } else failure()
 
         override def visitBinary[A, B, C](self: Binary[A, B, C], parentIsTag: Boolean)(l: LazyParsley[A], r: => LazyParsley[B]): ConstUnit[C] =
             if (parentIsTag == self.isOpaque) {
-                visitUnknown(l, parentIsTag = false): @unused
-                visitUnknown(r, parentIsTag = false): @unused
+                visitUnknown(l, parentIsTag = false)
+                visitUnknown(r, parentIsTag = false)
                 CUnit
             } else failure()
 
@@ -77,23 +76,23 @@ class TotalAttachmentSpec extends ParsleyTest {
                                                                                                s: => LazyParsley[B],
                                                                                                t: => LazyParsley[C]): ConstUnit[D] =
             if (parentIsTag == self.isOpaque) {
-                visitUnknown(f, parentIsTag = false): @unused
-                visitUnknown(s, parentIsTag = false): @unused
-                visitUnknown(t, parentIsTag = false): @unused
+                visitUnknown(f, parentIsTag = false)
+                visitUnknown(s, parentIsTag = false)
+                visitUnknown(t, parentIsTag = false)
                 CUnit
             } else failure()
 
         override def visit[A](self: <|>[A], parentIsTag: Boolean)(p: LazyParsley[A], q: LazyParsley[A]): ConstUnit[A] =
             if (parentIsTag == self.isOpaque) {
-                visitUnknown(p, parentIsTag = false): @unused
-                visitUnknown(q, parentIsTag = false): @unused
+                visitUnknown(p, parentIsTag = false)
+                visitUnknown(q, parentIsTag = false)
                 CUnit
             } else failure()
 
         override def visit[A](self: ChainPre[A], parentIsTag: Boolean)(p: LazyParsley[A], op: => LazyParsley[A => A]): ConstUnit[A] =
             if (parentIsTag == self.isOpaque) {
-                visitUnknown(p, parentIsTag = false): @unused
-                visitUnknown(op, parentIsTag = false): @unused
+                visitUnknown(p, parentIsTag = false)
+                visitUnknown(op, parentIsTag = false)
                 CUnit
             } else failure()
 

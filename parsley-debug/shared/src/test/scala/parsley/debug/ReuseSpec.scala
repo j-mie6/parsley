@@ -5,7 +5,6 @@
  */
 package parsley.debug
 
-import org.typelevel.scalaccompat.annotation.unused
 import parsley.ParsleyTest
 
 //noinspection ConvertExpressionToSAM
@@ -37,14 +36,14 @@ class ReuseSpec extends ParsleyTest {
         }
 
         info("it should not throw when running a reusable frontend multiple times")
-        reusable.render("bar", tree): @unused
-        reusable.render("bar", tree): @unused
+        reusable.render("bar", tree)
+        reusable.render("bar", tree)
 
         // The first run should not throw.
-        singleUse.render("bar", tree): @unused
+        singleUse.render("bar", tree)
         info("it should throw when running a single-use frontend multiple times")
         try {
-            singleUse.render("bar", tree): @unused
+            singleUse.render("bar", tree)
 
             fail("single-use frontend did not throw an exception after running multiple times")
         } catch {

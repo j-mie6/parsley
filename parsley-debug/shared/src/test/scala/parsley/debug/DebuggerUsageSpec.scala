@@ -8,7 +8,6 @@ package parsley.debug
 import scala.annotation.experimental
 
 // scalastyle:off underscore.import
-import org.typelevel.scalaccompat.annotation.unused
 import parsley.Parsley, Parsley._
 import parsley.ParsleyTest
 import parsley.character._
@@ -64,7 +63,7 @@ class DebuggerUsageSpec extends ParsleyTest {
         val parser = fresh { hit1 = true }.impure *> fresh { hit2 = true }.impure <* fresh { hit3 = true }
         val debugged = attachDebugger(parser)
 
-        val _ = debugged._2.parse(""): @unused
+        val _ = debugged._2.parse("")
 
         assert(hit1 && hit2 && hit3)
     }
@@ -80,7 +79,7 @@ class DebuggerUsageSpec extends ParsleyTest {
         val parser = many(string("abc"))
         val (treeF, debugged) = attachDebugger(parser)
 
-        val _ = debugged.parse("abcabc"): @unused
+        val _ = debugged.parse("abcabc")
         val tree = treeF()
 
         tree.parseResults match {
