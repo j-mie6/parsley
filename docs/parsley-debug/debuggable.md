@@ -11,13 +11,6 @@ system. The key part of this system from the `parsley`-end is the `@debuggable` 
 is used to collect up the names of your parsers so that they appear in the debugger views in the
 form you defined them in.
 
-@:callout(error)
-As the `MacroAnnotation` API changed in Scala 3.5 in a binary incompatible way, the 3.3 build
-of `parsley-debug` does not work on 3.5+. However, there is nothing internal about this annotation,
-take the version [here](https://github.com/j-mie6/parsley/blob/parsley-debug-3.5/parsley-debug/shared/src/main/scala-3/parsley/debuggable.scala),
-add a `parsley.Parsley` import and put it in its own file, and you can use your own local copy.
-@:@
-
 @:callout(warning)
 This annotation relies on Scala's *macro* system. This means that its implementation is dependent
 on the version of Scala being used. Scala 3's implementation is far more stable, but requires the
