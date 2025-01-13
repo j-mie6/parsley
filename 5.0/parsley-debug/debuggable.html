@@ -159,6 +159,13 @@
         system. The key part of this system from the <code>parsley</code>-end is the <code>@debuggable</code> annotation, which
         is used to collect up the names of your parsers so that they appear in the debugger views in the
         form you defined them in.</p>
+        <div class="callout error">
+          <i class="icofont-laika error">&#xeedd;</i>
+          <p>As the <code>MacroAnnotation</code> API changed in Scala 3.5 in a binary incompatible way, the 3.3 build
+          of <code>parsley-debug</code> does not work on 3.5+. However, there is nothing internal about this annotation,
+          take the version <a href="https://github.com/j-mie6/parsley/blob/parsley-debug-3.5/parsley-debug/shared/src/main/scala-3/parsley/debuggable.scala">here</a>,
+          add a <code>parsley.Parsley</code> import and put it in its own file, and you can use your own local copy.</p>
+        </div>
         <div class="callout warning">
           <i class="icofont-laika warning">&#xf026;</i>
           <p>This annotation relies on Scala&#39;s <em>macro</em> system. This means that its implementation is dependent
