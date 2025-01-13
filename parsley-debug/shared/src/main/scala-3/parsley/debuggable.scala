@@ -18,6 +18,8 @@ import scala.quoted.*
   * @since 5.0.0
   */
 @experimental class debuggable extends MacroAnnotation {
+    // this is required for Scala 3.5+
+    def transform(using Quotes)(tree: quotes.reflect.Definition, companion: Option[quotes.reflect.Definition]): List[quotes.reflect.Definition] = transform(tree)
     def transform(using Quotes)(tree: quotes.reflect.Definition): List[quotes.reflect.Definition] = {
         import quotes.reflect.*
         tree match {
