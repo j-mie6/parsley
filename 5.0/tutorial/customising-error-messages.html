@@ -653,7 +653,7 @@
         <pre><code class="nohighlight"><span class="keyword">trait</span><span> </span><span class="type-name">ErrorBuilder</span><span>[</span><span class="type-name">Err</span><span>] {
     </span><span class="comment">// This is the top level function which takes all the sub-parts
 </span><span>    </span><span class="comment">// and combines them into the final `Err`
-</span><span>    </span><span class="keyword">def</span><span> </span><span class="declaration-name">format</span><span>(</span><span class="identifier">pos</span><span>: </span><span class="type-name">Position</span><span>, </span><span class="identifier">source</span><span>: </span><span class="type-name">Source</span><span>, </span><span class="identifier">lines</span><span>: </span><span class="type-name">ErrorInfoLines</span><span>): </span><span class="type-name">Err</span><span>
+</span><span>    </span><span class="keyword">def</span><span> </span><span class="declaration-name">build</span><span>(</span><span class="identifier">pos</span><span>: </span><span class="type-name">Position</span><span>, </span><span class="identifier">source</span><span>: </span><span class="type-name">Source</span><span>, </span><span class="identifier">lines</span><span>: </span><span class="type-name">ErrorInfoLines</span><span>): </span><span class="type-name">Err</span><span>
 
     </span><span class="keyword">type</span><span> </span><span class="type-name">Position</span><span>
     </span><span class="keyword">type</span><span> </span><span class="type-name">Source</span><span>
@@ -673,9 +673,9 @@
 }</span></code></pre>
         <p>Wow, that&#39;s a lot of types! Essentially, each concrete implementation of this trait must specify
         what each of those types are. This means that the representation of the error is as flexible as
-        possible. In the <code>format</code> method, you can see that the types <code>Position</code>, <code>Source</code>, and
+        possible. In the <code>build</code> method, you can see that the types <code>Position</code>, <code>Source</code>, and
         <code>ErrorInfoLines</code> are all referenced. Indeed, you can also see these marked on <em>both</em> diagrams: in
-        other words, <code>format</code> is responsible for the general shape of <em>both</em> types of error message.</p>
+        other words, <code>build</code> is responsible for the general shape of <em>both</em> types of error message.</p>
         <p>To understand how these might come about, let&#39;s take a step &quot;into&quot; the formatter to find the sources
         of values for <code>Position</code>, <code>Source</code>, and <code>ErrorInfoLines</code>:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">trait</span><span> </span><span class="type-name">ErrorBuilder</span><span>[</span><span class="type-name">Err</span><span>] {
