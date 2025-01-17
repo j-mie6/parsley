@@ -185,7 +185,7 @@ object infix {
     //TODO: document
     def nonassoc[A, B](p: Parsley[A])(op: Parsley[(A, A) => B])(implicit wrap: A => B): Parsley[B] = {
         val guardNonAssoc = notFollowedBy(op).explain("non-associative operators cannot be chained together")
-        p <**> ((op, p).zipped((f, y) => f(_, y)) </> wrap) <* guardNonAssoc
+        p <**> ((op, p).zipped((f, y) => f(_, y)) </> wrap) <~ guardNonAssoc
     }
 
     // Private Helpers (maybe expose these in future?)

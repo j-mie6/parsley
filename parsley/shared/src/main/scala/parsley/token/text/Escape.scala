@@ -28,7 +28,7 @@ private [token] class Escape(desc: EscapeDesc, err: ErrorConfig, generic: numeri
         }
         prefix match {
             case None => numericTail
-            case Some(c) => char(c) *> err.labelEscapeNumericEnd(c, radix)(numericTail)
+            case Some(c) => char(c) ~> err.labelEscapeNumericEnd(c, radix)(numericTail)
         }
     }
 
@@ -50,9 +50,9 @@ private [token] class Escape(desc: EscapeDesc, err: ErrorConfig, generic: numeri
     private val hexadecimalEscape = fromDesc(radix = 16, desc.hexadecimalEscape, generic.zeroAllowedHexadecimal(NotConfigured))
     private val octalEscape = fromDesc(radix = 8, desc.octalEscape, generic.zeroAllowedOctal(NotConfigured))
     private val binaryEscape = fromDesc(radix = 2, desc.binaryEscape, generic.zeroAllowedBinary(NotConfigured))
-    private val numericEscape = decimalEscape <|> hexadecimalEscape <|> octalEscape <|> binaryEscape
-    val escapeCode = err.labelEscapeEnd(escMapped <|> numericEscape)
+    private val numericEscape = decimalEscape | hexadecimalEscape | octalEscape | binaryEscape
+    val escapeCode = err.labelEscapeEnd(escMapped | numericEscape)
     val escapeBegin = err.labelEscapeSequence(char(desc.escBegin)).void
     // do not make atomic
-    val escapeChar = escapeBegin *> escapeCode
+    val escapeChar = escapeBegin ~> escapeCode
 }

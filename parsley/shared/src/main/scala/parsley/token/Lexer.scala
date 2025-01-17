@@ -294,7 +294,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @param p the token parser to ensure consumes trailing whitespace.
           * @since 4.0.0
           */
-        def apply[A](p: Parsley[A]): Parsley[A] = (markAsToken(p) <* space.whiteSpace).uo("lexeme")
+        def apply[A](p: Parsley[A]): Parsley[A] = (markAsToken(p) <~ space.whiteSpace).uo("lexeme")
 
         /** $names
           *
@@ -755,7 +755,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
       */
     def fully[A](p: Parsley[A]): Parsley[A] = {
         val init = if (desc.spaceDesc.whitespaceIsContextDependent) space.init else pure(())
-        (((init.ut() *> space.whiteSpace).ut() *> p).ut() <* eof).uo("fully")
+        (((init.ut() ~> space.whiteSpace).ut() ~> p).ut() <~ eof).uo("fully")
     }
 
     /** This object is concerned with special treatment of whitespace.

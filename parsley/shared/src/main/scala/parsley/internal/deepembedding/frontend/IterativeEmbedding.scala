@@ -71,13 +71,13 @@ private [parsley] final class SepEndBy1[A, C](p: LazyParsley[A], sep: =>LazyPars
     private [parsley] var debugName = "sepEndBy1"
     // $COVERAGE-ON$
 }
-private [parsley] final class ManyUntil[A, C](body: LazyParsley[Any], factory: Factory[A, C]) extends Unary[Any, C](body) {
+private [parsley] final class ManyTill[A, C](body: LazyParsley[Any], factory: Factory[A, C]) extends Unary[Any, C](body) {
     override def make(p: StrictParsley[Any]): StrictParsley[C] = new backend.ManyUntil(p, factory)
 
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[C] = visitor.visit(this, context)(body, factory)
 
-    private [parsley] var debugName = "manyUntil"
+    private [parsley] var debugName = "manyTill"
     // $COVERAGE-ON$
 }
 private [parsley] final class SkipManyUntil(body: LazyParsley[Any]) extends Unary[Any, Unit](body) {
@@ -86,6 +86,6 @@ private [parsley] final class SkipManyUntil(body: LazyParsley[Any]) extends Unar
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)(body)
 
-    private [parsley] var debugName = "skipManyUntil"
+    private [parsley] var debugName = "skipManyTill"
     // $COVERAGE-ON$
 }

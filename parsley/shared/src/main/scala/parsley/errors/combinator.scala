@@ -113,7 +113,7 @@ object combinator {
       * beginning of the structure. This combinators effect can be cancelled with [[entrench `entrench`]].
       *
       * @example {{{
-      * scala> val greeting = string("hello world") <* char('!')
+      * scala> val greeting = string("hello world") <~ char('!')
       * scala> greeting.label("greeting").parse("hello world.")
       * val res0 = Failure((line 1, column 12):
       *   unexpected "."
@@ -149,8 +149,8 @@ object combinator {
       * shallower than the underlying.
       *
       * @example {{{
-      * scala> val greeting = string("hello world") <* char('!')
-      * scala> val shortGreeting = string("h") <* (char('i') | string("ey")) <* char('!')
+      * scala> val greeting = string("hello world") <~ char('!')
+      * scala> val shortGreeting = string("h") <~ (char('i') | string("ey")) <~ char('!')
       * // here, the shortGreeting, despite not getting as far into the input is dominating the amended long greeting
       * scala> (amend(atomic(greeting)).label("hello world!") | shortGreeting).parse("hello world.")
       * val res0 = Failure((line 1, column 2):

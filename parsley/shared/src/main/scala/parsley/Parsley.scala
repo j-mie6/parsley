@@ -102,7 +102,7 @@ import XCompat._ // substituteCo
   *
   *     If this parser is successful, then this combinator is successful and no further action is taken. Otherwise, if this parser
   *     fails '''without''' consuming input, then `x` is unconditionally returned. If this parser fails having consumed
-  *     input, this combinator fails. Functionally the same as `this <|> pure(x)`.
+  *     input, this combinator fails. Functionally the same as `this | pure(x)`.
   *
   * @define bind
   *     first performs this parser, then uses its result to generate and execute a new parser.
@@ -165,7 +165,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *
       * Similar to `map`, except the old result of this parser is not required to
       * compute the new result. This is useful when the result is a constant value (or function!).
-      * Functionally the same as `this *> pure(x)` or `this.map(_ => x)`.
+      * Functionally the same as `this ~> pure(x)` or `this.map(_ => x)`.
       *
       * ''In Haskell, this combinator is known as `($>)`''.
       *
@@ -185,7 +185,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *
       * Similar to `map`, except the old result of this parser is not required to
       * compute the new result. This is useful when the result is a constant value (or function!).
-      * Functionally the same as `this *> pure(x)` or `this.map(_ => x)`.
+      * Functionally the same as `this ~> pure(x)` or `this.map(_ => x)`.
       *
       * ''In Haskell, this combinator is known as `($>)`''.
       *
@@ -217,12 +217,12 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *
       * @example {{{
       * scala> import parsley.character.string
-      * scala> val p = string("a") <|> string("b")
+      * scala> val p = string("a") | string("b")
       * scala> p.parse("a")
       * val res0 = Success("a")
       * scala> p.parse("b")
       * val res1 = Success("b")
-      * scala> val q = string("ab") <|> string("ac")
+      * scala> val q = string("ab") | string("ac")
       * scala> q.parse("ac")
       * val res2 = Failure(..) // first parser consumed an 'a'!
       * }}}
@@ -230,6 +230,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @param q the parser to run if this parser fails having not consumed input.
       * @tparam Aʹ the type returned by `q`, which must be a supertype of the result type of this parser: this allows for weakening of the result type.
       * @return a parser which either parses this parser or parses `q`.
+      * @note just an alias for `|`
       * @group alt
       */
     def <|>[Aʹ >: A](q: Parsley[Aʹ]): Parsley[Aʹ] = this.alt(q, "<|>")
@@ -256,7 +257,6 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @param q the parser to run if this parser fails having not consumed input.
       * @tparam Aʹ the type returned by `q`, which must be a supertype of the result type of this parser: this allows for weakening of the result type.
       * @return a parser which either parses this parser or parses `q`.
-      * @note just an alias for `<|>`.
       * @group alt
       */
     def |[Aʹ >: A](q: Parsley[Aʹ]): Parsley[Aʹ] = this.alt(q, "|")
@@ -280,7 +280,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @param q the parser to run if this parser fails having not consumed input.
       * @tparam Aʹ the type returned by `q`, which must be a supertype of the result type of this parser: this allows for weakening of the result type.
       * @return a parser which either parses this parser or parses `q`.
-      * @note just an alias for `<|>`.
+      * @note just an alias for `|`.
       * @group alt
       */
     infix def orElse[Aʹ >: A](q: Parsley[Aʹ]): Parsley[Aʹ] = this.alt(q, "orElse")
@@ -311,7 +311,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * If this parser is successful, then its result is wrapped up using `Left(_)` and no further action is taken.
       * Otherwise, if this parser fails '''without''' consuming input, then `q` is parsed instead and its result is
       * wrapped up using `Right(_)`. If this parser fails having consumed input, this combinator fails.
-      * This is functionally equivalent to `this.map(Left(_)) <|> q.map(Right(_))`.
+      * This is functionally equivalent to `this.map(Left(_)) | q.map(Right(_))`.
       *
       * $attemptreason
       *
@@ -343,7 +343,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *
       * @example {{{
       * scala> import parsley.Parsley, parsley.character.char
-      * scala> val sign: Parsley[Int => Int] = char('+').as(identity[Int] _) <|> char('-').as(x => -x)
+      * scala> val sign: Parsley[Int => Int] = char('+').as(identity[Int] _) | char('-').as(x => -x)
       * scala> val nat: Parsley[Int] = ..
       * scala> val int = sign <*> nat
       * scala> int.parse("-7")
@@ -384,9 +384,9 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *
       * @example {{{
       *  // this has a common prefix "term" and requires backtracking
-      * val expr1 = atomic(lift2(Add, term <* char('+'), expr2)) <|> term
+      * val expr1 = atomic(lift2(Add, term <~ char('+'), expr2)) | term
       * // common prefix factored out, and branches return a function to recombine
-      * val expr2 = term <**> (char('+') *> expr2.map(y => Add(_, y)) </> (identity[Expr] _))
+      * val expr2 = term <**> (char('+') ~> expr2.map(y => Add(_, y)) </> (identity[Expr] _))
       * }}}
       *
       * @param pf the parser to run second, which returns a function this parser's result can be applied to.
@@ -410,7 +410,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *
       * @example {{{
       * scala> import parsley.character.char
-      * scala> ('a' *> 'b').parse("ab")
+      * scala> ('a' ~> 'b').parse("ab")
       * val res0 = Success('b')
       * }}}
       *
@@ -429,7 +429,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *
       * @example {{{
       * scala> import parsley.character.char
-      * scala> ('a' <* 'b').parse("ab")
+      * scala> ('a' <~ 'b').parse("ab")
       * val res0 = Success('a')
       * }}}
       *
@@ -625,7 +625,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *
       * @example {{{
       * scala> val int: Parsley[Int] = ..
-      * scala> val safeDiv: Parsley[Int] = (int <~> char(' ') *> int).collect {
+      * scala> val safeDiv: Parsley[Int] = (int <~> char(' ') ~> int).collect {
       *   case (x, y) if y != 0 => x / y
       * }
       * scala> safeDiv.parse("7 0")
@@ -654,7 +654,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *
       * @example {{{
       * scala> val int: Parsley[Int] = ..
-      * scala> val safeDiv: Parsley[Int] = (int <~> char(' ') *> int).collect {
+      * scala> val safeDiv: Parsley[Int] = (int <~> char(' ') ~> int).collect {
       *   case (x, y) if y != 0 => Some(x / y)
       *   case _ => None
       * }
@@ -873,7 +873,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * {{{
       * scala> val regexDesc: Parsley[Parsley[Unit]] = ..
       * // let's suppose "#" is the delimeter between expression and input
-      * scala> val regex: Parsley[Unit] = (regexDesc <* char('#')).flatten
+      * scala> val regex: Parsley[Unit] = (regexDesc <~ char('#')).flatten
       * scala> regex.parse("a.(c*)#abccc")
       * val res0 = Success(())
       * scala> regex.parse("a.(c*)#a")
@@ -958,7 +958,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
   * @groupname cond Conditional Combinators
   * @groupdesc cond
   *     These combinators will decide which branch to take next based on the result of another parser.
-  *     This differs from combinators like `<|>` which make decisions based on the success/failure of
+  *     This differs from combinators like `|` which make decisions based on the success/failure of
   *     a parser: here the result of a ''successful'' parse will direct which option is done. These
   *     are sometimes known as "selective" combinators.
   *
@@ -1036,15 +1036,15 @@ object Parsley extends ParsleyImpl with PlatformSpecific {
           *
           * @example {{{
           * // this works fine, even though all of `zipped`'s parsers are strict
-          * lazy val expr = (atomic(term) <* '+', ~expr).zipped(_ + _) <|> term
+          * lazy val expr = (atomic(term) <~ '+', ~expr).zipped(_ + _) | term
           * // in this case, however, the following would fix the problem more elegantly:
-          * lazy val expr = (atomic(term), '+' *> expr).zipped(_ + _) <|> term
+          * lazy val expr = (atomic(term), '+' ~> expr).zipped(_ + _) | term
           * }}}
           *
           * @return the parser `p`, but guaranteed to be lazy.
           * @group special
           */
-        def unary_~ : Parsley[A] = (transPure(()) *> p).ut() // I don't think this needs to appear in debug trace
+        def unary_~ : Parsley[A] = (transPure(()) ~> p).ut() // I don't think this needs to appear in debug trace
     }
 }
 private [parsley] abstract class ParsleyImpl {
@@ -1155,15 +1155,15 @@ private [parsley] abstract class ParsleyImpl {
       * then any input that it consumed is rolled back. This ensures that
       * the parser `p` is all-or-nothing when consuming input. While there are many legimate
       * uses for all-or-nothing behaviour, one notable, if discouraged, use is to allow the
-      * `<|>` combinator to backtrack -- recall it can only parse its alternative if the
+      * `|` combinator to backtrack -- recall it can only parse its alternative if the
       * first failed ''without'' consuming input. This is discouraged, however, as it can
       * affect the complexity of the parser and harm error messages.
       *
       * @example {{{
       * scala> import parsley.character.string, parsley.Parsley.atomic
-      * scala> (string("abc") <|> string("abd")).parse("abd")
+      * scala> (string("abc") | string("abd")).parse("abd")
       * val res0 = Failure(..) // first parser consumed a, so no backtrack
-      * scala> (atomic(string("abc")) <|> string("abd")).parse("abd")
+      * scala> (atomic(string("abc")) | string("abd")).parse("abd")
       * val res1 = Success("abd") // first parser does not consume input on failure now
       * }}}
       *
@@ -1182,9 +1182,9 @@ private [parsley] abstract class ParsleyImpl {
       *
       * @example {{{
       * scala> import parsley.Parsley.lookAhead, parsley.character.string
-      * scala> (lookAhead(string("aaa")) *> string("aaa")).parse("aaa")
+      * scala> (lookAhead(string("aaa")) ~> string("aaa")).parse("aaa")
       * val res0 = Success("aaa")
-      * scala> (lookAhead(string("abc")) <|> string("abd")).parse("abd")
+      * scala> (lookAhead(string("abc")) | string("abd")).parse("abd")
       * val res1 = Failure(..) // lookAhead does not roll back input consumed on failure
       * }}}
       *
@@ -1207,7 +1207,7 @@ private [parsley] abstract class ParsleyImpl {
       * import parsley.character.{string, letterOrDigit}
       * import parsley.Parsley.notFollowedBy
       * def keyword(kw: String): Parsley[Unit] = atomic {
-      *     string(kw) *> notFollowedBy(letterOrDigit)
+      *     string(kw) ~> notFollowedBy(letterOrDigit)
       * }
       * }}}
       *

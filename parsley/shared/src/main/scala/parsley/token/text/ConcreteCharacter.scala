@@ -16,9 +16,9 @@ private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape, e
 
     private def charLetter(graphicLetter: Parsley[Int]) = {
         // escapeChar is not atomic, so we don't need to rule out escape begin in graphic
-        escapes.escapeChar <|> err.labelGraphicCharacter(graphicLetter) <|> err.verifiedCharBadCharsUsedInLiteral.checkBadChar
+        escapes.escapeChar | err.labelGraphicCharacter(graphicLetter) | err.verifiedCharBadCharsUsedInLiteral.checkBadChar
     }
-    private def charLiteral[A](letter: Parsley[A], end: LabelConfig) = quote *> letter <* end(quote)
+    private def charLiteral[A](letter: Parsley[A], end: LabelConfig) = quote ~> letter <~ end(quote)
 
     override lazy val fullUtf16: Parsley[Int] = err.labelCharUtf16(charLiteral(charLetter(graphic.toUnicode), err.labelCharUtf16End))
     // this is a bit inefficient, converting to int and then back to char, but it makes it consistent, and can be optimised anyway

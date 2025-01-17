@@ -512,7 +512,7 @@ private [parsley] trait character {
     /** This combinator tries to parse each of the key-value pairs `kvs` (and `kv0`), until one of them succeeds.
       *
       * Each argument to this combinator is a pair of a string and a parser to perform if that string can be parsed.
-      * `strings(s0 -> p0, ...)` can be thought of as `atomicChoice(string(s0) *> p0, ...)`, however, the given
+      * `strings(s0 -> p0, ...)` can be thought of as `atomicChoice(string(s0) ~> p0, ...)`, however, the given
       * ordering of key-value pairs does not dictate the order in which the parses are tried. In particular, it
       * will avoid keys that are the prefix of another key first, so that it has ''Longest Match'' semantics.
       * It will try to minimise backtracking too, making it a much more efficient option than `atomicChoice`.
@@ -551,7 +551,7 @@ private [parsley] trait character {
         val ss = kv0 +: kvs
         choice(ss.groupBy(_._1.head).toList.sortBy(_._1).view.map(_._2).flatMap { s =>
             val (sLast, pLast) :: rest = s.toList.sortBy(_._1.length): @unchecked
-            ((string(sLast).ut() *> pLast.ut()).ut() :: rest.map { case (s, p) => (atomic(string(s).ut()).ut() *> p).ut() }).reverse
+            ((string(sLast).ut() ~> pLast.ut()).ut() :: rest.map { case (s, p) => (atomic(string(s).ut()).ut() ~> p).ut() }).reverse
         }.toSeq: _*).uo((kv0._1 +: kvs.map(_._1)).mkString("strings(", ", ", ")"))
     }
 
@@ -621,7 +621,7 @@ private [parsley] trait character {
       * @group spec
       * @see [[crlf `crlf`]]
       */
-    final val endOfLine: Parsley[Char] = (_newline.ut() <|> _crlf.ut()).ut().label("end of line").uo("endOfLine")
+    final val endOfLine: Parsley[Char] = (_newline.ut() |: _crlf.ut()).label("end of line").uo("endOfLine")
 
     /** This parser tries to parse a tab (`'\t'`) character, and returns it if successful.
       *

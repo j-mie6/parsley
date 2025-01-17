@@ -15,7 +15,7 @@ package parsley
   * @groupname cond Conditional Combinators
   * @groupdesc cond
   *     These combinators will decide which branch to take next based on the result of another parser.
-  *     This differs from combinators like `<|>` which make decisions based on the success/failure of
+  *     This differs from combinators like `|` which make decisions based on the success/failure of
   *     a parser: here the result of a ''successful'' parse will direct which option is done. These
   *     are sometimes known as "selective" combinators.
   *

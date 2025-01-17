@@ -97,7 +97,7 @@ private [parsley] trait combinator {
       * @param ps the parsers to try, in order.
       * @return a parser that tries to parse one of `ps`.
       * @group multi
-      * @see [[parsley.Parsley.<|> `<|>`]]
+      * @see [[parsley.Parsley.| `|`]]
       */
     final def choice[A](ps: Parsley[A]*): Parsley[A] = ps match {
         case ps if ps.isEmpty => empty
@@ -255,7 +255,7 @@ private [parsley] trait combinator {
       */
     final def decide[A](p: Parsley[Option[A]]): Parsley[A] = p.collect {
         case Some(x) => x
-    } //TODO: name
+    }.uo("decide")
 
     /** This combinator parses `q` depending only if `p` returns a `None`.
       *
@@ -264,7 +264,7 @@ private [parsley] trait combinator {
       * and `y` is returned. If `p` or `q` fails, the combinator fails.
       *
       * @example {{{
-      * decide(option(p), q) = p <|> q
+      * decide(option(p), q) = p | q
       * }}}
       *
       * @param p the first parser, which returns an `Option` to eliminate.
@@ -389,7 +389,7 @@ private [parsley] trait combinator {
       */
     final def sepBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepBy1(p, sep) </> Nil //TODO: name
     private [parsley] final def sepBy[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
-        sepBy1(p, sep, factory) <|> fresh(factory.newBuilder.result())
+        sepBy1(p, sep, factory) |: fresh(factory.newBuilder.result())
     } //TODO: name
 
     /** This combinator parses '''one''' or more occurrences of `p`, separated by `sep`.
@@ -417,9 +417,9 @@ private [parsley] trait combinator {
       * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
-    final def sepBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = p <::> many(sep *> p) //TODO: name
+    final def sepBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = p <::> many(sep ~> p) //TODO: name
     private [parsley] final def sepBy1[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
-        secretSome(p, sep *> p, factory)
+        secretSome(p, sep ~> p, factory)
     } //TODO: name
 
     /** This combinator parses '''zero''' or more occurrences of `p`, separated and optionally ended by `sep`.
@@ -446,7 +446,7 @@ private [parsley] trait combinator {
       */
     final def sepEndBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepEndBy(p, sep, List) //TODO: name
     private [parsley] final def sepEndBy[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
-        sepEndBy1(p, sep, factory) <|> fresh(factory.newBuilder.result())
+        sepEndBy1(p, sep, factory) |: fresh(factory.newBuilder.result())
     } //TODO: name
 
     /** This combinator parses '''one''' or more occurrences of `p`, separated and optionally ended by `sep`.
@@ -503,7 +503,7 @@ private [parsley] trait combinator {
       */
     final def endBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = endBy(p, sep, List) //TODO: name
     private [parsley] final def endBy[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
-        many(p <* sep, factory)
+        many(p <~ sep, factory)
     } //TODO: name
 
     /** This combinator parses '''one''' or more occurrences of `p`, separated and ended by `sep`.
@@ -530,9 +530,9 @@ private [parsley] trait combinator {
       * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
-    final def endBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = some(p <* sep) //TODO: name
+    final def endBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = some(p <~ sep) //TODO: name
     private [parsley] final def endBy1[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
-        some(p <* sep, factory)
+        some(p <~ sep, factory)
     } //TODO: name
 
     /** This combinator repeatedly parses a given parser '''zero''' or more times, until the `end` parser succeeds, collecting the results into a list.
@@ -544,7 +544,7 @@ private [parsley] trait combinator {
       * @example This can be useful for scanning comments: {{{
       * scala> import parsley.character.{string, item, endOfLine}
       * scala> import parsley.combinator.manyTill
-      * scala> val comment = string("//") *> manyTill(item, endOfLine)
+      * scala> val comment = string("//") ~> manyTill(item, endOfLine)
       * scala> p.parse("//hello world")
       * val res0 = Failure(..)
       * scala> p.parse("//hello world\n")
@@ -559,15 +559,15 @@ private [parsley] trait combinator {
       * @group iter
       * @since 4.5.0
       */
-    final def manyTill[A](p: Parsley[A], end: Parsley[_]): Parsley[List[A]] = manyTill(p, end, List) //TODO: name
+    final def manyTill[A](p: Parsley[A], end: Parsley[_]): Parsley[List[A]] = manyTill(p, end, List)
     private [parsley] final def manyTill[A, C](p: Parsley[A], end: Parsley[_], factory: Factory[A, C]): Parsley[C] = {
-        new Parsley(new frontend.ManyUntil((end.as(ManyUntil.Stop) <|> p: Parsley[Any]).internal, factory)) //TODO: name
+        new Parsley(new frontend.ManyTill((end.as(ManyUntil.Stop).ut() |: p: Parsley[Any]).internal, factory))
     }
 
     // TODO: find a way to make this redundant
     private [parsley] final def skipManyUntil(p: Parsley[_], end: Parsley[_]): Parsley[Unit] = {
-        new Parsley(new frontend.SkipManyUntil((end.as(ManyUntil.Stop) <|> p.void: Parsley[Any]).internal))
-    } //TODO: name
+        new Parsley(new frontend.SkipManyUntil((end.as(ManyUntil.Stop).ut() |: p.void.ut(): Parsley[Any]).internal))
+    }
 
     private [parsley] object ManyUntil {
         object Stop
@@ -583,7 +583,7 @@ private [parsley] trait combinator {
       * @example This can be useful for scanning comments: {{{
       * scala> import parsley.character.{string, item, endOfLine}
       * scala> import parsley.combinator.someUntil
-      * scala> val comment = string("//") *> someUntil(item, endOfLine)
+      * scala> val comment = string("//") ~> someUntil(item, endOfLine)
       * scala> p.parse("//hello world")
       * val res0 = Failure(..)
       * scala> p.parse("//hello world\n")
@@ -602,7 +602,7 @@ private [parsley] trait combinator {
       */
     final def someTill[A](p: Parsley[A], end: Parsley[_]): Parsley[List[A]] = {
         // similar to some, I think a someTill(init, p, end) could generalise both manyTill and someTill
-        notFollowedBy(end) *> (p <::> manyTill(p, end))
+        notFollowedBy(end) ~> (p <::> manyTill(p, end))
     } //TODO: name
 
     /** This combinator parses one of `thenP` or `elseP` depending on the result of parsing `condP`.
@@ -681,7 +681,7 @@ private [parsley] trait combinator {
       *     val reg = Reg.make[A]
       *     lazy val _cond = reg.gets(cond)
       *     lazy val _step = reg.modify(step)
-      *     reg.put(init) *> whenS(_cond, whileS(body *> _step *> _cond))
+      *     reg.put(init) ~> whenS(_cond, whileS(body ~> _step ~> _cond))
       * }
       * }}}
       *

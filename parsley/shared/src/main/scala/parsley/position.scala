@@ -31,9 +31,9 @@ private [parsley] trait position {
       * scala> import parsley.position.line, parsley.character.char
       * scala> line.parse("")
       * val res0 = Success(1)
-      * scala> (char('a') *> line).parse("a")
+      * scala> (char('a') ~> line).parse("a")
       * val res0 = Success(1)
-      * scala> (char('\n') *> line).parse("\n")
+      * scala> (char('\n') ~> line).parse("\n")
       * val res0 = Success(2)
       * }}}
       *
@@ -51,9 +51,9 @@ private [parsley] trait position {
       * scala> import parsley.position.col, parsley.character.char
       * scala> col.parse("")
       * val res0 = Success(1)
-      * scala> (char('a') *> col).parse("a")
+      * scala> (char('a') ~> col).parse("a")
       * val res0 = Success(2)
-      * scala> (char('\n') *> col).parse("\n")
+      * scala> (char('\n') ~> col).parse("\n")
       * val res0 = Success(1)
       * }}}
       *
@@ -72,9 +72,9 @@ private [parsley] trait position {
       * scala> import parsley.position.pos, parsley.character.char
       * scala> pos.parse("")
       * val res0 = Success((1, 1))
-      * scala> (char('a') *> pos).parse("a")
+      * scala> (char('a') ~> pos).parse("a")
       * val res0 = Success((1, 2))
-      * scala> (char('\n') *> pos).parse("\n")
+      * scala> (char('\n') ~> pos).parse("\n")
       * val res0 = Success((2, 1))
       * }}}
       *
@@ -97,9 +97,9 @@ private [parsley] trait position {
       * scala> import parsley.position.offset, parsley.character.char
       * scala> offset.parse("")
       * val res0 = Success(0)
-      * scala> (char('a') *> offset).parse("a")
+      * scala> (char('a') ~> offset).parse("a")
       * val res0 = Success(1)
-      * scala> (char('\n') *> offset).parse("\n")
+      * scala> (char('\n') ~> offset).parse("\n")
       * val res0 = Success(1)
       * }}}
       *

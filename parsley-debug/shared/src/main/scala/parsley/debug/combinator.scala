@@ -80,7 +80,7 @@ object combinator {
         val attached: LazyParsley[A] = TaggedWith.tagRecursively(parser.internal, new Debugging(context))
         val resetter: Parsley[Unit]  = fresh(context.reset()).impure
 
-        (() => context.getFinalTree, resetter *> new Parsley(attached))
+        (() => context.getFinalTree, resetter ~> new Parsley(attached))
     }
 
     // TODO: document
@@ -90,7 +90,7 @@ object combinator {
         val attached: LazyParsley[A] = TaggedWith.tagRecursively(parser.internal, new CheckDivergence(context))
         val resetter: Parsley[Unit]  = fresh(context.reset()).impure
 
-        resetter *> new Parsley(attached)
+        resetter ~> new Parsley(attached)
     }
 
     /* Attaches a debugger to a parser.
@@ -178,7 +178,7 @@ object combinator {
             view.render(input, frozen)
         }.impure
 
-        atomic(attached <* renderer) <|> (renderer *> empty)
+        atomic(attached <~ renderer) | (renderer ~> empty)
     }
 
     /** Attach a debugger to be rendered via a given view. This view will render whenever the parser produces debug content.

@@ -81,7 +81,7 @@ package object debug {
           * scala> import parsley.debug.DebugCombinators, parsley.character.string, parsley.Parsley.attempt
           * scala> val abc = attempt(string("abc").debug("string abc")).debug("attempt")
           * scala> val abd = string("abd").debug("string abd")
-          * scala> val p = (abc <|> abd).debug("or")
+          * scala> val p = (abc | abd).debug("or")
           * scala> p.parse("abd")
           * >or> (1, 1): abd•
           *              ^
@@ -121,7 +121,7 @@ package object debug {
           * scala> import parsley.debug.DebugCombinators, parsley.character.string, parsley.Parsley.attempt
           * scala> val abc = attempt(string("abc").debug("string abc")).debug("attempt")
           * scala> val abd = string("abd").debug("string abd")
-          * scala> val p = (abc <|> abd).debug("or")
+          * scala> val p = (abc | abd).debug("or")
           * scala> p.parse("abd")
           * >or> (1, 1): abd•
           *              ^
@@ -160,7 +160,7 @@ package object debug {
           * scala> import parsley.debug.DebugCombinators, parsley.character.string, parsley.Parsley.attempt
           * scala> val abc = attempt(string("abc").debug("string abc")).debug("attempt")
           * scala> val abd = string("abd").debug("string abd")
-          * scala> val p = (abc <|> abd).debug("or")
+          * scala> val p = (abc | abd).debug("or")
           * scala> p.parse("abd")
           * >or> (1, 1): abd•
           *              ^
@@ -199,7 +199,7 @@ package object debug {
           * scala> import parsley.debug.DebugCombinators, parsley.character.string, parsley.Parsley.attempt
           * scala> val abc = attempt(string("abc").debug("string abc")).debug("attempt")
           * scala> val abd = string("abd").debug("string abd")
-          * scala> val p = (abc <|> abd).debug("or")
+          * scala> val p = (abc | abd).debug("or")
           * scala> p.parse("abd")
           * >or> (1, 1): abd•
           *              ^

@@ -24,21 +24,21 @@ private [token] final class UnsignedCombined(@unused desc: NumericDesc, integer:
     // FIXME: It also doesn't account for the trailing and leading dot
     // FIXME: It also doesn't respect exponent descriptions
         /*{
-        val decFractional = '.' *> digit.foldRight1[BigDecimal](0)((d, x) => x/10 + d.asDigit)
+        val decFractional = '.' ~> digit.foldRight1[BigDecimal](0)((d, x) => x/10 + d.asDigit)
         // TODO: This integer needs to have the description altered to account for the sign presence
-        val decExponent = oneOf('e', 'E') *> integer.decimal32
-        val zeroPoint = (decFractional, decExponent <|> pure(0)).zipped[Either[BigInt, BigDecimal]] {
+        val decExponent = oneOf('e', 'E') ~> integer.decimal32
+        val zeroPoint = (decFractional, decExponent | pure(0)).zipped[Either[BigInt, BigDecimal]] {
             case (f, e) => Right(f / 10 * BigDecimal(10).pow(e))
-        } <|> decExponent.as(Right(BigDecimal(0)))
-        val zeroLead = '0' *> (noZeroHexadecimal <|> noZeroOctal <|> noZeroBinary <|> zeroPoint <|> decimal <|> pure(Left(BigInt(0))))
-        atomic(zeroLead <|> decimal)
+        } | decExponent.as(Right(BigDecimal(0)))
+        val zeroLead = '0' ~> (noZeroHexadecimal | noZeroOctal | noZeroBinary | zeroPoint | decimal | pure(Left(BigInt(0))))
+        atomic(zeroLead | decimal)
     }*/
 
     // TODO: Using choice here will generate a jump table, which will be nicer for `number` (this requires enhancements to the jumptable optimisation)
     // TODO: Leave these as defs so they get inlined into number for the jumptable optimisation
-    //private val noZeroHexadecimal = oneOf(desc.hexadecimalLeads) *> ofRadix(16, 2, hexDigit, oneOf('p', 'P'))
-    //private val noZeroOctal = oneOf(desc.octalLeads) *> ofRadix(8, 8, octDigit, oneOf('p', 'P'))
-    //private val noZeroBinary = oneOf(desc.binaryLeads) *> ofRadix(2, 2, oneOf('0', '1'), oneOf('p', 'P'))
+    //private val noZeroHexadecimal = oneOf(desc.hexadecimalLeads) ~> ofRadix(16, 2, hexDigit, oneOf('p', 'P'))
+    //private val noZeroOctal = oneOf(desc.octalLeads) ~> ofRadix(8, 8, octDigit, oneOf('p', 'P'))
+    //private val noZeroBinary = oneOf(desc.binaryLeads) ~> ofRadix(2, 2, oneOf('0', '1'), oneOf('p', 'P'))
 
     override protected [numeric] def bounded[T](number: Parsley[Either[BigInt, BigDecimal]], bits: Bits, radix: Int)
                                                (implicit ev: CanHold[bits.self,T]): Parsley[Either[T, BigDecimal]] = {
@@ -58,8 +58,8 @@ private [token] final class UnsignedCombined(@unused desc: NumericDesc, integer:
             case 8 => integer.plainOctal
             case 2 => integer.plainBinary
         }
-        val fractional = '.' *> digit.foldRight1[BigDecimal](0)((d, x) => x/radix + d.asDigit)
-        val exponent = exp *> integer.decimal32
+        val fractional = '.' ~> digit.foldRight1[BigDecimal](0)((d, x) => x/radix + d.asDigit)
+        val exponent = exp ~> integer.decimal32
         //(whole, (fractional <~> exponent) <+> fractional
         if (radix == 10) {
             (whole, option(fractional), option(exponent)).zipped[Either[BigInt, BigDecimal]] {

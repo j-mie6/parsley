@@ -62,7 +62,7 @@ trait LexToken { this: ErrorBuilder[_] =>
         case t0 +: ts =>
             val toks = traverse(t0, ts: _*)(p => option(lookAhead(atomic(p) <~> position.offset))).map(_.flatten).collect { case toks@(_::_) => toks }
             // this can only fail if either there is no input (which there must be), or there is a token at the front, in which case `rawTok` is not parsed anyway
-            val rawTok = stringOfSome(traverse(t0, ts: _*)(notFollowedBy) *> item)
+            val rawTok = stringOfSome(traverse(t0, ts: _*)(notFollowedBy) ~> item)
             toks <+> rawTok
         case _ => stringOfSome(_ => true).map(Right(_))
     }

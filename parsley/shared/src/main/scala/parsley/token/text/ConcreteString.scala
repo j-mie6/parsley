@@ -18,7 +18,7 @@ private [token] final class ConcreteString(ends: Set[(String, String)], stringCh
 
     private def stringLiteral(valid: Parsley[StringBuilder] => Parsley[StringBuilder],
                               openLabel: (Boolean, Boolean) => LabelWithExplainConfig, closeLabel: (Boolean, Boolean) => LabelConfig) = {
-        choice(ends.view.map(makeStringParser(valid, openLabel, closeLabel)).toSeq: _*) *> sbReg.gets(_.toString)
+        choice(ends.view.map(makeStringParser(valid, openLabel, closeLabel)).toSeq: _*) ~> sbReg.gets(_.toString)
     }
     override lazy val fullUtf16: Parsley[String] = stringLiteral(identity, err.labelStringUtf16, err.labelStringUtf16End)
     override lazy val ascii: Parsley[String] = stringLiteral(StringParsers.ensureAscii(err), err.labelStringAscii, err.labelStringAsciiEnd)
@@ -40,9 +40,9 @@ private [token] final class ConcreteString(ends: Set[(String, String)], stringCh
         // TODO: this could be fixed better with registers and skipMany?
         val content = valid(parsley.expr.infix.secretLeft1((sbReg.get, strChar).zipped(pf), strChar, pure(pf), null).impure)
         // open should be first, to allow for a jump table on the main choice
-        openLabel(allowsAllSpace, stringChar.isRaw)(string(begin)) *>
+        openLabel(allowsAllSpace, stringChar.isRaw)(string(begin)) ~>
         // then only one string builder needs allocation
-        sbReg.set(fresh(new StringBuilder)) *>
+        sbReg.set(fresh(new StringBuilder)) ~>
         skipManyUntil(sbReg.update(char(terminalInit).hide.as((sb: StringBuilder) => sb += terminalInit)) <|> content,
                       closeLabel(allowsAllSpace, stringChar.isRaw)(atomic(string(end)))) // atomic needed because ambiguity with init
     }

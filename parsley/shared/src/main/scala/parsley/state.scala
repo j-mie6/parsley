@@ -87,7 +87,7 @@ object state {
           * the parsing context. No input is consumed in this process, and it cannot fail.
           *
           * @example Get-Get Law: {{{
-          * r.get *> r.get == r.get
+          * r.get ~> r.get == r.get
           * r.get <~> r.get == r.get.map(x => (x, x))
           * }}}
           *
@@ -128,11 +128,11 @@ object state {
           * Without any other effect, the value `x` will be placed into this reference.
           *
           * @example Set-Get Law: {{{
-          * r.set(x) *> r.get == r.set(x).as(x)
+          * r.set(x) ~> r.get == r.set(x).as(x)
           * }}}
           *
           * @example Set-Set Law: {{{
-          * r.set(x) *> r.set(y) == r.set(y)
+          * r.set(x) ~> r.set(y) == r.set(y)
           * }}}
           *
           * @param x the value to place in the reference.
@@ -152,7 +152,7 @@ object state {
           *
           * @example Set-Set Law: {{{
           * // only when `q` does not inspect the value of `r`!
-          * r.set(p) *> r.set(q) == p *> r.set(q)
+          * r.set(p) ~> r.set(q) == p ~> r.set(q)
           * }}}
           *
           * @param p the parser that produces the value to store in the reference.
@@ -212,7 +212,7 @@ object state {
           * the state is '''not restored'''.
           *
           * @example Set-Set Law: {{{
-          * r.set(x) *> r.setDuring(y)(p) == r.set(y) *> p <* r.set(x)
+          * r.set(x) ~> r.setDuring(y)(p) == r.set(y) ~> p <~ r.set(x)
           * }}}
           *
           * @param x the value to place into this reference.
@@ -244,7 +244,7 @@ object state {
           * the state is '''not restored'''.
           *
           * @example Set-Set Law and Set-Get Law: {{{
-          * r.set(x) *> r.updateDuring(f)(p) == r.set(f(x)) *> p <* r.set(x)
+          * r.set(x) ~> r.updateDuring(f)(p) == r.set(f(x)) ~> p <~ r.set(x)
           * }}}
           *
           * @param f the function used to modify the value in this reference.
@@ -272,7 +272,7 @@ object state {
           * @group local
           */
         def rollback[B](p: Parsley[B]): Parsley[B] = this.get.persist { x =>
-            p <|> (this.set(x) *> empty)
+            p | (this.set(x) ~> empty)
         }
 
         private [this] var _v: Int = -1
@@ -389,9 +389,9 @@ object state {
       * {{{
       * val r = Ref.make[Int]
       *
-      * r.set(0) *>
-      * many('a' *> r.update(_+1)) *>
-      * forP_[Int](r.get, pure(_ != 0), pure(_ - 1)){_ => 'b'} *>
+      * r.set(0) ~>
+      * many('a' ~> r.update(_+1)) ~>
+      * forP_[Int](r.get, pure(_ != 0), pure(_ - 1)){_ => 'b'} ~>
       * forP_[Int](r.get, pure(_ != 0), pure(_ - 1)){_ => 'c'}
       * }}}
       *
@@ -408,7 +408,7 @@ object state {
           lazy val _cond = ref.gets(cond)
           lazy val _step = ref.update(step)
           whenS(_cond) {
-            whileS(body(ref.get) *> _step *> _cond)
+            whileS(body(ref.get) ~> _step ~> _cond)
           }
         }
     }
@@ -425,9 +425,9 @@ object state {
       * {{{
       * val r = Ref.make[Int]
       *
-      * r.set(0) *>
-      * many('a' *> r.update(_+1)) *>
-      * forYieldP_[Int, Char](r.get, pure(_ != 0), pure(_ - 1)){_ => 'b'} *>
+      * r.set(0) ~>
+      * many('a' ~> r.update(_+1)) ~>
+      * forYieldP_[Int, Char](r.get, pure(_ != 0), pure(_ - 1)){_ => 'b'} ~>
       * forYieldP_[Int, Char](r.get, pure(_ != 0), pure(_ - 1)){_ => 'c'}
       * }}}
       *
@@ -464,9 +464,9 @@ object state {
       * {{{
       * val r = Ref.make[Int]
       *
-      * r.set(0) *>
-      * many('a' *> r.update(_+1)) *>
-      * forP[Int](r.get, pure(_ != 0), pure(_ - 1)){'b'} *>
+      * r.set(0) ~>
+      * many('a' ~> r.update(_+1)) ~>
+      * forP[Int](r.get, pure(_ != 0), pure(_ - 1)){'b'} ~>
       * forP[Int](r.get, pure(_ != 0), pure(_ - 1)){'c'}
       * }}}
       *
@@ -497,9 +497,9 @@ object state {
       * {{{
       * val r = Ref.make[Int]
       *
-      * r.set(0) *>
-      * many('a' *> r.update(_+1)) *>
-      * forYieldP[Int, Char](r.get, pure(_ != 0), pure(_ - 1)){'b'} *>
+      * r.set(0) ~>
+      * many('a' ~> r.update(_+1)) ~>
+      * forYieldP[Int, Char](r.get, pure(_ != 0), pure(_ - 1)){'b'} ~>
       * forYieldP[Int, Char](r.get, pure(_ != 0), pure(_ - 1)){'c'}
       * }}}
       *

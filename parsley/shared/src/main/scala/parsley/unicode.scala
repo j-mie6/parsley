@@ -504,7 +504,7 @@ object unicode {
     /** This combinator tries to parse each of the key-value pairs `kvs` (and `kv0`), until one of them succeeds.
       *
       * Each argument to this combinator is a pair of a string and a parser to perform if that string can be parsed.
-      * `strings(s0 -> p0, ...)` can be thought of as `atomicChoice(string(s0) *> p0, ...)`, however, the given
+      * `strings(s0 -> p0, ...)` can be thought of as `atomicChoice(string(s0) ~> p0, ...)`, however, the given
       * ordering of key-value pairs does not dictate the order in which the parses are tried. In particular, it
       * will favour keys that are the prefix of another key first, so that it has ''Longest Match'' semantics.
       * it will try to minimise backtracking too, making it a much more efficient option than `atomicChoice`.
@@ -599,7 +599,7 @@ object unicode {
       * @group spec
       * @see [[crlf `crlf`]]
       */
-    val endOfLine: Parsley[Int] = (newline <|> crlf).label("end of line")
+    val endOfLine: Parsley[Int] = (newline |: crlf).label("end of line")
 
     /** This parser tries to parse a tab (`'\t'`) character, and returns it if successful.
       *

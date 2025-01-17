@@ -17,27 +17,27 @@ private [token] final class UnsignedInteger(desc: NumericDesc, err: ErrorConfig,
 
     // labelless versions
     protected [numeric] override lazy val _decimal: Parsley[BigInt] = generic.plainDecimal(desc, err.labelIntegerDecimalEnd)
-    protected [numeric] override lazy val _hexadecimal: Parsley[BigInt] = atomic('0' *> noZeroHexadecimal)
-    protected [numeric] override lazy val _octal: Parsley[BigInt] = atomic('0' *> noZeroOctal)
-    protected [numeric] override lazy val _binary: Parsley[BigInt] = atomic('0' *> noZeroBinary)
+    protected [numeric] override lazy val _hexadecimal: Parsley[BigInt] = atomic('0' ~> noZeroHexadecimal)
+    protected [numeric] override lazy val _octal: Parsley[BigInt] = atomic('0' ~> noZeroOctal)
+    protected [numeric] override lazy val _binary: Parsley[BigInt] = atomic('0' ~> noZeroBinary)
     // FIXME: numberEnd label is not applied here!
     protected [numeric] override lazy val _number: Parsley[BigInt] = {
         if (desc.decimalIntegersOnly) decimal
         else {
             def addHex(p: Parsley[BigInt]) = {
-                if (desc.integerNumbersCanBeHexadecimal) noZeroHexadecimal <|> p
+                if (desc.integerNumbersCanBeHexadecimal) noZeroHexadecimal | p
                 else p
             }
             def addOct(p: Parsley[BigInt]) = {
-                if (desc.integerNumbersCanBeOctal) noZeroOctal <|> p
+                if (desc.integerNumbersCanBeOctal) noZeroOctal | p
                 else p
             }
             def addBin(p: Parsley[BigInt]) = {
-                if (desc.integerNumbersCanBeBinary) noZeroBinary <|> p
+                if (desc.integerNumbersCanBeBinary) noZeroBinary | p
                 else p
             }
-            val zeroLead = '0'.label("digit") *> (addHex(addOct(addBin(decimal <|> pure(BigInt(0))))))
-            atomic(zeroLead <|> decimal)
+            val zeroLead = '0'.label("digit") ~> (addHex(addOct(addBin(decimal | pure(BigInt(0))))))
+            atomic(zeroLead | decimal)
         }
     }
 
@@ -55,13 +55,13 @@ private [token] final class UnsignedInteger(desc: NumericDesc, err: ErrorConfig,
     }
 
     private val noZeroHexadecimal =
-        when(desc.hexadecimalLeads.nonEmpty, oneOf(desc.hexadecimalLeads)) *> leadingBreakChar *>
+        when(desc.hexadecimalLeads.nonEmpty, oneOf(desc.hexadecimalLeads)) ~> leadingBreakChar ~>
         err.labelIntegerHexadecimalEnd(generic.plainHexadecimal(desc, err.labelIntegerHexadecimalEnd))
     private val noZeroOctal =
-        when(desc.octalLeads.nonEmpty, oneOf(desc.octalLeads)) *> leadingBreakChar *>
+        when(desc.octalLeads.nonEmpty, oneOf(desc.octalLeads)) ~> leadingBreakChar ~>
         err.labelIntegerOctalEnd(generic.plainOctal(desc, err.labelIntegerOctalEnd))
     private val noZeroBinary =
-        when(desc.binaryLeads.nonEmpty, oneOf(desc.binaryLeads)) *> leadingBreakChar *>
+        when(desc.binaryLeads.nonEmpty, oneOf(desc.binaryLeads)) ~> leadingBreakChar ~>
         err.labelIntegerBinaryEnd(generic.plainBinary(desc, err.labelIntegerBinaryEnd))
 
     override protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int, label: (ErrorConfig, Boolean) => LabelWithExplainConfig)

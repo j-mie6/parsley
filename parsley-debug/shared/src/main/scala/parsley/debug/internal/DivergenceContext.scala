@@ -27,7 +27,7 @@ private [parsley] final class DivergenceContext {
     }
 
     // NOTE: Pruning snapshots sounds attractive, but doesn't really work, at least for siblings
-    // consider `val p = r.updateDuring(_ => random())(lookAhead(char('a'))) *> p`
+    // consider `val p = r.updateDuring(_ => random())(lookAhead(char('a'))) ~> p`
     // this I think in an iterative example would be unable to resolve if the offset from the lookahead dominates
     // For a recursive structure, I think the pruning actually would work, and can be done
     private val snaps = mutable.Stack.empty[Snapshot]

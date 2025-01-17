@@ -103,7 +103,7 @@ final class OperatorSugar[+A] private [syntax] (private val p: Parsley[A]) {
       * @param q the parser to quotient this parser by.
       * @return a parser that only parses this parser if `q` cannot parse.
       */
-    def -(q: Parsley[_]): Parsley[A] = !new OperatorSugar(q) *> p
+    def -(q: Parsley[_]): Parsley[A] = !new OperatorSugar(q) ~> p
     /** This combinator, pronounced "option", will try parsing this parser wrapping its result in `Some`, and return `None` if it fails.
       *
       * Equivalent to `option`, but as a postfix operator: `option(p)` is the same as `p.?`.
