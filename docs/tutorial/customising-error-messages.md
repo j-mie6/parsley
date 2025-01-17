@@ -623,7 +623,7 @@ all the sub-formatters to understand what I mean:
 trait ErrorBuilder[Err] {
     // This is the top level function which takes all the sub-parts
     // and combines them into the final `Err`
-    def format(pos: Position, source: Source, lines: ErrorInfoLines): Err
+    def build(pos: Position, source: Source, lines: ErrorInfoLines): Err
 
     type Position
     type Source
@@ -645,9 +645,9 @@ trait ErrorBuilder[Err] {
 
 Wow, that's a lot of types! Essentially, each concrete implementation of this trait must specify
 what each of those types are. This means that the representation of the error is as flexible as
-possible. In the `format` method, you can see that the types `Position`, `Source`, and
+possible. In the `build` method, you can see that the types `Position`, `Source`, and
 `ErrorInfoLines` are all referenced. Indeed, you can also see these marked on _both_ diagrams: in
-other words, `format` is responsible for the general shape of _both_ types of error message.
+other words, `build` is responsible for the general shape of _both_ types of error message.
 
 To understand how these might come about, let's take a step "into" the formatter to find the sources
 of values for `Position`, `Source`, and `ErrorInfoLines`:
