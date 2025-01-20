@@ -561,16 +561,12 @@ private [parsley] trait combinator {
       */
     final def manyTill[A](p: Parsley[A], end: Parsley[_]): Parsley[List[A]] = manyTill(p, end, List)
     private [parsley] final def manyTill[A, C](p: Parsley[A], end: Parsley[_], factory: Factory[A, C]): Parsley[C] = {
-        new Parsley(new frontend.ManyTill((end.as(ManyUntil.Stop).ut() |: p: Parsley[Any]).internal, factory))
+        new Parsley(new frontend.ManyTill((end.as(parsley.internal.machine.instructions.ManyUntil.Stop).ut() |: p: Parsley[Any]).internal, factory))
     }
 
     // TODO: find a way to make this redundant
     private [parsley] final def skipManyUntil(p: Parsley[_], end: Parsley[_]): Parsley[Unit] = {
-        new Parsley(new frontend.SkipManyUntil((end.as(ManyUntil.Stop).ut() |: p.void.ut(): Parsley[Any]).internal))
-    }
-
-    private [parsley] object ManyUntil {
-        object Stop
+        new Parsley(new frontend.SkipManyUntil((end.as(parsley.internal.machine.instructions.ManyUntil.Stop).ut() |: p.void.ut(): Parsley[Any]).internal))
     }
 
     /** This combinator repeatedly parses a given parser '''one''' or more times, until the `end` parser succeeds, collecting the results into a list.

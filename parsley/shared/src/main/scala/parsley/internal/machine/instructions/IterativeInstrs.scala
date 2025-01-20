@@ -217,7 +217,7 @@ private [internal] final class ManyUntil(var label: Int) extends InstrWithLabel 
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         ctx.stack.upop() match {
-            case parsley.combinator.ManyUntil.Stop => ctx.exchangeAndContinue(ctx.stack.peek[mutable.Builder[Any, Any]].result())
+            case ManyUntil.Stop => ctx.exchangeAndContinue(ctx.stack.peek[mutable.Builder[Any, Any]].result())
             case x =>
                 ctx.stack.peek[mutable.Builder[Any, Any]] += x
                 ctx.pc = label
@@ -227,12 +227,15 @@ private [internal] final class ManyUntil(var label: Int) extends InstrWithLabel 
     override def toString: String = s"ManyUntil($label)"
     // $COVERAGE-ON$
 }
+private [parsley] object ManyUntil {
+    object Stop
+}
 
 private [internal] final class SkipManyUntil(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         ctx.stack.upop() match {
-            case parsley.combinator.ManyUntil.Stop => ctx.inc()
+            case ManyUntil.Stop => ctx.inc()
             case _ => ctx.pc = label
         }
     }
