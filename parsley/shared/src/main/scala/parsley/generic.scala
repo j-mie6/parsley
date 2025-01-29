@@ -5,6 +5,7 @@
  */
 package parsley
 
+//TODO: this needs to be a generic package, or we can't have typeclasses in properly.
 import lift._
 import parsley.errors.combinator._
 
