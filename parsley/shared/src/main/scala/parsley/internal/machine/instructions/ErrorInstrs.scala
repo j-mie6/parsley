@@ -11,16 +11,9 @@ import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.EmptyError
 
 private [internal] final class RelabelHints(labels: Iterable[String]) extends Instr {
-    private [this] val isHide: Boolean = labels.isEmpty
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        // if this was a hide, pop the hints if possible
-        // this is desirable so that hide is _very_ aggressive with labelling:
-        // whitespaces.hide should say nothing, but digits.label("integer") should give digit as a hint if one is parsed, not integer
-        if (isHide) ctx.popHints()
-        // EOK
-        // replace the head of the hints with the singleton for our label
-        else if (ctx.offset == ctx.handlers.check) ctx.replaceHint(labels)
+        if (ctx.offset == ctx.handlers.check) ctx.replaceHint(labels)
         // COK
         // do nothing
         ctx.mergeHints()
@@ -53,7 +46,8 @@ private [internal] final class RelabelErrorAndFail(labels: Iterable[String]) ext
 private [internal] object HideHints extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        ctx.popHints()
+        // according to old label logic, we do this unconditionally
+        /*if (ctx.offset == ctx.handlers.check)*/ ctx.popHints()
         ctx.mergeHints()
         ctx.handlers = ctx.handlers.tail
         ctx.inc()
@@ -68,7 +62,7 @@ private [internal] object HideErrorAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
         ctx.restoreHints()
-        ctx.errs.error = new EmptyError(ctx.offset, ctx.line, ctx.col, unexpectedWidth = 0)
+        if (ctx.offset == ctx.handlers.check) ctx.errs.error = new EmptyError(ctx.offset, ctx.line, ctx.col, unexpectedWidth = 0)
         ctx.handlers = ctx.handlers.tail
         ctx.fail()
     }
