@@ -108,10 +108,16 @@ private [deepembedding] object StrictParsley {
       * @param instrs the instruction buffer
       */
     private def allocateAndExpandRefs(minRef: Int, usedRefs: Set[Ref[_]])(implicit instrs: InstrBuffer): Unit = {
-        var nextSlot = math.max(minRef, 0)
+        val blockedSlots = usedRefs.collect {
+            case r if r.allocated => r.addr
+        }
+        @tailrec
+        def nextFreeSlot(n: Int): Int = if (blockedSlots.contains(n)) nextFreeSlot(n+1) else n
+
+        var nextSlot = nextFreeSlot(math.max(minRef, 0))
         for (r <- usedRefs if !r.allocated) {
             r.allocate(nextSlot)
-            nextSlot += 1
+            nextSlot = nextFreeSlot(nextSlot+1)
         }
         // check that no two references have the same address!
         if (usedRefs.groupBy(_.addr).valuesIterator.exists(_.size > 1)) {
