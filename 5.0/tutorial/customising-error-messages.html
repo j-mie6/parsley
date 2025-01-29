@@ -304,9 +304,10 @@
         looking a lot cleaner. But what if we started writing a comment, what would happen then?</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">expressions</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;5/*&quot;</span><span>)
 </span><span class="comment">// res5: parsley.Result[String, BigInt] = Failure((line 1, column 4):
-//   unknown parse error
+//   unexpected end of input
+//   expected &quot;*/&quot; or any character
 //   &gt;5/*
-//       )</span></code></pre>
+//       ^)</span></code></pre>
         <p>So, as I mentioned earlier, <code>hide</code> is just a <code>label</code>, and <code>label</code> will not relabel something if it
         fails and consumes input. That means, by opening our comment but not <em>finishing</em> it, we can see
         some different suggestions. In this case, end of input is not allowed, and any character will work
@@ -317,9 +318,10 @@
         <p>Now we get a more informative error message of:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">expressions</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;5/*&quot;</span><span>)
 </span><span class="comment">// res6: parsley.Result[String, BigInt] = Failure((line 1, column 4):
-//   unknown parse error
+//   unexpected end of input
+//   expected any character or end of comment
 //   &gt;5/*
-//       )</span></code></pre>
+//       ^)</span></code></pre>
         <p>Great! Now let&#39;s turn our attention back to expressions and not whitespace.</p>
         
         <h3 id="labelling-our-numbers" class="section"><a class="anchor-link left" href="#labelling-our-numbers"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1.1.2 </span>Labelling our numbers</h3>
