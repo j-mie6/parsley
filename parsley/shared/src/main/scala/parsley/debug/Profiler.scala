@@ -82,24 +82,24 @@ class Profiler {
         val invocations =  mutable.Map.empty[String, Int]
 
         @tailrec
-        def go(entries: List[(String, Long)], exits: List[(String, Long)], stack: List[((String, Long), Long)], cum: Long): Unit = {
+        def go(entries: List[(String, Long)], exits: List[(String, Long)], stack: List[((String, Long), Long)], cumulative: Long): Unit = {
             (entries, exits, stack) match {
                 case (Nil, Nil, Nil) =>
-                // final unwinding or stuff to clear on the stack (cum here is for the children)
-                case (ens, (n2, t2)::exs, ((n1, t1), oldCum)::stack) if ens.headOption.forall(t2 < _._2) =>
+                // final unwinding or stuff to clear on the stack (cumulative time here is for the children)
+                case (ens, (n2, t2)::exs, ((n1, t1), oldCumulative)::stack) if ens.headOption.forall(t2 < _._2) =>
                     assert(n1 == n2, "unwinding should result in matching values")
                     add(invocations, n1)(1)
-                    add(selfTotals, n1)(t2 - t1 - cum)
-                    go(ens, exs, stack, oldCum + t2 - t1)
-                // in this case, the scope closes quickly (cum here is for your siblings)
+                    add(selfTotals, n1)(t2 - t1 - cumulative)
+                    go(ens, exs, stack, oldCumulative + t2 - t1)
+                // in this case, the scope closes quickly (cumulative time here is for your siblings)
                 case ((n1, t1)::ens, (n2, t2)::exs, stack) if ens.headOption.forall(t2 < _._2) && n1 == n2 =>
                     assert(ens.nonEmpty || n1 == n2, "unwinding should result in matching values")
                     add(invocations, n1)(1)
                     add(selfTotals, n1)(t2 - t1)
-                    go(ens, exs, stack, cum + t2 - t1)
+                    go(ens, exs, stack, cumulative + t2 - t1)
                 // the next one opens first, or the entry and exit don't match
-                // in either case, this isn't our exit, push ourselves onto the stack (cum here is for your siblings)
-                case (nt::ens, exs@(_ :: _), stack) => go(ens, exs, (nt, cum)::stack, 0)
+                // in either case, this isn't our exit, push ourselves onto the stack (cumulative time here is for your siblings)
+                case (nt::ens, exs@(_ :: _), stack) => go(ens, exs, (nt, cumulative)::stack, 0)
                 // $COVERAGE-OFF$
                 case (Nil, Nil, _::_)
                     | (Nil, _::_, Nil)
