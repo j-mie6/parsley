@@ -195,9 +195,9 @@ the latter example, as the break characters may then only appear between digits.
 
 ```scala mdoc:height=2
 val lexerWithBreak = new Lexer(LexicalDesc.plain.copy(
-        numericDesc = NumericDesc.plain.copy(
-            literalBreakChar = BreakCharDesc.Supported('_', allowedAfterNonDecimalPrefix = true))
-    ))
+    numericDesc = NumericDesc.plain.copy(
+        literalBreakChar = BreakCharDesc.Supported('_', allowedAfterNonDecimalPrefix = true))
+))
 val withBreak = lexerWithBreak.lexeme.signed.number
 withBreak.parse("1_000")
 withBreak.parse("1_")
