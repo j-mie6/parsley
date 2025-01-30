@@ -1,45 +1,61 @@
+/*
+ * Copyright 2020 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package parsley
 package experimental.generic
 
 import scala.quoted.*
 import scala.deriving.*
+import generic.*
 
 /*
 Problem space:
-    * What are the shapes of the typeclass
     * How are error bridges incorporated in (annotation?)
-    * How do multi-argument typeclasses work with macros?
+    * How can we resolve defaults?
 */
 
-// looks like typeclasses cannot have more than one type parameter
-//trait ParserBridge1[T1, R]
+class DummyBridge1[T, R] extends ErrorBridge
+class DummyBridge2[T1, T2, R] extends ErrorBridge
 
-// class class Foo(x: Int, y: Int) derives ParserBridge2[Int, Int].Type
+inline transparent def bridge[T]: ErrorBridge = bridge[T, T]
+inline transparent def bridge[T, S >: T]: ErrorBridge = ${bridgeImpl[T, S]}
+def bridgeImpl[T: Type, S: Type](using Quotes): Expr[ErrorBridge] = {
+    import quotes.reflect.*
 
-/*class ParserBridge1[A] {
-    trait Impl[T] {
-        def apply(p: Parsley[A]): Parsley[T]
+    val clsDef = TypeRepr.of[T].classSymbol
+    println(clsDef)
+    clsDef match {
+        case Some(cls) =>
+            val DefDef("<init>", paramClauses, _, _) = cls.primaryConstructor.tree: @unchecked
+            // paramClauses is a list of lists, including *generics*
+            // our bridge arity is related to the first non-type bracket
+            val bridgeParams :: otherParams = paramClauses.collect {
+                case TermParamClause(ps) => ps
+            }: @unchecked
+            // FIXME: default check doesn't work, primary constructor doesn't have the default args...
+            val badArgs = otherParams.flatten.collect {
+                case ValDef(name, ty, default) if default.isEmpty && !isPos(ty.tpe) => name
+            }
+            if (badArgs.nonEmpty) {
+                report.errorAndAbort(s"Arguments ${badArgs.mkString(",")} are not `Pos`, do not have defaults, and are not in first set of brackets; cannot construct bridge")
+            }
+            val bridgeTyArgs = bridgeParams.collect {
+                case ValDef(_, ty, _) if !isPos(ty.tpe) => ty.tpe
+            }
+            println(bridgeTyArgs.map(_.typeSymbol))
+            val arity = bridgeTyArgs.length
+            bridgeTyArgs.map(_.asType) match {
+                case List('[t1]) => '{new DummyBridge1[t1, S]}
+                case List('[t1], '[t2]) => '{new DummyBridge2[t1, t2, S]}
+                case _ => '{???}
+            }
+        case None => report.errorAndAbort("cannot make bridge for non-class/object type")
     }
 }
-object ParserBridge1 {
-    def bridgeImpl[A: Type, T: Type](using Quotes): Expr[ParserBridge1[A]#Impl[T]] = ???
+
+def isPos(using Quotes)(ty: quotes.reflect.TypeRepr): Boolean = ty.asType match {
+    case '[parsley.experimental.generic.Pos] => true
+    case _                                   => false
 }
-
-inline def derived[A, T]: ParserBridge1[A]#Impl[T] = ${ParserBridge1.bridgeImpl[A, T]}*/
-
-
-
-inline transparent def bridge1[T](using mirror: Mirror.ProductOf[T]) = ${bridge1Impl[T]('mirror)}
-def bridge1Impl[T: Type](mirror: Expr[Mirror.ProductOf[T]])(using Quotes): Expr[?] = {
-    
-    '{???}
-}
-
-/*
-data Foo = Foo Int  Pos String
-
-$(deriveLiftedConstructors "mk" ['Foo])
--- mkFoo :: Parsec Int -> Parsec String -> Parsec Foo
--- mkFoo pi ps = f <$> pos <*> pi <*> ps
---   where f pos i s = Foo i pos s
-*/
