@@ -138,17 +138,9 @@ typeclass details the role of these well enough, however. For example's sake, ho
 are the two shapes of call that will be made for the different types of error messages:
 
 #### Vanilla
-```
-(line 1, column 5):
-  unexpected end of input
-  expected "(", "negate", digit, or letter
-  '-' is a binary operator
-  >3+4-
-       ^
-```
 ```scala mdoc:silent:nest
 val builder = implicitly[ErrorBuilder[String]]
-builder.build (
+val err = builder.build (
     builder.pos(1, 5),
     builder.source(None),
     builder.vanillaError (
@@ -164,28 +156,24 @@ builder.build (
         builder.combineMessages(List(
             builder.reason("'-' is a binary operator")
         )),
-        builder.lineInfo("3+4-", Nil, Nil, 1, 4, 4)
+        builder.lineInfo("3+4-", Nil, Nil, 1, 4, 1)
     )
 )
 ```
+```scala mdoc:passthrough
+println(s"""```
+$err
+```""")
+```
+
 One builder call not shown here, is a call to
 `builder.unexpectedToken`. This is a bigger discussion and is
 deferred to [Token Extraction in `ErrorBuilder`]
 
 #### Specialised
-```
-In file 'foo.txt' (line 2, column 6):
-  first message
-  second message
-  >first line of input
-  >second line
-        ^^^
-  >third line
-  >fourth line
-```
 ```scala mdoc:silent:nest
 val builder = implicitly[ErrorBuilder[String]]
-builder.build (
+val err = builder.build (
     builder.pos(2, 6),
     builder.source(Some("foo.txt")),
     builder.specializedError (
@@ -201,6 +189,11 @@ builder.build (
                          3)
     )
 )
+```
+```scala mdoc:passthrough
+println(s"""```
+$err
+```""")
 ```
 
 ## Constructing Test Errors
