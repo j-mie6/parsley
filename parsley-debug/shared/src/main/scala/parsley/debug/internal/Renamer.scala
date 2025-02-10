@@ -9,7 +9,7 @@ import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.deepembedding.frontend.debug.TaggedWith
 
 // An object with a single public apply method that allows the renaming of a
-// debugged  parser's name in order to increase the clarity of the debugger's
+// debugged parser's name in order to increase the clarity of the debugger's
 // results. By default, this does nothing other than get the prettified names of
 // a parser's class defined within.
 // It also requires user interaction, as it needs to collect information from the
