@@ -243,7 +243,7 @@ Another application of long-term state is to track indentation levels in
 a whitespace-sensitive language: here the start of a new cause, statement
 or block will record the current column number, and further statements
 must verify that the column number is correct. Leaving a block will restore
-the identation level back to how it was before. This is similar to how
+the indentation level back to how it was before. This is similar to how
 matching brackets worked.
 
 ## Stateful Combinators
