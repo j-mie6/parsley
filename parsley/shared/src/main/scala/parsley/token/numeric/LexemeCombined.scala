@@ -14,7 +14,7 @@ private [token] final class LexemeCombined(combined: CombinedParsers, lexeme: Le
     override lazy val hexadecimal: Parsley[Either[BigInt,BigDecimal]] = lexeme(combined.hexadecimal)
     override lazy val octal: Parsley[Either[BigInt,BigDecimal]] = lexeme(combined.octal)
     override lazy val binary: Parsley[Either[BigInt,BigDecimal]] = lexeme(combined.binary)
-    override lazy val  number: Parsley[Either[BigInt,BigDecimal]] = lexeme(combined.number)
+    override lazy val number: Parsley[Either[BigInt,BigDecimal]] = lexeme(combined.number)
 
     override protected[numeric] def bounded[T](number: Parsley[Either[BigInt,BigDecimal]], bits: Bits, radix: Int)
                                               (implicit ev: CanHold[bits.self,T]): Parsley[Either[T, BigDecimal]] =

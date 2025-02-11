@@ -142,7 +142,7 @@ object GOps {
 }
 ```
 
-The `SOps` object allows the input and output to the layer to vary so long as they are in a sub-type relation: this is the most common form of heterogeneous hierachy that leverages Scala's strengths. Otherwise, `GOps` handles any arbitrary relationship between the types, so long as there is a known implicit `A => B` conversion.
+The `SOps` object allows the input and output to the layer to vary so long as they are in a sub-type relation: this is the most common form of heterogeneous hierarchy that leverages Scala's strengths. Otherwise, `GOps` handles any arbitrary relationship between the types, so long as there is a known implicit `A => B` conversion.
 
 Since the types between layers differ, a variadic argument list cannot be used to collect them together. Instead, the `Ops` are
 stitched together into a `Prec[A]` structure:

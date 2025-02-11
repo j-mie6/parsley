@@ -29,7 +29,7 @@ is defined as being an object which mocks a package):
        to use character and string literals as parsers.
      - [[parsley.syntax.lift$ `parsley.syntax.lift`]] enables postfix application of the lift
        combinator onto a function (or value).
-     - [[parsley.syntax.zipped$ `parsley.syntax.zipped`]] enables boths a reversed form of
+     - [[parsley.syntax.zipped$ `parsley.syntax.zipped`]] enables both a reversed form of
        lift where the function appears on the right and is applied on a tuple (useful when type
        inference has failed) as well as a `.zipped` method for building tuples out of several
        combinators.

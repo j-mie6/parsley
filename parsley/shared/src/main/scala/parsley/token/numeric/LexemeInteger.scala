@@ -14,7 +14,7 @@ private [token] final class LexemeInteger(integer: IntegerParsers, lexeme: Lexem
     override lazy val hexadecimal: Parsley[BigInt] = lexeme(integer.hexadecimal)
     override lazy val octal: Parsley[BigInt] = lexeme(integer.octal)
     override lazy val binary: Parsley[BigInt] = lexeme(integer.binary)
-    override lazy val  number: Parsley[BigInt] = lexeme(integer.number)
+    override lazy val number: Parsley[BigInt] = lexeme(integer.number)
 
     override protected[numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int, label: (ErrorConfig, Boolean) => LabelWithExplainConfig)
                                               (implicit ev: CanHold[bits.self,T]): Parsley[T] =

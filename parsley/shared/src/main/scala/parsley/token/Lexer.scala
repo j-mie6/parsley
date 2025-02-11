@@ -431,7 +431,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
         def semiSep[A](p: Parsley[A]): Parsley[List[A]] = sepBy(p, symbol.semi)
         /**  This combinator parses '''one''' or more occurrences of `p`, separated by semi-colons.
           *
-          * First parses a `p`. Then parses a semi-colon followed by `p` until there are no more  semi-colons.
+          * First parses a `p`. Then parses a semi-colon followed by `p` until there are no more semi-colons.
           * The results of the `p`'s, `x,,1,,` through `x,,n,,`, are returned as `List(x,,1,,, .., x,,n,,)`.
           * If `p` fails having consumed input, the whole parser fails. Requires at least
           * one `p` to have been parsed.
@@ -480,7 +480,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
         def commaSep[A](p: Parsley[A]): Parsley[List[A]] = sepBy(p, symbol.comma)
         /**  This combinator parses '''one''' or more occurrences of `p`, separated by commas.
           *
-          * First parses a `p`. Then parses a comma followed by `p` until there are no more  commas.
+          * First parses a `p`. Then parses a comma followed by `p` until there are no more commas.
           * The results of the `p`'s, `x,,1,,` through `x,,n,,`, are returned as `List(x,,1,,, .., x,,n,,)`.
           * If `p` fails having consumed input, the whole parser fails. Requires at least
           * one `p` to have been parsed.
