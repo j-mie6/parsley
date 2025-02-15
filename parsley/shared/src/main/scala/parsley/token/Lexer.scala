@@ -5,6 +5,8 @@
  */
 package parsley.token
 
+import scala.collection.Factory
+
 import parsley.Parsley, Parsley.{eof, many, transPure => pure}
 import parsley.combinator.{sepBy, sepBy1}
 import parsley.errors.combinator.{markAsToken, ErrorMethods}
@@ -428,7 +430,8 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @since 4.5.0
           * @group separatorsg
           */
-        def semiSep[A](p: Parsley[A]): Parsley[List[A]] = sepBy(p, symbol.semi)
+        def semiSep[A](p: Parsley[A]): Parsley[List[A]] = semiSep(p, List)
+        private [parsley] def semiSep[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = sepBy(p, symbol.semi, factory)
         /**  This combinator parses '''one''' or more occurrences of `p`, separated by semi-colons.
           *
           * First parses a `p`. Then parses a semi-colon followed by `p` until there are no more semi-colons.
@@ -454,7 +457,8 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @since 4.5.0
           * @group separatorsg
           */
-        def semiSep1[A](p: Parsley[A]): Parsley[List[A]] = sepBy1(p, symbol.semi)
+        def semiSep1[A](p: Parsley[A]): Parsley[List[A]] = semiSep1(p, List)
+        private [parsley] def semiSep1[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = sepBy1(p, symbol.semi, factory)
         /**  This combinator parses '''zero''' or more occurrences of `p`, separated by commas.
           *
           * Behaves just like `commaSep1`, except does not require an initial `p`, returning the empty list instead.
@@ -477,7 +481,8 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @since 4.5.0
           * @group separatorsg
           */
-        def commaSep[A](p: Parsley[A]): Parsley[List[A]] = sepBy(p, symbol.comma)
+        def commaSep[A](p: Parsley[A]): Parsley[List[A]] = commaSep(p, List)
+        private [parsley] def commaSep[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = sepBy(p, symbol.comma, factory)
         /**  This combinator parses '''one''' or more occurrences of `p`, separated by commas.
           *
           * First parses a `p`. Then parses a comma followed by `p` until there are no more commas.
@@ -503,7 +508,8 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @since 4.5.0
           * @group separatorsg
           */
-        def commaSep1[A](p: Parsley[A]): Parsley[List[A]] = sepBy1(p, symbol.comma)
+        def commaSep1[A](p: Parsley[A]): Parsley[List[A]] = commaSep1(p, List)
+        private [parsley] def commaSep1[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = sepBy1(p, symbol.comma, factory)
 
         /** This combinator parses a `p` enclosed within parentheses.
           *
