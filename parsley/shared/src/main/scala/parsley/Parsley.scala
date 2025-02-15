@@ -1306,9 +1306,12 @@ private [parsley] abstract class ParsleyImpl {
       * @group iter
       */
     final def many[A](p: Parsley[A]): Parsley[List[A]] = many(p, List)
-    private [parsley] final def many[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = {
-        new Parsley(new frontend.Many(p.internal, factory))
-    }
+    // this is needed for Scala 2 to avoid manual ascription (and ascribes cleaner), but isn't really needed for Scala 3 and increases doc/API footprint
+    // we can add them later if we really wanted to
+    //final private [parsley] def many[A, CC[_]](p: Parsley[A], factory: IterableFactory[CC]): Parsley[CC[A]] = many[A, CC[A]](p, factory)
+    // this is needed for Scala 2 (or manual ascription on A+C) for ArraySeq, but isn't really needed for Scala 3, and saves 2.12 work
+    //final def many[Ev[_], A: Ev, CC[_]](p: Parsley[A], factory: EvidenceIterableFactory[CC, Ev]): Parsley[CC[A]] = many[A, CC[A]](p, factory)
+    final private [parsley] def many[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = new Parsley(new frontend.Many(p.internal, factory))
 
     /** This combinator repeatedly parses a given parser '''one''' or more times, collecting the results into a list.
       *
