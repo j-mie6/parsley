@@ -76,6 +76,14 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     // JS lacks the IO module, so has its own rootdoc
     Compile / doc / scalacOptions ++= Seq("-doc-root-content", s"${baseDirectory.value.getPath}/rootdoc.md"),
   )
+  // 4.6.0 bumped to 0.5, which means the old versions are unfindable
+  .nativeSettings(
+    tlVersionIntroduced := Map(
+      "2.13" -> "4.6.0",
+      "2.12" -> "4.6.0",
+      "3"    -> "4.6.0",
+    ),
+  )
 
 lazy val docs = project
   .in(file("site"))
@@ -117,6 +125,14 @@ lazy val parsleyDebug = crossProject(JSPlatform, JVMPlatform, NativePlatform)
           Seq()
       }
     }
+  )
+    // 4.6.0 bumped to 0.5, which means the old versions are unfindable
+  .nativeSettings(
+    tlVersionIntroduced := Map(
+      "2.13" -> "4.6.0",
+      "2.12" -> "4.6.0",
+      "3"    -> "4.6.0",
+    ),
   )
 
 def testCoverageJob(cacheSteps: List[WorkflowStep]) = WorkflowJob(
