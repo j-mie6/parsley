@@ -8,10 +8,7 @@ package parsley
 import scala.collection.{Factory, mutable}
 
 private [parsley] object StringFactories {
-    val charFactory = new Factory[Char, String] {
-        def newBuilder = new StringBuilder
-        def fromSpecific(it: IterableOnce[Char]): String = it.iterator.mkString
-    }
+    val charFactory = Factory.stringFactory
 
     val intFactory = new Factory[Int, String] {
         def newBuilder = new mutable.Builder[Int, String] {

@@ -5,7 +5,7 @@
  */
 package parsley
 
-import scala.collection.Factory
+import scala.collection.IterableFactory
 
 import parsley.XAssert._
 import parsley.combinator.{whenS, whileS}
@@ -442,11 +442,11 @@ object state {
       * @group comb
       */
     def forYieldP_[A, B](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: Parsley[A] => Parsley[B]): Parsley[List[B]] = {
-        forYieldPGen_(init, cond, step)(body, List)
+        forYieldP_(init, cond, step, List)(body)
     }
-    private [parsley] def forYieldPGen_[A, B, C](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])
-                                                (body: Parsley[A] => Parsley[B], factory: Factory[B, C]): Parsley[C] = {
-        fresh(factory.newBuilder).persist { acc =>
+    private [parsley] def forYieldP_[A, B, CC[_]](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A], factory: IterableFactory[CC])
+                                                 (body: Parsley[A] => Parsley[B]): Parsley[CC[B]] = {
+        fresh(factory.newBuilder[B]).persist { acc =>
             forP_(init, cond, step) { x =>
                 (acc, body(x)).zipped(_ += _).impure // we don't want this optimised out, it's a mutable operation in a resultless context
             } ~> acc.map(_.result())
@@ -515,10 +515,10 @@ object state {
       * @group comb
       */
     def forYieldP[A, B](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: =>Parsley[B]): Parsley[List[B]] = {
-        forYieldPGen(init, cond, step)(body, List)
+        forYieldP(init, cond, step, List)(body)
     }
-    private [parsley] def forYieldPGen[A, B, C](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])
-                                               (body: =>Parsley[B], factory: Factory[B, C]): Parsley[C] = {
-        forYieldPGen_(init, cond, step)(_ => body, factory)
+    private [parsley] def forYieldP[A, B, CC[_]](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A], factory: IterableFactory[CC])
+                                                (body: =>Parsley[B]): Parsley[CC[B]] = {
+        forYieldP_(init, cond, step, factory)(_ => body)
     }
 }

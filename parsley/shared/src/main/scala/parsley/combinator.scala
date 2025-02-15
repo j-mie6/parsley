@@ -6,7 +6,7 @@
 package parsley
 
 import scala.annotation.tailrec
-import scala.collection.{Factory, mutable}
+import scala.collection.{Factory, IterableFactory, mutable}
 
 import parsley.Parsley.{atomic, empty, fresh, many, notFollowedBy, transPure => pure, secretSome, select, some}
 import parsley.state.{RefMaker, StateCombinators, forP}
@@ -134,9 +134,9 @@ private [parsley] trait combinator {
       * @see [[parsley.Parsley.<::> `<::>`]]
       * @note $strict
       */
-    final def sequence[A](p0: Parsley[A], ps: Parsley[A]*): Parsley[List[A]] = sequence[A, List[A]](List, p0, ps: _*) //TODO: name
-    private [parsley] final def sequence[A, C](factory: Factory[A, C], p0: Parsley[A], ps: Parsley[A]*): Parsley[C] = {
-        @tailrec def go(acc: Parsley[mutable.Builder[A, C]], ps: List[Parsley[A]]): Parsley[C] = ps match {
+    final def sequence[A](p0: Parsley[A], ps: Parsley[A]*): Parsley[List[A]] = sequence[A, List](List, p0, ps: _*) //TODO: name
+    private [parsley] final def sequence[A, CC[_]](factory: IterableFactory[CC], p0: Parsley[A], ps: Parsley[A]*): Parsley[CC[A]] = {
+        @tailrec def go(acc: Parsley[mutable.Builder[A, CC[A]]], ps: List[Parsley[A]]): Parsley[CC[A]] = ps match {
             case Nil => acc.map(_.result())
             case p::ps => go((acc, p).zipped(_ += _), ps)
         }
@@ -164,8 +164,8 @@ private [parsley] trait combinator {
       * @see [[sequence `sequence`]]
       * @note $strict
       */
-    final def traverse[A, B](x0: A, xs: A*)(f: A => Parsley[B]): Parsley[List[B]] = traverseGen(x0, xs: _*)(f, List) //TODO: name
-    private [parsley] final def traverseGen[A, B, C](x0: A, xs: A*)(f: A => Parsley[B], factory: Factory[B, C]): Parsley[C] = {
+    final def traverse[A, B](x0: A, xs: A*)(f: A => Parsley[B]): Parsley[List[B]] = traverse[A, B, List](List, x0, xs: _*)(f) //TODO: name
+    private [parsley] final def traverse[A, B, CC[_]](factory: IterableFactory[CC], x0: A, xs: A*)(f: A => Parsley[B]): Parsley[CC[B]] = {
         sequence(factory, f(x0), xs.map(f): _*)
     } //TODO: name
 
@@ -715,9 +715,9 @@ private [parsley] trait combinator {
       * @since 4.0.0
       */
     final def exactly[A](n: Int, p: Parsley[A]): Parsley[List[A]] = exactly(n, p, List) //TODO: name
-    private [parsley] final def exactly[A, C](n: Int, p: Parsley[A], factory: Factory[A, C]): Parsley[C] = {
+    private [parsley] final def exactly[A, CC[_]](n: Int, p: Parsley[A], factory: IterableFactory[CC]): Parsley[CC[A]] = {
         require(n > 0, "n must be greater than 0 for exactly")
-        traverseGen(0, (1 until n): _*)(_ => p, factory)
+        traverse(factory, 0, (1 until n): _*)(_ => p)
     } //TODO: name
 
     /** This combinator parses between `min` and `max` occurrences of `p`, returning these `n` results in a list.
