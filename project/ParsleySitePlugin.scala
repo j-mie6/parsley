@@ -121,7 +121,7 @@ object ParsleySitePlugin extends AutoPlugin {
                     Version(s"$v.x", path).withLabel(label).withFallbackLink(s"api-guide")
                 Versions
                   .forCurrentVersion(version(tlBaseVersion.value, Dev)())
-                  .withOlderVersions(version("4.4", EndOfLife)(), version("4.5", Stable)().setCanonical)
+                  .withOlderVersions(version("4.4", EndOfLife)(), version("4.5", Stable)(), version("4.6", Stable)().setCanonical)
                   .withRenderUnversioned(notBackport)
             }
             .site.themeColors(
