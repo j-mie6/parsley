@@ -9,15 +9,15 @@ Parsley is distributed on Maven Central, and can be added to your project via:
 
 ```scala
 // SBT
-libraryDependencies += "com.github.j-mie6" %% "parsley" % "4.5.3"
+libraryDependencies += "com.github.j-mie6" %% "parsley" % "4.6.0"
 
 // scala-cli
---dependency com.github.j-mie6::parsley:4.5.3
+--dependency com.github.j-mie6::parsley:4.6.0
 // or in file
-//> using dep com.github.j-mie6::parsley:4.5.3
+//> using dep com.github.j-mie6::parsley:4.6.0
 
 // mill
-ivy"com.github.j-mie6::parsley:4.5.3"
+ivy"com.github.j-mie6::parsley:4.6.0"
 ```
 
 Documentation can be found [**here**](https://javadoc.io/doc/com.github.j-mie6/parsley-docs_2.13/latest/index.html)
@@ -26,7 +26,7 @@ If you're a `cats` user, you may also be interested in using [`parsley-cats`](ht
 to augment `parsley` with instances for various `cats` typeclasses:
 
 ```scala
-libraryDependencies += "com.github.j-mie6" %% "parsley-cats" % "1.3.0"
+libraryDependencies += "com.github.j-mie6" %% "parsley-cats" % "1.5.0"
 ```
 
 ### Examples
@@ -168,7 +168,8 @@ _An exception to this policy is made for any version `3.x.y`, which reaches EoL 
 | `4.2.0` | 22nd January 2023  | EoL reached (`4.2.14`)          |
 | `4.3.0` | 8th July 2023      | EoL reached (`4.3.1`)           |
 | `4.4.0` | 6th October 2023   | EoL reached (`4.4.1`)           |
-| `4.5.0` | 6th January 2023   | Enjoying indefinite support     |
+| `4.5.0` | 6th January 2023   | Supported until 15th May 2025   |
+| `4.6.0` | 15th February 2023 | Enjoying indefinite support     |
 
 ## Bug Reports [![Percentage of issues still open](https://isitmaintained.com/badge/open/j-mie6/Parsley.svg)](https://isitmaintained.com/project/j-mie6/Parsley "Percentage of issues still open") [![Maintainability](https://img.shields.io/codeclimate/maintainability/j-mie6/parsley)](https://codeclimate.com/github/j-mie6/parsley) [![Test Coverage](https://img.shields.io/codeclimate/coverage-letter/j-mie6/parsley)](https://codeclimate.com/github/j-mie6/parsley)
 
