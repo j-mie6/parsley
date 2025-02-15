@@ -39,7 +39,7 @@ object ParsleySitePlugin extends AutoPlugin {
             )
             .withRawContent,  // enable usage of raw HTML,
         mdocVariables := {
-            mdocVariables.value ++ Map("STABLE_VERSION" -> "4.5.2"),
+            mdocVariables.value ++ Map("STABLE_VERSION" -> "4.6.0"),
         },
         tlSiteHelium := {
             val notBackport = true || !githubIsWorkflowBuild.value
@@ -196,12 +196,13 @@ object redirects {
 
     private def redirects(latest: String) = {
         // TODO: this can be made less brittle, surely can be derived from the above configuration?
-        val versions = List("latest", "stable", "4.4.x", "4.4", "4.5.x", "4.5", /*"5.0.x",*/ "5.0")
+        val versions = List("latest", "stable", "4.4.x", "4.4", "4.5.x", "4.5", "4.6.x", "4.6", /*"5.0.x",*/ "5.0")
         val versionMappings = List(
             "latest" -> latest,
-            "stable" -> "4.5",
+            "stable" -> "4.6",
             "4.4.x" -> "4.4",
             "4.5.x" -> "4.5",
+            "4.6.x" -> "4.6",
             //"5.0.x" -> "5.0",
         )
 
