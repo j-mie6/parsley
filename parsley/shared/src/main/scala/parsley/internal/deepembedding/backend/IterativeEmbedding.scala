@@ -18,13 +18,11 @@ import StrictParsley.InstrBuffer
 private [deepembedding] final class Many[A, C](init: StrictParsley[mutable.Builder[A, C]], val p: StrictParsley[A]) extends Unary[A, C] {
     final override def optimise: StrictParsley[C] = p match {
         case _: Pure[_] => throw new NonProductiveIterationException("many") // scalastyle:ignore throw
-        //case _: MZero   => new Pure(factory.newBuilder.result())
         case _          => this
     }
     final override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val body = state.freshLabel()
         val handler = state.freshLabel()
-        //if (producesResults) instrs += new instructions.Fresh(factory.newBuilder)
         suspend(init.codeGen[M, R](producesResults)) >> {
             instrs += new instructions.PushHandler(handler)
             instrs += new instructions.Label(body)
@@ -167,14 +165,15 @@ private [deepembedding] final class SepEndBy1[A, C](p: StrictParsley[A], sep: St
 }
 
 // TODO: unify :/
-private [deepembedding] final class ManyUntil[A, C](val p: StrictParsley[Any], factory: Factory[A, C]) extends Unary[Any, C] {
+private [deepembedding] final class ManyUntil[A, C](init: StrictParsley[mutable.Builder[A, C]], val p: StrictParsley[Any]) extends Unary[Any, C] {
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val start = state.freshLabel()
-        instrs += new instructions.Fresh(factory.newBuilder)
-        instrs += new instructions.Label(start)
-        suspend(p.codeGen[M, R](producesResults = true)) |> {
-            instrs += new instructions.ManyUntil(start)
-            if (!producesResults) instrs += instructions.Pop
+        suspend(init.codeGen[M, R](producesResults = true)) >> {
+            instrs += new instructions.Label(start)
+            suspend(p.codeGen[M, R](producesResults = true)) |> {
+                instrs += new instructions.ManyUntil(start)
+                if (!producesResults) instrs += instructions.Pop
+            }
         }
     }
     // $COVERAGE-OFF$
