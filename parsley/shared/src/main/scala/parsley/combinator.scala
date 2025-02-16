@@ -342,7 +342,7 @@ private [parsley] trait combinator {
       * @note `many(p) == many(0, p)` and `some(p) == many(1, p)`.
       * @group iter
       */
-    final def manyN[A](n: Int, p: Parsley[A]): Parsley[List[A]] = manyN(n, p, List) //TODO: name
+    final def manyN[A](n: Int, p: Parsley[A]): Parsley[List[A]] = manyN(n, p, List)
     private [parsley] final def manyN[A, C](n: Int, p: Parsley[A], factory: Factory[A, C]): Parsley[C] = {
         require(n >= 0, "cannot pass negative integer to `manyN`")
         fresh(factory.newBuilder).persist { acc =>
@@ -377,7 +377,7 @@ private [parsley] trait combinator {
       * @group iter
       * @since 4.5.0
       */
-    final def countMany(p: Parsley[_]): Parsley[Int] = p.foldLeft(0)((n, _) => n + 1) //TODO: name
+    final def countMany(p: Parsley[_]): Parsley[Int] = p.foldLeft(0)((n, _) => n + 1).uo("countMany")
 
     /** This combinator repeatedly parses a given parser '''one''' or more times, returning how many times it succeeded.
       *
@@ -404,7 +404,7 @@ private [parsley] trait combinator {
       * @group iter
       * @since 4.5.0
       */
-    final def countSome(p: Parsley[_]): Parsley[Int] = p.foldLeft1(0)((n, _) => n + 1) //TODO: name
+    final def countSome(p: Parsley[_]): Parsley[Int] = p.foldLeft1(0)((n, _) => n + 1).uo("countSome")
 
     /** This combinator parses '''zero''' or more occurrences of `p`, separated by `sep`.
       *
@@ -428,7 +428,7 @@ private [parsley] trait combinator {
       * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
-    final def sepBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepBy1(p, sep) </> Nil //TODO: name
+    final def sepBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepBy(p, sep, List)
     private [parsley] final def sepBy[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
         sepBy1(p, sep, factory) |: fresh(factory.newBuilder.result())
     } //TODO: name
@@ -485,7 +485,7 @@ private [parsley] trait combinator {
       * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
-    final def sepEndBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepEndBy(p, sep, List) //TODO: name
+    final def sepEndBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepEndBy(p, sep, List)
     private [parsley] final def sepEndBy[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
         sepEndBy1(p, sep, factory) |: fresh(factory.newBuilder.result())
     } //TODO: name
@@ -515,7 +515,7 @@ private [parsley] trait combinator {
       * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
-    final def sepEndBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepEndBy1(p, sep, List) //TODO: name
+    final def sepEndBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepEndBy1(p, sep, List)
     private [parsley] final def sepEndBy1[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
         new Parsley(new frontend.SepEndBy1(p.internal, sep.internal, factory))
     } //TODO: name
@@ -542,7 +542,7 @@ private [parsley] trait combinator {
       * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
-    final def endBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = endBy(p, sep, List) //TODO: name
+    final def endBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = endBy(p, sep, List)
     private [parsley] final def endBy[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
         many(p <~ sep, factory)
     } //TODO: name
@@ -665,7 +665,7 @@ private [parsley] trait combinator {
       */
     final def ifS[A](condP: Parsley[Boolean], thenP: =>Parsley[A], elseP: =>Parsley[A]): Parsley[A] = {
         new Parsley(new frontend.If(condP.internal, thenP.internal, elseP.internal))
-    } // FIXME: expose name
+    }
 
     /** This combinator conditionally parses `thenP` depending on the result of parsing `condP`.
       *
@@ -686,7 +686,7 @@ private [parsley] trait combinator {
       * @return a parser that conditionally parses `thenP` after `condP`.
       * @group condComp
       */
-    final def whenS(condP: Parsley[Boolean])(thenP: =>Parsley[Unit]): Parsley[Unit] = ifS(condP, thenP, pure(())) //TODO: name
+    final def whenS(condP: Parsley[Boolean])(thenP: =>Parsley[Unit]): Parsley[Unit] = ifS(condP, thenP, pure(())).uo("whenS")
 
     /** This combinator verfies that the given parser returns `true`, or else fails.
       *
@@ -702,7 +702,7 @@ private [parsley] trait combinator {
       * @param p the parser that yields the condition value.
       * @group condComp
       */
-    final def guardS(p: Parsley[Boolean]): Parsley[Unit] = ifS(p, pure(()), empty) //TODO: name
+    final def guardS(p: Parsley[Boolean]): Parsley[Unit] = ifS(p, pure(()), empty(0).ut()).uo("guardS")
 
     /** This combinator repeatedly parses `p` so long as it returns `true`.
       *
@@ -728,8 +728,8 @@ private [parsley] trait combinator {
       */
     final def whileS(p: Parsley[Boolean]): Parsley[Unit] = {
         lazy val whileP: Parsley[Unit] = whenS(p)(whileP)
-        whileP
-    } //TODO: name
+        whileP.uo("whileS")
+    }
 
     /** This combinator parses exactly `n` occurrences of `p`, returning these `n` results in a list.
       *
@@ -755,7 +755,7 @@ private [parsley] trait combinator {
       * @group range
       * @since 4.0.0
       */
-    final def exactly[A](n: Int, p: Parsley[A]): Parsley[List[A]] = exactly(n, p, List) //TODO: name
+    final def exactly[A](n: Int, p: Parsley[A]): Parsley[List[A]] = exactly(n, p, List)
     private [parsley] final def exactly[A, CC[_]](n: Int, p: Parsley[A], factory: IterableFactory[CC]): Parsley[CC[A]] = {
         require(n > 0, "n must be greater than 0 for exactly")
         traverse(factory, 0, (1 until n): _*)(_ => p)
