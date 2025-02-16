@@ -507,7 +507,7 @@ private [parsley] trait character {
       * @since 4.0.0
       * @group string
       */
-    final def strings(str0: String, strs: String*): Parsley[String] = strings(str0 -> pure(str0), strs.map(s => s -> pure(s)): _*)
+    final def strings(str0: String, strs: String*): Parsley[String] = strings(str0 -> pure(str0), strs.map(s => s -> pure(s))*)
 
     /** This combinator tries to parse each of the key-value pairs `kvs` (and `kv0`), until one of them succeeds.
       *
@@ -552,7 +552,7 @@ private [parsley] trait character {
         choice(ss.groupBy(_._1.head).toList.sortBy(_._1).view.map(_._2).flatMap { s =>
             val (sLast, pLast) :: rest = s.toList.sortBy(_._1.length): @unchecked
             ((string(sLast).ut() ~> pLast.ut()).ut() :: rest.map { case (s, p) => (atomic(string(s).ut()).ut() ~> p).ut() }).reverse
-        }.toSeq: _*).uo((kv0._1 +: kvs.map(_._1)).mkString("strings(", ", ", ")"))
+        }.toSeq*).uo((kv0._1 +: kvs.map(_._1)).mkString("strings(", ", ", ")"))
     }
 
     /** This parser will parse '''any''' single character from the input, failing if there is no input remaining.

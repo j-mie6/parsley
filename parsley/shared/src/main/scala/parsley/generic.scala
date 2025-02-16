@@ -51,7 +51,7 @@ object generic {
         protected final def error[T](p: Parsley[T]): Parsley[T] = applyReason(applyLabels(p))
         private def applyLabels[T](p: Parsley[T]): Parsley[T] = labels match {
             case Nil => p
-            case l0 :: ls => p.label(l0, ls: _*).ut()
+            case l0 :: ls => p.label(l0, ls*).ut()
         }
         private def applyReason[T](p: Parsley[T]): Parsley[T] = reason.foldLeft(p)(_.explain(_).ut())
     }
