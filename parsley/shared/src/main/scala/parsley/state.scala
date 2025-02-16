@@ -471,6 +471,7 @@ object state {
       * @param body the body of the loop performed each iteration, which has access to the current value of the state.
       * @return a parser that initialises some state with `init` and then parses body until `cond` is true, modifying the state each iteration with `step`.
       * @see [[parsley.state.forP_ `forP_`]] for a version that ignores the results of the body.
+      * @since 5.0.0
       * @group comb
       */
     def forYieldP_[A, B, CC[_]](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A], factory: IterableFactory[CC])
@@ -574,6 +575,7 @@ object state {
       * @return a parser that initialises some state with `init` and then parses body until `cond` is true, modifying the state each iteration with `step`.
       *         The results of the iterations are returned in a `CC`.
       * @see [[parsley.state.forP `forP`]] for a version that ignores the results.
+      * @since 5.0.0
       * @group comb
       */
     def forYieldP[A, B, CC[_]](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A], factory: IterableFactory[CC])
