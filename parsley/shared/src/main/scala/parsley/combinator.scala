@@ -8,7 +8,7 @@ package parsley
 import scala.annotation.tailrec
 import scala.collection.{Factory, IterableFactory, mutable}
 
-import parsley.Parsley.{atomic, empty, fresh, many, notFollowedBy, transPure => pure, secretSome, select, some}
+import parsley.Parsley.{atomic, empty, transFresh => fresh, many, notFollowedBy, transPure => pure, secretSome, select, some}
 import parsley.state.{RefMaker, StateCombinators, forP}
 import parsley.syntax.zipped.zippedSyntax2
 
@@ -343,7 +343,37 @@ private [parsley] trait combinator {
       * @group iter
       */
     final def manyN[A](n: Int, p: Parsley[A]): Parsley[List[A]] = manyN(n, p, List)
-    private [parsley] final def manyN[A, C](n: Int, p: Parsley[A], factory: Factory[A, C]): Parsley[C] = {
+    /** This combinator repeatedly parses a given parser '''`n`''' or more times, collecting the results into a list.
+      *
+      * Parses a given parser, `p`, repeatedly until it fails. If `p` failed having consumed input,
+      * this combinator fails. Otherwise when `p` fails '''without consuming input''', this combinator
+      * will return all of the results, `x,,1,,` through `x,,m,,` (with `m >= n`), in a list: `List(x,,1,,, .., x,,m,,)`.
+      * If `p` was not successful at least `n` times, this combinator fails.
+      *
+      * @example {{{
+      * scala> import parsley.character.string
+      * scala> import parsley.combinator.manyN
+      * scala> val p = manyN(2, string("ab"), Vector)
+      * scala> p.parse("")
+      * val res0 = Failure(..)
+      * scala> p.parse("ab")
+      * val res1 = Failure(..)
+      * scala> p.parse("abababab")
+      * val res2 = Success(Vector("ab", "ab", "ab", "ab"))
+      * scala> p.parse("aba")
+      * val res3 = Failure(..)
+      * }}}
+      *
+      * @param n the minimum number of `p`s required.
+      * @param p the parser to execute multiple times.
+      * @param factory a way to construct the result type `C`.
+      * @tparam C a structure that can store `A`s inside it.
+      * @return a parser that parses `p` until it fails, returning the list of all the successful results.
+      * @note `many(p, factory) == many(0, p, factory)` and `some(p, factory) == many(1, p, factory)`.
+      * @since 5.0.0
+      * @group iter
+      */
+    final def manyN[A, C](n: Int, p: Parsley[A], factory: Factory[A, C]): Parsley[C] = {
         require(n >= 0, "cannot pass negative integer to `manyN`")
         fresh(factory.newBuilder).persist { acc =>
             forP[Int](pure(0), pure(_ < n), pure(_ + 1)) {
@@ -429,9 +459,34 @@ private [parsley] trait combinator {
       * @group sep
       */
     final def sepBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepBy(p, sep, List)
-    private [parsley] final def sepBy[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
-        sepBy1(p, sep, factory) |: fresh(factory.newBuilder.result())
-    } //TODO: name
+    /** This combinator parses '''zero''' or more occurrences of `p`, separated by `sep`.
+      *
+      * Behaves just like `sepBy1`, except does not require an initial `p`, returning an empty structure instead.
+      *
+      * @example {{{
+      * scala> ...
+      * scala> val args = sepBy(int, string(", "), Vector)
+      * scala> args.parse("7, 3, 2")
+      * val res0 = Success(Vector(7, 3, 2))
+      * scala> args.parse("")
+      * val res1 = Success(Vector.empty)
+      * scala> args.parse("1")
+      * val res2 = Success(Vector(1))
+      * scala> args.parse("1, 2, ")
+      * val res3 = Failure(..) // no trailing comma allowed
+      * }}}
+      *
+      * @param p the parser whose results are collected into a list.
+      * @param sep the delimiter that must be parsed between every `p`.
+      * @param factory the means of constructing the `C`.
+      * @tparam C the structure that contains the results of type `A`.
+      * @return a parser that parses `p` delimited by `sep`, returning a `C` of `p`'s results.
+      * @since 5.0.0
+      * @group sep
+      */
+    final def sepBy[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
+        (sepBy1(p, sep, factory).ut() |: fresh(factory.newBuilder.result())).uo("sepBy")
+    }
 
     /** This combinator parses '''one''' or more occurrences of `p`, separated by `sep`.
       *
@@ -458,10 +513,36 @@ private [parsley] trait combinator {
       * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
-    final def sepBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = p <::> many(sep ~> p) //TODO: name
-    private [parsley] final def sepBy1[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
-        secretSome(p, sep ~> p, factory)
-    } //TODO: name
+    final def sepBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = (p <::> many((sep ~> p).ut()).ut()).uo("sepBy1") // FIXME: in terms of the other!
+    /** This combinator parses '''one''' or more occurrences of `p`, separated by `sep`.
+      *
+      * First parses a `p`. Then parses `sep` followed by `p` until there are no more `sep`s.
+      * The results of the `p`'s, `x,,1,,` through `x,,n,,`, are returned as `C(x,,1,,, .., x,,n,,)`.
+      * If `p` or `sep` fails having consumed input, the whole parser fails. Requires at least
+      * one `p` to have been parsed.
+      *
+      * @example {{{
+      * scala> ...
+      * scala> val args = sepBy1(int, string(", "))
+      * scala> args.parse("7, 3, 2")
+      * val res0 = Success(List(7, 3, 2))
+      * scala> args.parse("")
+      * val res1 = Failure(..)
+      * scala> args.parse("1")
+      * val res2 = Success(List(1))
+      * scala> args.parse("1, 2, ")
+      * val res3 = Failure(..) // no trailing comma allowed
+      * }}}
+      *
+      * @param p the parser whose results are collected into a `C`.
+      * @param sep the delimiter that must be parsed between every `p`.
+      * @param factory the means of constructing the `C`.
+      * @tparam C the structure that contains the results of type `A`.
+      * @return a parser that parses `p` delimited by `sep`, returning the `C` of `p`'s results.
+      * @since 5.0.0
+      * @group sep
+      */
+    final def sepBy1[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = secretSome(p, (sep ~> p).ut(), factory).uo("sepBy1")
 
     /** This combinator parses '''zero''' or more occurrences of `p`, separated and optionally ended by `sep`.
       *
@@ -486,9 +567,34 @@ private [parsley] trait combinator {
       * @group sep
       */
     final def sepEndBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepEndBy(p, sep, List)
-    private [parsley] final def sepEndBy[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
-        sepEndBy1(p, sep, factory) |: fresh(factory.newBuilder.result())
-    } //TODO: name
+    /** This combinator parses '''zero''' or more occurrences of `p`, separated and optionally ended by `sep`.
+      *
+      * Behaves just like `sepEndBy1`, except does not require an initial `p`, returning an empty structure instead.
+      *
+      * @example {{{
+      * scala> ...
+      * scala> val args = sepEndBy(int, string(";\n"), Vector)
+      * scala> args.parse("7;\n3;\n2")
+      * val res0 = Success(Vector(7, 3, 2))
+      * scala> args.parse("")
+      * val res1 = Success(Vector.empty)
+      * scala> args.parse("1")
+      * val res2 = Success(Vector(1))
+      * scala> args.parse("1;\n2;\n")
+      * val res3 = Success(Vector(1, 2))
+      * }}}
+      *
+      * @param p the parser whose results are collected into a `C`.
+      * @param sep the delimiter that must be parsed between every `p`.
+      * @param factory the means of constructing the `C`.
+      * @tparam C the structure that contains the results of type `A`.
+      * @return a parser that parses `p` delimited by `sep`, returning the `C` of `p`'s results.
+      * @since 5.0.0
+      * @group sep
+      */
+    final def sepEndBy[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
+        (sepEndBy1(p, sep, factory).ut() |: fresh(factory.newBuilder.result())).uo("sepEndBy")
+    }
 
     /** This combinator parses '''one''' or more occurrences of `p`, separated and optionally ended by `sep`.
       *
@@ -516,9 +622,37 @@ private [parsley] trait combinator {
       * @group sep
       */
     final def sepEndBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepEndBy1(p, sep, List)
-    private [parsley] final def sepEndBy1[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
+    /** This combinator parses '''one''' or more occurrences of `p`, separated and optionally ended by `sep`.
+      *
+      * First parses a `p`. Then parses `sep` followed by `p` until there are no more: if a final `sep` exists, this is parsed.
+      * The results of the `p`'s, `x,,1,,` through `x,,n,,`, are returned as `C(x,,1,,, .., x,,n,,)`.
+      * If `p` or `sep` fails having consumed input, the whole parser fails. Requires at least
+      * one `p` to have been parsed.
+      *
+      * @example {{{
+      * scala> ...
+      * scala> val args = sepEndBy1(int, string(";\n"), Vector)
+      * scala> args.parse("7;\n3;\n2")
+      * val res0 = Success(Vector(7, 3, 2))
+      * scala> args.parse("")
+      * val res1 = Failure(..)
+      * scala> args.parse("1")
+      * val res2 = Success(Vector(1))
+      * scala> args.parse("1;\n2;\n")
+      * val res3 = Success(Vector(1, 2))
+      * }}}
+      *
+      * @param p the parser whose results are collected into a `C`.
+      * @param sep the delimiter that must be parsed between every `p`.
+      * @param factory the means of constructing the `C`.
+      * @tparam C the structure that contains the results of type `A`.
+      * @return a parser that parses `p` delimited by `sep`, returning the `C` of `p`'s results.
+      * @since 5.0.0
+      * @group sep
+      */
+    final def sepEndBy1[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
         new Parsley(new frontend.SepEndBy1(p.internal, sep.internal, factory))
-    } //TODO: name
+    }
 
     /** This combinator parses '''zero''' or more occurrences of `p`, separated and ended by `sep`.
       *
@@ -543,9 +677,34 @@ private [parsley] trait combinator {
       * @group sep
       */
     final def endBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = endBy(p, sep, List)
-    private [parsley] final def endBy[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
-        many(p <~ sep, factory)
-    } //TODO: name
+     /** This combinator parses '''zero''' or more occurrences of `p`, separated and ended by `sep`.
+      *
+      * Behaves just like `endBy1`, except does not require an initial `p` and `sep`, returning an empty structure instead.
+      *
+      * @example {{{
+      * scala> ...
+      * scala> val args = endBy(int, string(";\n"), Vector)
+      * scala> args.parse("7;\n3;\n2")
+      * val res0 = Failure(..)
+      * scala> args.parse("")
+      * val res1 = Success(Vector.empty)
+      * scala> args.parse("1;\n")
+      * val res2 = Success(Vector(1))
+      * scala> args.parse("1;\n2;\n")
+      * val res3 = Success(Vector(1, 2))
+      * }}}
+      *
+      * @param p the parser whose results are collected into a `C`.
+      * @param sep the delimiter that must be parsed between every `p`.
+      * @param factory the means of constructing the `C`.
+      * @tparam C the structure that contains the results of type `A`.
+      * @return a parser that parses `p` delimited by `sep`, returning the `C` of `p`'s results.
+      * @since 5.0.0
+      * @group sep
+      */
+    final def endBy[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
+        many((p <~ sep).ut(), factory).uo("endBy")
+    }
 
     /** This combinator parses '''one''' or more occurrences of `p`, separated and ended by `sep`.
       *
@@ -571,10 +730,35 @@ private [parsley] trait combinator {
       * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
-    final def endBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = some(p <~ sep) //TODO: name
-    private [parsley] final def endBy1[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
-        some(p <~ sep, factory)
-    } //TODO: name
+    final def endBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = some((p <~ sep).ut()).uo("endBy1") //FIXME: unify with the other one
+    /** This combinator parses '''one''' or more occurrences of `p`, separated and ended by `sep`.
+      *
+      * Parses `p` followed by `sep` one or more times.
+      * The results of the `p`'s, `x,,1,,` through `x,,n,,`, are returned as `C(x,,1,,, .., x,,n,,)`.
+      * If `p` or `sep` fails having consumed input, the whole parser fails.
+      *
+      * @example {{{
+      * scala> ...
+      * scala> val args = endBy1(int, string(";\n"), Vector)
+      * scala> args.parse("7;\n3;\n2")
+      * val res0 = Failure(..)
+      * scala> args.parse("")
+      * val res1 = Failure(..)
+      * scala> args.parse("1;\n")
+      * val res2 = Success(Vector(1))
+      * scala> args.parse("1;\n2;\n")
+      * val res3 = Success(Vector(1, 2))
+      * }}}
+      *
+      * @param p the parser whose results are collected into a `C`.
+      * @param sep the delimiter that must be parsed between every `p`.
+      * @param factory the means of constructing the `C`.
+      * @tparam C the structure that contains the results of type `A`.
+      * @return a parser that parses `p` delimited by `sep`, returning a `C` of `p`'s results.
+      * @since 5.0.0
+      * @group sep
+      */
+    final def endBy1[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = some((p <~ sep).ut(), factory).uo("endBy1")
 
     /** This combinator repeatedly parses a given parser '''zero''' or more times, until the `end` parser succeeds, collecting the results into a list.
       *

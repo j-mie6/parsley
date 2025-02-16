@@ -396,7 +396,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       */
     def <**>[B](pf: =>Parsley[A => B]): Parsley[B] = lift.lift2[A, A=>B, B]((x, f) => f(x), this, pf).uo("<**>")
 
-    // FIXME: move into nodes
+    // FIXME: names move into nodes
     @inline private def lseq[B](q: =>Parsley[B], name: String): Parsley[A] = new Parsley(new frontend.<*(this.internal, q.internal)).uo(name)
     @inline private def rseq[B](q: =>Parsley[B], name: String): Parsley[B] = new Parsley(new frontend.*>(this.internal, q.internal)).uo(name)
 
@@ -1097,6 +1097,7 @@ private [parsley] abstract class ParsleyImpl {
       * @group basic
       */
     final def fresh[A](x: =>A): Parsley[A] = new Parsley(new singletons.Fresh(x))
+    @inline private [parsley] final def transFresh[A](x: =>A) = fresh(x).ut() // FIXME: switch round?
 
     /** This combinator parses its first argument `either`, and then parses either `left` or `right` depending on its result.
       *
@@ -1390,7 +1391,7 @@ private [parsley] abstract class ParsleyImpl {
       * }}}
       *
       * @param p the parser to execute multiple times.
-      * @param factory a way to construct the result type `C`
+      * @param factory a way to construct the result type `C`.
       * @tparam C a structure that can store `A`s inside it.
       * @return a parser that parses `p` until it fails, returning all of all the successful results.
       * @since 5.0.0
