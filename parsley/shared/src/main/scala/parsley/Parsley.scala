@@ -1020,7 +1020,7 @@ object Parsley extends ParsleyImpl with PlatformSpecific {
           * problem: a recursion point inside one of these strict fields
           * will cause an infinite loop at runtime! This can be fixed by
           * ensuring that this becomes part of a lazy argument. This is
-          * a solution described by the [[combinator$.sequence `sequence`]]
+          * a solution described by the [[combinator$.sequence[A]* `sequence`]]
           * combinator, for instance: `p <::> sequence(q, .., r)` will ensure
           * that the `sequence` is in a lazy position in `<::>` meaning that
           * even if any of `q` to `r` must be lazy, they can go in the strict
