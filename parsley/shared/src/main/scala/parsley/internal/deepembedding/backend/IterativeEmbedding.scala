@@ -5,7 +5,7 @@
  */
 package parsley.internal.deepembedding.backend
 
-import scala.collection.Factory
+import scala.collection.{mutable, Factory}
 
 import parsley.exceptions.NonProductiveIterationException
 
@@ -15,21 +15,23 @@ import parsley.internal.machine.instructions
 
 import StrictParsley.InstrBuffer
 
-private [deepembedding] final class Many[A, C](val p: StrictParsley[A], factory: Factory[A, C]) extends Unary[A, C] {
+private [deepembedding] final class Many[A, C](init: StrictParsley[mutable.Builder[A, C]], val p: StrictParsley[A]) extends Unary[A, C] {
     final override def optimise: StrictParsley[C] = p match {
         case _: Pure[_] => throw new NonProductiveIterationException("many") // scalastyle:ignore throw
-        case _: MZero   => new Pure(factory.newBuilder.result())
+        //case _: MZero   => new Pure(factory.newBuilder.result())
         case _          => this
     }
     final override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val body = state.freshLabel()
         val handler = state.freshLabel()
-        if (producesResults) instrs += new instructions.Fresh(factory.newBuilder)
-        instrs += new instructions.PushHandler(handler)
-        instrs += new instructions.Label(body)
-        suspend(p.codeGen[M, R](producesResults)) |> {
-            instrs += new instructions.Label(handler)
-            instrs += (if (producesResults) new instructions.Many(body) else new instructions.SkipMany(body))
+        //if (producesResults) instrs += new instructions.Fresh(factory.newBuilder)
+        suspend(init.codeGen[M, R](producesResults)) >> {
+            instrs += new instructions.PushHandler(handler)
+            instrs += new instructions.Label(body)
+            suspend(p.codeGen[M, R](producesResults)) |> {
+                instrs += new instructions.Label(handler)
+                instrs += (if (producesResults) new instructions.Many(body) else new instructions.SkipMany(body))
+            }
         }
     }
 

@@ -137,7 +137,7 @@ class VisitorTests extends ParsleyTest {
         new DebugError(dummyParser, "plugh", false, dummyErrorBuilder).testV
         new <|>(dummyParser, dummyParser, "dummy").testV
         new >>=[Nothing, Nothing](dummyParser, crash).testV
-        new Many(dummyParser, null).testV
+        new Many(dummyParser, dummyParser, null).testV
         new ChainPre(dummyParser, dummyParser).testV
         new Span(dummyParser).testV
         new Profile(dummyParser, "", null).testV

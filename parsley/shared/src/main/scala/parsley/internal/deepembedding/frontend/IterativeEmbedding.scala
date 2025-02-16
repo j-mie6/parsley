@@ -5,18 +5,17 @@
  */
 package parsley.internal.deepembedding.frontend
 
-import scala.collection.Factory
+import scala.collection.{mutable, Factory}
 
 import parsley.internal.deepembedding.ContOps, ContOps.{suspend, ContAdapter}
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 
-private [parsley] final class Many[A, C](p: LazyParsley[A], factory: Factory[A, C]) extends Unary[A, C](p) {
-    override def make(p: StrictParsley[A]): StrictParsley[C] = new backend.Many(p, factory)
+private [parsley] final class Many[A, C](init: LazyParsley[mutable.Builder[A, C]], p: LazyParsley[A], private [parsley] var debugName: String)
+    extends Binary[mutable.Builder[A, C], A, C](init, p) {
+    override def make(init: StrictParsley[mutable.Builder[A, C]], p: StrictParsley[A]): StrictParsley[C] = new backend.Many(init, p)
 
     // $COVERAGE-OFF$
-    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[C] = visitor.visit(this, context)(p, factory)
-
-    private [parsley] var debugName = "many"
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[C] = visitor.visit(this, context)(init, p)
     // $COVERAGE-ON$
 }
 private [parsley] final class ChainPost[A](p: LazyParsley[A], _op: =>LazyParsley[A => A]) extends Binary[A, A => A, A](p, _op) {

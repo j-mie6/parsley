@@ -5,7 +5,7 @@
  */
 package parsley.internal.deepembedding.frontend
 
-import scala.collection.Factory
+import scala.collection.{mutable, Factory}
 
 import parsley.debug.{Breakpoint, Profiler}
 import parsley.errors.ErrorBuilder
@@ -114,7 +114,7 @@ private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle
     def visit[A](self: <*[A], context: T)(p: LazyParsley[A], _q: =>LazyParsley[_]): U[A]
 
     // Iterative parser visitors.
-    def visit[A, C](self: Many[A, C], context: T)(p: LazyParsley[A], factory: Factory[A, C]): U[C]
+    def visit[A, C](self: Many[A, C], context: T)(init: LazyParsley[mutable.Builder[A, C]], p: LazyParsley[A]): U[C]
     def visit[A](self: ChainPost[A], context: T)(p: LazyParsley[A], _op: =>LazyParsley[A => A]): U[A]
     def visit[A](self: ChainPre[A], context: T)(p: LazyParsley[A], op: =>LazyParsley[A => A]): U[A]
     def visit[A, B](self: Chainl[A, B], context: T)(init: LazyParsley[B], p: =>LazyParsley[A], op: =>LazyParsley[(B, A) => B]): U[B]
@@ -274,7 +274,9 @@ private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
     override def visit[A](self: <*[A], context: T)(p: LazyParsley[A], _q: =>LazyParsley[_]): U[A] = visitBinary[A, Any, A](self, context)(p, _q)
 
     // Iterative overrides.
-    override def visit[A, C](self: Many[A, C], context: T)(p: LazyParsley[A], factory: Factory[A, C]): U[C] = visitUnary(self, context)(p)
+    override def visit[A, C](self: Many[A, C], context: T)(init: LazyParsley[mutable.Builder[A, C]], p: LazyParsley[A]): U[C] = {
+        visitBinary(self, context)(init, p)
+    }
     override def visit[A](self: ChainPost[A], context: T)(p: LazyParsley[A], _op: =>LazyParsley[A => A]): U[A] = visitBinary(self, context)(p, _op)
     override def visit[A, B](self: Chainl[A, B], context: T)(init: LazyParsley[B], p: =>LazyParsley[A], op: =>LazyParsley[(B, A) => B]): U[B] = {
         visitTernary(self, context)(init, p, op)

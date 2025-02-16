@@ -1335,7 +1335,7 @@ private [parsley] abstract class ParsleyImpl {
       * @since 5.0.0
       * @group iter
       */
-    final def many[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = new Parsley(new frontend.Many(p.internal, factory))
+    final def many[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = secretSome(fresh(factory.newBuilder), p, "many")
     // this is needed for Scala 2 to avoid manual ascription (and ascribes cleaner), but isn't really needed for Scala 3 and increases doc/API footprint
     // we can add them later if we really wanted to. Alternatively, p.many(factory) would remove this problem entirely and provide better intellisense.
     //final private [parsley] def many[A, CC[_]](p: Parsley[A], factory: IterableFactory[CC]): Parsley[CC[A]] = many[A, CC[A]](p, factory)
@@ -1368,7 +1368,7 @@ private [parsley] abstract class ParsleyImpl {
       * @since 4.5.0
       * @group iter
       */
-    final def some[A](p: Parsley[A]): Parsley[List[A]] = (p <::> many(p).ut()).uo("some")
+    final def some[A](p: Parsley[A]): Parsley[List[A]] = some(p, List)
     /** This combinator repeatedly parses a given parser '''one''' or more times, collecting the results into a type `C` via a `Factory[A, C]`.
       *
       * Parses a given parser, `p`, repeatedly until it fails. If `p` failed having consumed input,
@@ -1397,14 +1397,11 @@ private [parsley] abstract class ParsleyImpl {
       * @since 5.0.0
       * @group iter
       */
-    final def some[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = secretSome(p, p, factory).uo("some")
-    // TODO: this could be generalised to be the new many, where many(p, factory) = secretSome(fresh(factory.newBuilder), p, factory)
-    private [parsley] final def secretSome[A, C](init: Parsley[A], p: Parsley[A], factory: Factory[A, C]): Parsley[C] = {
-        secretSome(init.map(factory.newBuilder += _).ut(), p)
+    final def some[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = secretSome(p, p, factory, "some")
+    private [parsley] final def secretSome[A, C](init: Parsley[A], p: Parsley[A], factory: Factory[A, C], debugName: String): Parsley[C] = {
+        secretSome(init.map(factory.newBuilder += _).ut(), p, debugName)
     }
-    private [parsley] final def secretSome[A, C](init: Parsley[mutable.Builder[A, C]], p: Parsley[A]): Parsley[C] = {
-        val pf = transPure[(mutable.Builder[A, C], A) => mutable.Builder[A, C]](_ += _)
-        // Can't use the regular foldLeft1 here, because we need a fresh Builder each time.
-        expr.infix.secretLeft1(init, p, pf, null).map(_.result())
+    private [parsley] final def secretSome[A, C](init: Parsley[mutable.Builder[A, C]], p: Parsley[A], debugName: String): Parsley[C] = {
+        new Parsley(new frontend.Many(init.internal, p.internal, debugName))
     }
 }

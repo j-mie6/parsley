@@ -373,12 +373,12 @@ private [parsley] trait combinator {
       * @since 5.0.0
       * @group iter
       */
-    final def manyN[A, C](n: Int, p: Parsley[A], factory: Factory[A, C]): Parsley[C] = {
+    final def manyN[A, C](n: Int, p: Parsley[A], factory: Factory[A, C]): Parsley[C] = { // FIXME: no persist needed
         require(n >= 0, "cannot pass negative integer to `manyN`")
         fresh(factory.newBuilder).persist { acc =>
             forP[Int](pure(0), pure(_ < n), pure(_ + 1)) {
                 (acc, p).zipped(_ += _).impure // we don't want this optimised out, it's a mutable operation in a resultless context
-            } ~> secretSome(acc, p)
+            } ~> secretSome(acc, p, null)
         }
     } //TODO: name
 
@@ -513,7 +513,7 @@ private [parsley] trait combinator {
       * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
-    final def sepBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = (p <::> many((sep ~> p).ut()).ut()).uo("sepBy1") // FIXME: in terms of the other!
+    final def sepBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepBy1(p, sep, List)
     /** This combinator parses '''one''' or more occurrences of `p`, separated by `sep`.
       *
       * First parses a `p`. Then parses `sep` followed by `p` until there are no more `sep`s.
@@ -542,7 +542,7 @@ private [parsley] trait combinator {
       * @since 5.0.0
       * @group sep
       */
-    final def sepBy1[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = secretSome(p, (sep ~> p).ut(), factory).uo("sepBy1")
+    final def sepBy1[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = secretSome(p, (sep ~> p).ut(), factory, "sepBy1")
 
     /** This combinator parses '''zero''' or more occurrences of `p`, separated and optionally ended by `sep`.
       *
@@ -730,7 +730,7 @@ private [parsley] trait combinator {
       * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
-    final def endBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = some((p <~ sep).ut()).uo("endBy1") //FIXME: unify with the other one
+    final def endBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = endBy1(p, sep, List)
     /** This combinator parses '''one''' or more occurrences of `p`, separated and ended by `sep`.
       *
       * Parses `p` followed by `sep` one or more times.
