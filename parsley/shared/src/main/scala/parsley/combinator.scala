@@ -1027,12 +1027,43 @@ private [parsley] trait combinator {
       * @since 4.4.0
       */
     final def range[A](min: Int, max: Int)(p: Parsley[A]): Parsley[List[A]] = range(min, max, List)(p)
-    private [parsley] final def range[A, CC[_]](min: Int, max: Int, factory: IterableFactory[CC])(p: Parsley[A]): Parsley[CC[A]] = {
+    /** This combinator parses between `min` and `max` occurrences of `p`, returning these `n` results in a `CC`.
+      *
+      * Parses `p` repeatedly a minimum of `min` times and up to `max` times both inclusive. If `p` fails before
+      * `min` is reached, then this combinator fails. It is not required for `p` to fail after the `max`^th^ parse. The results produced by
+      * `p`, `x,,min,,` through `x,,max,,`, are returned as `CC(x,,min,,, .., x,,max,,)`.
+      *
+      * @example {{{
+      * scala> import parsley.character.item
+      * scala> import parsley.combinator.range
+      * scala> val p = range(min=3, max=5, Vector)(item)
+      * scala> p.parse("ab")
+      * val res0 = Failure(..)
+      * scala> p.parse("abc")
+      * val res1 = Success(Vector('a', 'b', 'c'))
+      * scala> p.parse("abcd")
+      * val res2 = Success(Vector('a', 'b', 'c', 'd'))
+      * scala> p.parse("abcde")
+      * val res2 = Success(Vector('a', 'b', 'c', 'd', 'e'))
+      * scala> p.parse("abcdef")
+      * val res2 = Success(Vector('a', 'b', 'c', 'd', 'e'))
+      * }}}
+      *
+      * @param min the minimum number of times to repeat `p`, inclusive.
+      * @param max the maximum number of times to repeat `p`, inclusive.
+      * @param p the parser to repeat.
+      * @param factory the means of constructing the `CC`.
+      * @tparam CC the structure that contains the results of type `A`.
+      * @return the results of the successful parses of `p`.
+      * @group range
+      * @since 5.0.0
+      */
+    final def range[A, CC[_]](min: Int, max: Int, factory: IterableFactory[CC])(p: Parsley[A]): Parsley[CC[A]] = {
         fresh(factory.newBuilder[A]).persist { xs =>
             count(min, max)((xs, p).zipped(_ += _).impure) ~>
             xs.map(_.result())
         }
-    }
+    } //TODO: name
 
     /** This combinator parses between `min` and `max` occurrences of `p`, returning the number of successes.
       *
