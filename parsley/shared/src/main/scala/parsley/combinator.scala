@@ -1091,10 +1091,9 @@ private [parsley] trait combinator {
       */
     final def range[A, CC[_]](min: Int, max: Int, factory: IterableFactory[CC])(p: Parsley[A]): Parsley[CC[A]] = {
         fresh(factory.newBuilder[A]).persist { xs =>
-            count(min, max)((xs, p).zipped(_ += _).impure) ~>
-            xs.map(_.result())
-        }
-    } //TODO: name
+            (count(min, max)((xs.ut(), p).zipped(_ += _).ut().impure.ut()).ut() ~> xs.ut().map(_.result()).ut()).ut()
+        }.uo("range")
+    }
 
     /** This combinator parses between `min` and `max` occurrences of `p`, returning the number of successes.
       *
@@ -1127,8 +1126,6 @@ private [parsley] trait combinator {
       * @since 4.4.0
       */
     final def count(min: Int, max: Int)(p: Parsley[_]): Parsley[Int] = min.makeRef { i =>
-        exactly(min, p) ~>
-        many(guardS(i.gets(_ < max)) ~> p ~> i.update(_ + 1)) ~>
-        i.get
-    } //TODO: name
+        ((exactly(min, p).ut() ~> many(((guardS(i.gets(_ < max).ut()).ut() ~> p).ut() ~> i.update(_ + 1).ut()).ut()).ut()).ut() ~> i.get.ut()).ut()
+    }.uo("count")
 }
