@@ -9,7 +9,7 @@ import scala.annotation.tailrec
 import scala.collection.{Factory, IterableFactory, mutable}
 
 import parsley.Parsley.{atomic, empty, transFresh => fresh, many, notFollowedBy, transPure => pure, secretSome, select, some}
-import parsley.state.{RefMaker, StateCombinators, forP}
+import parsley.state.{RefMaker, StateCombinators}
 import parsley.syntax.zipped.zippedSyntax2
 
 import parsley.internal.deepembedding.frontend
@@ -373,14 +373,14 @@ private [parsley] trait combinator {
       * @since 5.0.0
       * @group iter
       */
-    final def manyN[A, C](n: Int, p: Parsley[A], factory: Factory[A, C]): Parsley[C] = { // FIXME: no persist needed
+    final def manyN[A, C](n: Int, p: Parsley[A], factory: Factory[A, C]): Parsley[C] = {
         require(n >= 0, "cannot pass negative integer to `manyN`")
-        fresh(factory.newBuilder).persist { acc =>
-            forP[Int](pure(0), pure(_ < n), pure(_ + 1)) {
-                (acc, p).zipped(_ += _).impure // we don't want this optimised out, it's a mutable operation in a resultless context
-            } ~> secretSome(acc, p, null)
+        @tailrec def go(acc: Parsley[mutable.Builder[A, C]], i: Int): Parsley[C] = i match {
+            case 0 => secretSome(acc, p, "manyN")
+            case i => go((acc, p).zipped(_ += _).ut(), i-1)
         }
-    } //TODO: name
+        go(fresh(factory.newBuilder), n)
+    }
 
     /** This combinator repeatedly parses a given parser '''zero''' or more times, returning how many times it succeeded.
       *
