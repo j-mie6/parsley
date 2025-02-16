@@ -34,6 +34,6 @@ private [parsley] final class Local[S, A](val ref: Ref[S], p: LazyParsley[S], q:
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(ref, p, q)
 
-    private [parsley] var debugName = "local"
+    private [parsley] var debugName = "Ref.setDuring"
     // $COVERAGE-ON$
 }

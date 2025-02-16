@@ -41,7 +41,7 @@ private [parsley] final class ErrorAmend[A](p: LazyParsley[A], partial: Boolean)
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p, partial)
 
-    private [parsley] var debugName = "amend"
+    private [parsley] var debugName = if (partial) "partialAmend" else "amend"
     // $COVERAGE-ON$
 }
 private [parsley] final class ErrorEntrench[A](p: LazyParsley[A]) extends Unary[A, A](p) {

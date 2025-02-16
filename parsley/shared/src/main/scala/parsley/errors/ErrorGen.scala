@@ -37,7 +37,7 @@ sealed abstract class ErrorGen[-A] {
       *
       * @since 4.4.0
       */
-    final def apply(p: Parsley[(A, Int)]): Parsley[Nothing] = (p <**> parser).impure
+    final def apply(p: Parsley[(A, Int)]): Parsley[Nothing] = (p <**> parser).ut().impure.ut()
 
     /** This parser can be applied (postfix) to a parser returning a value and a width to generate an
       * error message tailored to them.
@@ -52,8 +52,9 @@ sealed abstract class ErrorGen[-A] {
       *
       * @since 4.4.0
       */
-    final def parser: Parsley[((A, Int)) => Nothing] = new Parsley(internal)
+    final def parser: Parsley[((A, Int)) => Nothing] = if (transparent) new Parsley(internal).ut() else new Parsley(internal)
     private [errors] def internal: LazyParsley[((A, Int)) => Nothing]
+    private [errors] def transparent: Boolean = false
 
     /** This method can be overridden to control how wide an error is based on the value and width
       * that produces it.

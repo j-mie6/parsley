@@ -250,7 +250,7 @@ object combinator {
       * @see [[amend `amend`]] and [[dislodge[A](by:Int)* `dislodge`]]
       * @group adj
       */
-    def amendThenDislodge[A](by: Int)(p: Parsley[A]): Parsley[A] = dislodge(by)(amend(p))
+    def amendThenDislodge[A](by: Int)(p: Parsley[A]): Parsley[A] = dislodge(by)(amend(p).ut()).uo("amendThenDislodge")
 
     // These don't need coverage really, they are basically the same as the ones above
     // $COVERAGE-OFF$
@@ -273,7 +273,7 @@ object combinator {
       * @see [[partialAmend `partialAmend`]] and [[dislodge[A](by:Int)* `dislodge`]]
       * @group adj
       */
-    def partialAmendThenDislodge[A](by: Int)(p: Parsley[A]): Parsley[A] = dislodge(by)(partialAmend(p))
+    def partialAmendThenDislodge[A](by: Int)(p: Parsley[A]): Parsley[A] = dislodge(by)(partialAmend(p).ut()).uo("partialAmendThenDislodge")
     // $COVERAGE-ON$
 
     /** This combinator marks any errors within the given parser as being ''lexical errors''.
@@ -387,9 +387,10 @@ object combinator {
           * @group filter
           */
         def filterOut(pred: PartialFunction[A, String]): Parsley[A] = {
-            this.filterWith(new VanillaGen[A] {
+            this.filterWith(new VanillaGen[A] { // TODO: direct call would remove the uo
                 override def reason(x: A) = Some(pred(x))
-            })(!pred.isDefinedAt(_))
+                override private [errors] def transparent: Boolean = true
+            })(!pred.isDefinedAt(_)).uo("filterOut")
         }
 
         /** This combinator filters the result of this parser using the given partial-predicate, succeeding only when the predicate is undefined.
@@ -436,9 +437,10 @@ object combinator {
           * @group filter
           */
         def guardAgainst(pred: PartialFunction[A, Seq[String]]): Parsley[A] = {
-            this.filterWith(new SpecializedGen[A] {
+            this.filterWith(new SpecializedGen[A] { // TODO: direct call would remove the uo
                 override def messages(x: A) = pred(x)
-            })(!pred.isDefinedAt(_))
+                override private [errors] def transparent: Boolean = true
+            })(!pred.isDefinedAt(_)).uo("gaurdAgainst")
         }
 
         /** This combinator applies a partial function `pf` to the result of this parser if its result is defined for `pf`, failing if it is not.
@@ -500,9 +502,10 @@ object combinator {
           * @group filter
           */
         def collectMsg[B](msggen: A => Seq[String])(pf: PartialFunction[A, B]): Parsley[B] = {
-            this.collectWith(new SpecializedGen[A] {
+            this.collectWith(new SpecializedGen[A] { // TODO: direct call would remove the uo
                 override def messages(x: A) = msggen(x)
-            })(pf)
+                override private [errors] def transparent: Boolean = true
+            })(pf).uo("collectMsg")
         }
 
         /** This combinator conditionally transforms the result of this parser with a given function, if a `Left` is
@@ -532,12 +535,13 @@ object combinator {
           * @group filter
           */
         def mapFilterMsg[B](f: A => Either[Seq[String], B]): Parsley[B] = {
-            this.mapFilterWith(new SpecializedGen[A] {
+            this.mapFilterWith(new SpecializedGen[A] { // TODO: direct call would remove the uo
                 override def messages(x: A) = {
                     val Left(errs) = f(x): @unchecked
                     errs
                 }
-            })(x => f(x).toOption)
+                override private [errors] def transparent: Boolean = true
+            })(x => f(x).toOption).uo("mapFilterMsg")
         }
 
         /** This combinator filters the result of this parser using the given partial-predicate, succeeding only when the predicate is undefined.
@@ -574,9 +578,10 @@ object combinator {
           * @group filter
           */
         def unexpectedWhen(pred: PartialFunction[A, String]): Parsley[A] = {
-            this.filterWith(new VanillaGen[A] {
+            this.filterWith(new VanillaGen[A] { // TODO: direct call would remove the uo
                 override def unexpected(x: A) = VanillaGen.NamedItem(pred(x))
-            })(!pred.isDefinedAt(_))
+                override private [errors] def transparent: Boolean = true
+            })(!pred.isDefinedAt(_)).uo("unexpectedWhen")
         }
 
         /** This combinator filters the result of this parser using the given partial-predicate, succeeding only when the predicate is undefined.
@@ -612,10 +617,11 @@ object combinator {
           * @group filter
           */
         def unexpectedWithReasonWhen(pred: PartialFunction[A, (String, String)]): Parsley[A] = {
-            this.filterWith(new VanillaGen[A] {
+            this.filterWith(new VanillaGen[A] { // TODO: direct call would remove the uo
                 override def unexpected(x: A) = VanillaGen.NamedItem(pred(x)._1)
                 override def reason(x: A) = Some(pred(x)._2)
-            })(!pred.isDefinedAt(_))
+                override private [errors] def transparent: Boolean = true
+            })(!pred.isDefinedAt(_)).uo("unexpectedWithReasonWhen")
         }
 
         /** This combinator changes the expected component of any errors generated by this parser.
@@ -645,7 +651,7 @@ object combinator {
           * @see [[label `label`]]
           * @group rich
           */
-        def ?(item: String): Parsley[A] = this.label(item)
+        def ?(item: String): Parsley[A] = this.label(item).uo("?")
 
         /** This combinator adds a reason to error messages generated by this parser.
           *
@@ -693,7 +699,7 @@ object combinator {
           * @since 4.4.0
           * @group genFilter
           */
-        def filterWith(errGen: ErrorGen[A])(pred: A => Boolean): Parsley[A] = combinator.filterWith(con(p))(pred, errGen)
+        def filterWith(errGen: ErrorGen[A])(pred: A => Boolean): Parsley[A] = combinator.filterWith(con(p), "filterWith")(pred, errGen)
 
         /** This combinator conditionally transforms the result of this parser with a given partial function, generating an error with the
           * given error generator if the function is not defined on the result of this parser.
@@ -706,7 +712,7 @@ object combinator {
           * @since 4.4.0
           * @group genFilter
           */
-        def collectWith[B](errGen: ErrorGen[A])(pf: PartialFunction[A, B]): Parsley[B] = combinator.collectWith(con(p))(pf, errGen)
+        def collectWith[B](errGen: ErrorGen[A])(pf: PartialFunction[A, B]): Parsley[B] = combinator.collectWith(con(p), "collectWith")(pf, errGen)
 
         /** This combinator conditionally transforms the result of this parser with a given function, generating an error with the
           * given error generator if the function returns `None` given the result of this parser.
@@ -719,18 +725,18 @@ object combinator {
           * @since 4.4.0
           * @group genFilter
           */
-        def mapFilterWith[B](errGen: ErrorGen[A])(f: A => Option[B]): Parsley[B] = combinator.mapFilterWith(con(p))(f, errGen)
+        def mapFilterWith[B](errGen: ErrorGen[A])(f: A => Option[B]): Parsley[B] = combinator.mapFilterWith(con(p), "mapFilterWith")(f, errGen)
     }
 
-    @inline private [parsley] def filterWith[A](p: Parsley[A])(f: A => Boolean, err: ErrorGen[A]): Parsley[A] = {
-        new Parsley(new frontend.Filter(p.internal, f, err.internal))
+    @inline private [parsley] def filterWith[A](p: Parsley[A], debugName: String)(f: A => Boolean, err: ErrorGen[A]): Parsley[A] = {
+        new Parsley(new frontend.Filter(p.internal, f, err.internal)).uo(debugName) // FIXME: move in
     }
 
-    @inline private [parsley] def collectWith[A, B](p: Parsley[A])(f: PartialFunction[A, B], err: ErrorGen[A]): Parsley[B] = {
-        mapFilterWith(p)(f.lift, err)
+    @inline private [parsley] def collectWith[A, B](p: Parsley[A], debugName: String)(f: PartialFunction[A, B], err: ErrorGen[A]): Parsley[B] = {
+        mapFilterWith(p, debugName)(f.lift, err)
     }
 
-    @inline private [parsley] def mapFilterWith[A, B](p: Parsley[A])(f: A => Option[B], err: ErrorGen[A]): Parsley[B] = {
-        new Parsley(new frontend.MapFilter(p.internal, f, err.internal))
+    @inline private [parsley] def mapFilterWith[A, B](p: Parsley[A], debugName: String)(f: A => Option[B], err: ErrorGen[A]): Parsley[B] = {
+        new Parsley(new frontend.MapFilter(p.internal, f, err.internal)).uo(debugName) // FIXME: move in
     }
 }

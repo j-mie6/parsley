@@ -14,7 +14,7 @@ import parsley.exceptions.UnfilledReferenceException
 
 import parsley.internal.deepembedding.{frontend, singletons}
 
-import Parsley.{fresh, pure, empty}
+import Parsley.{transFresh => fresh, transPure => pure, empty}
 
 
 /** This module contains all the functionality and operations for using and manipulating references.
@@ -122,7 +122,7 @@ object state {
           * @since 3.2.0
           * @group getters
           */
-        def gets[B](pf: Parsley[A => B]): Parsley[B] = pf <*> this.get
+        def gets[B](pf: Parsley[A => B]): Parsley[B] = pf.ap(this.get.ut()).uo("Ref.gets")
         /** This combinator stores a new value into this reference.
           *
           * Without any other effect, the value `x` will be placed into this reference.
@@ -175,7 +175,7 @@ object state {
           * @since 4.5.0
           * @group setters
           */
-        def sets[B](p: Parsley[B], f: B => A): Parsley[Unit] = this.set(p.map(f))
+        def sets[B](p: Parsley[B], f: B => A): Parsley[Unit] = this.set(p.map(f).ut()).uo("Ref.sets")
         /** This combinator modifies the value stored in this reference with a function.
           *
           * Without any other effect, get the value stored in this reference, `x`, and
@@ -203,7 +203,7 @@ object state {
           * @since 4.5.0
           * @group mod
           */
-        def update(pf: Parsley[A => A]): Parsley[Unit] = this.set(this.gets(pf))
+        def update(pf: Parsley[A => A]): Parsley[Unit] = this.set(this.gets(pf).ut()).uo("Ref.update")
         /** This combinator changed the value stored in this reference for the duration of a given parser, resetting it afterwards.
           *
           * First get the current value in this reference `x,,old,,`, then place `x` into this reference
@@ -253,7 +253,7 @@ object state {
           * @since 4.5.0
           * @group local
           */
-        def updateDuring[B](f: A => A)(p: Parsley[B]): Parsley[B] = this.setDuring(this.gets(f))(p)
+        def updateDuring[B](f: A => A)(p: Parsley[B]): Parsley[B] = this.setDuring(this.gets(f).ut())(p).uo("Ref.updateDuring")
         /** This combinator rolls-back any changes to this reference made by a given parser if it fails.
           *
           * First get the current value in this reference `x,,old,,`. Then parse `p`, if it succeeds,
@@ -273,7 +273,7 @@ object state {
           */
         def rollback[B](p: Parsley[B]): Parsley[B] = this.get.persist { x =>
             p | (this.set(x) ~> empty)
-        }
+        } // TODO: name
 
         private [this] var _v: Int = -1
         private [parsley] def addr: Int = {
@@ -352,7 +352,7 @@ object state {
           * @param f a function to generate a new parser that can observe the result of this parser many times without reparsing.
           * @since 3.2.0
           */
-        def persist[B](f: Parsley[A] => Parsley[B]): Parsley[B] = this.fillRef(ref => f(ref.get))
+        def persist[B](f: Parsley[A] => Parsley[B]): Parsley[B] = this.fillRef(ref => f(ref.get.uo("var (persist)"))).uo("persist")
     }
 
     /** This class, when in scope, enables a method to create and fill a reference with a
@@ -375,7 +375,7 @@ object state {
           * @see [[parsley.state.StateCombinators.fillRef `fillRef`]] for a version that uses the result of a parser to fill the reference instead.
           * @since 4.0.0
           */
-        def makeRef[B](body: Ref[A] => Parsley[B]): Parsley[B] = pure(x).fillRef(body)
+        def makeRef[B](body: Ref[A] => Parsley[B]): Parsley[B] = pure(x).fillRef(body).uo("makeRef")
     }
 
     /** This combinator allows for the repeated execution of a parser `body` in a stateful loop, `body` will have access to the current value of the state.
@@ -411,7 +411,7 @@ object state {
             whileS(body(ref.get) ~> _step ~> _cond)
           }
         }
-    }
+    } // TODO: name
 
     /** This combinator allows for the repeated execution of a parser `body` in a stateful loop, `body` will have access to the current value of the state.
       *
@@ -481,7 +481,7 @@ object state {
                 (acc, body(x)).zipped(_ += _).impure // we don't want this optimised out, it's a mutable operation in a resultless context
             } ~> acc.map(_.result())
         }
-    }
+    } // TODO: name
 
     /** This combinator allows for the repeated execution of a parser in a stateful loop.
       *
@@ -513,7 +513,7 @@ object state {
         forP_(init, cond, step) { _ =>
             _body
         }
-    }
+    } // TODO: name
 
     /** This combinator allows for the repeated execution of a parser in a stateful loop.
       *
@@ -581,5 +581,5 @@ object state {
     def forYieldP[A, B, CC[_]](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A], factory: IterableFactory[CC])
                               (body: =>Parsley[B]): Parsley[CC[B]] = {
         forYieldP_(init, cond, step, factory)(_ => body)
-    }
+    } // TODO: name
 }

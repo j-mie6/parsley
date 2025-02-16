@@ -231,7 +231,7 @@ private [parsley] trait combinator {
       * @return a parser that tries to parse `p`, but can still succeed with `None` if that was not possible.
       * @group opt
       */
-    final def option[A](p: Parsley[A]): Parsley[Option[A]] = p.map(Some(_)) </> None //TODO: name
+    final def option[A](p: Parsley[A]): Parsley[Option[A]] = (p.map(Some(_)).ut() </> None).uo("option")
 
     /** This combinator will parse `p` if possible, otherwise will do nothing.
       *
@@ -255,7 +255,7 @@ private [parsley] trait combinator {
       * @note equivalent to `optionalAs(p, ())`.
       * @group opt
       */
-    final def optional(p: Parsley[_]): Parsley[Unit] = optionalAs(p, ()) //TODO: name
+    final def optional(p: Parsley[_]): Parsley[Unit] = optionalAs(p, ()).uo("optional")
 
     /** This combinator will parse `p` if possible, otherwise will do nothing.
       *
@@ -279,7 +279,7 @@ private [parsley] trait combinator {
       * @return a parser that tries to parse `p`, returning `x` regardless of success or failure.
       * @group opt
       */
-    final def optionalAs[A](p: Parsley[_], x: A): Parsley[A] = p.as(x) </> x //TODO: name
+    final def optionalAs[A](p: Parsley[_], x: A): Parsley[A] = (p.as(x).ut() </> x).uo("optionalAs")
 
     /** This combinator can eliminate an `Option` from the result of the parser `p`.
       *
@@ -313,7 +313,7 @@ private [parsley] trait combinator {
       * @return a parser that either just parses `p` or both `p` and `q` in order to return an `A`.
       * @group condComp
       */
-    final def decide[A](p: Parsley[Option[A]], q: =>Parsley[A]): Parsley[A] = select(p.map(_.toRight(())), q.map(x => (_: Unit) => x)) //TODO: name
+    final def decide[A](p: Parsley[Option[A]], q: =>Parsley[A]): Parsley[A] = select(p.map(_.toRight(())).ut(), q.map(x => (_: Unit) => x).ut()).uo("decide")
 
     /** This combinator repeatedly parses a given parser '''`n`''' or more times, collecting the results into a list.
       *
