@@ -1306,12 +1306,40 @@ private [parsley] abstract class ParsleyImpl {
       * @group iter
       */
     final def many[A](p: Parsley[A]): Parsley[List[A]] = many(p, List)
+    /** This combinator repeatedly parses a given parser '''zero''' or more times, collecting the results into a type `C` via a `Factory[A, C]`.
+      *
+      * Parses a given parser, `p`, repeatedly until it fails. If `p` failed having consumed input,
+      * this combinator fails. Otherwise when `p` fails '''without consuming input''', this combinator
+      * will return all of the results, `x,,1,,` through `x,,n,,` (with `n >= 0`), in a structure: `C(x,,1,,, .., x,,n,,)`.
+      * If `p` was never successful, an empty `C` is returned.
+      *
+      * @example {{{
+      * scala> import parsley.character.string
+      * scala> import parsley.Parsley.many
+      * scala> val p = many(string("ab"), Vector)
+      * scala> p.parse("")
+      * val res0 = Success(Vector.empty)
+      * scala> p.parse("ab")
+      * val res1 = Success(Vector("ab"))
+      * scala> p.parse("abababab")
+      * val res2 = Success(Vector("ab", "ab", "ab", "ab"))
+      * scala> p.parse("aba")
+      * val res3 = Failure(..)
+      * }}}
+      *
+      * @param p the parser to execute multiple times.
+      * @param factory a way to construct the result type `C`
+      * @tparam C a structure that can store `A`s inside it.
+      * @return a parser that parses `p` until it fails, returning all of all the successful results.
+      * @since 5.0.0
+      * @group iter
+      */
+    final def many[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = new Parsley(new frontend.Many(p.internal, factory))
     // this is needed for Scala 2 to avoid manual ascription (and ascribes cleaner), but isn't really needed for Scala 3 and increases doc/API footprint
-    // we can add them later if we really wanted to
+    // we can add them later if we really wanted to. Alternatively, p.many(factory) would remove this problem entirely and provide better intellisense.
     //final private [parsley] def many[A, CC[_]](p: Parsley[A], factory: IterableFactory[CC]): Parsley[CC[A]] = many[A, CC[A]](p, factory)
     // this is needed for Scala 2 (or manual ascription on A+C) for ArraySeq, but isn't really needed for Scala 3, and saves 2.12 work
     //final def many[Ev[_], A: Ev, CC[_]](p: Parsley[A], factory: EvidenceIterableFactory[CC, Ev]): Parsley[CC[A]] = many[A, CC[A]](p, factory)
-    final private [parsley] def many[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = new Parsley(new frontend.Many(p.internal, factory))
 
     /** This combinator repeatedly parses a given parser '''one''' or more times, collecting the results into a list.
       *
@@ -1340,8 +1368,36 @@ private [parsley] abstract class ParsleyImpl {
       * @group iter
       */
     final def some[A](p: Parsley[A]): Parsley[List[A]] = (p <::> many(p).ut()).uo("some")
-    private [parsley] final def some[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = secretSome(p, p, factory).uo("some")
-    // This could be generalised to be the new many, where many(p, factory) = secretSome(fresh(factory.newBuilder), p, factory)
+    /** This combinator repeatedly parses a given parser '''one''' or more times, collecting the results into a type `C` via a `Factory[A, C]`.
+      *
+      * Parses a given parser, `p`, repeatedly until it fails. If `p` failed having consumed input,
+      * this combinator fails. Otherwise when `p` fails '''without consuming input''', this combinator
+      * will return all of the results, `x,,1,,` through `x,,n,,` (with `n >= 1`), in a structure: `C(x,,1,,, .., x,,n,,)`.
+      * If `p` was not successful at least one time, this combinator fails.
+      *
+      * @example {{{
+      * scala> import parsley.character.string
+      * scala> import parsley.Parsley.some
+      * scala> val p = some(string("ab"), Vector)
+      * scala> p.parse("")
+      * val res0 = Failure(..)
+      * scala> p.parse("ab")
+      * val res1 = Success(Vector("ab"))
+      * scala> p.parse("abababab")
+      * val res2 = Success(Vector("ab", "ab", "ab", "ab"))
+      * scala> p.parse("aba")
+      * val res3 = Failure(..)
+      * }}}
+      *
+      * @param p the parser to execute multiple times.
+      * @param factory a way to construct the result type `C`
+      * @tparam C a structure that can store `A`s inside it.
+      * @return a parser that parses `p` until it fails, returning all of all the successful results.
+      * @since 5.0.0
+      * @group iter
+      */
+    final def some[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = secretSome(p, p, factory).uo("some")
+    // TODO: this could be generalised to be the new many, where many(p, factory) = secretSome(fresh(factory.newBuilder), p, factory)
     private [parsley] final def secretSome[A, C](init: Parsley[A], p: Parsley[A], factory: Factory[A, C]): Parsley[C] = {
         secretSome(init.map(factory.newBuilder += _).ut(), p)
     }
