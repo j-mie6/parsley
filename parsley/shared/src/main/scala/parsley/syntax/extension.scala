@@ -69,7 +69,7 @@ final class OperatorSugar[+A] private [syntax] (private val p: Parsley[A]) {
       * Equivalent to `many`, but as a postfix operator: `many(p)` is the same as `p.*`.
       *
       * @note an alias for `many`.
-      * @see [[Parsley.many `many`]] for more details.
+      * @see [[Parsley.many[A]* `many`]] for more details.
       */
     def * : Parsley[List[A]] = many(p)
     /** This combinator, pronounced "plus", will parse this parser '''one''' or more times returning a list of the parsed results.
@@ -77,7 +77,7 @@ final class OperatorSugar[+A] private [syntax] (private val p: Parsley[A]) {
       * Equivalent to `some`, but as a postfix operator: `some(p)` is the same as `p.+`.
       *
       * @note an alias for `some`.
-      * @see [[Parsley.some `some`]] for more details.
+      * @see [[Parsley.some[A]* `some`]] for more details.
       */
     def + : Parsley[List[A]] = some(p)
     /** This combinator, pronounced "not", will succeed when this parser fails, and vice-versa, never consuming input.

@@ -499,7 +499,7 @@ object unicode {
       * @note just an alias for [[parsley.character.strings(str0* `character.strings`]], to allow for more ergonomic imports.
       * @group string
       */
-    def strings(str0: String, strs: String*): Parsley[String] = character.strings(str0, strs: _*)
+    def strings(str0: String, strs: String*): Parsley[String] = character.strings(str0, strs*)
 
     /** This combinator tries to parse each of the key-value pairs `kvs` (and `kv0`), until one of them succeeds.
       *
@@ -535,7 +535,7 @@ object unicode {
       * @note just an alias for [[parsley.character.strings[A](kv0* `character.strings`]], to allow for more ergonomic imports.
       * @group string
       */
-    def strings[A](kv0: (String, Parsley[A]), kvs: (String, Parsley[A])*): Parsley[A] = character.strings(kv0, kvs: _*)
+    def strings[A](kv0: (String, Parsley[A]), kvs: (String, Parsley[A])*): Parsley[A] = character.strings(kv0, kvs*)
     // $COVERAGE-ON$
 
     /** This parser will parse '''any''' single codepoint from the input, failing if there is no input remaining.

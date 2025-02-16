@@ -400,7 +400,7 @@ object state {
       * @param step the change in induction variable on each iteration.
       * @param body the body of the loop performed each iteration, which has access to the current value of the state.
       * @return a parser that initialises some state with `init` and then parses body until `cond` is true, modifying the state each iteration with `step`.
-      * @see [[parsley.state.forYieldP_ `forYieldP_`]] for a version that returns the results of each `body` parse.
+      * @see [[[parsley.state.forYieldP_[A,B,CC[_]]* `forYieldP_`]]] for a version that returns the results of each `body` parse.
       * @group comb
       */
     def forP_[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: Parsley[A] => Parsley[_]): Parsley[Unit] = {
@@ -431,7 +431,7 @@ object state {
       * forYieldP_[Int, Char](r.get, pure(_ != 0), pure(_ - 1)){_ => 'c'}
       * }}}
       *
-      * This will return a list `n` `'c'` characters.
+      * This will return a list of `n` `'c'` characters.
       *
       * @param init the initial value of the induction variable.
       * @param cond the condition by which the loop terminates.
@@ -444,8 +444,38 @@ object state {
     def forYieldP_[A, B](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: Parsley[A] => Parsley[B]): Parsley[List[B]] = {
         forYieldP_(init, cond, step, List)(body)
     }
-    private [parsley] def forYieldP_[A, B, CC[_]](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A], factory: IterableFactory[CC])
-                                                 (body: Parsley[A] => Parsley[B]): Parsley[CC[B]] = {
+    /** This combinator allows for the repeated execution of a parser `body` in a stateful loop, `body` will have access to the current value of the state.
+      *
+      * `forP_(init, cond, step)(body)` behaves much like a traditional for comprehension using `init`, `cond`, `step` and `body` as parsers
+      * which control the loop itself. First, a reference `r` is created and initialised with `init`. Then `cond` is parsed, producing
+      * the function `pred`. If `r.gets(pred)` returns true, then `body` is parsed, then `r` is modified with the result of parsing `step`.
+      * This repeats until `r.gets(pred)` returns false. This is useful for performing certain context sensitive tasks. Unlike `forP_` the
+      * results of the body invokations are returned in a `CC[B]` structure.
+      *
+      * @example the classic context sensitive grammar of `a^n^b^n^c^n^` can be matched using `forP_`:
+      * {{{
+      * val r = Ref.make[Int]
+      *
+      * r.set(0) ~>
+      * many('a' ~> r.update(_+1)) ~>
+      * forYieldP_[Int, Char, Array](r.get, pure(_ != 0), pure(_ - 1), Array){_ => 'b'} ~>
+      * forYieldP_[Int, Char, Vector](r.get, pure(_ != 0), pure(_ - 1), Vector){_ => 'c'}
+      * }}}
+      *
+      * This will return a vector of `n` `'c'` characters.
+      *
+      * @param init the initial value of the induction variable.
+      * @param cond the condition by which the loop terminates.
+      * @param step the change in induction variable on each iteration.
+      * @param factory a way to construct the result type `CC`
+      * @param body the body of the loop performed each iteration, which has access to the current value of the state.
+      * @return a parser that initialises some state with `init` and then parses body until `cond` is true, modifying the state each iteration with `step`.
+      * @see [[parsley.state.forP_ `forP_`]] for a version that ignores the results of the body.
+      * @since 5.0.0
+      * @group comb
+      */
+    def forYieldP_[A, B, CC[_]](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A], factory: IterableFactory[CC])
+                               (body: Parsley[A] => Parsley[B]): Parsley[CC[B]] = {
         fresh(factory.newBuilder[B]).persist { acc =>
             forP_(init, cond, step) { x =>
                 (acc, body(x)).zipped(_ += _).impure // we don't want this optimised out, it's a mutable operation in a resultless context
@@ -475,7 +505,7 @@ object state {
       * @param step the change in induction variable on each iteration.
       * @param body the body of the loop performed each iteration.
       * @return a parser that initialises some state with `init` and then parses body until `cond` is true, modifying the state each iteration with `step`.
-      * @see [[parsley.state.forYieldP `forYieldP`]] for a version that returns the results of each `body` parse.
+      * @see [[[parsley.state.forYieldP[A,B,CC[_]]* `forYieldP`]]] for a version that returns the results of each `body` parse.
       * @group comb
       */
     def forP[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: =>Parsley[_]): Parsley[Unit] = {
@@ -503,7 +533,7 @@ object state {
       * forYieldP[Int, Char](r.get, pure(_ != 0), pure(_ - 1)){'c'}
       * }}}
       *
-      * This will return a list `n` `'c'` characters.
+      * This will return a list of `n` `'c'` characters.
       *
       * @param init the initial value of the induction variable.
       * @param cond the condition by which the loop terminates.
@@ -517,8 +547,39 @@ object state {
     def forYieldP[A, B](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: =>Parsley[B]): Parsley[List[B]] = {
         forYieldP(init, cond, step, List)(body)
     }
-    private [parsley] def forYieldP[A, B, CC[_]](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A], factory: IterableFactory[CC])
-                                                (body: =>Parsley[B]): Parsley[CC[B]] = {
+    /** This combinator allows for the repeated execution of a parser in a stateful loop.
+      *
+      * `forYieldP(init, cond, step)(body)` behaves much like a traditional for comprehension using `init`, `cond`, `step` and `body` as parsers
+      * which control the loop itself. First, a reference `r` is created and initialised with `init`. Then `cond` is parsed, producing
+      * the function `pred`. If `r.gets(pred)` returns true, then `body` is parsed, then `r` is modified with the result of parsing `step`.
+      * This repeats until `r.gets(pred)` returns false. This is useful for performing certain context sensitive tasks. Unlike `forP` the
+      * results of the body invokations are returned in a `CC[B]` structure.
+      *
+      * @example the classic context sensitive grammar of `a^n^b^n^c^n^` can be matched using `forP`:
+      * {{{
+      * val r = Ref.make[Int]
+      *
+      * r.set(0) ~>
+      * many('a' ~> r.update(_+1)) ~>
+      * forYieldP[Int, Char, Vector](r.get, pure(_ != 0), pure(_ - 1), Vector){'b'} ~>
+      * forYieldP[Int, Char, Array](r.get, pure(_ != 0), pure(_ - 1), Array){'c'}
+      * }}}
+      *
+      * This will return an array of `n` `'c'` characters.
+      *
+      * @param init the initial value of the induction variable.
+      * @param cond the condition by which the loop terminates.
+      * @param step the change in induction variable on each iteration.
+      * @param factory a way to construct the result type `CC`
+      * @param body the body of the loop performed each iteration.
+      * @return a parser that initialises some state with `init` and then parses body until `cond` is true, modifying the state each iteration with `step`.
+      *         The results of the iterations are returned in a `CC`.
+      * @see [[parsley.state.forP `forP`]] for a version that ignores the results.
+      * @since 5.0.0
+      * @group comb
+      */
+    def forYieldP[A, B, CC[_]](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A], factory: IterableFactory[CC])
+                              (body: =>Parsley[B]): Parsley[CC[B]] = {
         forYieldP_(init, cond, step, factory)(_ => body)
     }
 }

@@ -414,7 +414,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           *
           * @example {{{
           * scala> ...
-          * scala> val stmts = lexer.lexeme.separators.semiSep(int)
+          * scala> val stmts = lexer.lexeme.semiSep(int)
           * scala> stmts.parse("7; 3;2")
           * val res0 = Success(List(7; 3; 2))
           * scala> stmts.parse("")
@@ -431,7 +431,31 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @group separatorsg
           */
         def semiSep[A](p: Parsley[A]): Parsley[List[A]] = semiSep(p, List)
-        private [parsley] def semiSep[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = sepBy(p, symbol.semi, factory)
+        /**  This combinator parses '''zero''' or more occurrences of `p`, separated by semi-colons.
+          *
+          * Behaves just like `semiSep1`, except does not require an initial `p`, returning an empty structure instead.
+          *
+          * @example {{{
+          * scala> ...
+          * scala> val stmts = lexer.lexeme.semiSep(int, Vector)
+          * scala> stmts.parse("7; 3;2")
+          * val res0 = Success(Vector(7; 3; 2))
+          * scala> stmts.parse("")
+          * val res1 = Success(Vector.empty)
+          * scala> stmts.parse("1")
+          * val res2 = Success(Vector(1))
+          * scala> stmts.parse("1; 2; ")
+          * val res3 = Failure(..) // no trailing semi-colon allowed
+          * }}}
+          *
+          * @param p the parser whose results are collected into a `C`.
+          * @param factory a way to produce a `C` from `A`s.
+          * @tparam C the desired collection to return.
+          * @return a parser that parses `p` delimited by semi-colons, returning the `C` containing `p`'s results.
+          * @since 5.0.0
+          * @group separatorsg
+          */
+        def semiSep[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = sepBy(p, symbol.semi, factory)
         /**  This combinator parses '''one''' or more occurrences of `p`, separated by semi-colons.
           *
           * First parses a `p`. Then parses a semi-colon followed by `p` until there are no more semi-colons.
@@ -441,7 +465,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           *
           * @example {{{
           * scala> ...
-          * scala> val stmts = lexer.lexeme.separators.semiSep1(int)
+          * scala> val stmts = lexer.lexeme.semiSep1(int)
           * scala> stmts.parse("7; 3;2")
           * val res0 = Success(List(7; 3; 2))
           * scala> stmts.parse("")
@@ -458,14 +482,41 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @group separatorsg
           */
         def semiSep1[A](p: Parsley[A]): Parsley[List[A]] = semiSep1(p, List)
-        private [parsley] def semiSep1[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = sepBy1(p, symbol.semi, factory)
+        /**  This combinator parses '''one''' or more occurrences of `p`, separated by semi-colons.
+          *
+          * First parses a `p`. Then parses a semi-colon followed by `p` until there are no more semi-colons.
+          * The results of the `p`'s, `x,,1,,` through `x,,n,,`, are returned as `C(x,,1,,, .., x,,n,,)`.
+          * If `p` fails having consumed input, the whole parser fails. Requires at least
+          * one `p` to have been parsed.
+          *
+          * @example {{{
+          * scala> ...
+          * scala> val stmts = lexer.lexeme.semiSep1(int, Vector)
+          * scala> stmts.parse("7; 3;2")
+          * val res0 = Success(Vector(7; 3; 2))
+          * scala> stmts.parse("")
+          * val res1 = Failure(..)
+          * scala> stmts.parse("1")
+          * val res2 = Success(Vector(1))
+          * scala> stmts.parse("1; 2; ")
+          * val res3 = Failure(..) // no trailing semi-colon allowed
+          * }}}
+          *
+          * @param p the parser whose results are collected into a `C`.
+          * @param factory a way to produce a `C` from `A`s.
+          * @tparam C the desired collection to return.
+          * @return a parser that parses `p` delimited by semi-colons, returning the `C` containing `p`'s results.
+          * @since 5.0.0
+          * @group separatorsg
+          */
+        def semiSep1[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = sepBy1(p, symbol.semi, factory)
         /**  This combinator parses '''zero''' or more occurrences of `p`, separated by commas.
           *
           * Behaves just like `commaSep1`, except does not require an initial `p`, returning the empty list instead.
           *
           * @example {{{
           * scala> ...
-          * scala> val stmts = lexer.lexeme.separators.commaSep(int)
+          * scala> val stmts = lexer.lexeme.commaSep(int)
           * scala> stmts.parse("7, 3,2")
           * val res0 = Success(List(7, 3, 2))
           * scala> stmts.parse("")
@@ -482,7 +533,31 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @group separatorsg
           */
         def commaSep[A](p: Parsley[A]): Parsley[List[A]] = commaSep(p, List)
-        private [parsley] def commaSep[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = sepBy(p, symbol.comma, factory)
+        /**  This combinator parses '''zero''' or more occurrences of `p`, separated by commas.
+          *
+          * Behaves just like `commaSep1`, except does not require an initial `p`, returning an empty structure instead.
+          *
+          * @example {{{
+          * scala> ...
+          * scala> val stmts = lexer.lexeme.commaSep(int, Vector)
+          * scala> stmts.parse("7, 3,2")
+          * val res0 = Success(Vector(7, 3, 2))
+          * scala> stmts.parse("")
+          * val res1 = Success(Vector.empty)
+          * scala> stmts.parse("1")
+          * val res2 = Success(Vector(1))
+          * scala> stmts.parse("1, 2, ")
+          * val res3 = Failure(..) // no trailing comma allowed
+          * }}}
+          *
+          * @param p the parser whose results are collected into a `C`.
+          * @param factory a way to produce a `C` from `A`s.
+          * @tparam C the desired collection to return.
+          * @return a parser that parses `p` delimited by commas, returning the `C` containing `p`'s results.
+          * @since 5.0.0
+          * @group separatorsg
+          */
+        def commaSep[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = sepBy(p, symbol.comma, factory)
         /**  This combinator parses '''one''' or more occurrences of `p`, separated by commas.
           *
           * First parses a `p`. Then parses a comma followed by `p` until there are no more commas.
@@ -492,7 +567,7 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           *
           * @example {{{
           * scala> ...
-          * scala> val stmts = lexer.lexeme.separators.commaSep1(int)
+          * scala> val stmts = lexer.lexeme.commaSep1(int)
           * scala> stmts.parse("7, 3,2")
           * val res0 = Success(List(7, 3, 2))
           * scala> stmts.parse("")
@@ -509,7 +584,34 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @group separatorsg
           */
         def commaSep1[A](p: Parsley[A]): Parsley[List[A]] = commaSep1(p, List)
-        private [parsley] def commaSep1[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = sepBy1(p, symbol.comma, factory)
+        /**  This combinator parses '''one''' or more occurrences of `p`, separated by commas.
+          *
+          * First parses a `p`. Then parses a comma followed by `p` until there are no more commas.
+          * The results of the `p`'s, `x,,1,,` through `x,,n,,`, are returned as `C(x,,1,,, .., x,,n,,)`.
+          * If `p` fails having consumed input, the whole parser fails. Requires at least
+          * one `p` to have been parsed.
+          *
+          * @example {{{
+          * scala> ...
+          * scala> val stmts = lexer.lexeme.commaSep1(int, Vector)
+          * scala> stmts.parse("7, 3,2")
+          * val res0 = Success(Vector(7, 3, 2))
+          * scala> stmts.parse("")
+          * val res1 = Failure(..)
+          * scala> stmts.parse("1")
+          * val res2 = Success(Vector(1))
+          * scala> stmts.parse("1, 2, ")
+          * val res3 = Failure(..) // no trailing comma allowed
+          * }}}
+          *
+          * @param p the parser whose results are collected into a `C`.
+          * @param factory a way to produce a `C` from `A`s.
+          * @tparam C the desired collection to return.
+          * @return a parser that parses `p` delimited by commas, returning the `C` containing `p`'s results.
+          * @since 5.0.0
+          * @group separatorsg
+          */
+        def commaSep1[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = sepBy1(p, symbol.comma, factory)
 
         /** This combinator parses a `p` enclosed within parentheses.
           *

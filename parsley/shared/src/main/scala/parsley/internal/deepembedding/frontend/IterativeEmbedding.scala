@@ -5,18 +5,17 @@
  */
 package parsley.internal.deepembedding.frontend
 
-import scala.collection.Factory
+import scala.collection.{mutable, Factory}
 
 import parsley.internal.deepembedding.ContOps, ContOps.{suspend, ContAdapter}
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 
-private [parsley] final class Many[A, C](p: LazyParsley[A], factory: Factory[A, C]) extends Unary[A, C](p) {
-    override def make(p: StrictParsley[A]): StrictParsley[C] = new backend.Many(p, factory)
+private [parsley] final class Many[A, C](init: LazyParsley[mutable.Builder[A, C]], p: =>LazyParsley[A], private [parsley] var debugName: String)
+    extends Binary[mutable.Builder[A, C], A, C](init, p) {
+    override def make(init: StrictParsley[mutable.Builder[A, C]], p: StrictParsley[A]): StrictParsley[C] = new backend.Many(init, p)
 
     // $COVERAGE-OFF$
-    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[C] = visitor.visit(this, context)(p, factory)
-
-    private [parsley] var debugName = "many"
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[C] = visitor.visit(this, context)(init, p)
     // $COVERAGE-ON$
 }
 private [parsley] final class ChainPost[A](p: LazyParsley[A], _op: =>LazyParsley[A => A]) extends Binary[A, A => A, A](p, _op) {
@@ -71,13 +70,12 @@ private [parsley] final class SepEndBy1[A, C](p: LazyParsley[A], sep: =>LazyPars
     private [parsley] var debugName = "sepEndBy1"
     // $COVERAGE-ON$
 }
-private [parsley] final class ManyTill[A, C](body: LazyParsley[Any], factory: Factory[A, C]) extends Unary[Any, C](body) {
-    override def make(p: StrictParsley[Any]): StrictParsley[C] = new backend.ManyUntil(p, factory)
+private [parsley] final class ManyTill[A, C](init: LazyParsley[mutable.Builder[A, C]], body: =>LazyParsley[Any], private [parsley] var debugName: String)
+    extends Binary[mutable.Builder[A, C], Any, C](init, body) {
+    override def make(init: StrictParsley[mutable.Builder[A, C]], p: StrictParsley[Any]): StrictParsley[C] = new backend.ManyUntil(init, p)
 
     // $COVERAGE-OFF$
-    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[C] = visitor.visit(this, context)(body, factory)
-
-    private [parsley] var debugName = "manyTill"
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[C] = visitor.visit(this, context)(init, body)
     // $COVERAGE-ON$
 }
 private [parsley] final class SkipManyUntil(body: LazyParsley[Any]) extends Unary[Any, Unit](body) {
