@@ -211,7 +211,7 @@ private [parsley] object TaggedWith {
         }
 
         // XXX: This will assume all completely unknown parsers have no children at all (i.e. are Singletons).
-        override def visitUnknown[A](self: LazyParsley[A], context: ParserTracker): DL[A] = self match {
+        override def visitUnknown[A](self: LazyParsley[A], context: ParserTracker): DL[A] = (self: LazyParsley[A]) match {
             case d: TaggedWith[A @unchecked]      => result[R, Deferred[LazyParsley[A]], M](new Deferred(d)) // No need to debug a parser twice!
             case n: Named[A @unchecked]           => n.p.visit(this, context).map(_.get).map {
                 case tw: TaggedWith[A @unchecked] => new Deferred(tw.withName(n.name))
@@ -221,6 +221,7 @@ private [parsley] object TaggedWith {
                 // parsley, and parsley does not expose naturally transparent combinators.
                 case _                            => throw new IllegalStateException("a transparent parser has been explicitly named, this is non-sensical")
             }
+            case rb: RemoteBreak[A @unchecked]    => visitUnary(rb, context)(rb.p)
             case _                                => handleNoChildren(self, context)
         }
     }

@@ -6,10 +6,13 @@ import parsley.errors.combinator._
 
 import parsley.debug.DillRemoteView
 
+import parsley.debug.*
+import parsley.debug.combinator.DebuggerOps
+
 object Main {
     @main def main() = {
-        lazy val hello: Parsley[String] = ("hel" ~> "lo").label("hehe")
+        lazy val hello: Parsley[String] = ("hel" ~> "lo").break(FullBreak).label("hehe")
         lazy val world: Parsley[String] = ("world")
-        (hello ~> world).attach(DillRemoteView).parse("hello world")
+        (hello ~> world).break(ExitBreak).attach(DillRemoteView).parse("hello world")
     }
 }

@@ -10,12 +10,14 @@ import scala.collection.mutable
 import parsley.XAssert
 import parsley.debug.ParseAttempt
 import parsley.internal.deepembedding.frontend.LazyParsley
+import parsley.internal.deepembedding.frontend.debug.RemoteBreak 
+import parsley.debug.*
 
 // Class used to hold details about a parser being debugged.
 // This is normally held as a value inside an implicit variable.
 // Anything caught by the toStringRules will have a parse result of that type toString-ed for memory
 // efficiency.
-private [parsley] class DebugContext(private val toStringRules: PartialFunction[Any, Boolean]) {
+private [parsley] class DebugContext(private val toStringRules: PartialFunction[Any, Boolean], private val view: Option[DebugView]) {
     // Create a new dummy root of the tree that will act as filler for the rest of the tree to build
     // off of (as there is no "nil" representation for the tree... other than null, which should be
     // avoided in Scala wherever possible).
@@ -75,11 +77,54 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
         uid
     }*/
 
+    /** The number of breakpoints to skip through.
+      * 
+      * When breakpointSkips is zero, the next breakpoint will stop the parsing.
+      */
+    var breakpointSkips: Int = 0
+
+    /** Handle a breakpoint.
+      *
+      * @param tree         The debug tree that has been created thus far.
+      * @param fullInput    The full parser input.
+      * @param view         The DebugView instance. This must extend DebugView.Pauseable to work.
+      */
+    private def handleBreak(tree: TransientDebugTree, fullInput: String): Unit = view match {
+        case Some(view: DebugView.Pauseable) => {
+            if (breakpointSkips > 0) {
+                breakpointSkips -= 1
+            } else {
+                breakpointSkips = view.renderWait(fullInput, tree)
+            }
+        }
+        case _ => println("Tried to use a debug view that does not support breakpoints!")
+    }
+
     // Push a new parser onto the parser callstack.
     def push(fullInput: String, parser: LazyParsley[_], userAssignedName: Option[String]): Unit = {
+        // Send the debug tree here if EntryBreak
+        parser match {
+            case break: RemoteBreak[_] => break.break match {
+                case EntryBreak | FullBreak => handleBreak(builderStack.head, fullInput)
+                case _ => 
+            }
+            case _ =>
+        }
+
+        println(parser)
+
         val newTree = new TransientDebugTree(fullInput = fullInput)
         newTree.name = Renamer.nameOf(userAssignedName, parser)
         newTree.internal = Renamer.internalName(parser)
+
+        // Send the debug tree here if ExitBreak
+        parser match {
+            case break: RemoteBreak[_] => break.break match {
+                case ExitBreak | FullBreak => handleBreak(newTree, fullInput)
+                case _ => 
+            }
+            case _ =>
+        }
 
         //val uid = nextUid()
         //builderStack.head.children(s"${newTree.name}-#$uid") = newTree

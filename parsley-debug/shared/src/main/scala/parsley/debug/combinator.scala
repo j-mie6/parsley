@@ -75,7 +75,7 @@ object combinator {
       * @return A pair of the finalised tree, and the instrumented parser.
       */
     private [parsley] def attachDebugger[A](parser: Parsley[A], toStringRules: PartialFunction[Any, Boolean]): DebuggedPair[A] = {
-        val context: DebugContext = new DebugContext(toStringRules)
+        val context: DebugContext = new DebugContext(toStringRules, None)
 
         val attached: LazyParsley[A] = TaggedWith.tagRecursively(parser.internal, new Debugging(context))
         val resetter: Parsley[Unit]  = fresh(context.reset()).impure
@@ -183,7 +183,7 @@ object combinator {
 
     // TODO : document
     private [parsley] def attachDebugger[A](parser: Parsley[A], toStringRules: PartialFunction[Any, Boolean], view: DebugView): DebuggedPair[A] = {
-        val context: DebugContext = new DebugContext(toStringRules)
+        val context: DebugContext = new DebugContext(toStringRules, Some(view))
 
         val attached: LazyParsley[A] = TaggedWith.tagRecursively(parser.internal, new Debugging(context))
         val resetter: Parsley[Unit]  = fresh(context.reset()).impure
