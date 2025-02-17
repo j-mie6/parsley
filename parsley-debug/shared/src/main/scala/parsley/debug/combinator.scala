@@ -272,6 +272,12 @@ object combinator {
         case _           => new Parsley(Named(parser.internal, name))
     }
 
+    import parsley.internal.deepembedding.frontend.debug.RemoteBreak
+
+    def break[A](parser: Parsley[A], break: Breakpoint): Parsley[A] = {
+      new Parsley(new RemoteBreak(parser.internal, break))
+    }
+
     /** Dot accessor versions of the combinators.  */
     implicit class DebuggerOps[A](par: Parsley[A]) {
         //def attachDebugger(toStringRules: PartialFunction[Any, Boolean]): DebuggedPair[A] = combinator.attachDebugger(par, toStringRules)
@@ -286,6 +292,7 @@ object combinator {
         def attachReusable(view: =>DebugView.Reusable): () => Parsley[A] = combinator.attachReusable(par, view, DefaultStringRules)
         //def attach(implicit view: DebugFrontend): Parsley[A] = combinator.attach(par, defaultRules)
         def named(name: String): Parsley[A] = combinator.named(par, name)
+        def break(break: Breakpoint): Parsley[A] = combinator.break(par, break)
     }
     // $COVERAGE-ON$
 
