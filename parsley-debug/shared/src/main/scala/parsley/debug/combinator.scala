@@ -181,6 +181,16 @@ object combinator {
         atomic(attached <~ renderer) | (renderer ~> empty)
     }
 
+    // TODO : document
+    private [parsley] def attachDebugger[A](parser: Parsley[A], toStringRules: PartialFunction[Any, Boolean], view: DebugView): DebuggedPair[A] = {
+        val context: DebugContext = new DebugContext(toStringRules)
+
+        val attached: LazyParsley[A] = TaggedWith.tagRecursively(parser.internal, new Debugging(context))
+        val resetter: Parsley[Unit]  = fresh(context.reset()).impure
+
+        (() => context.getFinalTree, resetter ~> new Parsley(attached))
+    }
+
     /** Attach a debugger to be rendered via a given view. This view will render whenever the parser produces debug content.
       *
       * This assumes the default rules of converting only lambdas and closures into strings when
