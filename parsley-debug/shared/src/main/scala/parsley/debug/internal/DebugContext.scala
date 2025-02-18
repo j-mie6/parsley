@@ -10,7 +10,7 @@ import scala.collection.mutable
 import parsley.XAssert
 import parsley.debug.ParseAttempt
 import parsley.internal.deepembedding.frontend.LazyParsley
-import parsley.internal.deepembedding.frontend.debug.RemoteBreak 
+import parsley.internal.deepembedding.frontend.debug.RemoteBreak
 import parsley.debug.*
 
 // Class used to hold details about a parser being debugged.
@@ -78,7 +78,7 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
     }*/
 
     /** The number of breakpoints to skip through.
-      * 
+      *
       * When breakpointSkips is zero, the next breakpoint will stop the parsing.
       */
     private var breakpointSkips: Int = 0

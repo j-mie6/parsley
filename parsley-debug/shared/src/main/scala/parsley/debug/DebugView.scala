@@ -49,7 +49,7 @@ object DebugView {
       /** Render a given debug tree and wait for a response from the remote viewer.
         *
         * @see [[DebugView]]
-        * @return n The number of breakpoints to step through after the current breakpoint. 
+        * @return n The number of breakpoints to step through after the current breakpoint.
         *           n == 0 to just step through this breakpoint.
         *           n >= 1 to step through the next n breakpoints.
         */
