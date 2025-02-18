@@ -43,17 +43,11 @@ lazy val commonSettings = Seq(
   headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax,
   headerEmptyLine := false,
 
-  resolvers ++= Resolver.sonatypeOssRepos("snapshots"),
   resolvers ++= Opts.resolver.sonatypeOssReleases, // Will speed up MiMA during fast back-to-back releases
   libraryDependencies ++= Seq(
     "org.scalatest" %%% "scalatest" % "3.2.19" % Test,
     "org.scalatestplus" %%% "scalacheck-1-18" % "3.2.19.0" % Test,
-    // --------------- TODO : Used for testing delete this --------------------
-    "com.github.j-mie6" %%% "parsley-debug-remote" % "0.1-ac6943f-SNAPSHOT",
   ),
-
-  // --------------- TODO : Used for testing delete this --------------------
-  libraryDependencySchemes += "com.github.j-mie6" %%% "parsley" % VersionScheme.Always,
 
   Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oI"),
 
