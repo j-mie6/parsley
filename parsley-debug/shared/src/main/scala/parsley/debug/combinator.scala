@@ -74,8 +74,8 @@ object combinator {
       * @tparam A Output type of original parser.
       * @return A pair of the finalised tree, and the instrumented parser.
       */
-    private [parsley] def attachDebugger[A](parser: Parsley[A], toStringRules: PartialFunction[Any, Boolean]): DebuggedPair[A] = {
-        val context: DebugContext = new DebugContext(toStringRules, None)
+    private [parsley] def attachDebugger[A](parser: Parsley[A], toStringRules: PartialFunction[Any, Boolean], view: DebugView): DebuggedPair[A] = {
+        val context: DebugContext = new DebugContext(toStringRules, view)
 
         val attached: LazyParsley[A] = TaggedWith.tagRecursively(parser.internal, new Debugging(context))
         val resetter: Parsley[Unit]  = fresh(context.reset()).impure
@@ -107,7 +107,7 @@ object combinator {
       * @tparam A Output type of original parser.
       * @return A pair of the finalised tree, and the instrumented parser.
       */
-    private [parsley] def attachDebugger[A](parser: Parsley[A]): DebuggedPair[A] = attachDebugger[A](parser, DefaultStringRules)
+    // private [parsley] def attachDebugger[A](parser: Parsley[A]): DebuggedPair[A] = attachDebugger[A](parser, DefaultStringRules)
 
     // $COVERAGE-OFF$
     /* Create a closure that freshly attaches a debugger to a parser every time it is called.
@@ -168,7 +168,7 @@ object combinator {
       *         a call to [[Parsley.parse]] is made.
       */
     def attach[A](parser: Parsley[A], view: DebugView, toStringRules: PartialFunction[Any, Boolean]): Parsley[A] = {
-        val (tree, attached) = attachDebugger(parser, toStringRules)
+        val (tree, attached) = attachDebugger(parser, toStringRules, view)
 
         // Ideally, this should run 'attached', and render the tree regardless of the parser's success.
         val renderer = fresh {
@@ -179,16 +179,6 @@ object combinator {
         }.impure
 
         atomic(attached <~ renderer) | (renderer ~> empty)
-    }
-
-    // TODO : document
-    private [parsley] def attachDebugger[A](parser: Parsley[A], toStringRules: PartialFunction[Any, Boolean], view: DebugView): DebuggedPair[A] = {
-        val context: DebugContext = new DebugContext(toStringRules, Some(view))
-
-        val attached: LazyParsley[A] = TaggedWith.tagRecursively(parser.internal, new Debugging(context))
-        val resetter: Parsley[Unit]  = fresh(context.reset()).impure
-
-        (() => context.getFinalTree, resetter ~> new Parsley(attached))
     }
 
     /** Attach a debugger to be rendered via a given view. This view will render whenever the parser produces debug content.

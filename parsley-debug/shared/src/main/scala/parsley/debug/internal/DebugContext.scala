@@ -17,7 +17,7 @@ import parsley.debug.*
 // This is normally held as a value inside an implicit variable.
 // Anything caught by the toStringRules will have a parse result of that type toString-ed for memory
 // efficiency.
-private [parsley] class DebugContext(private val toStringRules: PartialFunction[Any, Boolean], private val view: Option[DebugView]) {
+private [parsley] class DebugContext(private val toStringRules: PartialFunction[Any, Boolean], private val view: DebugView) {
     // Create a new dummy root of the tree that will act as filler for the rest of the tree to build
     // off of (as there is no "nil" representation for the tree... other than null, which should be
     // avoided in Scala wherever possible).
@@ -90,7 +90,7 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
       * @param view         The DebugView instance. This must extend DebugView.Pauseable to work.
       */
     private def handleBreak(tree: TransientDebugTree, fullInput: String): Unit = view match {
-        case Some(view: DebugView.Pauseable) => {
+        case view: DebugView.Pauseable => {
             if (breakpointSkips > 0) {
                 breakpointSkips -= 1
             } else {
