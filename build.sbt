@@ -1,6 +1,5 @@
 import _root_.parsley.build.mima
 
-
 val projectName = "parsley"
 val Scala213 = "2.13.14"
 val Scala212 = "2.12.18"
