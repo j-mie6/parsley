@@ -111,8 +111,6 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
             case _ =>
         }
 
-        println(parser)
-
         val newTree = new TransientDebugTree(fullInput = fullInput)
         newTree.name = Renamer.nameOf(userAssignedName, parser)
         newTree.internal = Renamer.internalName(parser)
