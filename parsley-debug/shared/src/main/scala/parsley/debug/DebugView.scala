@@ -6,6 +6,7 @@
 package parsley.debug
 
 import parsley.debug.internal.XIllegalStateException
+import org.typelevel.scalaccompat.annotation.unused
 
 /** A common interface for a rendering view for a debugger to present the debug tree. Inherit from
   * one of the two provided subtraits to use.
@@ -81,6 +82,6 @@ object DebugView {
 
 /* A no-op implementation for internal use, like testing */
 private [parsley] object SilentDebugView extends DebugView {
-    override private[debug] def render(input: => String, tree: => DebugTree): Unit = ()
-    private [debug] def renderWait(input: => String, tree: => DebugTree): Int = 0
+    override private[debug] def render(@unused input: => String, @unused tree: => DebugTree): Unit = ()
+    private [debug] def renderWait(@unused input: => String, @unused tree: => DebugTree): Int = 0
 }
