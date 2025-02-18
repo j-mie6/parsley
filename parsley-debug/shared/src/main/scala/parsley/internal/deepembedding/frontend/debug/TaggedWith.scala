@@ -211,7 +211,7 @@ private [parsley] object TaggedWith {
         }
 
         // XXX: This will assume all completely unknown parsers have no children at all (i.e. are Singletons).
-        override def visitUnknown[A](self: LazyParsley[A], context: ParserTracker): DL[A] = (self: LazyParsley[A]) match {
+        override def visitUnknown[A](self: LazyParsley[A], context: ParserTracker): DL[A] = self match {
             case d: TaggedWith[A @unchecked]      => result[R, Deferred[LazyParsley[A]], M](new Deferred(d)) // No need to debug a parser twice!
             case n: Named[A @unchecked]           => n.p.visit(this, context).map(_.get).map {
                 case tw: TaggedWith[A @unchecked] => new Deferred(tw.withName(n.name))
