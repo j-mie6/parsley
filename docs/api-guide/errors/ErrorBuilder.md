@@ -132,7 +132,7 @@ user to pick how each component should be represented without
 exposing unnecessary information into the rest of the system.
 
 After these types are specified, the methods of the typeclass
-can be implemented. These put together the primtive-most components
+can be implemented. These put together the primitive-most components
 and compose them into the larger whole. The documentation of the
 typeclass details the role of these well enough, however. For example's sake, however, these
 are the two shapes of call that will be made for the different types of error messages:
