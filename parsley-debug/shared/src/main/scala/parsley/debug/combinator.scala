@@ -107,7 +107,7 @@ object combinator {
       * @tparam A Output type of original parser.
       * @return A pair of the finalised tree, and the instrumented parser.
       */
-    // private [parsley] def attachDebugger[A](parser: Parsley[A]): DebuggedPair[A] = attachDebugger[A](parser, DefaultStringRules)
+    private [parsley] def attachDebugger[A](parser: Parsley[A]): DebuggedPair[A] = attachDebugger[A](parser, DefaultStringRules, SilentDebugView)
 
     // $COVERAGE-OFF$
     /* Create a closure that freshly attaches a debugger to a parser every time it is called.
