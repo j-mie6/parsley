@@ -10,7 +10,7 @@ import parsley.Parsley.{atomic, empty, fresh}
 import parsley.debug.internal.{DebugContext, DivergenceContext}
 
 import parsley.internal.deepembedding.frontend.LazyParsley
-import parsley.internal.deepembedding.frontend.debug.{TaggedWith, Named}
+import parsley.internal.deepembedding.frontend.debug.{TaggedWith, Named, RemoteBreak}
 import parsley.internal.deepembedding.backend.debug.{CheckDivergence, Debugging}
 
 /** This object contains the combinators for attaching debuggers to parsers.
@@ -272,11 +272,15 @@ object combinator {
         case _           => new Parsley(Named(parser.internal, name))
     }
 
-    import parsley.internal.deepembedding.frontend.debug.RemoteBreak
-
-    def break[A](parser: Parsley[A], break: Breakpoint): Parsley[A] = {
-      new Parsley(new RemoteBreak(parser.internal, break))
-    }
+    /** Set a breakpoint on a parser to be used by RemoteView
+      *
+      * @param parser The parser to debug.
+      * @param break Indicate whether to break on entry or exit to the parser.
+      * @tparam A Output type of original parser.
+      * @return A modified parser which will pause parsing and ask the view to render the produced
+      *         debug tree after a call to [[Parsley.parse]] is made.
+      */
+    def break[A](parser: Parsley[A], break: Breakpoint): Parsley[A] = new Parsley(new RemoteBreak(parser.internal, break))
 
     /** Dot accessor versions of the combinators.  */
     implicit class DebuggerOps[A](par: Parsley[A]) {
