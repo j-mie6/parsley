@@ -81,7 +81,7 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
       * 
       * When breakpointSkips is zero, the next breakpoint will stop the parsing.
       */
-    var breakpointSkips: Int = 0
+    private var breakpointSkips: Int = 0
 
     /** Handle a breakpoint.
       *
