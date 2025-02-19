@@ -221,6 +221,7 @@ private [parsley] object TaggedWith {
                 // parsley, and parsley does not expose naturally transparent combinators.
                 case _                            => throw new IllegalStateException("a transparent parser has been explicitly named, this is non-sensical")
             }
+            case rb: RemoteBreak[A @unchecked]    => visitUnary(rb, context)(rb.p)
             case _                                => handleNoChildren(self, context)
         }
     }

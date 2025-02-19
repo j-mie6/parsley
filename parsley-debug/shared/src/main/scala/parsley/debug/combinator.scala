@@ -10,7 +10,7 @@ import parsley.Parsley.{atomic, empty, fresh}
 import parsley.debug.internal.{DebugContext, DivergenceContext}
 
 import parsley.internal.deepembedding.frontend.LazyParsley
-import parsley.internal.deepembedding.frontend.debug.{TaggedWith, Named}
+import parsley.internal.deepembedding.frontend.debug.{TaggedWith, Named, RemoteBreak}
 import parsley.internal.deepembedding.backend.debug.{CheckDivergence, Debugging}
 
 /** This object contains the combinators for attaching debuggers to parsers.
@@ -74,8 +74,8 @@ object combinator {
       * @tparam A Output type of original parser.
       * @return A pair of the finalised tree, and the instrumented parser.
       */
-    private [parsley] def attachDebugger[A](parser: Parsley[A], toStringRules: PartialFunction[Any, Boolean]): DebuggedPair[A] = {
-        val context: DebugContext = new DebugContext(toStringRules)
+    private [parsley] def attachDebugger[A](parser: Parsley[A], toStringRules: PartialFunction[Any, Boolean], view: DebugView): DebuggedPair[A] = {
+        val context: DebugContext = new DebugContext(toStringRules, view)
 
         val attached: LazyParsley[A] = TaggedWith.tagRecursively(parser.internal, new Debugging(context))
         val resetter: Parsley[Unit]  = fresh(context.reset()).impure
@@ -107,7 +107,7 @@ object combinator {
       * @tparam A Output type of original parser.
       * @return A pair of the finalised tree, and the instrumented parser.
       */
-    private [parsley] def attachDebugger[A](parser: Parsley[A]): DebuggedPair[A] = attachDebugger[A](parser, DefaultStringRules)
+    private [parsley] def attachDebugger[A](parser: Parsley[A]): DebuggedPair[A] = attachDebugger[A](parser, DefaultStringRules, SilentDebugView)
 
     // $COVERAGE-OFF$
     /* Create a closure that freshly attaches a debugger to a parser every time it is called.
@@ -168,7 +168,7 @@ object combinator {
       *         a call to [[Parsley.parse]] is made.
       */
     def attach[A](parser: Parsley[A], view: DebugView, toStringRules: PartialFunction[Any, Boolean]): Parsley[A] = {
-        val (tree, attached) = attachDebugger(parser, toStringRules)
+        val (tree, attached) = attachDebugger(parser, toStringRules, view)
 
         // Ideally, this should run 'attached', and render the tree regardless of the parser's success.
         val renderer = fresh {
@@ -262,6 +262,16 @@ object combinator {
         case _           => new Parsley(Named(parser.internal, name))
     }
 
+    /** Set a breakpoint on a parser to be used by RemoteView
+      *
+      * @param parser The parser to debug.
+      * @param break Indicate whether to break on entry or exit to the parser.
+      * @tparam A Output type of original parser.
+      * @return A modified parser which will pause parsing and ask the view to render the produced
+      *         debug tree after a call to [[Parsley.parse]] is made.
+      */
+    def break[A](parser: Parsley[A], break: Breakpoint): Parsley[A] = new Parsley(new RemoteBreak(parser.internal, break))
+
     /** Dot accessor versions of the combinators.  */
     implicit class DebuggerOps[A](par: Parsley[A]) {
         //def attachDebugger(toStringRules: PartialFunction[Any, Boolean]): DebuggedPair[A] = combinator.attachDebugger(par, toStringRules)
@@ -276,6 +286,7 @@ object combinator {
         def attachReusable(view: =>DebugView.Reusable): () => Parsley[A] = combinator.attachReusable(par, view, DefaultStringRules)
         //def attach(implicit view: DebugFrontend): Parsley[A] = combinator.attach(par, defaultRules)
         def named(name: String): Parsley[A] = combinator.named(par, name)
+        def break(break: Breakpoint): Parsley[A] = combinator.break(par, break)
     }
     // $COVERAGE-ON$
 
