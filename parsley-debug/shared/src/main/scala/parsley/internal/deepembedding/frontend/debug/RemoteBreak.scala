@@ -14,5 +14,5 @@ private [parsley] final class RemoteBreak[A](p: LazyParsley[A], val break: Break
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visitUnknown(this, context) // or visitGeneric
 
-    private [parsley] var debugName: String = "dillBreak"
+    private [parsley] var debugName: String = "remoteBreak"
 }

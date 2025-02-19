@@ -76,4 +76,9 @@ class RemoteBreakSpec extends ParsleyTest {
         val p: Parsley[_] = string("5").break(EntryBreak)
         testExpecting(0, 0, 0, 0)(many(p), "555")
     }
+
+    it should "stay silent after skipping more breakpoints than there are" in {
+        val p: Parsley[_] = string(".").break(FullBreak)
+        testExpecting(10)(p ~> p, "..")
+    }
 }
