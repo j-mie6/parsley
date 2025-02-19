@@ -183,7 +183,7 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.{</span><span class="identifier">manyTill</span><span>}
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">comment</span><span> = </span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;//&quot;</span><span>) ~&gt; </span><span class="identifier">manyTill</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>)
-</span><span class="comment">// comment: parsley.Parsley[List[Char]] = parsley.Parsley@79d420b5
+</span><span class="comment">// comment: parsley.Parsley[List[Char]] = parsley.Parsley@7741838b
 </span><span class="identifier">comment</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;// this is a comment</span><span class="escape-sequence">\n</span><span class="string-literal">&quot;</span><span>)
 </span><span class="comment">// res0: parsley.Result[String, List[Char]] = Success(List( , t, h, i, s,  , i, s,  , a,  , c, o, m, m, e, n, t))</span></code></pre>
         
