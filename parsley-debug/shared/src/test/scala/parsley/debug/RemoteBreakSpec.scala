@@ -11,7 +11,7 @@ import org.typelevel.scalaccompat.annotation.unused
 
 private [debug] class MockedDebugView(private val exp: Iterator[Int]) extends DebugView.Reusable with DebugView.Pauseable {
   override private [debug] def render(@unused input: =>String, @unused tree: =>DebugTree): Unit = ()
-  override private [debug] def renderWait(@unused input: =>String, @unused tree: =>DebugTree): Int = if (exp.hasNext) exp.next else Assertions.fail("Hit unexpected breakpoint")
+  override private [debug] def renderWait(@unused input: =>String, @unused tree: =>DebugTree): Int = if (exp.hasNext) exp.next() else Assertions.fail("Hit unexpected breakpoint")
 
   private [debug] def checkMetExpectations(): Unit = if (exp.hasNext) Assertions.fail(s"Did not hit all breakpoints. Still expecting: (${exp.mkString(", ")})")
 }
@@ -50,10 +50,16 @@ class RemoteBreakSpec extends ParsleyTest {
         testExpecting(1)(p ~> p, "II")
     }
 
-    it should "skip many breakpoints" in {
+    it should "skip breakpoints many times" in {
+        val p1: Parsley[_] = string("E").break(FullBreak)
+        val p2: Parsley[_] = p1 ~> p1 ~> p1
+        testExpecting(1, 1, 1)(p2, "EEE")
+    }
+
+    it should "skip many breakpoints at once" in {
         val p1: Parsley[_] = string("!").break(FullBreak)
-        val p2: Parsley[_] = p1 ~> p1
-        testExpecting(2, 2)(p2.break(FullBreak), "!!")
+        val p2: Parsley[_] = p1 ~> p1 ~> p1
+        testExpecting(7)(p2.break(FullBreak), "!!!")
     }
 
     it should "never break if the parser wasn't reached" in {
