@@ -82,6 +82,6 @@ object DebugView {
 
 /* A no-op implementation for internal use, like testing */
 private [parsley] object SilentDebugView extends DebugView {
-    override private[debug] def render(@unused input: => String, @unused tree: => DebugTree): Unit = ()
+    override private [debug] def render(@unused input: => String, @unused tree: => DebugTree): Unit = ()
     private [debug] def renderWait(@unused input: => String, @unused tree: => DebugTree): Int = 0
 }
