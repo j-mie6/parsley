@@ -97,7 +97,7 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
                 breakpointSkips = view.renderWait(fullInput, tree)
             }
         }
-        case _ => println("Tried to use a debug view that does not support breakpoints!")
+        case _ => 
     }
 
     // Push a new parser onto the parser callstack.
