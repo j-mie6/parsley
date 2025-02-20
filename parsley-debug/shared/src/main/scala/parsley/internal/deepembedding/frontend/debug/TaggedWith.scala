@@ -95,7 +95,8 @@ private [parsley] object TaggedWith {
     // Keeping this around for easy access to LPM.
     @unused private [this] final class ContWrap[M[_, +_], R] {
         type LPM[+A] = M[R, LazyParsley[A]]
-        type DLPM[+A] = M[R, Deferred[LazyParsley[A]]]
+        /* Respective combinator and a Boolean for if the combinator is Iterative */
+        type DLPM[+A] = M[R, Deferred[LazyParsley[A], Boolean]] 
     }
 
     private def visitWithM[M[_, +_]: ContOps, A](parser: LazyParsley[A], tracker: ParserTracker, visitor: DebugInjectingVisitorM[M, LazyParsley[A]]) = {
@@ -114,18 +115,19 @@ private [parsley] object TaggedWith {
 
         // This is the main logic for the visitor: everything else is just plumbing
         private def handlePossiblySeen[A](self: LazyParsley[A], context: ParserTracker)(subParser: =>DL[A]): DL[A] = {
-            if (context.hasSeen(self)) result(context.get(self))
+            if (context.hasSeen(self)) result(context.get(self), self.isIterative)
             else {
                 val prom = context.put(self)
                 subParser.map { subParser_ =>
                     val retParser = if (self.isOpaque) Deferred(new TaggedWith(strategy)(self, subParser_.get, None)) else subParser_
                     prom.set(retParser)
-                    retParser
+                    (retParser, self.isIterative)
                 }
             }
         }
 
-        private def handleNoChildren[A](self: LazyParsley[A], context: ParserTracker): DL[A] = handlePossiblySeen(self, context)(result(Deferred(self)))
+        private def handleNoChildren[A](self: LazyParsley[A], context: ParserTracker): DL[A] =
+            handlePossiblySeen(self, context)(result(Deferred(self)))
 
         // We assume _q must be lazy, as it'd be better to *not* force a strict value versus accidentally forcing a lazy value.
         // This is called handle2Ary as to not be confused with handling Binary[_, _, _].
@@ -212,9 +214,10 @@ private [parsley] object TaggedWith {
 
         // XXX: This will assume all completely unknown parsers have no children at all (i.e. are Singletons).
         override def visitUnknown[A](self: LazyParsley[A], context: ParserTracker): DL[A] = self match {
-            case d: TaggedWith[A @unchecked]      => result[R, Deferred[LazyParsley[A]], M](new Deferred(d)) // No need to debug a parser twice!
+            case d: TaggedWith[A @unchecked]      => 
+                result[R, Deferred[LazyParsley[A]], M](new Deferred(d), self.isIterative) // No need to debug a parser twice!
             case n: Named[A @unchecked]           => n.p.visit(this, context).map(_.get).map {
-                case tw: TaggedWith[A @unchecked] => new Deferred(tw.withName(n.name))
+                case tw: TaggedWith[A @unchecked] => new Deferred(tw.withName(n.name), self.isIterative)
                 // this should never be the case, because all all opaque combinators will be tagged,
                 // so if it's not tagged it will be transparent, and naming a transparent combinator
                 // goes against it being transparent. Additionally, named is not available within
