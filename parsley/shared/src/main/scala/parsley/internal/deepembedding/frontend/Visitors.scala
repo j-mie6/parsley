@@ -170,6 +170,24 @@ private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
     def visitBinary[A, B, C](self: Binary[A, B, C], context: T)(l: LazyParsley[A], r: =>LazyParsley[B]): U[C]
     def visitTernary[A, B, C, D](self: Ternary[A, B, C, D], context: T)(f: LazyParsley[A], s: =>LazyParsley[B], t: =>LazyParsley[C]): U[D]
 
+    private def handleIterative[A](parser: LazyParsley[A]): Unit = {
+        println(s"Processing iterative combinator: ${parser.getClass.getSimpleName}")
+
+        /* Ensure iterative combinators are properly wrapped to be visible */
+        if (!parser.isOpaque) {
+            /* Make the first transparent parser opaque so the debugger can latch onto it */
+            parser.opaque() 
+            /* Now that the debugger is latched on, bubble up to the first opaque parent */
+            parser.parent match {
+                /* If the parent is an iterative combinator, continue bubbling */
+                case Some(parent) if parent.isInstanceOf[Iterative] =>
+                    handleIterative(parent.asInstanceOf[LazyParsley[A]])
+                case  => /* Stop bubbling if we hit a non-iterative or opaque parser */
+            }
+        }
+    }
+
+
     // Forward the generic parser to one of the defined methods.
     // $COVERAGE-OFF$
     override def visitGeneric[A](self: GenericLazyParsley[A], context: T): U[A] = self match {
@@ -275,22 +293,33 @@ private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
 
     // Iterative overrides.
     override def visit[A, C](self: Many[A, C], context: T)(init: LazyParsley[mutable.Builder[A, C]], p: LazyParsley[A]): U[C] = {
+        handleIterative(self)
         visitBinary(self, context)(init, p)
     }
-    override def visit[A](self: ChainPost[A], context: T)(p: LazyParsley[A], _op: =>LazyParsley[A => A]): U[A] = visitBinary(self, context)(p, _op)
+    override def visit[A](self: ChainPost[A], context: T)(p: LazyParsley[A], _op: =>LazyParsley[A => A]): U[A] = {
+        handleIterative(self)
+        visitBinary(self, context)(p, _op)
+    }
     override def visit[A, B](self: Chainl[A, B], context: T)(init: LazyParsley[B], p: =>LazyParsley[A], op: =>LazyParsley[(B, A) => B]): U[B] = {
+        handleIterative(self)
         visitTernary(self, context)(init, p, op)
     }
     override def visit[A, B](self: Chainr[A, B], context: T)(p: LazyParsley[A], op: =>LazyParsley[(A, B) => B], wrap: A => B): U[B] = {
+        handleIterative(self)
         visitBinary(self, context)(p, op)
     }
     override def visit[A, C](self: SepEndBy1[A, C], context: T)(p: LazyParsley[A], sep: =>LazyParsley[_], factory: Factory[A, C]): U[C] = {
+        handleIterative(self)
         visitBinary[A, Any, C](self, context)(p, sep)
     }
     override def visit[A, C](self: ManyTill[A, C], context: T)(init: LazyParsley[mutable.Builder[A, C]], body: LazyParsley[Any]): U[C] = {
+        handleIterative(self)
         visitBinary[mutable.Builder[A, C], Any, C](self, context)(init, body)
     }
-    override def visit(self: SkipManyUntil, context: T)(body: LazyParsley[Any]): U[Unit] = visitUnary[Any, Unit](self, context)(body)
+    override def visit(self: SkipManyUntil, context: T)(body: LazyParsley[Any]): U[Unit] = {
+        handleIterative(self)
+        visitUnary[Any, Unit](self, context)(body)
+    } 
 
     // Error overrides.
     override def visit[A](self: ErrorLabel[A], context: T)(p: LazyParsley[A], label: String, labels: Seq[String]): U[A] = visitUnary(self, context)(p)
