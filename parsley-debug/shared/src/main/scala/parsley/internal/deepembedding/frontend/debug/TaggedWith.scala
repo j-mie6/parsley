@@ -22,11 +22,11 @@ import parsley.internal.deepembedding.frontend._ // scalastyle:ignore underscore
 // Wrapper class signifying debugged classes
 // TODO: the origin is needed to figure out the name later on... but couldn't we resolve the name here and avoid forwarding on to the backend (send string instead)?
 // FIXME: this clobbers the register allocator, apparently?
-private [parsley] final class TaggedWith[A](factory: TagFactory)(val origin: LazyParsley[A], val subParser: LazyParsley[A], userAssignedName: Option[String])
+private [parsley] final class TaggedWith[A](factory: TagFactory)(val origin: LazyParsley[A], val subParser: LazyParsley[A], needsBubbling: Boolean, userAssignedName: Option[String])
     extends LazyParsley[A] {
     XAssert.assert(!origin.isInstanceOf[TaggedWith[_]], "Tagged parsers should not be nested within each other directly.")
 
-    def make(p: StrictParsley[A]): StrictParsley[A] = factory.create(origin, p, userAssignedName)
+    def make(p: StrictParsley[A]): StrictParsley[A] = factory.create(origin, p, needsBubbling, userAssignedName)
 
     override def findLetsAux[M[_, +_] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] = suspend(subParser.findLets(seen))
     override def preprocess[M[_, +_] : ContOps, R, A_ >: A](implicit lets: LetMap): M[R, StrictParsley[A_]] = {
@@ -34,7 +34,7 @@ private [parsley] final class TaggedWith[A](factory: TagFactory)(val origin: Laz
     }
 
     // $COVERAGE-OFF$
-    private [frontend] def withName(name: String): TaggedWith[A] = new TaggedWith(factory)(origin, subParser, Some(name))
+    private [frontend] def withName(name: String): TaggedWith[A] = new TaggedWith(factory)(origin, subParser, needsBubbling, Some(name))
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visitUnknown(this, context)
     // $COVERAGE-ON$
 
@@ -139,7 +139,7 @@ private [parsley] object TaggedWith {
                     /* If we are opaque then attach TaggedWith now, otherwise bubble upwards */
                     val retParser = {
                         if (self.isOpaque) 
-                            Deferred(new TaggedWith(strategy)(self, subResult_.parser.get, None)) 
+                            Deferred(new TaggedWith(strategy)(self, subResult_.parser.get, subResult_.needsBubbling, None)) 
                         else { 
                             subResult_.parser /* The parser is transparent, so no tagging */
                         }

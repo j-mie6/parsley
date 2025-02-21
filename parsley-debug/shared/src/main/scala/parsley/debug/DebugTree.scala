@@ -47,6 +47,9 @@ private [debug] abstract class DebugTree extends Iterable[DebugTree] {
       */
     def nodeChildren: List[DebugTree]
 
+    /** Does this node need to bubble up its success state to its parent? */
+    def doesNeedBubbling: Boolean
+
 // $COVERAGE-OFF$
     /** Provides a depth-first view of the tree as an iterator. */
     override def iterator: Iterator[DebugTree] = Iterator(this) ++ nodeChildren.iterator.flatMap(_.iterator)
