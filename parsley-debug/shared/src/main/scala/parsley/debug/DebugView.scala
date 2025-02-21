@@ -6,6 +6,7 @@
 package parsley.debug
 
 import parsley.debug.internal.XIllegalStateException
+import org.typelevel.scalaccompat.annotation.unused
 
 /** A common interface for a rendering view for a debugger to present the debug tree. Inherit from
   * one of the two provided subtraits to use.
@@ -39,6 +40,23 @@ object DebugView {
       */
     trait Reusable extends DebugView
 
+    /** Signifies that the debug view inheriting from this can wait on a certain render call.
+      * 
+      * This can be extended to make remote breakpoint stepping possible.
+      *
+      * @see [[DebugView]]
+      */
+    trait Pauseable extends DebugView {
+      /** Render a given debug tree and wait for a response from the remote viewer.
+        *
+        * @see [[DebugView]]
+        * @return n The number of breakpoints to step through after the current breakpoint.
+        *           n == 0 to just step through this breakpoint.
+        *           n >= 1 to step through the next n breakpoints.
+        */
+      private [debug] def renderWait(input: => String, tree: => DebugTree): Int
+    }
+
     /** Signifies that the debug view inheriting from this can only be run once.
       *
       * @see [[DebugView]]
@@ -60,4 +78,10 @@ object DebugView {
         /** The implementation of the render method above */
         private [debug] def renderImpl(input: =>String, tree: =>DebugTree): Unit
     }
+}
+
+/* A no-op implementation for internal use, like testing */
+private [parsley] object SilentDebugView extends DebugView {
+    override private [debug] def render(@unused input: => String, @unused tree: => DebugTree): Unit = ()
+    private [debug] def renderWait(@unused input: => String, @unused tree: => DebugTree): Int = 0
 }

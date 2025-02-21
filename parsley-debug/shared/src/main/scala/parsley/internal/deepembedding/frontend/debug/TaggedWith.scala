@@ -282,6 +282,7 @@ private [parsley] object TaggedWith {
                     case _                            => throw new IllegalStateException("a transparent parser has been explicitly named, this is non-sensical")
                 }
             }
+            case rb: RemoteBreak[A @unchecked]    => visitUnary(rb, context)(rb.p)
             case _                                => handleNoChildren(self, context)
         }
     }
