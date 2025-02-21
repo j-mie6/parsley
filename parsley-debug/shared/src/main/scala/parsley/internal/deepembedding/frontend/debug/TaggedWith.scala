@@ -112,7 +112,7 @@ private [parsley] object TaggedWith {
     }
 
     private def visitWithM[M[_, +_]: ContOps, A](parser: LazyParsley[A], tracker: ParserTracker, visitor: DebugInjectingVisitorM[M, LazyParsley[A]]) = {
-        perform[M, LazyParsley[A]](parser.visit(visitor, tracker).map(_.get))
+        perform[M, LazyParsley[A]](parser.visit(visitor, tracker).map(_.parser.get))
     }
 
     // This visitor uses Cont / ContOps to ensure that if a parser is deeply recursive, the user can all a method
@@ -127,21 +127,21 @@ private [parsley] object TaggedWith {
             suspend[M, R, ParserResult[A]](p.visit(this, context))
 
         // This is the main logic for the visitor: everything else is just plumbing
-        private def handlePossiblySeen[A](self: LazyParsley[A], context: ParserTracker)(subParser: =>DL[A]): DL[A] = {
+        private def handlePossiblySeen[A](self: LazyParsley[A], context: ParserTracker)(subResult: =>DL[A]): DL[A] = {
             /* We have seen this parser before, fetch parser from the tracker's context */
             if (context.hasSeen(self)) {
                 result(ParserResult(context.get(self), self.isIterative)) 
             } else {
                 val prom = context.put(self)
-                subParser.map { subParser_ =>
+                subResult.map { subResult_ =>
                     /* If either the child or we are iterative then we are iterative here */
-                    val isIterativeHere = self.isIterative || subParser_.needsBubbling
+                    val isIterativeHere = self.isIterative || subResult_.needsBubbling
                     /* If we are opaque then attach TaggedWith now, otherwise bubble upwards */
                     val retParser = {
                         if (self.isOpaque) 
-                            Deferred(new TaggedWith(strategy)(self, subParser_.get, None)) 
+                            Deferred(new TaggedWith(strategy)(self, subResult_.parser.get, None)) 
                         else { 
-                            subParser_.parser /* The parser is transparent, so no tagging */
+                            subResult_.parser /* The parser is transparent, so no tagging */
                         }
                     }
 
@@ -180,8 +180,7 @@ private [parsley] object TaggedWith {
                         override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[B] = 
                             visitor.visitGeneric(this, context)
                         private [parsley] var debugName = self.debugName
-                    }),
-                },
+                    })},
                 needsBubbling = dbgC.needsBubbling
             )}
         }
