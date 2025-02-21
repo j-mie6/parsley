@@ -47,8 +47,8 @@ private [debug] abstract class DebugTree extends Iterable[DebugTree] {
       */
     def nodeChildren: List[DebugTree]
 
-    /** Does this node need to bubble up its success state to its parent? */
-    def doesNeedBubbling: Boolean
+    /** Is this parser iterative? */
+    def isIterative: Boolean
 
 // $COVERAGE-OFF$
     /** Provides a depth-first view of the tree as an iterator. */

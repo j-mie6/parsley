@@ -115,6 +115,7 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
         newTree.name = Renamer.nameOf(userAssignedName, parser)
         newTree.internal = Renamer.internalName(parser)
         newTree.needsBubbling = needsBubbling
+        newTree.iterative = parser.isIterative
 
         // Send the debug tree here if ExitBreak
         parser match {
