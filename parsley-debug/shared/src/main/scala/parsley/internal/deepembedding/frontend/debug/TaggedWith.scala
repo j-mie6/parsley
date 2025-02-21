@@ -95,9 +95,22 @@ private [parsley] object TaggedWith {
     // Keeping this around for easy access to LPM.
     @unused private [this] final class ContWrap[M[_, +_], R] {
         type LPM[+A] = M[R, LazyParsley[A]]
-        /* Respective combinator and a Boolean for if the combinator is Iterative */
-        type DLPM[+A] = M[R, Deferred[LazyParsley[A], Boolean]] 
+        /** 
+         * ParserResult containing the related LazyParsley combinator and a Boolean for if the
+         * combinator need to be bubble up to an opaque parser
+         *  */
+        type DLPM[+A] = M[R, ParserResult[A]] 
     }
+
+    /**
+      * This class is used to store the result of a parser visit, and whether or not the parser needs to bubble up
+      *
+      * @param parser The parser that was visited
+      * @param needsBubbling Whether or not the parser is transparent and hence needs to bubble up
+      * @tparam A The type of the parser
+      */
+    private case class ParserResult[+A](parser: Deferred[LazyParsley[A]], needsBubbling: Boolean)
+
 
     private def visitWithM[M[_, +_]: ContOps, A](parser: LazyParsley[A], tracker: ParserTracker, visitor: DebugInjectingVisitorM[M, LazyParsley[A]]) = {
         perform[M, LazyParsley[A]](parser.visit(visitor, tracker).map(_.get))
@@ -119,9 +132,22 @@ private [parsley] object TaggedWith {
             else {
                 val prom = context.put(self)
                 subParser.map { subParser_ =>
-                    val retParser = if (self.isOpaque) Deferred(new TaggedWith(strategy)(self, subParser_.get, None)) else subParser_
+                    /* If either the child or we are iterative then we are iterative here */
+                    val isIterativeHere = self.isIterative || subParser_.needsBubbling
+                    /* If we are opaque then attach TaggedWith now, otherwise bubble upwards */
+                    val retParser = {
+                        if (self.isOpaque) 
+                            Deferred(new TaggedWith(strategy)(self, subParser_.get, None)) 
+                        else { 
+                            subParser_.parser /* The parser is transparent, so no tagging */
+                        }
+                    }
+
+                    /* If we are still iterative but transparent then we bubble up */
+                    val bubbleNeeded = isIterativeHere && !self.isOpaque
+                    
                     prom.set(retParser)
-                    (retParser, self.isIterative)
+                    ParserResult(retParser, bubbleNeeded)
                 }
             }
         }
@@ -215,9 +241,9 @@ private [parsley] object TaggedWith {
         // XXX: This will assume all completely unknown parsers have no children at all (i.e. are Singletons).
         override def visitUnknown[A](self: LazyParsley[A], context: ParserTracker): DL[A] = self match {
             case d: TaggedWith[A @unchecked]      => 
-                result[R, Deferred[LazyParsley[A]], M](new Deferred(d), self.isIterative) // No need to debug a parser twice!
+                result[R, ParserResult[A], M](ParserResult(new Deferred(d), self.isIterative)) // No need to debug a parser twice!
             case n: Named[A @unchecked]           => n.p.visit(this, context).map(_.get).map {
-                case tw: TaggedWith[A @unchecked] => new Deferred(tw.withName(n.name), self.isIterative)
+                case tw: TaggedWith[A @unchecked] => ParserResult(new Deferred(tw.withName(n.name)), self.isIterative)
                 // this should never be the case, because all all opaque combinators will be tagged,
                 // so if it's not tagged it will be transparent, and naming a transparent combinator
                 // goes against it being transparent. Additionally, named is not available within
