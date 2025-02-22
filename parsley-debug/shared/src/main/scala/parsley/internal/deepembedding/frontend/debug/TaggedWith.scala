@@ -144,12 +144,10 @@ private [parsley] object TaggedWith {
                             subParser /* The parser is transparent, so no tagging */
                         }
                     }
-
-                    /* If we are still iterative but transparent then we bubble up */
-                    val bubbleNeeded = isIterative && !self.isOpaque
                     
                     prom.set(retParser)
-                    ParserResult(retParser, bubbleNeeded)
+                    /* If we are still iterative but transparent then we bubble up */
+                    ParserResult(retParser, isIterative && !self.isOpaque)
                 }
             }
         }
