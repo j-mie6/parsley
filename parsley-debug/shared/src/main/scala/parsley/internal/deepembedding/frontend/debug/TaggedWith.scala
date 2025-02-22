@@ -107,7 +107,7 @@ private [parsley] object TaggedWith {
         /** 
          * ParserResult containing the related LazyParsley combinator and a Boolean for if the
          * combinator need to be bubble up to an opaque parser
-         *  */
+         **/
         type DLPM[+A] = M[R, ParserResult[A]] 
     }
 
@@ -127,25 +127,25 @@ private [parsley] object TaggedWith {
 
         // This is the main logic for the visitor: everything else is just plumbing
         private def handlePossiblySeen[A](self: LazyParsley[A], context: ParserTracker)(subResult: =>DL[A]): DL[A] = {
-            /* We have seen this parser before, fetch parser from the tracker's context */
+            // We have seen this parser before, fetch parser from the tracker's context
             if (context.hasSeen(self)) {
                 result(ParserResult(context.get(self), self.isIterative)) 
             } else {
                 val prom = context.put(self)
                 subResult.map { case ParserResult(subParser, subIsIterative) =>
-                    /* If either the child or we are iterative then we are iterative here */
+                    // If either the child or we are iterative then we are iterative here
                     val isIterative = self.isIterative || subIsIterative
-                    /* If we are opaque then attach TaggedWith now, otherwise bubble upwards */
+                    // If we are opaque then attach TaggedWith now, otherwise bubble upwards
                     val retParser = {
                         if (self.isOpaque) 
                             Deferred(new TaggedWith(strategy)(self, subParser.get, isIterative, None)) 
                         else { 
-                            subParser /* The parser is transparent, so no tagging */
+                            subParser // The parser is transparent, so no tagging
                         }
                     }
                     
                     prom.set(retParser)
-                    /* If we are still iterative but transparent then we bubble up */
+                    // If we are still iterative but transparent then we bubble up
                     ParserResult(retParser, isIterative && !self.isOpaque)
                 }
             }
