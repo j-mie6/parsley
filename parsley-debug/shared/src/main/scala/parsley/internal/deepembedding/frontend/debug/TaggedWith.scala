@@ -22,11 +22,11 @@ import parsley.internal.deepembedding.frontend._ // scalastyle:ignore underscore
 // Wrapper class signifying debugged classes
 // TODO: the origin is needed to figure out the name later on... but couldn't we resolve the name here and avoid forwarding on to the backend (send string instead)?
 // FIXME: this clobbers the register allocator, apparently?
-private [parsley] final class TaggedWith[A](factory: TagFactory)(val origin: LazyParsley[A], val subParser: LazyParsley[A], needsBubbling: Boolean, userAssignedName: Option[String])
+private [parsley] final class TaggedWith[A](factory: TagFactory)(val origin: LazyParsley[A], val subParser: LazyParsley[A], isIterative: Boolean, userAssignedName: Option[String])
     extends LazyParsley[A] {
     XAssert.assert(!origin.isInstanceOf[TaggedWith[_]], "Tagged parsers should not be nested within each other directly.")
 
-    def make(p: StrictParsley[A]): StrictParsley[A] = factory.create(origin, p, needsBubbling, userAssignedName)
+    def make(p: StrictParsley[A]): StrictParsley[A] = factory.create(origin, p, isIterative, userAssignedName)
 
     override def findLetsAux[M[_, +_] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] = suspend(subParser.findLets(seen))
     override def preprocess[M[_, +_] : ContOps, R, A_ >: A](implicit lets: LetMap): M[R, StrictParsley[A_]] = {
@@ -34,7 +34,7 @@ private [parsley] final class TaggedWith[A](factory: TagFactory)(val origin: Laz
     }
 
     // $COVERAGE-OFF$
-    private [frontend] def withName(name: String): TaggedWith[A] = new TaggedWith(factory)(origin, subParser, needsBubbling, Some(name))
+    private [frontend] def withName(name: String): TaggedWith[A] = new TaggedWith(factory)(origin, subParser, isIterative, Some(name))
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visitUnknown(this, context)
     // $COVERAGE-ON$
 
@@ -96,10 +96,10 @@ private [parsley] object TaggedWith {
       * This class is used to store the result of a parser visit, and whether or not the parser needs to bubble up
       *
       * @param parser The parser that was visited
-      * @param needsBubbling Whether or not the parser is transparent and hence needs to bubble up
+      * @param isIterative Whether or not the parser is transparent and hence needs to bubble up
       * @tparam A The type of the parser
       */
-    private case class ParserResult[+A](parser: Deferred[LazyParsley[A]], needsBubbling: Boolean)
+    private case class ParserResult[+A](parser: Deferred[LazyParsley[A]], isIterative: Boolean)
 
     // Keeping this around for easy access to LPM.
     @unused private [this] final class ContWrap[M[_, +_], R] {
@@ -135,11 +135,11 @@ private [parsley] object TaggedWith {
                 val prom = context.put(self)
                 subResult.map { subResult_ =>
                     /* If either the child or we are iterative then we are iterative here */
-                    val isIterativeHere = self.isIterative || subResult_.needsBubbling
+                    val isIterativeHere = self.isIterative || subResult_.isIterative
                     /* If we are opaque then attach TaggedWith now, otherwise bubble upwards */
                     val retParser = {
                         if (self.isOpaque) 
-                            Deferred(new TaggedWith(strategy)(self, subResult_.parser.get, subResult_.needsBubbling, None)) 
+                            Deferred(new TaggedWith(strategy)(self, subResult_.parser.get, subResult_.isIterative, None)) 
                         else { 
                             subResult_.parser /* The parser is transparent, so no tagging */
                         }
@@ -164,7 +164,7 @@ private [parsley] object TaggedWith {
             handlePossiblySeen[A](self, context) {
                 zipWith(visit(p, context), visit(q, context))((dbgP, dbgQ) => ParserResult(
                     parser = constructor(dbgP.parser, dbgQ.parser),
-                    needsBubbling = dbgP.needsBubbling || dbgQ.needsBubbling
+                    isIterative = dbgP.isIterative || dbgQ.isIterative
                 ))
             }
         }
@@ -181,7 +181,7 @@ private [parsley] object TaggedWith {
                             visitor.visitGeneric(this, context)
                         private [parsley] var debugName = self.debugName
                     })},
-                needsBubbling = dbgC.needsBubbling
+                isIterative = dbgC.isIterative
             )}
         }
 
@@ -196,7 +196,7 @@ private [parsley] object TaggedWith {
                             private [parsley] var debugName = self.debugName
                         }
                     },
-                    needsBubbling = dbgL.needsBubbling || dbgR.needsBubbling
+                    isIterative = dbgL.isIterative || dbgR.isIterative
                 )}
             }
         }
@@ -211,7 +211,7 @@ private [parsley] object TaggedWith {
                         private [parsley] var debugName = self.debugName
                     }
                 },
-                needsBubbling = dbgF.needsBubbling || dbgS.needsBubbling || dbgT.needsBubbling
+                isIterative = dbgF.isIterative || dbgS.isIterative || dbgT.isIterative
             )}
         }
 
@@ -229,7 +229,7 @@ private [parsley] object TaggedWith {
                             perform[M, LazyParsley[B]](f(x).visit(subVisitor, context).map(_.parser.get))
                         })
                     },
-                    needsBubbling = dbgC.needsBubbling
+                    isIterative = dbgC.isIterative
                 )}
             }
         }
@@ -253,7 +253,7 @@ private [parsley] object TaggedWith {
             handlePossiblySeen(self, context) {
                 visit(p, context).map(p => { ParserResult(
                     parser = Deferred( new Put(ref, p.parser.get)),
-                    needsBubbling = p.needsBubbling
+                    isIterative = p.isIterative
                 )})
             }
         }
@@ -263,7 +263,7 @@ private [parsley] object TaggedWith {
                     parser = Deferred {
                         new NewReg(ref, init.parser.get, body.parser.get)
                     },
-                    needsBubbling = init.needsBubbling || body.needsBubbling
+                    isIterative = init.isIterative || body.isIterative
                 )}
             }
         }
@@ -274,7 +274,7 @@ private [parsley] object TaggedWith {
                 result[R, ParserResult[A], M](ParserResult(new Deferred(d), d.origin.isIterative)) // No need to debug a parser twice!
             case n: Named[A @unchecked]           => n.p.visit(this, context).map { subResult =>
                 subResult.parser.get match {
-                    case tw: TaggedWith[A @unchecked] => ParserResult(new Deferred(tw.withName(n.name)), subResult.needsBubbling)
+                    case tw: TaggedWith[A @unchecked] => ParserResult(new Deferred(tw.withName(n.name)), subResult.isIterative)
                     // this should never be the case, because all all opaque combinators will be tagged,
                     // so if it's not tagged it will be transparent, and naming a transparent combinator
                     // goes against it being transparent. Additionally, named is not available within
