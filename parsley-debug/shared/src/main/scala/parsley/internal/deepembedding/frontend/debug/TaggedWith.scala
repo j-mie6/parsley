@@ -123,8 +123,7 @@ private [parsley] object TaggedWith {
         extends GenericLazyParsleyIVisitor[ParserTracker, ContWrap[M, R]#DLPM] {
         private type DL[+A] = ContWrap[M, R]#DLPM[A]
 
-        private def visit[A](p: LazyParsley[A], context: ParserTracker) = 
-            suspend[M, R, ParserResult[A]](p.visit(this, context))
+        private def visit[A](p: LazyParsley[A], context: ParserTracker) = suspend[M, R, ParserResult[A]](p.visit(this, context))
 
         // This is the main logic for the visitor: everything else is just plumbing
         private def handlePossiblySeen[A](self: LazyParsley[A], context: ParserTracker)(subResult: =>DL[A]): DL[A] = {
