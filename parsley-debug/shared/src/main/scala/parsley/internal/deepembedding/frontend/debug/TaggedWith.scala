@@ -135,7 +135,7 @@ private [parsley] object TaggedWith {
                 val prom = context.put(self)
                 subResult.map { subResult_ =>
                     /* If either the child or we are iterative then we are iterative here */
-                    val isIterativeHere = self.isIterative || subResult_.isIterative
+                    val isIterative = self.isIterative || subResult_.isIterative
                     /* If we are opaque then attach TaggedWith now, otherwise bubble upwards */
                     val retParser = {
                         if (self.isOpaque) 
@@ -146,10 +146,10 @@ private [parsley] object TaggedWith {
                     }
 
                     /* If we are still iterative but transparent then we bubble up */
-                    val bubbleNeeded = isIterativeHere && !self.isOpaque
+                    val bubbleNeeded = isIterative && !self.isOpaque
                     
                     prom.set(retParser)
-                    ParserResult(retParser, bubbleNeeded)
+                    ParserResult(retParser, isIterative)
                 }
             }
         }
