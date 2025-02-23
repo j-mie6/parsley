@@ -92,8 +92,8 @@ private [parsley] object TaggedWith {
         def apply[A](x: =>A) = new Deferred(x)
     }
 
-     /**
-      * This class is used to store the result of a parser visit, and whether or not the parser needs to bubble up
+    /** This class is used to store the result of a parser visit, and whether
+      *  or not the parser needs to bubble up
       *
       * @param parser The parser that was visited
       * @param isIterative Whether or not the parser is transparent and hence needs to bubble up
@@ -104,11 +104,11 @@ private [parsley] object TaggedWith {
     // Keeping this around for easy access to LPM.
     @unused private [this] final class ContWrap[M[_, +_], R] {
         type LPM[+A] = M[R, LazyParsley[A]]
-        /** 
-         * ParserResult containing the related LazyParsley combinator and a Boolean for if the
-         * combinator need to be bubble up to an opaque parser
-         **/
-        type DLPM[+A] = M[R, ParserResult[A]] 
+         
+        // Containing the related LazyParsley combinator and a Boolean for if the
+        // combinator need to be bubble up to an opaque parser
+         
+        type DLPM[+A] = M[R, (ParserResult[A])] 
     }
 
     private def visitWithM[M[_, +_]: ContOps, A](parser: LazyParsley[A], tracker: ParserTracker, visitor: DebugInjectingVisitorM[M, LazyParsley[A]]) = {
