@@ -14,7 +14,7 @@ import parsley.internal.deepembedding.backend, backend.StrictParsley
   * This trait represents combinators that are iterative, that is, they execute 
   * parsers multiple times until they cannot match any more
   */
-sealed trait Iterative
+private [parsley] sealed trait Iterative
 
 private [parsley] final class Many[A, C](init: LazyParsley[mutable.Builder[A, C]], p: =>LazyParsley[A], private [parsley] var debugName: String) 
     extends Binary[mutable.Builder[A, C], A, C](init, p) with Iterative {
