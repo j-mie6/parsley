@@ -27,7 +27,7 @@ private [parsley] final class Debugging(dbgCtx: DebugContext) extends TagFactory
 
 private [parsley] final class CheckDivergence(dtx: DivergenceContext) extends TagFactory {
     def create[A](origin: LazyParsley[A], p: StrictParsley[A], isIterative: Boolean, userAssignedName: Option[String]): StrictParsley[A] = {
-        new DivergenceChecker(origin, p, isIterative, userAssignedName)(dtx)
+        new DivergenceChecker(origin, p, userAssignedName)(dtx)
     }
 }
 
@@ -47,11 +47,11 @@ private [backend] final class Debugged[A](origin: LazyParsley[A], val p: StrictP
     override protected def pretty(p: String): String = s"debugged($p)"
 }
 
-private [backend] final class DivergenceChecker[A](origin: LazyParsley[A], val p: StrictParsley[A], isIterative: Boolean, userAssignedName: Option[String])(dtx: DivergenceContext)
+private [backend] final class DivergenceChecker[A](origin: LazyParsley[A], val p: StrictParsley[A], userAssignedName: Option[String])(dtx: DivergenceContext)
     extends Unary[A, A] {
     override protected [backend] def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler = state.freshLabel()
-        instrs += new TakeSnapshot(handler, origin, isIterative, userAssignedName)(dtx)
+        instrs += new TakeSnapshot(handler, origin, userAssignedName)(dtx)
         suspend[M, R, Unit](p.codeGen[M, R](producesResults)) |> {
             instrs += new Label(handler)
             instrs += new DropSnapshot(dtx)

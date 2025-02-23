@@ -76,13 +76,13 @@ private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Instr 
     // $COVERAGE-ON$
 }
 
-private [internal] class TakeSnapshot(var label: Int, origin: LazyParsley[_], isIterative: Boolean, userAssignedName: Option[String])(dtx: DivergenceContext) extends InstrWithLabel {
+private [internal] class TakeSnapshot(var label: Int, origin: LazyParsley[_], userAssignedName: Option[String])(dtx: DivergenceContext) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         val handler = ctx.handlers
         ctx.pushHandler(label)
         val ctxSnap = dtx.CtxSnap(ctx.pc, ctx.instrs, ctx.offset, ctx.regs.toList)
-        dtx.takeSnapshot(origin, isIterative, userAssignedName, ctxSnap, if (handler.isEmpty) None else Some(dtx.HandlerSnap(handler.pc, handler.instrs)))
+        dtx.takeSnapshot(origin, userAssignedName, ctxSnap, if (handler.isEmpty) None else Some(dtx.HandlerSnap(handler.pc, handler.instrs)))
         ctx.inc()
     }
 
