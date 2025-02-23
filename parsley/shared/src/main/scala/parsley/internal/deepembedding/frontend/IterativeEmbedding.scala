@@ -17,14 +17,14 @@ import parsley.internal.deepembedding.backend, backend.StrictParsley
   * @see [[parsley.internal.deepembedding.frontend.debug.TaggedWith `TaggedWith`]] for how this trait is used to bubble up knowledge of
   * iterative subparsers to the [[parsley.debug.DebugTree `DebugTree`]]
   * 
-  * @example [[Many]]
-  * @example [[ChainPost]]
-  * @example [[ChainPre]]
-  * @example [[Chainl]]
-  * @example [[Chainr]]
-  * @example [[SepEndBy1]]
-  * @example [[ManyTill]]
-  * @example [[SkipManyUntil]]
+  * @example [[parsley.internal.deepembedding.frontend.Many `Many``]]
+  * @example [[parsley.internal.deepembedding.frontend.ChainPost `ChainPost`]]
+  * @example [[parsley.internal.deepembedding.frontend.ChainPre `ChainPre`]]
+  * @example [[parsley.internal.deepembedding.frontend.Chainl `Chainl`]]
+  * @example [[parsley.internal.deepembedding.frontend.Chainr `Chainr`]]
+  * @example [[parsley.internal.deepembedding.frontend.SepEndBy1 `SepEndBy1`]]
+  * @example [[parsley.internal.deepembedding.frontend.ManyTill `ManyTill`]]
+  * @example [[parsley.internal.deepembedding.frontend.SkipManyUntil `SkipManyUntil`]]
   */
 sealed trait Iterative
 
