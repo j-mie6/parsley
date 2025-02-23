@@ -10,6 +10,22 @@ import scala.collection.{mutable, Factory}
 import parsley.internal.deepembedding.ContOps, ContOps.{suspend, ContAdapter}
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 
+/**
+  * This trait represents combinators that are iterative, that is, they execute 
+  * parsers multiple times until they cannot match any more
+  * 
+  * @see [[parsley.internal.deepembedding.frontend.debug.TaggedWith `TaggedWith`]] for how this trait is used to bubble up knowledge of
+  * iterative subparsers to the [[parsley.debug.DebugTree `DebugTree`]]
+  * 
+  * @example [[Many]]
+  * @example [[ChainPost]]
+  * @example [[ChainPre]]
+  * @example [[Chainl]]
+  * @example [[Chainr]]
+  * @example [[SepEndBy1]]
+  * @example [[ManyTill]]
+  * @example [[SkipManyUntil]]
+  */
 sealed trait Iterative
 
 private [parsley] final class Many[A, C](init: LazyParsley[mutable.Builder[A, C]], p: =>LazyParsley[A], private [parsley] var debugName: String) 
