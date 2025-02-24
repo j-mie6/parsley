@@ -101,7 +101,7 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
     }
 
     // Push a new parser onto the parser callstack.
-    def push(fullInput: String, parser: LazyParsley[_], userAssignedName: Option[String]): Unit = {
+    def push(fullInput: String, parser: LazyParsley[_], isIterative: Boolean, userAssignedName: Option[String]): Unit = {
         // Send the debug tree here if EntryBreak
         parser match {
             case break: RemoteBreak[_] => break.break match {
@@ -114,6 +114,7 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
         val newTree = new TransientDebugTree(fullInput = fullInput)
         newTree.name = Renamer.nameOf(userAssignedName, parser)
         newTree.internal = Renamer.internalName(parser)
+        newTree.iterative = isIterative
 
         // Send the debug tree here if ExitBreak
         parser match {

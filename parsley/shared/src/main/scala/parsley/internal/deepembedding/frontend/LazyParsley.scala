@@ -186,6 +186,10 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     private [parsley] def transparent(): Unit = debugName = null
     private [parsley] def opaque(name: String): Unit = debugName = name
     private [parsley] def isOpaque: Boolean = debugName != null
+    private [parsley] def isIterative: Boolean = this match {
+        case _: Iterative => true
+        case _            => false
+    }
 
     /** Pretty-prints a combinator tree, for internal debugging purposes only. */
     final private [internal] def prettyAST: String = {

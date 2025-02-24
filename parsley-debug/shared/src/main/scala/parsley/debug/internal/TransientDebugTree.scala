@@ -21,7 +21,8 @@ import parsley.debug.{DebugTree, ParseAttempt}
   */
 private [parsley] class TransientDebugTree(var name: String = "", var internal: String = "", val fullInput: String,
                                            var parse: Option[ParseAttempt] = None, var cNumber: Option[Long] = None,
-                                           val children: mutable.ListBuffer[TransientDebugTree] = mutable.ListBuffer.empty) extends DebugTree {
+                                           val children: mutable.ListBuffer[TransientDebugTree] = mutable.ListBuffer.empty,
+                                           var iterative: Boolean = false) extends DebugTree {
     // These are user-facing, and will depend heavily on what the parser looks like.
     // $COVERAGE-OFF$
     override def parserName: String = name
@@ -34,6 +35,14 @@ private [parsley] class TransientDebugTree(var name: String = "", var internal: 
     override def parseResults: Option[ParseAttempt] = parse
 
     override def nodeChildren: List[DebugTree] = children.toList
+
+    
+    // If the parser needs bubbling then we do not see it because it is transparent. 
+    // If it does not need bubbling then it is either an iterative, opaque parser 
+    // or a non-iterative, opaque parser.
+    // To cover both cases, we also check if it is iterative.
+      
+    override def isIterative: Boolean = iterative
 
     // Factors out inputs or results for parsers with children.
     private type Augment  = (Long, (Int, Int))

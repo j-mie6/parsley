@@ -25,7 +25,7 @@ class DebuggerUsageSpec extends ParsleyTest {
     "the Debugged internal frontend class" should "not allow nesting of Debugged nodes" in {
         val factory = new Debugging(new DebugContext(parsley.debug.combinator.DefaultStringRules, SilentDebugView))
         try {
-            val _ = new TaggedWith(factory)(new TaggedWith(factory)(fresh(()).internal, null, None), null, None)
+            val _ = new TaggedWith(factory)(new TaggedWith(factory)(fresh(()).internal, null, false, None), null, false, None)
             fail("Debugged nodes have been nested")
         } catch {
             case _: Throwable => info("assertion exception thrown, as expected")
@@ -34,9 +34,9 @@ class DebuggerUsageSpec extends ParsleyTest {
 
     it should "preserve the prettified names of the parsers" in {
         val factory = new Debugging(new DebugContext(parsley.debug.combinator.DefaultStringRules, SilentDebugView))
-        new TaggedWith(factory)(named(fresh(()), "foo").internal, null, None).debugName shouldBe "foo"
-        new TaggedWith(factory)(fresh(()).internal, null, None).debugName shouldBe "fresh"
-        new TaggedWith(factory)(fresh(()).internal, null, Some("bar")).debugName shouldBe "bar"
+        new TaggedWith(factory)(named(fresh(()), "foo").internal, null, false, None).debugName shouldBe "foo"
+        new TaggedWith(factory)(fresh(()).internal, null, false, None).debugName shouldBe "fresh"
+        new TaggedWith(factory)(fresh(()).internal, null, false, Some("bar")).debugName shouldBe "bar"
     }
 
     "the debugger runtime" should "preserve the result of parsers" in {

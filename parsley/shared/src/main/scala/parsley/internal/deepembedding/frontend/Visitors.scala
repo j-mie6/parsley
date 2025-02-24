@@ -274,23 +274,13 @@ private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
     override def visit[A](self: <*[A], context: T)(p: LazyParsley[A], _q: =>LazyParsley[_]): U[A] = visitBinary[A, Any, A](self, context)(p, _q)
 
     // Iterative overrides.
-    override def visit[A, C](self: Many[A, C], context: T)(init: LazyParsley[mutable.Builder[A, C]], p: LazyParsley[A]): U[C] = {
-        visitBinary(self, context)(init, p)
-    }
+    override def visit[A, C](self: Many[A, C], context: T)(init: LazyParsley[mutable.Builder[A, C]], p: LazyParsley[A]): U[C] = visitBinary(self, context)(init, p)
     override def visit[A](self: ChainPost[A], context: T)(p: LazyParsley[A], _op: =>LazyParsley[A => A]): U[A] = visitBinary(self, context)(p, _op)
-    override def visit[A, B](self: Chainl[A, B], context: T)(init: LazyParsley[B], p: =>LazyParsley[A], op: =>LazyParsley[(B, A) => B]): U[B] = {
-        visitTernary(self, context)(init, p, op)
-    }
-    override def visit[A, B](self: Chainr[A, B], context: T)(p: LazyParsley[A], op: =>LazyParsley[(A, B) => B], wrap: A => B): U[B] = {
-        visitBinary(self, context)(p, op)
-    }
-    override def visit[A, C](self: SepEndBy1[A, C], context: T)(p: LazyParsley[A], sep: =>LazyParsley[_], factory: Factory[A, C]): U[C] = {
-        visitBinary[A, Any, C](self, context)(p, sep)
-    }
-    override def visit[A, C](self: ManyTill[A, C], context: T)(init: LazyParsley[mutable.Builder[A, C]], body: LazyParsley[Any]): U[C] = {
-        visitBinary[mutable.Builder[A, C], Any, C](self, context)(init, body)
-    }
-    override def visit(self: SkipManyUntil, context: T)(body: LazyParsley[Any]): U[Unit] = visitUnary[Any, Unit](self, context)(body)
+    override def visit[A, B](self: Chainl[A, B], context: T)(init: LazyParsley[B], p: =>LazyParsley[A], op: =>LazyParsley[(B, A) => B]): U[B] = visitTernary(self, context)(init, p, op)
+    override def visit[A, B](self: Chainr[A, B], context: T)(p: LazyParsley[A], op: =>LazyParsley[(A, B) => B], wrap: A => B): U[B] = visitBinary(self, context)(p, op)
+    override def visit[A, C](self: SepEndBy1[A, C], context: T)(p: LazyParsley[A], sep: =>LazyParsley[_], factory: Factory[A, C]): U[C] = visitBinary[A, Any, C](self, context)(p, sep)
+    override def visit[A, C](self: ManyTill[A, C], context: T)(init: LazyParsley[mutable.Builder[A, C]], body: LazyParsley[Any]): U[C] = visitBinary[mutable.Builder[A, C], Any, C](self, context)(init, body)
+    override def visit(self: SkipManyUntil, context: T)(body: LazyParsley[Any]): U[Unit] = visitUnary[Any, Unit](self, context)(body) 
 
     // Error overrides.
     override def visit[A](self: ErrorLabel[A], context: T)(p: LazyParsley[A], label: String, labels: Seq[String]): U[A] = visitUnary(self, context)(p)

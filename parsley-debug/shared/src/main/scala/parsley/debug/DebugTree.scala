@@ -47,6 +47,9 @@ private [debug] abstract class DebugTree extends Iterable[DebugTree] {
       */
     def nodeChildren: List[DebugTree]
 
+    /** Is this parser iterative? */
+    def isIterative: Boolean
+
 // $COVERAGE-OFF$
     /** Provides a depth-first view of the tree as an iterator. */
     override def iterator: Iterator[DebugTree] = Iterator(this) ++ nodeChildren.iterator.flatMap(_.iterator)

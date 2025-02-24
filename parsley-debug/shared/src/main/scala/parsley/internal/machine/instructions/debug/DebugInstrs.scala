@@ -16,14 +16,14 @@ import parsley.internal.machine.XAssert._
 import parsley.internal.machine.stacks.Stack.StackExt
 
 // Enter into the scope of a parser in the current context.
-private [internal] class EnterParser(var label: Int, origin: LazyParsley[_], userAssignedName: Option[String])(dbgCtx: DebugContext) extends InstrWithLabel {
+private [internal] class EnterParser(var label: Int, origin: LazyParsley[_], isIterative: Boolean, userAssignedName: Option[String])(dbgCtx: DebugContext) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         // Uncomment to debug entries and exits.
         // println(s"Entering ${origin.prettyName} (@ ${ctx.pc} -> Exit @ $label)")
 
         // I think we can get away with executing this unconditionally.
-        dbgCtx.push(ctx.input, origin, userAssignedName)
+        dbgCtx.push(ctx.input, origin, isIterative, userAssignedName)
         // Using my own state tracker instead.
         dbgCtx.pushPos(ctx.offset, ctx.line, ctx.col)
         ctx.pushHandler(label) // Mark the AddAttempt instruction as an exit handler.

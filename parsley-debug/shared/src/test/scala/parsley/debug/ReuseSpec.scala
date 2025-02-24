@@ -33,6 +33,8 @@ class ReuseSpec extends ParsleyTest {
 
             override def nodeChildren: List[DebugTree] = Nil
 
+            override def isIterative: Boolean = false
+
             override def fullInput: String = "bar"
         }
 

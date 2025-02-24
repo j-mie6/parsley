@@ -16,27 +16,27 @@ import parsley.internal.machine.instructions.{Label, Pop}
 import parsley.internal.machine.instructions.debug.{AddAttemptAndLeave, DropSnapshot, EnterParser, TakeSnapshot}
 
 private [deepembedding] sealed abstract class TagFactory {
-    def create[A](origin: LazyParsley[A], p: StrictParsley[A], userAssignedName: Option[String]): StrictParsley[A]
+    def create[A](origin: LazyParsley[A], p: StrictParsley[A], isIterative: Boolean, userAssignedName: Option[String]): StrictParsley[A]
 }
 
 private [parsley] final class Debugging(dbgCtx: DebugContext) extends TagFactory {
-    def create[A](origin: LazyParsley[A], p: StrictParsley[A], userAssignedName: Option[String]): StrictParsley[A] = {
-        new Debugged(origin, p, userAssignedName)(dbgCtx)
+    def create[A](origin: LazyParsley[A], p: StrictParsley[A], isIterative: Boolean, userAssignedName: Option[String]): StrictParsley[A] = {
+        new Debugged(origin, p, isIterative, userAssignedName)(dbgCtx)
     }
 }
 
 private [parsley] final class CheckDivergence(dtx: DivergenceContext) extends TagFactory {
-    def create[A](origin: LazyParsley[A], p: StrictParsley[A], userAssignedName: Option[String]): StrictParsley[A] = {
+    def create[A](origin: LazyParsley[A], p: StrictParsley[A], isIterative: Boolean, userAssignedName: Option[String]): StrictParsley[A] = {
         new DivergenceChecker(origin, p, userAssignedName)(dtx)
     }
 }
 
 // backend implementations
-private [backend] final class Debugged[A](origin: LazyParsley[A], val p: StrictParsley[A], userAssignedName: Option[String])(dbgCtx: DebugContext)
+private [backend] final class Debugged[A](origin: LazyParsley[A], val p: StrictParsley[A], isIterative: Boolean, userAssignedName: Option[String])(dbgCtx: DebugContext)
     extends Unary[A, A] {
     override protected [backend] def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler = state.freshLabel()
-        instrs += new EnterParser(handler, origin, userAssignedName)(dbgCtx)
+        instrs += new EnterParser(handler, origin, isIterative, userAssignedName)(dbgCtx)
         suspend[M, R, Unit](p.codeGen[M, R](producesResults = true)) |> {
             instrs += new Label(handler)
             instrs += new AddAttemptAndLeave(dbgCtx)
