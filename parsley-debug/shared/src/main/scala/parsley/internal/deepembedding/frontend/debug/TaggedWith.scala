@@ -127,13 +127,11 @@ private [parsley] object TaggedWith {
 
         // This is the main logic for the visitor: everything else is just plumbing
         private def handlePossiblySeen[A](self: LazyParsley[A], context: ParserTracker)(subResult: =>DL[A]): DL[A] = {
-            // We have seen this parser before, fetch parser from the tracker's context
             if (context.hasSeen(self)) {
                 result(TaggingResult(context.get(self), self.isIterative)) 
             } else {
                 val prom = context.put(self)
                 subResult.map { case TaggingResult(subParser, subIsIterative) =>
-                    // If either the child or we are iterative then we are iterative here
                     val isIterative = self.isIterative || subIsIterative
                     // If we are opaque then attach TaggedWith now, otherwise bubble upwards
                     val retParser = {
