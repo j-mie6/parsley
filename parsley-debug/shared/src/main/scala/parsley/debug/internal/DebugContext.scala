@@ -93,7 +93,7 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
         case view: DebugView.Pauseable => {
             if (breakpointSkips > 0) {
                 breakpointSkips -= 1
-            } else {
+            } else if (breakpointSkips != -1) {
                 breakpointSkips = view.renderWait(fullInput, tree)
             }
         }
