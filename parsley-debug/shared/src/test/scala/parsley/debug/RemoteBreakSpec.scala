@@ -81,4 +81,9 @@ class RemoteBreakSpec extends ParsleyTest {
         val p: Parsley[_] = string(".").break(FullBreak)
         testExpecting(10)(p ~> p, "..")
     }
+
+    it should "skip indefinitely with the special case of -1" in {
+        val p: Parsley[_] = string("#").break(EntryBreak)
+        testExpecting(-1)(many(p), "#####")
+    }
 }
