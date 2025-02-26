@@ -102,3 +102,11 @@ private [internal] class DropSnapshot(dtx: DivergenceContext) extends Instr {
     override def toString: String = "DropSnapshot"
     // $COVERAGE-ON$
 }
+
+private [internal] class TriggerBreakpoint(private val dbgCtx: DebugContext) extends Instr {
+    override def apply(ctx: Context): Unit = dbgCtx.handleBreak(ctx.input)
+
+    // $COVERAGE-OFF$
+    override def toString: String = "TriggerBreakpoint"
+    // $COVERAGE-ON$
+}

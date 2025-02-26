@@ -83,13 +83,13 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
       */
     private var breakpointSkips: Int = 0
 
-    /** Handle a breakpoint.
+    /** Trigger a breakpoint.
       *
       * @param tree         The debug tree that has been created thus far.
       * @param fullInput    The full parser input.
       * @param view         The DebugView instance. This must extend DebugView.Pauseable to work.
       */
-    private def handleBreak(fullInput: String): Unit = view match {
+    def triggerBreak(fullInput: String): Unit = view match {
         case view: DebugView.Pauseable => {
             if (breakpointSkips > 0) {
                 breakpointSkips -= 1
@@ -102,28 +102,11 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
 
     // Push a new parser onto the parser callstack.
     def push(fullInput: String, parser: LazyParsley[_], isIterative: Boolean, userAssignedName: Option[String]): Unit = {
-        // Send the debug tree here if EntryBreak
-        parser match {
-            case break: RemoteBreak[_] => break.break match {
-                case EntryBreak | FullBreak => handleBreak(fullInput)
-                case _ => 
-            }
-            case _ =>
-        }
 
         val newTree = new TransientDebugTree(fullInput = fullInput)
         newTree.name = Renamer.nameOf(userAssignedName, parser)
         newTree.internal = Renamer.internalName(parser)
         newTree.iterative = isIterative
-
-        // Send the debug tree here if ExitBreak
-        parser match {
-            case break: RemoteBreak[_] => break.break match {
-                case ExitBreak | FullBreak => handleBreak(fullInput)
-                case _ => 
-            }
-            case _ =>
-        }
 
         //val uid = nextUid()
         //builderStack.head.children(s"${newTree.name}-#$uid") = newTree
