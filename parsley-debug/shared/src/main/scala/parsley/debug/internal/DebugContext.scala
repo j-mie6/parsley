@@ -89,12 +89,12 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
       * @param fullInput    The full parser input.
       * @param view         The DebugView instance. This must extend DebugView.Pauseable to work.
       */
-    private def handleBreak(tree: TransientDebugTree, fullInput: String): Unit = view match {
+    private def handleBreak(fullInput: String): Unit = view match {
         case view: DebugView.Pauseable => {
             if (breakpointSkips > 0) {
                 breakpointSkips -= 1
             } else if (breakpointSkips != -1) {
-                breakpointSkips = view.renderWait(fullInput, tree)
+                breakpointSkips = view.renderWait(fullInput, builderStack.head)
             }
         }
         case _ => 
@@ -105,7 +105,7 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
         // Send the debug tree here if EntryBreak
         parser match {
             case break: RemoteBreak[_] => break.break match {
-                case EntryBreak | FullBreak => handleBreak(builderStack.head, fullInput)
+                case EntryBreak | FullBreak => handleBreak(fullInput)
                 case _ => 
             }
             case _ =>
@@ -119,7 +119,7 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
         // Send the debug tree here if ExitBreak
         parser match {
             case break: RemoteBreak[_] => break.break match {
-                case ExitBreak | FullBreak => handleBreak(newTree, fullInput)
+                case ExitBreak | FullBreak => handleBreak(fullInput)
                 case _ => 
             }
             case _ =>
