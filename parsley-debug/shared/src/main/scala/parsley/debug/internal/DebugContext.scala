@@ -10,8 +10,7 @@ import scala.collection.mutable
 import parsley.XAssert
 import parsley.debug.ParseAttempt
 import parsley.internal.deepembedding.frontend.LazyParsley
-import parsley.internal.deepembedding.frontend.debug.RemoteBreak
-import parsley.debug.*
+import parsley.debug.DebugView
 
 // Class used to hold details about a parser being debugged.
 // This is normally held as a value inside an implicit variable.

@@ -5,6 +5,7 @@
  */
 package parsley.internal.deepembedding.backend.debug
 
+import parsley.debug.*
 import parsley.debug.internal.{DebugContext, DivergenceContext}
 
 import parsley.internal.deepembedding.ContOps
@@ -12,8 +13,9 @@ import parsley.internal.deepembedding.ContOps.{suspend, ContAdapter}
 import parsley.internal.deepembedding.backend.{CodeGenState, StrictParsley, Unary}
 import parsley.internal.deepembedding.backend.StrictParsley.InstrBuffer
 import parsley.internal.deepembedding.frontend.LazyParsley
+import parsley.internal.deepembedding.frontend.debug.RemoteBreak
 import parsley.internal.machine.instructions.{Label, Pop}
-import parsley.internal.machine.instructions.debug.{AddAttemptAndLeave, DropSnapshot, EnterParser, TakeSnapshot}
+import parsley.internal.machine.instructions.debug.{AddAttemptAndLeave, DropSnapshot, EnterParser, TakeSnapshot, TriggerBreakpoint}
 
 private [deepembedding] sealed abstract class TagFactory {
     def create[A](origin: LazyParsley[A], p: StrictParsley[A], isIterative: Boolean, userAssignedName: Option[String]): StrictParsley[A]
@@ -36,12 +38,31 @@ private [backend] final class Debugged[A](origin: LazyParsley[A], val p: StrictP
     extends Unary[A, A] {
     override protected [backend] def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler = state.freshLabel()
+
+        origin match {
+            case rb: RemoteBreak[_] => rb.break match {
+                case EntryBreak | FullBreak =>  instrs += new TriggerBreakpoint(dbgCtx)
+                case _ => 
+            }
+            case _ =>
+        }
+
         instrs += new EnterParser(handler, origin, isIterative, userAssignedName)(dbgCtx)
-        suspend[M, R, Unit](p.codeGen[M, R](producesResults = true)) |> {
+        val r = suspend[M, R, Unit](p.codeGen[M, R](producesResults = true)) |> {
             instrs += new Label(handler)
             instrs += new AddAttemptAndLeave(dbgCtx)
             if (!producesResults) instrs += Pop
         }
+
+        origin match {
+            case rb: RemoteBreak[_] => rb.break match {
+                case ExitBreak | FullBreak =>  instrs += new TriggerBreakpoint(dbgCtx)
+                case _ => 
+            }
+            case _ =>
+        }
+
+        r
     }
 
     override protected def pretty(p: String): String = s"debugged($p)"
