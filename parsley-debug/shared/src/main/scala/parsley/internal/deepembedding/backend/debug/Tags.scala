@@ -5,7 +5,6 @@
  */
 package parsley.internal.deepembedding.backend.debug
 
-import parsley.debug.*
 import parsley.debug.internal.{DebugContext, DivergenceContext}
 
 import parsley.internal.deepembedding.ContOps
@@ -13,9 +12,8 @@ import parsley.internal.deepembedding.ContOps.{suspend, ContAdapter}
 import parsley.internal.deepembedding.backend.{CodeGenState, StrictParsley, Unary}
 import parsley.internal.deepembedding.backend.StrictParsley.InstrBuffer
 import parsley.internal.deepembedding.frontend.LazyParsley
-import parsley.internal.deepembedding.frontend.debug.RemoteBreak
 import parsley.internal.machine.instructions.{Label, Pop}
-import parsley.internal.machine.instructions.debug.{AddAttemptAndLeave, DropSnapshot, EnterParser, TakeSnapshot, TriggerBreakpoint}
+import parsley.internal.machine.instructions.debug.{AddAttemptAndLeave, DropSnapshot, EnterParser, TakeSnapshot}
 
 private [deepembedding] sealed abstract class TagFactory {
     def create[A](origin: LazyParsley[A], p: StrictParsley[A], isIterative: Boolean, userAssignedName: Option[String]): StrictParsley[A]
@@ -39,24 +37,10 @@ private [backend] final class Debugged[A](origin: LazyParsley[A], val p: StrictP
     override protected [backend] def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler = state.freshLabel()
         instrs += new EnterParser(handler, origin, isIterative, userAssignedName)(dbgCtx)
-
         suspend[M, R, Unit](p.codeGen[M, R](producesResults = true)) |> {
             instrs += new Label(handler)
-            origin match {
-                case rb: RemoteBreak[_] => rb.break match {
-                    case EntryBreak | FullBreak => instrs += new TriggerBreakpoint(dbgCtx)
-                    case _ =>
-                }
-                case _ => instrs += new AddAttemptAndLeave(dbgCtx)
-            }
-            
-            origin match {
-                case rb: RemoteBreak[_] => rb.break match {
-                    case ExitBreak | FullBreak => instrs += new TriggerBreakpoint(dbgCtx)
-                    case _ =>
-                }
-                case _ => if (!producesResults) instrs += Pop
-            }
+            instrs += new AddAttemptAndLeave(dbgCtx)
+            if (!producesResults) instrs += Pop
         }
     }
 

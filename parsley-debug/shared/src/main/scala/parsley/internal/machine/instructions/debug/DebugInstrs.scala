@@ -5,7 +5,7 @@
  */
 package parsley.internal.machine.instructions.debug
 
-import parsley.debug.ParseAttempt
+import parsley.debug.*
 import parsley.debug.internal.{DebugContext, DivergenceContext}
 
 import parsley.internal.deepembedding.frontend.LazyParsley
@@ -111,5 +111,13 @@ private [internal] class TriggerBreakpoint(dbgCtx: DebugContext) extends Instr {
 
     // $COVERAGE-OFF$
     override def toString: String = "TriggerBreakpoint"
+    // $COVERAGE-ON$
+}
+
+private [internal] class DormantBreakpoint(private val break: Breakpoint) extends Instr {
+    override def apply(ctx: Context): Unit = ctx.inc()
+
+    // $COVERAGE-OFF$
+    override def toString: String = "DormantBreakpoint"
     // $COVERAGE-ON$
 }
