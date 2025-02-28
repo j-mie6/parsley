@@ -37,31 +37,27 @@ private [parsley] final class CheckDivergence(dtx: DivergenceContext) extends Ta
 private [backend] final class Debugged[A](origin: LazyParsley[A], val p: StrictParsley[A], isIterative: Boolean, userAssignedName: Option[String])(dbgCtx: DebugContext)
     extends Unary[A, A] {
     override protected [backend] def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
-        origin match {
-            case rb: RemoteBreak[_] => rb.break match {
-                case EntryBreak | FullBreak => instrs += new TriggerBreakpoint(dbgCtx)
-                case _ =>
-            }
-            case _ =>
-        }
-
         val handler = state.freshLabel()
         instrs += new EnterParser(handler, origin, isIterative, userAssignedName)(dbgCtx)
-        val s = suspend[M, R, Unit](p.codeGen[M, R](producesResults = true)) |> {
+
+        suspend[M, R, Unit](p.codeGen[M, R](producesResults = true)) |> {
             instrs += new Label(handler)
-            instrs += new AddAttemptAndLeave(dbgCtx)
-            if (!producesResults) instrs += Pop
-        }
-
-        origin match {
-            case rb: RemoteBreak[_] => rb.break match {
-                case ExitBreak | FullBreak => instrs += new TriggerBreakpoint(dbgCtx)
-                case _ =>
+            origin match {
+                case rb: RemoteBreak[_] => rb.break match {
+                    case EntryBreak | FullBreak => instrs += new TriggerBreakpoint(dbgCtx)
+                    case _ =>
+                }
+                case _ => instrs += new AddAttemptAndLeave(dbgCtx)
             }
-            case _ =>
+            
+            origin match {
+                case rb: RemoteBreak[_] => rb.break match {
+                    case ExitBreak | FullBreak => instrs += new TriggerBreakpoint(dbgCtx)
+                    case _ =>
+                }
+                case _ => if (!producesResults) instrs += Pop
+            }
         }
-
-        s
     }
 
     override protected def pretty(p: String): String = s"debugged($p)"
