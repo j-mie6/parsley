@@ -5,10 +5,10 @@
  */
 package parsley.internal.deepembedding.frontend.debug
 
+import parsley.debug.Breakpoint
 import parsley.internal.deepembedding.backend
 import parsley.internal.deepembedding.backend.StrictParsley
 import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor, Unary}
-import parsley.debug.Breakpoint
 
 private [parsley] final class RemoteBreak[A](p: LazyParsley[A], break: Breakpoint) extends Unary[A, A](p) {
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.RemoteBreak(p, break)

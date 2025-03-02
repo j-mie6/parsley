@@ -12,6 +12,7 @@ import parsley.internal.deepembedding.ContOps.{suspend, ContAdapter}
 import parsley.internal.deepembedding.backend.{CodeGenState, StrictParsley, Unary}
 import parsley.internal.deepembedding.backend.StrictParsley.InstrBuffer
 import parsley.internal.deepembedding.frontend.LazyParsley
+import parsley.internal.deepembedding.frontend.debug.StrictParsleyDebugged
 import parsley.internal.machine.instructions.{Label, Pop}
 import parsley.internal.machine.instructions.debug.{AddAttemptAndLeave, DropSnapshot, EnterParser, TakeSnapshot}
 
@@ -21,6 +22,10 @@ private [deepembedding] sealed abstract class TagFactory {
 
 private [parsley] final class Debugging(dbgCtx: DebugContext) extends TagFactory {
     def create[A](origin: LazyParsley[A], p: StrictParsley[A], isIterative: Boolean, userAssignedName: Option[String]): StrictParsley[A] = {
+        p match {
+            case p: StrictParsleyDebugged[A] => p.injectDebugContext(dbgCtx)
+            case _ =>
+        }
         new Debugged(origin, p, isIterative, userAssignedName)(dbgCtx)
     }
 }

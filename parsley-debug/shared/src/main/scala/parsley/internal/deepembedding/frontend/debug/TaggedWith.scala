@@ -13,11 +13,16 @@ import parsley.XAssert
 import parsley.debug.internal.XWeakMap
 import parsley.state.Ref
 
+import parsley.debug.internal.DebugContext
 import parsley.internal.deepembedding.{singletons, Cont, ContOps, Id}
 import parsley.internal.deepembedding.ContOps.{perform, result, suspend, zipWith, zipWith3, ContAdapter}
 import parsley.internal.deepembedding.backend.StrictParsley
 import parsley.internal.deepembedding.backend.debug.TagFactory
 import parsley.internal.deepembedding.frontend._ // scalastyle:ignore underscore.import
+
+private [deepembedding] trait StrictParsleyDebugged[A] extends StrictParsley[A] {
+    private[deepembedding] def injectDebugContext(dbgCtx: DebugContext)
+}
 
 // Wrapper class signifying debugged classes
 // TODO: the origin is needed to figure out the name later on... but couldn't we resolve the name here and avoid forwarding on to the backend (send string instead)?

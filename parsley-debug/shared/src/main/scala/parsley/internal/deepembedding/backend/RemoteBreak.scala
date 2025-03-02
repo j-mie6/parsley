@@ -1,19 +1,36 @@
 package parsley.internal.deepembedding.backend
 
-import parsley.internal.machine.instructions.*
-import parsley.internal.machine.instructions.debug.DormantBreakpoint
-import parsley.debug.Breakpoint
+import parsley.debug.*
+import parsley.debug.internal.DebugContext
+import parsley.internal.deepembedding.ContOps
+import parsley.internal.deepembedding.ContOps.{suspend, ContAdapter}
+import parsley.internal.deepembedding.frontend.debug.StrictParsleyDebugged
+import parsley.internal.machine.instructions.debug.TriggerBreakpoint
 
-private [deepembedding] final class RemoteBreak[A](val p: StrictParsley[A], break: Breakpoint)
-    extends ScopedUnary[A, A] {
+private [deepembedding] final class RemoteBreak[A](p: StrictParsley[A], break: Breakpoint) extends StrictParsleyDebugged[A] {
+  private var dbgCtx: Option[DebugContext] = None;
 
-  override protected def pretty(p: String): String = s"$p.break($break)"
+  override private [deepembedding] def injectDebugContext(dbgCtx: DebugContext) = this.dbgCtx = Some(dbgCtx)
 
-  override def instr: Instr = new DormantBreakpoint(break)
+  override protected[backend] def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: StrictParsley.InstrBuffer, state: CodeGenState): M[R,Unit] = {
+    (dbgCtx, break) match {
+      case (Some(dbgCtx), EntryBreak | FullBreak) => instrs += new TriggerBreakpoint(dbgCtx)
+      case _ =>
+    }
+    suspend[M, R, Unit](p.codeGen[M, R](producesResults)) |> {
+        (dbgCtx, break) match {
+          case (Some(dbgCtx), ExitBreak | FullBreak) => instrs += new TriggerBreakpoint(dbgCtx)
+          case _ =>
+        }
+    }
+  }
 
-  override def setup(label: Int): Instr = new PushHandler(label) // ????
+  override private [deepembedding] def inlinable: Boolean = p.inlinable
 
-  override def handlerLabel(state: CodeGenState): Int = state.getLabel(instr)
+  override private [deepembedding] def pretty: String = f"remoteBreak${prettySuffix}(${p.pretty})"
 
-  override def instrNeedsLabel: Boolean = false // ????
+  private def prettySuffix: String = dbgCtx match {
+    case Some(_) => ""
+    case None => "Inactive"
+  }
 }
