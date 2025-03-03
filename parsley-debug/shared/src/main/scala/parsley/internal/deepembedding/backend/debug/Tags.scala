@@ -48,7 +48,7 @@ private [backend] final class Debugged[A](origin: LazyParsley[A], val p: StrictP
                     case _ =>
                 }
                 case manageableRb: RemoteManageableBreak[_] => manageableRb.break match {
-                    case EntryBreak | FullBreak => instrs += new TriggerManageableBreakpoint(dbgCtx, manageableRb.refs)
+                    case EntryBreak | FullBreak => instrs += new TriggerManageableBreakpoint(dbgCtx, manageableRb.refs*)
                     case _ =>
                 }
                 case _ => instrs += new AddAttemptAndLeave(dbgCtx)

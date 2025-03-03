@@ -115,8 +115,8 @@ private [internal] class TriggerBreakpoint(dbgCtx: DebugContext) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] class TriggerManageableBreakpoint(dbgCtx: DebugContext) extends Instr {
-    override def apply(ctx: Context, refs: Ref[Any]*): Unit = {
+private [internal] class TriggerManageableBreakpoint(dbgCtx: DebugContext, refs: Ref[Any]*) extends Instr {
+    override def apply(ctx: Context): Unit = {
         dbgCtx.triggerManageableBreak(ctx.input, refs*)
         ctx.inc()
     }
