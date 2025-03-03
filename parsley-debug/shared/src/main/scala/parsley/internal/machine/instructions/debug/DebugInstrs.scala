@@ -5,6 +5,7 @@
  */
 package parsley.internal.machine.instructions.debug
 
+import parsley.state.Ref
 import parsley.debug.ParseAttempt
 import parsley.debug.internal.{DebugContext, DivergenceContext}
 
@@ -111,5 +112,16 @@ private [internal] class TriggerBreakpoint(dbgCtx: DebugContext) extends Instr {
 
     // $COVERAGE-OFF$
     override def toString: String = "TriggerBreakpoint"
+    // $COVERAGE-ON$
+}
+
+private [internal] class TriggerManageableBreakpoint(dbgCtx: DebugContext) extends Instr {
+    override def apply(ctx: Context, refs: Ref[Any]*): Unit = {
+        dbgCtx.triggerManageableBreak(ctx.input, refs*)
+        ctx.inc()
+    }
+    
+    // $COVERAGE-OFF$
+    override def toString: String = "TriggerManageableBreakpoint"
     // $COVERAGE-ON$
 }
