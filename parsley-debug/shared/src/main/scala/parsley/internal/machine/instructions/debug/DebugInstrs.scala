@@ -5,7 +5,7 @@
  */
 package parsley.internal.machine.instructions.debug
 
-import parsley.state.Ref
+import parsley.debug.combinator.State
 import parsley.debug.ParseAttempt
 import parsley.debug.internal.{DebugContext, DivergenceContext}
 
@@ -104,9 +104,9 @@ private [internal] class DropSnapshot(dtx: DivergenceContext) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] class TriggerBreakpoint(dbgCtx: DebugContext, refs: Ref[Any]*) extends Instr {
+private [internal] class TriggerBreakpoint(dbgCtx: DebugContext, refs: State[Any]*) extends Instr {
     override def apply(ctx: Context): Unit = {
-        dbgCtx.triggerBreak(ctx.input, refs)
+        dbgCtx.triggerBreak(ctx.input, refs*)
         ctx.inc()
     }
 

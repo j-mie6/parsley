@@ -12,6 +12,7 @@ import parsley.XAssert
 import parsley.debug.ParseAttempt
 import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.debug.DebugView
+import parsley.debug.combinator.State
 
 // Class used to hold details about a parser being debugged.
 // This is normally held as a value inside an implicit variable.
@@ -88,24 +89,24 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
       * @param fullInput    The full parser input.
       * @param refs         References managed by this breakpoint.
       */
-    def triggerBreak(fullInput: String, refs: Seq[Ref[Any]]): Unit = view match {
+    def triggerBreak(fullInput: String, refs: State[Any]*): Unit = view match {
         case view: DebugView.Pauseable => {
             if (breakpointSkips > 0) { // Skip to next breakpoint
                 breakpointSkips -= 1
             } else if (breakpointSkips != -1) { // Breakpoint exit
                 breakpointSkips = view match {
-                    case view: DebugView.Manageable => {
-                        // Wait for RemoteView to return breakpoint skips and updated state 
-                        val (newSkips, newRefs): (Int, Seq[Any]) = 
-                            view.renderManage(fullInput, builderStack.head, refs.map(_.get.toString)*) //FIXME: decode properly
+                    // case view: DebugView.Manageable => {
+                    //     // Wait for RemoteView to return breakpoint skips and updated state 
+                    //     val (newSkips, newRefs): (Int, Seq[Any]) = 
+                    //         view.renderManage(fullInput, builderStack.head, refs.map((ref, codec) => codec.encode(ref))) //FIXME
 
-                        // Update references
-                        for (ref <- refs; newRef <- newRefs) {
-                            ref.set(newRef)
-                        }
+                    //     // Update references
+                    //     for (ref <- refs; newRef <- newRefs) {
+                    //         ref.set(newRef)
+                    //     }
 
-                        newSkips
-                    }
+                    //     newSkips
+                    // }
                     case _ => {
                         view.renderWait(fullInput, builderStack.head)
                     }

@@ -8,7 +8,7 @@ package parsley.debug
 import parsley.Parsley
 import parsley.Parsley.{atomic, empty, fresh}
 import parsley.state.Ref
-import parsley.debug.internal.{DebugContext, DivergenceContext}
+import parsley.debug.internal.{Codec, DebugContext, DivergenceContext}
 
 import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.deepembedding.frontend.debug.{TaggedWith, Named, RemoteBreak}
@@ -272,7 +272,8 @@ object combinator {
       * @return A modified parser which will pause parsing and ask the view to render the produced
       *         debug tree after a call to [[Parsley.parse]] is made.
       */
-    def break[A](parser: Parsley[A], break: Breakpoint, refs: Ref[Any]*): Parsley[A] = new Parsley(new RemoteBreak(parser.internal, break, refs*))
+    type State[A] = (Ref[A], Codec[A])
+    def break[A](parser: Parsley[A], break: Breakpoint, refs: State[Any]*): Parsley[A] = new Parsley(new RemoteBreak(parser.internal, break, refs*))
 
     /** Dot accessor versions of the combinators. */
     implicit class DebuggerOps[A](par: Parsley[A]) {
@@ -288,7 +289,7 @@ object combinator {
         def attachReusable(view: =>DebugView.Reusable): () => Parsley[A] = combinator.attachReusable(par, view, DefaultStringRules)
         //def attach(implicit view: DebugFrontend): Parsley[A] = combinator.attach(par, defaultRules)
         def named(name: String): Parsley[A] = combinator.named(par, name)
-        def break(break: Breakpoint, refs: Ref[Any]*): Parsley[A] = combinator.break(par, break, refs*)
+        def break(break: Breakpoint, refs: State[Any]*): Parsley[A] = combinator.break(par, break, refs*)
     }
     // $COVERAGE-ON$
 

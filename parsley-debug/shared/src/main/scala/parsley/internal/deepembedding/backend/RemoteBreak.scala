@@ -5,14 +5,14 @@
  */
 package parsley.internal.deepembedding.backend
 
-import parsley.state.Ref
+import parsley.debug.combinator.State
 import parsley.debug.{Breakpoint, EntryBreak, ExitBreak, FullBreak}
 import parsley.debug.internal.DebugContext
 import parsley.internal.deepembedding.ContOps
 import parsley.internal.deepembedding.ContOps.{suspend, ContAdapter}
 import parsley.internal.machine.instructions.debug.TriggerBreakpoint
 
-private [deepembedding] final class InertBreak[A](p: StrictParsley[A], break: Breakpoint, refs: Ref[Any]*) extends StrictParsley[A] {
+private [deepembedding] final class InertBreak[A](p: StrictParsley[A], break: Breakpoint, refs: State[Any]*) extends StrictParsley[A] {
   override protected[backend] def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: StrictParsley.InstrBuffer, state: CodeGenState): M[R,Unit]
     = p.codeGen(producesResults)
 
@@ -23,7 +23,7 @@ private [deepembedding] final class InertBreak[A](p: StrictParsley[A], break: Br
   private [deepembedding] def activate(dbgCtx: DebugContext) = new ActiveBreak[A](p, break, dbgCtx, refs*)
 }
 
-private [deepembedding] final class ActiveBreak[A](p: StrictParsley[A], break: Breakpoint, dbgCtx: DebugContext, refs: Ref[Any]*) extends StrictParsley[A] {
+private [deepembedding] final class ActiveBreak[A](p: StrictParsley[A], break: Breakpoint, dbgCtx: DebugContext, refs: State[Any]*) extends StrictParsley[A] {
   override protected[backend] def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: StrictParsley.InstrBuffer, state: CodeGenState): M[R,Unit] = {
     break match {
       case EntryBreak | FullBreak => instrs += new TriggerBreakpoint(dbgCtx, refs*)
