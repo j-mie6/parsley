@@ -272,7 +272,7 @@ object combinator {
       * @return A modified parser which will pause parsing and ask the view to render the produced
       *         debug tree after a call to [[Parsley.parse]] is made.
       */
-    def break[A](parser: Parsley[A], break: Breakpoint, refs: Ref[Any]*): Parsley[A] = new Parsley(new RemoteBreak(parser.internal, break, refs))
+    def break[A](parser: Parsley[A], break: Breakpoint, refs: Ref[Any]*): Parsley[A] = new Parsley(new RemoteBreak(parser.internal, break, refs*))
 
     /** Dot accessor versions of the combinators. */
     implicit class DebuggerOps[A](par: Parsley[A]) {
