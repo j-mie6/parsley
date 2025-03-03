@@ -61,9 +61,9 @@ private [parsley] object TaggedWith {
     // This map tracks seen parsers to prevent infinitely recursive parsers from overflowing the stack (and ties
     // the knot for these recursive parsers).
     // Use maps with weak keys or don't pass this into a >>= parser.
-    private final class ParserTracker(val map: mutable.Map[LazyParsley[_], Later[_]]) {
-        def put[A](par: LazyParsley[A]): Later[LazyParsley[A]] = {
-            val prom = new Later[LazyParsley[A]]
+    private final class ParserTracker(val map: mutable.Map[LazyParsley[_], Promise[_]]) {
+        def put[A](par: LazyParsley[A]): Promise[LazyParsley[A]] = {
+            val prom = new Promise[LazyParsley[A]]
             map(par) = prom
             prom
         }
@@ -77,7 +77,7 @@ private [parsley] object TaggedWith {
     // too early and the promise will not have been filled (this is the case for recursive parsers).
     // instead, the lazy box is opened in the by-name parameters of constructed nodes, which ensures
     // that the traversal completes before the promise is checked.
-    private final class Later[A] {
+    private final class Promise[A] {
         private var value: Deferred[A] = _
         def get: Deferred[A] = Deferred {
             if (value == null) throw new NoSuchElementException("fetched empty later value")
@@ -105,11 +105,11 @@ private [parsley] object TaggedWith {
     // Keeping this around for easy access to LPM.
     @unused private [this] final class ContWrap[M[_, +_], R] {
         type LPM[+A] = M[R, LazyParsley[A]]
-         
+
         // Containing the related LazyParsley combinator and a Boolean for if the
         // combinator need to be bubble up to an opaque parser
-         
-        type DLPM[+A] = M[R, (TaggingResult[A])] 
+
+        type DLPM[+A] = M[R, (TaggingResult[A])]
     }
 
     private def visitWithM[M[_, +_]: ContOps, A](parser: LazyParsley[A], tracker: ParserTracker, visitor: DebugInjectingVisitorM[M, LazyParsley[A]]) = {
@@ -129,20 +129,20 @@ private [parsley] object TaggedWith {
         // This is the main logic for the visitor: everything else is just plumbing
         private def handlePossiblySeen[A](self: LazyParsley[A], context: ParserTracker)(subResult: =>DL[A]): DL[A] = {
             if (context.hasSeen(self)) {
-                result(TaggingResult(context.get(self), self.isIterative)) 
+                result(TaggingResult(context.get(self), self.isIterative))
             } else {
                 val prom = context.put(self)
                 subResult.map { case TaggingResult(subParser, subIsIterative) =>
                     val isIterative = self.isIterative || subIsIterative
                     // If we are opaque then attach TaggedWith now, otherwise bubble upwards
                     val retParser = {
-                        if (self.isOpaque) 
+                        if (self.isOpaque)
                             subParser.map(new TaggedWith(strategy)(self, _, isIterative, None))
-                        else { 
+                        else {
                             subParser // The parser is transparent, so no tagging
                         }
                     }
-                    
+
                     prom.set(retParser)
                     // If we are still iterative but transparent then we bubble up
                     TaggingResult(retParser, isIterative && !self.isOpaque)
@@ -165,7 +165,7 @@ private [parsley] object TaggedWith {
             }
         }
 
-        override def visitSingleton[A](self: singletons.Singleton[A], context: ParserTracker): DL[A] = 
+        override def visitSingleton[A](self: singletons.Singleton[A], context: ParserTracker): DL[A] =
             handleNoChildren[A](self, context)
 
         override def visitUnary[A, B](self: Unary[A, B], context: ParserTracker)(p: LazyParsley[A]): DL[B] = handlePossiblySeen[B](self, context) {
@@ -173,7 +173,7 @@ private [parsley] object TaggedWith {
                 parser = Deferred {
                     (new Unary[A, B](dbgC.parser.get) {
                         override def make(p: StrictParsley[A]): StrictParsley[B] = self.make(p)
-                        override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[B] = 
+                        override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[B] =
                             visitor.visitGeneric(this, context)
                         private [parsley] var debugName = self.debugName
                     })},
@@ -187,7 +187,7 @@ private [parsley] object TaggedWith {
                     parser = Deferred {
                         new Binary[A, B, C](dbgL.parser.get, dbgR.parser.get) {
                             override def make(p: StrictParsley[A], q: StrictParsley[B]): StrictParsley[C] = self.make(p, q)
-                            override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[C] = 
+                            override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[C] =
                                 visitor.visitGeneric(this, context)
                             private [parsley] var debugName = self.debugName
                         }
@@ -242,7 +242,7 @@ private [parsley] object TaggedWith {
                     Deferred(new ChainPre(p.get, op.get))
                 }
             }
-        } 
+        }
 
         // the generic unary/binary overrides above cannot handle this properly, as they lose the UsesReg trait
         override def visit[S](self: Put[S], context: ParserTracker)(ref: Ref[S], p: LazyParsley[S]): DL[Unit] = {
@@ -266,7 +266,7 @@ private [parsley] object TaggedWith {
 
         // XXX: This will assume all completely unknown parsers have no children at all (i.e. are Singletons).
         override def visitUnknown[A](self: LazyParsley[A], context: ParserTracker): DL[A] = self match {
-            case d: TaggedWith[A @unchecked]      => 
+            case d: TaggedWith[A @unchecked]      =>
                 result[R, TaggingResult[A], M](TaggingResult(new Deferred(d), d.origin.isIterative)) // No need to debug a parser twice!
             case n: Named[A @unchecked]           => n.p.visit(this, context).map { subResult =>
                 subResult.parser.get match {
