@@ -7,6 +7,7 @@ package parsley.debug.internal
 
 import scala.collection.mutable
 
+import parsley.state.Ref
 import parsley.XAssert
 import parsley.debug.ParseAttempt
 import parsley.internal.deepembedding.frontend.LazyParsley
@@ -90,10 +91,31 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
       */
     def triggerBreak(fullInput: String): Unit = view match {
         case view: DebugView.Pauseable => {
-            if (breakpointSkips > 0) {
+            if (breakpointSkips > 0) { // Skip to next breakpoint
                 breakpointSkips -= 1
-            } else if (breakpointSkips != -1) {
+            } else if (breakpointSkips != -1) { // Breakpoint exit
                 breakpointSkips = view.renderWait(fullInput, builderStack.head)
+            }
+        }
+        case _ => 
+    }
+
+    def triggerManageableBreak(fullInput: String, refs: Ref[Any]*): Unit = view match {
+        case view: DebugView.Manageable => {
+            if (breakpointSkips > 0) { // Skip to next breakpoint
+                breakpointSkips -= 1
+            } else if (breakpointSkips != -1) { // Breakpoint exit
+
+                // Wait for RemoteView to return breakpoint skips and updated state 
+                val (newSkips, newRefs): (Int, Seq[Any]) = 
+                    view.renderManage(fullInput, builderStack.head, refs.map(_.get.toString)*) //FIXME: decode properly
+
+                // Update references
+                for (ref <- refs; newRef <- newRefs) {
+                    ref.set(newRef)
+                }
+
+                breakpointSkips = newSkips
             }
         }
         case _ => 
