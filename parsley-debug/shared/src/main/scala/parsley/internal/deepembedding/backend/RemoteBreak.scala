@@ -1,25 +1,36 @@
+/*
+ * Copyright 2020 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package parsley.internal.deepembedding.backend
 
 import parsley.debug.*
 import parsley.debug.internal.DebugContext
 import parsley.internal.deepembedding.ContOps
 import parsley.internal.deepembedding.ContOps.{suspend, ContAdapter}
-import parsley.internal.deepembedding.frontend.debug.StrictParsleyDebugged
 import parsley.internal.machine.instructions.debug.TriggerBreakpoint
 
-private [deepembedding] final class RemoteBreak[A](p: StrictParsley[A], break: Breakpoint) extends StrictParsleyDebugged[A] {
-  private var dbgCtx: Option[DebugContext] = None;
+private [deepembedding] final class InertBreak[A](p: StrictParsley[A], break: Breakpoint) extends StrictParsley[A] {
+  override protected[backend] def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: StrictParsley.InstrBuffer, state: CodeGenState): M[R,Unit]
+    = p.codeGen(producesResults)
 
-  override private [deepembedding] def injectDebugContext(dbgCtx: DebugContext) = this.dbgCtx = Some(dbgCtx)
+  override private [deepembedding] def inlinable: Boolean = p.inlinable
 
+  override private [deepembedding] def pretty: String = f"inertBreak(${p.pretty})"
+
+  private [deepembedding] def activate(dbgCtx: DebugContext) = new ActiveBreak[A](p, break, dbgCtx)
+}
+
+private [deepembedding] final class ActiveBreak[A](p: StrictParsley[A], break: Breakpoint, dbgCtx: DebugContext) extends StrictParsley[A] {
   override protected[backend] def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: StrictParsley.InstrBuffer, state: CodeGenState): M[R,Unit] = {
-    (dbgCtx, break) match {
-      case (Some(dbgCtx), EntryBreak | FullBreak) => instrs += new TriggerBreakpoint(dbgCtx)
+    break match {
+      case EntryBreak | FullBreak => instrs += new TriggerBreakpoint(dbgCtx)
       case _ =>
     }
     suspend[M, R, Unit](p.codeGen[M, R](producesResults)) |> {
-        (dbgCtx, break) match {
-          case (Some(dbgCtx), ExitBreak | FullBreak) => instrs += new TriggerBreakpoint(dbgCtx)
+        break match {
+          case ExitBreak | FullBreak => instrs += new TriggerBreakpoint(dbgCtx)
           case _ =>
         }
     }
@@ -27,10 +38,5 @@ private [deepembedding] final class RemoteBreak[A](p: StrictParsley[A], break: B
 
   override private [deepembedding] def inlinable: Boolean = p.inlinable
 
-  override private [deepembedding] def pretty: String = f"remoteBreak${prettySuffix}(${p.pretty})"
-
-  private def prettySuffix: String = dbgCtx match {
-    case Some(_) => ""
-    case None => "Inactive"
-  }
+  override private [deepembedding] def pretty: String = f"activeBreak(${p.pretty})"
 }

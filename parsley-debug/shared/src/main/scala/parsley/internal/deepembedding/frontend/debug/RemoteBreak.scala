@@ -11,7 +11,7 @@ import parsley.internal.deepembedding.backend.StrictParsley
 import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor, Unary}
 
 private [parsley] final class RemoteBreak[A](p: LazyParsley[A], break: Breakpoint) extends Unary[A, A](p) {
-    override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.RemoteBreak(p, break)
+    override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.InertBreak(p, break)
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visitGeneric(this, context)
 
