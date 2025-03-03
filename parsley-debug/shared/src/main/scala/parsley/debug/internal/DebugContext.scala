@@ -85,37 +85,31 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
 
     /** Trigger a breakpoint.
       *
-      * @param tree         The debug tree that has been created thus far.
       * @param fullInput    The full parser input.
-      * @param view         The DebugView instance. This must extend DebugView.Pauseable to work.
+      * @param refs         References managed by this breakpoint.
       */
-    def triggerBreak(fullInput: String): Unit = view match {
+    def triggerBreak(fullInput: String, refs: Seq[Ref[Any]]): Unit = view match {
         case view: DebugView.Pauseable => {
             if (breakpointSkips > 0) { // Skip to next breakpoint
                 breakpointSkips -= 1
             } else if (breakpointSkips != -1) { // Breakpoint exit
-                breakpointSkips = view.renderWait(fullInput, builderStack.head)
-            }
-        }
-        case _ => 
-    }
+                breakpointSkips = view match {
+                    case view: DebugView.Manageable => {
+                        // Wait for RemoteView to return breakpoint skips and updated state 
+                        val (newSkips, newRefs): (Int, Seq[Any]) = 
+                            view.renderManage(fullInput, builderStack.head, refs.map(_.get.toString)*) //FIXME: decode properly
 
-    def triggerManageableBreak(fullInput: String, refs: Ref[Any]*): Unit = view match {
-        case view: DebugView.Manageable => {
-            if (breakpointSkips > 0) { // Skip to next breakpoint
-                breakpointSkips -= 1
-            } else if (breakpointSkips != -1) { // Breakpoint exit
+                        // Update references
+                        for (ref <- refs; newRef <- newRefs) {
+                            ref.set(newRef)
+                        }
 
-                // Wait for RemoteView to return breakpoint skips and updated state 
-                val (newSkips, newRefs): (Int, Seq[Any]) = 
-                    view.renderManage(fullInput, builderStack.head, refs.map(_.get.toString)*) //FIXME: decode properly
-
-                // Update references
-                for (ref <- refs; newRef <- newRefs) {
-                    ref.set(newRef)
+                        newSkips
+                    }
+                    case _ => {
+                        view.renderWait(fullInput, builderStack.head)
+                    }
                 }
-
-                breakpointSkips = newSkips
             }
         }
         case _ => 

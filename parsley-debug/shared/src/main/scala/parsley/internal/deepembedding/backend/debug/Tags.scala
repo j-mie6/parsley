@@ -13,9 +13,9 @@ import parsley.internal.deepembedding.ContOps.{suspend, ContAdapter}
 import parsley.internal.deepembedding.backend.{CodeGenState, StrictParsley, Unary}
 import parsley.internal.deepembedding.backend.StrictParsley.InstrBuffer
 import parsley.internal.deepembedding.frontend.LazyParsley
-import parsley.internal.deepembedding.frontend.debug.{RemoteBreak, RemoteManageableBreak}
+import parsley.internal.deepembedding.frontend.debug.RemoteBreak
 import parsley.internal.machine.instructions.{Label, Pop}
-import parsley.internal.machine.instructions.debug.{AddAttemptAndLeave, DropSnapshot, EnterParser, TakeSnapshot, TriggerBreakpoint, TriggerManageableBreakpoint}
+import parsley.internal.machine.instructions.debug.{AddAttemptAndLeave, DropSnapshot, EnterParser, TakeSnapshot, TriggerBreakpoint}
 
 private [deepembedding] sealed abstract class TagFactory {
     def create[A](origin: LazyParsley[A], p: StrictParsley[A], isIterative: Boolean, userAssignedName: Option[String]): StrictParsley[A]
@@ -44,11 +44,7 @@ private [backend] final class Debugged[A](origin: LazyParsley[A], val p: StrictP
             instrs += new Label(handler)
             origin match {
                 case rb: RemoteBreak[_] => rb.break match {
-                    case EntryBreak | FullBreak => instrs += new TriggerBreakpoint(dbgCtx)
-                    case _ =>
-                }
-                case manageableRb: RemoteManageableBreak[_] => manageableRb.break match {
-                    case EntryBreak | FullBreak => instrs += new TriggerManageableBreakpoint(dbgCtx, manageableRb.refs*)
+                    case EntryBreak | FullBreak => instrs += new TriggerBreakpoint(dbgCtx, rb.refs)
                     case _ =>
                 }
                 case _ => instrs += new AddAttemptAndLeave(dbgCtx)
@@ -56,7 +52,7 @@ private [backend] final class Debugged[A](origin: LazyParsley[A], val p: StrictP
             
             origin match {
                 case rb: RemoteBreak[_] => rb.break match {
-                    case ExitBreak | FullBreak => instrs += new TriggerBreakpoint(dbgCtx)
+                    case ExitBreak | FullBreak => instrs += new TriggerBreakpoint(dbgCtx, rb.refs)
                     case _ =>
                 }
                 case _ => if (!producesResults) instrs += Pop

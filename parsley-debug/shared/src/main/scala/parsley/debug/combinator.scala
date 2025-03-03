@@ -11,7 +11,7 @@ import parsley.state.Ref
 import parsley.debug.internal.{DebugContext, DivergenceContext}
 
 import parsley.internal.deepembedding.frontend.LazyParsley
-import parsley.internal.deepembedding.frontend.debug.{TaggedWith, Named, RemoteBreak, RemoteManageableBreak}
+import parsley.internal.deepembedding.frontend.debug.{TaggedWith, Named, RemoteBreak}
 import parsley.internal.deepembedding.backend.debug.{CheckDivergence, Debugging}
 
 /** This object contains the combinators for attaching debuggers to parsers.
@@ -267,22 +267,12 @@ object combinator {
       *
       * @param parser The parser to debug.
       * @param break Indicate whether to break on entry or exit to the parser.
-      * @tparam A Output type of original parser.
-      * @return A modified parser which will pause parsing and ask the view to render the produced
-      *         debug tree after a call to [[Parsley.parse]] is made.
-      */
-    def break[A](parser: Parsley[A], break: Breakpoint): Parsley[A] = new Parsley(new RemoteBreak(parser.internal, break))
-
-    /** Set a breakpoint on a parser to be used by RemoteView, attaching a variable arguments of Ref
-      *
-      * @param parser The parser to debug.
-      * @param break Indicate whether to break on entry or exit to the parser.
       * @param refs Stateful references to be updated.
       * @tparam A Output type of original parser.
       * @return A modified parser which will pause parsing and ask the view to render the produced
       *         debug tree after a call to [[Parsley.parse]] is made.
       */
-    def breakAndManage[A](parser: Parsley[A], break: Breakpoint, refs: Ref[Any]*): Parsley[A] = new Parsley(new RemoteManageableBreak(parser.internal, break, refs*))
+    def break[A](parser: Parsley[A], break: Breakpoint, refs: Ref[Any]*): Parsley[A] = new Parsley(new RemoteBreak(parser.internal, break, refs))
 
     /** Dot accessor versions of the combinators. */
     implicit class DebuggerOps[A](par: Parsley[A]) {
@@ -298,8 +288,7 @@ object combinator {
         def attachReusable(view: =>DebugView.Reusable): () => Parsley[A] = combinator.attachReusable(par, view, DefaultStringRules)
         //def attach(implicit view: DebugFrontend): Parsley[A] = combinator.attach(par, defaultRules)
         def named(name: String): Parsley[A] = combinator.named(par, name)
-        def break(break: Breakpoint): Parsley[A] = combinator.break(par, break)
-        def breakAndManage(break: Breakpoint, refs: Ref[Any]*): Parsley[A] = combinator.breakAndManage(par, break, refs*)
+        def break(break: Breakpoint, refs: Ref[Any]*): Parsley[A] = combinator.break(par, break, refs*)
     }
     // $COVERAGE-ON$
 
