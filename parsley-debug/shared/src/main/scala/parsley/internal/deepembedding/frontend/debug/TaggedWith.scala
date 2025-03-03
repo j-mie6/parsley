@@ -61,9 +61,9 @@ private [parsley] object TaggedWith {
     // This map tracks seen parsers to prevent infinitely recursive parsers from overflowing the stack (and ties
     // the knot for these recursive parsers).
     // Use maps with weak keys or don't pass this into a >>= parser.
-    private final class ParserTracker(val map: mutable.Map[LazyParsley[_], ParsleyPromise[_]]) {
-        def put[A](par: LazyParsley[A]): ParsleyPromise[A] = {
-            val prom = new ParsleyPromise[A]
+    private final class ParserTracker(val map: mutable.Map[LazyParsley[_], Later[_]]) {
+        def put[A](par: LazyParsley[A]): Later[LazyParsley[A]] = {
+            val prom = new Later[LazyParsley[A]]
             map(par) = prom
             prom
         }
@@ -77,16 +77,17 @@ private [parsley] object TaggedWith {
     // too early and the promise will not have been filled (this is the case for recursive parsers).
     // instead, the lazy box is opened in the by-name parameters of constructed nodes, which ensures
     // that the traversal completes before the promise is checked.
-    private final class ParsleyPromise[A] {
-        private var value: Deferred[LazyParsley[A]] = _
-        def get: Deferred[LazyParsley[A]] = Deferred {
-            if (value == null) throw new NoSuchElementException("fetched empty promise value")
+    private final class Later[A] {
+        private var value: Deferred[A] = _
+        def get: Deferred[A] = Deferred {
+            if (value == null) throw new NoSuchElementException("fetched empty later value")
             value.get
         }
-        def set(v: Deferred[LazyParsley[A]]): Unit = value = v
+        def set(v: Deferred[A]): Unit = value = v
     }
     private final class Deferred[+A](x: =>A) {
         lazy val get = x
+        def map[B](f: A => B): Deferred[B] = Deferred(f(get))
     }
     private object Deferred {
         def apply[A](x: =>A) = new Deferred(x)
@@ -136,7 +137,7 @@ private [parsley] object TaggedWith {
                     // If we are opaque then attach TaggedWith now, otherwise bubble upwards
                     val retParser = {
                         if (self.isOpaque) 
-                            Deferred(new TaggedWith(strategy)(self, subParser.get, isIterative, None)) 
+                            subParser.map(new TaggedWith(strategy)(self, _, isIterative, None))
                         else { 
                             subParser // The parser is transparent, so no tagging
                         }
@@ -150,7 +151,7 @@ private [parsley] object TaggedWith {
         }
 
         private def handleNoChildren[A](self: LazyParsley[A], context: ParserTracker): DL[A] =
-            handlePossiblySeen(self, context)(result(TaggingResult(Deferred(self), self.isIterative)))
+            handlePossiblySeen(self, context)(result(TaggingResult(Deferred(self), isIterative = false)))
 
         // We assume _q must be lazy, as it'd be better to *not* force a strict value versus accidentally forcing a lazy value.
         // This is called handle2Ary as to not be confused with handling Binary[_, _, _].
