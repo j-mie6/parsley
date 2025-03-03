@@ -76,4 +76,12 @@ private [parsley] class TransientDebugTree(var name: String = "", var internal: 
             })
         }
     }
+
+    // Strips all `remoteBreak` nodes from the tree
+    private [debug] def withoutBreakpoints: TransientDebugTree = {
+        val childrenWithoutBreak = children.map(_.withoutBreakpoints)
+        if (internalName == "remoteBreak") {
+            childrenWithoutBreak.head // Debug nodes *should* only ever have one and only one child
+        } else new TransientDebugTree(name, internal, fullInput, parse, cNumber, childrenWithoutBreak, iterative)
+    }
 }

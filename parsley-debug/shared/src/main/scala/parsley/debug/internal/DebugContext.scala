@@ -45,7 +45,7 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
         XAssert.assert(!(ch.size > 1), s"The root tree has somehow gained multiple children. (${ch.size})")
 
         // This should never fail.
-        ch.head
+        ch.head.withoutBreakpoints
     }
 
     // Add an attempt of parsing at the current stack point.
