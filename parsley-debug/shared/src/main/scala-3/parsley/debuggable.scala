@@ -28,12 +28,14 @@ import scala.quoted.*
                 val fields = cls.symbol.fieldMembers.view.map(_.termRef)
                 val parsers = fields.filter(_.typeSymbol == parsleyTy)
 
+                val filePath = Expr(cls.pos.sourceFile.path)
+
                 // the idea is we inject a call to Collector.registerNames with a constructed
                 // map from these identifiers to their compile-time names
                 val listOfParsers = Expr.ofList {
                     parsers.map(tr => Expr.ofTuple((Ident(tr).asExprOf[parsley.Parsley[?]], Expr(tr.name)))).toList
                 }
-                val registration = '{parsley.debug.util.Collector.registerNames($listOfParsers.toMap)}.asTerm
+                val registration = '{parsley.debug.util.Collector.registerNames($listOfParsers.toMap, $filePath)}.asTerm
 
                 // add the registration as the last statement in the object
                 // TODO: in future, we want to modify all `def`s with a top level `opaque` combinator

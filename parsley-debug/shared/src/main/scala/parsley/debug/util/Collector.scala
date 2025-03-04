@@ -9,6 +9,7 @@ package parsley.debug.util
 
 import parsley.Parsley
 import parsley.debug.internal.Renamer
+import parsley.debug.internal.SourceCollector
 import parsley.token.Lexer
 
 import parsley.internal.deepembedding.frontend.LazyParsley
@@ -35,9 +36,25 @@ object Collector {
         Renamer.addNames(XCollector.collectNames(obj))
     }*/
 
-    /** This is an internal method used by the `parsley.debuggable` annotation */
-    def registerNames(names: Map[Parsley[_], String]): Unit = {
+    /**
+      * This is an internal method used by the `parsley.debuggable` annotation. 
+      * 
+      * This function registers the names collected by the annotation to the 
+      * `Renamer` object, and also adds the source file path the annotation was
+      * found inside of the the `SourceCollector` object.
+      *
+      * @param names List of parsers mapped to their string representations.
+      * @param source Source file the parsers are being added from.
+      */
+    def registerNames(names: Map[Parsley[_], String], source: String): Unit = {
+        println("Adding src : " + source)
+        SourceCollector.addSource(source)
+        println("Adding src2 : " + source)
+        SourceCollector.addSource(source)
+
         Renamer.addNames(names.map { case (k, v) => k.internal -> v })
+
+        println("Current sources : " + SourceCollector.sources.toString)
     }
 
     /** Collect names of parsers from a [[parsley.token.Lexer]].
