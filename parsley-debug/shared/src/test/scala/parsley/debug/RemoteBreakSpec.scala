@@ -172,8 +172,8 @@ class RemoteBreakSpec extends ParsleyTest {
     private def testExpectingRefs(expectations: Seq[String]*)(p: Parsley[_], input: String, shouldSucceed: Boolean): Unit = {
         val mock = new MockedManageableView(expectations.iterator)
         (p.attach(mock).parse(input), shouldSucceed) match {
-            case (_: parsley.Failure[_], true) => Assertions.fail("Parser failed, should've succeeded")
-            case (_: parsley.Success[_], false) => Assertions.fail("Parser succeeded, should've failed")
+            case (res: parsley.Failure[_], true) => Assertions.fail(f"Parser should've succeeded, failed with ${res}")
+            case (res: parsley.Success[_], false) => Assertions.fail(f"Parser should've failed, succeeded with ${res}")
             case _ => mock.checkMetExpectations()
         }
     }
