@@ -6,7 +6,6 @@
 package parsley.debug.internal
 
 import scala.collection.mutable
-import scala.collection.IterableOnce
 
 private [parsley] case class SourceCollector()
 
@@ -27,7 +26,7 @@ private [parsley] object SourceCollector {
       *
       * @param sources The source paths to add.
       */
-    private [parsley] def addSources(sources: IterableOnce[String]): Unit = collected ++= sources
+    private [parsley] def addSources(sources: Seq[String]): Unit = collected ++= sources
 
     /**
       * Add a single source path string to the collection.
