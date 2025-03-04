@@ -111,7 +111,7 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
                             
                             // Update breakpoint skips
                             breakpointSkips = newSkips
-                            return Some(newRefs)
+                            Some(newRefs)
                         }
 
                         // Update breakpoint using Pausable render call
