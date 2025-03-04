@@ -167,18 +167,19 @@ class RemoteBreakSpec extends ParsleyTest {
         }
     }
 
+    // Some common test utils
+
     def refString(r: Ref[String]): Parsley[String] = r.get.flatMap(parsley.character.string(_))
 
+    val openTag = atomic('<' <~ notFollowedBy('/'))
+    val leftTag = openTag ~> stringOfSome(letter) <~ '>'
+
     it should "preserve references that aren't passed to break" in {
-        val openTag = atomic('<' <~ notFollowedBy('/'))
-        val leftTag = openTag ~> stringOfSome(letter) <~ '>'
         val p = leftTag.fillRef { name => char(' ').break(ExitBreak). <~ ("</" ~> refString(name) <~ ">") }
         testExpectingRefs(Seq.empty)(p, "<hi> </hi>", true)
     }
     
     it should "preserve references that are passed in and not returned" in {
-        val openTag = atomic('<' <~ notFollowedBy('/'))
-        val leftTag = openTag ~> stringOfSome(letter) <~ '>'
         val p = leftTag.fillRef { name => {
             class NameRefCodec extends RefCodec {
                 type A = String
@@ -194,8 +195,6 @@ class RemoteBreakSpec extends ParsleyTest {
     }
 
     it should "modify references that are passed in and returned" in {
-        val openTag = atomic('<' <~ notFollowedBy('/'))
-        val leftTag = openTag ~> stringOfSome(letter) <~ '>'
         val p = leftTag.fillRef { name => {
             class NameRefCodec extends RefCodec {
                 type A = String
@@ -206,6 +205,6 @@ class RemoteBreakSpec extends ParsleyTest {
             char(' ').break(ExitBreak, new NameRefCodec) <~ ("</" ~> refString(name) <~ ">") 
         }}
         
-        testExpectingRefs(Seq("hi"))(p, "<hello> </hi>", false)
+        testExpectingRefs(Seq("hi"))(p, "<hello> </hi>", true)
     }
 }
