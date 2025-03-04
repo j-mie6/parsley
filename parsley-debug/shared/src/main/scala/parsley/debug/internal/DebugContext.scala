@@ -10,8 +10,8 @@ import scala.collection.mutable
 import parsley.XAssert
 import parsley.debug.ParseAttempt
 import parsley.internal.deepembedding.frontend.LazyParsley
+import parsley.internal.machine.{Context, RefCodec}
 import parsley.debug.DebugView
-import parsley.debug.combinator.CodecRef
 
 // Class used to hold details about a parser being debugged.
 // This is normally held as a value inside an implicit variable.
@@ -88,7 +88,7 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
       * @param fullInput    The full parser input.
       * @param refs         References managed by this breakpoint.
       */
-    def triggerBreak(fullInput: String, refs: CodecRef[Any]*): Unit = view match {
+    def triggerBreak(context: Context, fullInput: String, refs: RefCodec[?]*): Unit = view match {
         case view: DebugView.Pauseable => {
             if (breakpointSkips > 0) { // Skip to next breakpoint
                 breakpointSkips -= 1
@@ -97,18 +97,18 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
                     case view: DebugView.Manageable => {
 
                         // Encode ref values using encoder
-                        val codedRefs = refs.map({ case (ref, codec) => (ref.addr, codec.encode(ref)) })
-
+                        val codedRefs: Seq[(Int, String)] = refs.map(codedRef => (codedRef.ref.addr, codedRef.encodeRef(context)))
+ 
                         // Wait for RemoteView to return breakpoint skips and updated state
                         val (newSkips, newRefs): (Int, Seq[(Int, String)]) = view.renderManage(fullInput, builderStack.head, codedRefs*)
 
                         // Update references
                         for ((refAddr, newRef) <- newRefs) {
-                            val (ref, codec) = refs
-                                .find({ case (ref, _) => ref.addr == refAddr })
+                            val refCodec = refs
+                                .find(refCodec => refCodec.ref.addr == refAddr)
                                 .get
-                                
-                            ref.set(codec.decode(newRef))
+                            
+                            refCodec.updateRef(newRef, context)
                         }
 
                         newSkips

@@ -5,7 +5,6 @@
  */
 package parsley.internal.machine.instructions.debug
 
-import parsley.debug.combinator.CodecRef
 import parsley.debug.ParseAttempt
 import parsley.debug.internal.{DebugContext, DivergenceContext}
 
@@ -15,6 +14,7 @@ import parsley.internal.machine.instructions.{Instr, InstrWithLabel}
 import parsley.internal.machine.XAssert._
 
 import parsley.internal.machine.stacks.Stack.StackExt
+import parsley.internal.machine.RefCodec
 
 // Enter into the scope of a parser in the current context.
 private [internal] class EnterParser(var label: Int, origin: LazyParsley[_], isIterative: Boolean, userAssignedName: Option[String])(dbgCtx: DebugContext) extends InstrWithLabel {
@@ -104,9 +104,9 @@ private [internal] class DropSnapshot(dtx: DivergenceContext) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] class TriggerBreakpoint(dbgCtx: DebugContext, refs: CodecRef[Any]*) extends Instr {
+private [internal] class TriggerBreakpoint(dbgCtx: DebugContext, refs: RefCodec[?]*) extends Instr {
     override def apply(ctx: Context): Unit = {
-        dbgCtx.triggerBreak(ctx.input, refs*)
+        dbgCtx.triggerBreak(ctx, ctx.input, refs*)
         ctx.inc()
     }
 
