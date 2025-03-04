@@ -1,10 +1,30 @@
+/*
+ * Copyright 2020 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package parsley.debug
 
 import scala.util.Try
 
+/** An encoder-decoder for `A` and a string representation
+  * 
+  * @tparam A the type being encoded and decoded
+  */
 trait Codec[A] {
-    def decode(s: String): Try[A]
+    /** Encode `a` into a string
+      * 
+      * @param a the value to encode
+      * @return the string encoding of `a`
+      */
     def encode(a: A): String
+
+    /** Attempt to decode a string into type `A`
+      *
+      * @param s the string to decode
+      * @return a `Try[A]` containing the decoded value if successful
+      */
+    def decode(s: String): Try[A]
 }
 
 object BooleanCodec extends Codec[Boolean] {
