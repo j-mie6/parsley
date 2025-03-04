@@ -93,7 +93,7 @@ class RemoteBreakSpec extends ParsleyTest {
     it should "break after input is consumed on ExitBreak" in {
         val p: Parsley[_] = string("scala").break(ExitBreak)
         val mock = new MockedPauseableView2(Iterator("scala"))
-        p.attach(mock).parse("scala")
+        val _ = p.attach(mock).parse("scala")
     }
 
 
