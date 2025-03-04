@@ -7,7 +7,6 @@ package parsley.debug.internal
 
 import scala.collection.mutable
 
-import parsley.state.Ref
 import parsley.XAssert
 import parsley.debug.ParseAttempt
 import parsley.internal.deepembedding.frontend.LazyParsley
@@ -95,18 +94,25 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
                 breakpointSkips -= 1
             } else if (breakpointSkips != -1) { // Breakpoint exit
                 breakpointSkips = view match {
-                    // case view: DebugView.Manageable => {
-                    //     // Wait for RemoteView to return breakpoint skips and updated state 
-                    //     val (newSkips, newRefs): (Int, Seq[Any]) = 
-                    //         view.renderManage(fullInput, builderStack.head, refs.map((ref, codec) => codec.encode(ref))) //FIXME
+                    case view: DebugView.Manageable => {
 
-                    //     // Update references
-                    //     for (ref <- refs; newRef <- newRefs) {
-                    //         ref.set(newRef)
-                    //     }
+                        // Encode ref values using encoder
+                        val codedRefs = refs.map({ case (ref, codec) => (ref.addr, codec.encode(ref)) })
 
-                    //     newSkips
-                    // }
+                        // Wait for RemoteView to return breakpoint skips and updated state
+                        val (newSkips, newRefs): (Int, Seq[(Int, String)]) = view.renderManage(fullInput, builderStack.head, codedRefs*)
+
+                        // Update references
+                        for ((refAddr, newRef) <- newRefs) {
+                            val (ref, codec) = refs
+                                .find({ case (ref, _) => ref.addr == refAddr })
+                                .get
+                                
+                            ref.set(codec.decode(newRef))
+                        }
+
+                        newSkips
+                    }
                     case _ => {
                         view.renderWait(fullInput, builderStack.head)
                     }
