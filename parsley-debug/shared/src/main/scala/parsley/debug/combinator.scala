@@ -8,7 +8,7 @@ package parsley.debug
 import parsley.Parsley
 import parsley.Parsley.{atomic, empty, fresh}
 import parsley.state.Ref
-import parsley.debug.internal.{Codec, DebugContext, DivergenceContext}
+import parsley.debug.internal.{DebugContext, DivergenceContext}
 
 import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.deepembedding.frontend.debug.{TaggedWith, Named, RemoteBreak}
