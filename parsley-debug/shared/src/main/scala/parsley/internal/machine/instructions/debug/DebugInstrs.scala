@@ -112,7 +112,7 @@ private [internal] class TriggerBreakpoint[A](dbgCtx: DebugContext, refs: RefCod
         def encode(refCodec: RefCodec[A]) = refCodec.codec.encode(ctx.regs(refCodec.ref.addr).asInstanceOf[A])
         
         // Encode all refs if view is manageable
-        val codedRefs: Option[Seq[(Int, String)]] = Option.when(!dbgCtx.manageableView)(refs.map(refCodec => (refCodec.ref.addr, encode(refCodec))))
+        val codedRefs: Option[Seq[(Int, String)]] = Option.when(dbgCtx.manageableView)(refs.map(refCodec => (refCodec.ref.addr, encode(refCodec))))
         
         // Trigger breakpoint and update refs (if manageable)
         dbgCtx.triggerBreak(ctx.input, codedRefs) match {
