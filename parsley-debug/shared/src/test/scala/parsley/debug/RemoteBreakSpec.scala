@@ -59,7 +59,7 @@ private [debug] class MockedManageableView(exp: Iterator[Seq[String]]) extends D
 
   override private[debug] def renderWait(input: => String, tree: => DebugTree): Int = Assertions.fail("Should not have called renderWait")
 
-  override private[debug] def renderManage(input: => String, tree: => DebugTree, state: (Int, String)*): (Int, Seq[(Int, String)]) = {
+  override private[debug] def renderManage(input: => String, tree: => DebugTree, state: (Int, String)*): (Int, Seq[CodedRef]) = {
     if (!exp.hasNext) {
         Assertions.fail("Unexpected call to renderManage")
     }

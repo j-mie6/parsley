@@ -11,6 +11,7 @@ import parsley.XAssert
 import parsley.debug.ParseAttempt
 import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.debug.DebugView
+import parsley.debug.RefCodec.CodedRef
 
 // Class used to hold details about a parser being debugged.
 // This is normally held as a value inside an implicit variable.
@@ -89,15 +90,12 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
         case _ => false
     } 
 
-    // Ref address and String value passed to RemoteView
-    type CodedRefs = Seq[(Int, String)]
-
     /** Trigger a breakpoint.
       *
       * @param fullInput    The full parser input.
       * @param refs         References managed by this breakpoint.
       */
-    def triggerBreak(fullInput: String, codedRefs: Option[CodedRefs]): Option[CodedRefs] = {
+    def triggerBreak(fullInput: String, codedRefs: Option[Seq[CodedRef]]): Option[Seq[CodedRef]] = {
         view match {
             case view: DebugView.Pauseable => {
                 if (breakpointSkips > 0) { // Skip to next breakpoint
@@ -107,7 +105,7 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
                         case view: DebugView.Manageable => {
                             
                             // Wait for RemoteView to return breakpoint skips and updated state
-                            val (newSkips, newRefs): (Int, CodedRefs) = view.renderManage(fullInput, builderStack.head, codedRefs.get*)
+                            val (newSkips, newRefs): (Int, Seq[CodedRef]) = view.renderManage(fullInput, builderStack.head, codedRefs.get*)
                             
                             // Update breakpoint skips
                             breakpointSkips = newSkips

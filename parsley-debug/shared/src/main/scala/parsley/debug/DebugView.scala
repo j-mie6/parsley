@@ -5,6 +5,7 @@
  */
 package parsley.debug
 
+import parsley.debug.RefCodec.CodedRef
 import parsley.debug.internal.XIllegalStateException
 import org.typelevel.scalaccompat.annotation.unused
 
@@ -64,7 +65,7 @@ object DebugView {
       * @see [[DebugView]]
       */
     trait Manageable extends DebugView with Pauseable {
-        private [debug] def renderManage(input: => String, tree: => DebugTree, state: (Int, String)*): (Int, Seq[(Int, String)])
+        private [debug] def renderManage(input: => String, tree: => DebugTree, state: (Int, String)*): (Int, Seq[CodedRef])
     }
 
     /** Signifies that the debug view inheriting from this can only be run once.

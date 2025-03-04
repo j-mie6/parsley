@@ -15,6 +15,13 @@ abstract class RefCodec {
     val codec: Codec[A]
 }
 
+object RefCodec {
+    
+    // Ref address and String value passed to RemoteView
+    type CodedRef = (Int, String)
+
+}
+
 
 /** An encoder-decoder for `A` and a string representation
   * 
