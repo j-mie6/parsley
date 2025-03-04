@@ -106,6 +106,7 @@ private [internal] class DropSnapshot(dtx: DivergenceContext) extends Instr {
 
 private [internal] class TriggerBreakpoint(dbgCtx: DebugContext, refs: CodecRef[Any]*) extends Instr {
     override def apply(ctx: Context): Unit = {
+        dbgCtx.addParseAttempt(new ParseAttempt("", 0, 0, (0,0), (0,0), Some(()))) // Dummy success
         dbgCtx.triggerBreak(ctx.input, refs*)
         ctx.inc()
     }
