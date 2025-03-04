@@ -11,7 +11,7 @@ import parsley.XAssert
 import parsley.debug.ParseAttempt
 import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.debug.DebugView
-import parsley.debug.combinator.State
+import parsley.debug.combinator.CodecRef
 
 // Class used to hold details about a parser being debugged.
 // This is normally held as a value inside an implicit variable.
@@ -88,7 +88,7 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
       * @param fullInput    The full parser input.
       * @param refs         References managed by this breakpoint.
       */
-    def triggerBreak(fullInput: String, refs: State[Any]*): Unit = view match {
+    def triggerBreak(fullInput: String, refs: CodecRef[Any]*): Unit = view match {
         case view: DebugView.Pauseable => {
             if (breakpointSkips > 0) { // Skip to next breakpoint
                 breakpointSkips -= 1
