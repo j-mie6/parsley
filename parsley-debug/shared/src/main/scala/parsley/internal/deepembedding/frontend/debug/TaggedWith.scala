@@ -67,7 +67,7 @@ private [parsley] object TaggedWith {
             map(par) = prom
             prom
         }
-        def get[A](par: LazyParsley[A]): Deferred[LazyParsley[A]] = map(par).get.asInstanceOf[Deferred[LazyParsley[A]]]
+        def get[A](par: LazyParsley[A]): Lazy[LazyParsley[A]] = map(par).get.asInstanceOf[Lazy[LazyParsley[A]]]
         def hasSeen(par: LazyParsley[_]): Boolean = map.contains(par)
     }
 
@@ -78,19 +78,18 @@ private [parsley] object TaggedWith {
     // instead, the lazy box is opened in the by-name parameters of constructed nodes, which ensures
     // that the traversal completes before the promise is checked.
     private final class Promise[A] {
-        private var value: Deferred[A] = _
-        def get: Deferred[A] = Deferred {
+        private var value: Lazy[A] = _
+        def get: Lazy[A] = Lazy {
             if (value == null) throw new NoSuchElementException("fetched empty later value")
             value.get
         }
-        def set(v: Deferred[A]): Unit = value = v
+        def set(v: Lazy[A]): Unit = value = v
     }
-    private final class Deferred[+A](x: =>A) {
+    private final class Lazy[+A](x: =>A) {
         lazy val get = x
-        def map[B](f: A => B): Deferred[B] = Deferred(f(get))
     }
-    private object Deferred {
-        def apply[A](x: =>A) = new Deferred(x)
+    private object Lazy {
+        def apply[A](x: =>A) = new Lazy(x)
     }
 
     /** This class is used to store the result of a parser visit, and whether
@@ -100,7 +99,7 @@ private [parsley] object TaggedWith {
       * @param isIterative Whether or not the parser is transparent and hence needs to bubble up
       * @tparam A The type of the parser
       */
-    private case class TaggingResult[+A](parser: Deferred[LazyParsley[A]], isIterative: Boolean)
+    private case class TaggingResult[+A](parser: Lazy[LazyParsley[A]], isIterative: Boolean)
 
     // Keeping this around for easy access to LPM.
     @unused private [this] final class ContWrap[M[_, +_], R] {
@@ -109,7 +108,7 @@ private [parsley] object TaggedWith {
         // Containing the related LazyParsley combinator and a Boolean for if the
         // combinator need to be bubble up to an opaque parser
 
-        type DLPM[+A] = M[R, (TaggingResult[A])]
+        type DLPM[+A] = M[R, TaggingResult[A]]
     }
 
     private def visitWithM[M[_, +_]: ContOps, A](parser: LazyParsley[A], tracker: ParserTracker, visitor: DebugInjectingVisitorM[M, LazyParsley[A]]) = {
@@ -137,7 +136,7 @@ private [parsley] object TaggedWith {
                     // If we are opaque then attach TaggedWith now, otherwise bubble upwards
                     val retParser = {
                         if (self.isOpaque)
-                            subParser.map(new TaggedWith(strategy)(self, _, isIterative, None))
+                            Lazy(new TaggedWith(strategy)(self, subParser.get, isIterative, None))
                         else {
                             subParser // The parser is transparent, so no tagging
                         }
@@ -151,12 +150,12 @@ private [parsley] object TaggedWith {
         }
 
         private def handleNoChildren[A](self: LazyParsley[A], context: ParserTracker): DL[A] =
-            handlePossiblySeen(self, context)(result(TaggingResult(Deferred(self), isIterative = false)))
+            handlePossiblySeen(self, context)(result(TaggingResult(Lazy(self), isIterative = false)))
 
         // We assume _q must be lazy, as it'd be better to *not* force a strict value versus accidentally forcing a lazy value.
         // This is called handle2Ary as to not be confused with handling Binary[_, _, _].
         private def handle2Ary[P[X] <: LazyParsley[X], A, B, C](self: P[A], context: ParserTracker)(p: LazyParsley[B], q: =>LazyParsley[C])
-                                                               (constructor: (Deferred[LazyParsley[B]], Deferred[LazyParsley[C]]) => Deferred[P[A]]): DL[A] = {
+                                                               (constructor: (Lazy[LazyParsley[B]], Lazy[LazyParsley[C]]) => Lazy[P[A]]): DL[A] = {
             handlePossiblySeen[A](self, context) {
                 zipWith(visit(p, context), visit(q, context))((dbgP, dbgQ) => TaggingResult(
                     parser = constructor(dbgP.parser, dbgQ.parser),
@@ -170,7 +169,7 @@ private [parsley] object TaggedWith {
 
         override def visitUnary[A, B](self: Unary[A, B], context: ParserTracker)(p: LazyParsley[A]): DL[B] = handlePossiblySeen[B](self, context) {
             visit(p, context).map { dbgC => TaggingResult(
-                parser = Deferred {
+                parser = Lazy {
                     (new Unary[A, B](dbgC.parser.get) {
                         override def make(p: StrictParsley[A]): StrictParsley[B] = self.make(p)
                         override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[B] =
@@ -184,7 +183,7 @@ private [parsley] object TaggedWith {
         override def visitBinary[A, B, C](self: Binary[A, B, C], context: ParserTracker)(l: LazyParsley[A], r: =>LazyParsley[B]): DL[C] = {
             handlePossiblySeen(self, context) {
                 zipWith(visit(l, context), visit(r, context)) { (dbgL, dbgR) => TaggingResult(
-                    parser = Deferred {
+                    parser = Lazy {
                         new Binary[A, B, C](dbgL.parser.get, dbgR.parser.get) {
                             override def make(p: StrictParsley[A], q: StrictParsley[B]): StrictParsley[C] = self.make(p, q)
                             override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[C] =
@@ -200,7 +199,7 @@ private [parsley] object TaggedWith {
         override def visitTernary[A, B, C, D](self: Ternary[A, B, C, D], context: ParserTracker)
                                              (f: LazyParsley[A], s: =>LazyParsley[B], t: =>LazyParsley[C]): DL[D] = handlePossiblySeen[D](self, context) {
             zipWith3(visit(f, context), visit(s, context), visit(t, context)) { (dbgF, dbgS, dbgT) => TaggingResult(
-                parser = Deferred {
+                parser = Lazy {
                     new Ternary[A, B, C, D](dbgF.parser.get, dbgS.parser.get, dbgT.parser.get) {
                         override def make(p: StrictParsley[A], q: StrictParsley[B], r: StrictParsley[C]): StrictParsley[D] = self.make(p, q, r)
                         override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[D] = visitor.visitGeneric(this, context)
@@ -219,7 +218,7 @@ private [parsley] object TaggedWith {
                 // This is why a map with weak keys is required, so that these entries do not flood the map and
                 // cause a massive memory leak.
                 visit(p, context).map { dbgC => TaggingResult(
-                    parser = Deferred {
+                    parser = Lazy {
                         new >>=[A, B](dbgC.parser.get, x => {
                             val subVisitor = new DebugInjectingVisitorM[M, LazyParsley[B]](strategy)
                             perform[M, LazyParsley[B]](f(x).visit(subVisitor, context).map(_.parser.get))
@@ -232,14 +231,14 @@ private [parsley] object TaggedWith {
 
         override def visit[A](self: <|>[A], context: ParserTracker)(p: LazyParsley[A], q: LazyParsley[A]): DL[A] = {
             handle2Ary(self, context)(p, q) { (p, q) => {
-                    Deferred(new <|>(p.get, q.get, self.debugName))
+                    Lazy(new <|>(p.get, q.get, self.debugName))
                 }
             }
         }
 
         override def visit[A](self: ChainPre[A], context: ParserTracker)(p: LazyParsley[A], op: =>LazyParsley[A => A]): DL[A] = {
             handle2Ary(self, context)(p, op) { (p, op) => {
-                    Deferred(new ChainPre(p.get, op.get))
+                    Lazy(new ChainPre(p.get, op.get))
                 }
             }
         }
@@ -248,7 +247,7 @@ private [parsley] object TaggedWith {
         override def visit[S](self: Put[S], context: ParserTracker)(ref: Ref[S], p: LazyParsley[S]): DL[Unit] = {
             handlePossiblySeen(self, context) {
                 visit(p, context).map(p => { TaggingResult(
-                    parser = Deferred( new Put(ref, p.parser.get)),
+                    parser = Lazy( new Put(ref, p.parser.get)),
                     isIterative = p.isIterative
                 )})
             }
@@ -256,7 +255,7 @@ private [parsley] object TaggedWith {
         override def visit[S, A](self: NewReg[S, A], context: ParserTracker)(ref: Ref[S], init: LazyParsley[S], body: =>LazyParsley[A]): DL[A] = {
             handlePossiblySeen(self, context) {
                 zipWith(visit(init, context), visit(body, context)) { (init, body) => TaggingResult(
-                    parser = Deferred {
+                    parser = Lazy {
                         new NewReg(ref, init.parser.get, body.parser.get)
                     },
                     isIterative = init.isIterative || body.isIterative
@@ -267,10 +266,10 @@ private [parsley] object TaggedWith {
         // XXX: This will assume all completely unknown parsers have no children at all (i.e. are Singletons).
         override def visitUnknown[A](self: LazyParsley[A], context: ParserTracker): DL[A] = self match {
             case d: TaggedWith[A @unchecked]      =>
-                result[R, TaggingResult[A], M](TaggingResult(new Deferred(d), d.origin.isIterative)) // No need to debug a parser twice!
+                result[R, TaggingResult[A], M](TaggingResult(Lazy(d), d.origin.isIterative)) // No need to debug a parser twice!
             case n: Named[A @unchecked]           => n.p.visit(this, context).map { subResult =>
                 subResult.parser.get match {
-                    case tw: TaggedWith[A @unchecked] => TaggingResult(new Deferred(tw.withName(n.name)), subResult.isIterative)
+                    case tw: TaggedWith[A @unchecked] => TaggingResult(Lazy(tw.withName(n.name)), subResult.isIterative)
                     // this should never be the case, because all all opaque combinators will be tagged,
                     // so if it's not tagged it will be transparent, and naming a transparent combinator
                     // goes against it being transparent. Additionally, named is not available within
