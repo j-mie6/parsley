@@ -174,13 +174,18 @@ class RemoteBreakSpec extends ParsleyTest {
         val p = leftTag.fillRef { name => char(' ').break(ExitBreak). <~ ("</" ~> refString(name) <~ ">") }
         testExpectingRefs(Seq.empty)(p, "<hi> </hi>", true)
     }
-
-    // TOOD: Relies on fixing existential types
     
-    // it should "preserve references that aren't modified" in {
-    //     val openTag = atomic('<' <~ notFollowedBy('/'))
-    //     val leftTag = openTag ~> character.stringOfSome(letter) <~ '>'
-    //     val p = leftTag.fillRef { name => char(' ').break(ExitBreak, (name, StringCodec)) <~ ("</" ~> refString(name) <~ ">") }
-    //     testExpectingRefs(Seq.empty)(p, "<hi> </hi>", true)
-    // }
+    it should "preserve references that are passed in and not returned" in {
+        val openTag = atomic('<' <~ notFollowedBy('/'))
+        val leftTag = openTag ~> stringOfSome(letter) <~ '>'
+        val p = leftTag.fillRef { name => char(' ').break(ExitBreak, RefCodec(name, StringCodec)) <~ ("</" ~> refString(name) <~ ">") }
+        testExpectingRefs(Seq.empty)(p, "<hello> </hi>", false)
+    }
+
+    it should "modify references that are passed in and returned" in {
+        val openTag = atomic('<' <~ notFollowedBy('/'))
+        val leftTag = openTag ~> stringOfSome(letter) <~ '>'
+        val p = leftTag.fillRef { name => char(' ').break(ExitBreak, RefCodec(name, StringCodec)) <~ ("</" ~> refString(name) <~ ">") }
+        testExpectingRefs(Seq("hi"))(p, "<hello> </hi>", false)
+    }
 }
