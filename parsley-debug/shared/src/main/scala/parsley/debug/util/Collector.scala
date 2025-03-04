@@ -8,8 +8,7 @@ package parsley.debug.util
 //import scala.annotation.nowarn
 
 import parsley.Parsley
-import parsley.debug.internal.Renamer
-import parsley.debug.internal.SourceCollector
+import parsley.debug.internal.{Renamer, SourceCollector}
 import parsley.token.Lexer
 
 import parsley.internal.deepembedding.frontend.LazyParsley
@@ -47,14 +46,8 @@ object Collector {
       * @param source Source file the parsers are being added from.
       */
     def registerNames(names: Map[Parsley[_], String], source: String): Unit = {
-        println("Adding src : " + source)
         SourceCollector.addSource(source)
-        println("Adding src2 : " + source)
-        SourceCollector.addSource(source)
-
         Renamer.addNames(names.map { case (k, v) => k.internal -> v })
-
-        println("Current sources : " + SourceCollector.sources.toString)
     }
 
     /** Collect names of parsers from a [[parsley.token.Lexer]].
