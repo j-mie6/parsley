@@ -61,13 +61,13 @@ private [parsley] object TaggedWith {
     // This map tracks seen parsers to prevent infinitely recursive parsers from overflowing the stack (and ties
     // the knot for these recursive parsers).
     // Use maps with weak keys or don't pass this into a >>= parser.
-    private final class ParserTracker(val map: mutable.Map[LazyParsley[_], Promise[_]]) {
-        def put[A](par: LazyParsley[A]): Promise[LazyParsley[A]] = {
-            val prom = new Promise[LazyParsley[A]]
+    private final class ParserTracker(val map: mutable.Map[LazyParsley[_], TaggingResultPromise[_]]) {
+        def put[A](par: LazyParsley[A]): TaggingResultPromise[A] = {
+            val prom = new TaggingResultPromise[A]
             map(par) = prom
             prom
         }
-        def get[A](par: LazyParsley[A]): Lazy[LazyParsley[A]] = map(par).get.asInstanceOf[Lazy[LazyParsley[A]]]
+        def get[A](par: LazyParsley[A]): TaggingResult[A] = map(par).get.asInstanceOf[TaggingResult[A]]
         def hasSeen(par: LazyParsley[_]): Boolean = map.contains(par)
     }
 
@@ -77,13 +77,18 @@ private [parsley] object TaggedWith {
     // too early and the promise will not have been filled (this is the case for recursive parsers).
     // instead, the lazy box is opened in the by-name parameters of constructed nodes, which ensures
     // that the traversal completes before the promise is checked.
-    private final class Promise[A] {
-        private var value: Lazy[A] = _
-        def get: Lazy[A] = Lazy {
-            if (value == null) throw new NoSuchElementException("fetched empty later value")
-            value.get
+    private final class TaggingResultPromise[A] {
+        private var valueParser: Lazy[LazyParsley[A]] = _
+        private var valueIterative: Boolean = false
+        // this needs to be under a lazy to defer fetching from the object
+        def get: TaggingResult[A] = TaggingResult(Lazy {
+            if (valueParser == null) throw new NoSuchElementException("fetched empty later value")
+            valueParser.get
+        }, valueIterative)
+        def set(tr: TaggingResult[A]): Unit = {
+            valueParser = tr.parser
+            valueIterative = tr.isIterative
         }
-        def set(v: Lazy[A]): Unit = value = v
     }
     private final class Lazy[+A](x: =>A) {
         lazy val get = x
@@ -128,7 +133,7 @@ private [parsley] object TaggedWith {
         // This is the main logic for the visitor: everything else is just plumbing
         private def handlePossiblySeen[A](self: LazyParsley[A], context: ParserTracker)(subResult: =>DL[A]): DL[A] = {
             if (context.hasSeen(self)) {
-                result(TaggingResult(context.get(self), self.isIterative))
+                result(context.get(self))
             } else {
                 val prom = context.put(self)
                 subResult.map { case TaggingResult(subParser, subIsIterative) =>
@@ -141,10 +146,11 @@ private [parsley] object TaggedWith {
                             subParser // The parser is transparent, so no tagging
                         }
                     }
-
-                    prom.set(retParser)
                     // If we are still iterative but transparent then we bubble up
-                    TaggingResult(retParser, isIterative && !self.isOpaque)
+                    val res = TaggingResult(retParser, isIterative && !self.isOpaque)
+
+                    prom.set(res)
+                    res
                 }
             }
         }
