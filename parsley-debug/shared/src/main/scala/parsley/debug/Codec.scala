@@ -72,7 +72,13 @@ object DoubleCodec extends Codec[Double] {
 object CharCodec extends Codec[Char] {
     def encode(c: Char): String = c.toString
 
-    def decode(s: String): Try[Char] = Try(if (s.length == 1) s.charAt(0) else throw new Exception)
+    def decode(s: String): Try[Char] = Try {
+        if (s.length != 1) {
+            throw new Exception("String must contain a single character")
+        }
+        
+        s.charAt(0)
+    }
 }
 
 object StringCodec extends Codec[String] {
