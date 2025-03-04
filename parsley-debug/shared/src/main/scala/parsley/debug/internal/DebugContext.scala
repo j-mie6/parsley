@@ -10,13 +10,13 @@ import scala.collection.mutable
 import parsley.XAssert
 import parsley.debug.ParseAttempt
 import parsley.internal.deepembedding.frontend.LazyParsley
-import parsley.internal.machine.{Context, RefCodec}
 import parsley.debug.DebugView
 
 // Class used to hold details about a parser being debugged.
 // This is normally held as a value inside an implicit variable.
 // Anything caught by the toStringRules will have a parse result of that type toString-ed for memory
 // efficiency.
+
 private [parsley] class DebugContext(private val toStringRules: PartialFunction[Any, Boolean], private val view: DebugView) {
     // Create a new dummy root of the tree that will act as filler for the rest of the tree to build
     // off of (as there is no "nil" representation for the tree... other than null, which should be
@@ -83,43 +83,48 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
       */
     private var breakpointSkips: Int = 0
 
+    /** True if associated DebugView extends the Manageable trait */
+    def manageableView: Boolean = view match {
+        case _: DebugView.Manageable => true 
+        case _ => false
+    } 
+
+    // Ref address and String value passed to RemoteView
+    type CodedRefs = Seq[(Int, String)]
+
     /** Trigger a breakpoint.
       *
       * @param fullInput    The full parser input.
       * @param refs         References managed by this breakpoint.
       */
-    def triggerBreak(context: Context, fullInput: String, refs: RefCodec[?]*): Unit = view match {
-        case view: DebugView.Pauseable => {
-            if (breakpointSkips > 0) { // Skip to next breakpoint
-                breakpointSkips -= 1
-            } else if (breakpointSkips != -1) { // Breakpoint exit
-                breakpointSkips = view match {
-                    case view: DebugView.Manageable => {
-
-                        // Encode ref values using encoder
-                        val codedRefs: Seq[(Int, String)] = refs.map(codedRef => (codedRef.ref.addr, codedRef.encodeRef(context)))
- 
-                        // Wait for RemoteView to return breakpoint skips and updated state
-                        val (newSkips, newRefs): (Int, Seq[(Int, String)]) = view.renderManage(fullInput, builderStack.head, codedRefs*)
-
-                        // Update references
-                        for ((refAddr, newRef) <- newRefs) {
-                            val refCodec = refs
-                                .find(refCodec => refCodec.ref.addr == refAddr)
-                                .get
+    def triggerBreak(fullInput: String, codedRefs: Option[CodedRefs]): Option[CodedRefs] = {
+        view match {
+            case view: DebugView.Pauseable => {
+                if (breakpointSkips > 0) { // Skip to next breakpoint
+                    breakpointSkips -= 1
+                } else if (breakpointSkips != -1) { // Breakpoint exit
+                    view match {
+                        case view: DebugView.Manageable => {
                             
-                            refCodec.updateRef(newRef, context)
+                            // Wait for RemoteView to return breakpoint skips and updated state
+                            val (newSkips, newRefs): (Int, CodedRefs) = view.renderManage(fullInput, builderStack.head, codedRefs.get*)
+                            
+                            // Update breakpoint skips
+                            breakpointSkips = newSkips
+                            return Some(newRefs)
                         }
 
-                        newSkips
+                        // Update breakpoint using Pausable render call
+                        case _ => breakpointSkips = view.renderWait(fullInput, builderStack.head)
                     }
-                    case _ => {
-                        view.renderWait(fullInput, builderStack.head)
-                    }
+                    
                 }
             }
+            
+            case _ =>
         }
-        case _ => 
+
+        None
     }
 
     // Push a new parser onto the parser callstack.

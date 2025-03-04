@@ -104,9 +104,29 @@ private [internal] class DropSnapshot(dtx: DivergenceContext) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] class TriggerBreakpoint(dbgCtx: DebugContext, refs: RefCodec[?]*) extends Instr {
+private [internal] class TriggerBreakpoint(dbgCtx: DebugContext, refs: RefCodec*) extends Instr {
+    
     override def apply(ctx: Context): Unit = {
-        dbgCtx.triggerBreak(ctx, ctx.input, refs*)
+
+        // Encode ref using associated Codec
+        def encode[A](refCodec: RefCodec) = refCodec.codec.encode(ctx.regs(refCodec.ref.addr).asInstanceOf[refCodec.A])
+        
+        // Encode all refs if view is manageable
+        val codedRefs: Option[Seq[(Int, String)]] = {
+            if (!dbgCtx.manageableView)
+                Some(refs.map((refCodec: RefCodec) => (refCodec.ref.addr, encode(refCodec))))
+            else None
+        }
+        
+        // Trigger breakpoint and update refs (if manageable)
+        dbgCtx.triggerBreak(ctx.input, codedRefs) match {
+            case None => 
+            case Some(codedRefs) => for ((refAddr, refVal) <- codedRefs) {
+                val codec = refs.find(_.ref.addr == refAddr).get.codec
+                codec.decode(refVal).map(ctx.writeReg(refAddr, _)) //FIXME: handle errors
+            }
+        }
+
         ctx.inc()
     }
 
