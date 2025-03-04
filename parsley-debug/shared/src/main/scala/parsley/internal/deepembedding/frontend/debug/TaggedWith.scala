@@ -90,11 +90,16 @@ private [parsley] object TaggedWith {
             bubblesIterative = tr.bubblesIterative
         }
     }
-    private final class Lazy[+A](x: =>A) {
-        lazy val get = x
+    private final class Lazy[+A](private [this] var f: () => A) {
+        // this will clear away the `f` closure, which reduces risk of space leaks
+        lazy val get = {
+            val x = f()
+            f = null
+            x
+        }
     }
     private object Lazy {
-        def apply[A](x: =>A) = new Lazy(x)
+        def apply[A](x: =>A) = new Lazy(() => x)
     }
 
     /** This class is used to store the result of a parser visit, and whether
