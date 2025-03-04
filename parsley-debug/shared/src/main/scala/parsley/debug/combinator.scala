@@ -272,8 +272,8 @@ object combinator {
       * @return A modified parser which will pause parsing and ask the view to render the produced
       *         debug tree after a call to [[Parsley.parse]] is made.
       */
-    type State[A] = (Ref[A], Codec[A])
-    def break[A](parser: Parsley[A], break: Breakpoint, refs: State[Any]*): Parsley[A] = new Parsley(new RemoteBreak(parser.internal, break, refs*))
+    type CodecRef[A] = (Ref[A], Codec[A])
+    def break[A](parser: Parsley[A], break: Breakpoint, refs: CodecRef[Any]*): Parsley[A] = new Parsley(new RemoteBreak(parser.internal, break, refs*))
 
     /** Dot accessor versions of the combinators. */
     implicit class DebuggerOps[A](par: Parsley[A]) {
@@ -289,7 +289,7 @@ object combinator {
         def attachReusable(view: =>DebugView.Reusable): () => Parsley[A] = combinator.attachReusable(par, view, DefaultStringRules)
         //def attach(implicit view: DebugFrontend): Parsley[A] = combinator.attach(par, defaultRules)
         def named(name: String): Parsley[A] = combinator.named(par, name)
-        def break(break: Breakpoint, refs: State[Any]*): Parsley[A] = combinator.break(par, break, refs*)
+        def break(break: Breakpoint, refs: CodecRef[Any]*): Parsley[A] = combinator.break(par, break, refs*)
     }
     // $COVERAGE-ON$
 
