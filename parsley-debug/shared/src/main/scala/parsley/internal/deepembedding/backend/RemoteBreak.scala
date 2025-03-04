@@ -5,12 +5,11 @@
  */
 package parsley.internal.deepembedding.backend
 
-import parsley.debug.{Breakpoint, EntryBreak, ExitBreak, FullBreak}
+import parsley.debug.{Breakpoint, EntryBreak, ExitBreak, FullBreak, RefCodec}
 import parsley.debug.internal.DebugContext
 import parsley.internal.deepembedding.ContOps
 import parsley.internal.deepembedding.ContOps.{suspend, ContAdapter}
 import parsley.internal.machine.instructions.debug.TriggerBreakpoint
-import parsley.internal.machine.RefCodec
 
 private [deepembedding] final class InertBreak[A](p: StrictParsley[A], break: Breakpoint, refs: RefCodec*) extends StrictParsley[A] {
   override protected[backend] def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: StrictParsley.InstrBuffer, state: CodeGenState): M[R,Unit]

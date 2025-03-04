@@ -7,12 +7,12 @@ package parsley.debug
 
 import parsley.Parsley
 import parsley.Parsley.{atomic, empty, fresh}
+import parsley.debug.RefCodec
 import parsley.debug.internal.{DebugContext, DivergenceContext}
 
 import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.deepembedding.frontend.debug.{TaggedWith, Named, RemoteBreak}
 import parsley.internal.deepembedding.backend.debug.{CheckDivergence, Debugging}
-import parsley.internal.machine.RefCodec
 
 /** This object contains the combinators for attaching debuggers to parsers.
   *

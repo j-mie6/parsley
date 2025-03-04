@@ -6,6 +6,15 @@
 package parsley.debug
 
 import scala.util.Try
+import parsley.state.Ref
+
+abstract class RefCodec {
+    type A
+
+    val ref: Ref[A]
+    val codec: Codec[A]
+}
+
 
 /** An encoder-decoder for `A` and a string representation
   * 
