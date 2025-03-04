@@ -27,32 +27,6 @@ private [debug] class MockedPauseableView(exp: Iterator[Int]) extends DebugView.
   private [debug] def checkMetExpectations(): Unit = if (exp.hasNext) Assertions.fail(s"Did not hit all breakpoints. Still expecting: (${exp.mkString(", ")})")
 }
 
-// Mock for input consumption
-private [debug] class MockedPauseableView2(exp: Iterator[String]) extends DebugView.Reusable with DebugView.Pauseable {
-    override private [debug] def render(@unused input: =>String, @unused tree: =>DebugTree): Unit = ()
-    
-    override private [debug] def renderWait(input: =>String, tree: =>DebugTree): Int = {
-        if (!exp.hasNext) {
-            Assertions.fail("Unexpected call to renderWait")
-        }
-
-        val expecting: String = exp.next();
-
-        val firstChild: DebugTree = tree.nodeChildren match {
-            case firstChild :: Nil => firstChild
-            case _ => Assertions.fail("Breakpoint did not have a single child")
-        }
-
-        val parse: ParseAttempt = firstChild.parseResults.getOrElse(Assertions.fail("Parser did not succeed"))
-        
-        if (expecting != parse.rawInput) {
-            Assertions.fail(f"Parser consumed (${parse.rawInput}) but expected (${expecting})")
-        }
-
-        0
-    }
-}
-
 // Mock for modifying state
 private [debug] class MockedManageableView(exp: Iterator[Seq[String]]) extends DebugView.Manageable {
   override private[debug] def render(input: => String, tree: => DebugTree): Unit = ()
@@ -60,9 +34,7 @@ private [debug] class MockedManageableView(exp: Iterator[Seq[String]]) extends D
   override private[debug] def renderWait(input: => String, tree: => DebugTree): Int = Assertions.fail("Should not have called renderWait")
 
   override private[debug] def renderManage(input: => String, tree: => DebugTree, state: (Int, String)*): (Int, Seq[(Int, String)]) = {
-    if (!exp.hasNext) {
-        Assertions.fail("Unexpected call to renderManage")
-    }
+    Assertions.assert(exp.hasNext, "Unexpected call to renderManage")
 
     val seq = exp.next();
     val newState = state.map(_._1).zip(seq)
@@ -92,7 +64,23 @@ class RemoteBreakSpec extends ParsleyTest {
 
     it should "break after input is consumed on ExitBreak" in {
         val p: Parsley[_] = string("scala").break(ExitBreak)
-        val mock = new MockedPauseableView2(Iterator("scala"))
+        val mock = new DebugView.Reusable with DebugView.Pauseable {
+            private[debug] def render(input: => String, tree: => parsley.debug.DebugTree): Unit = ()
+            private[debug] def renderWait(@unused input: => String, tree: => parsley.debug.DebugTree): Int = {
+                val breakAttempt: ParseAttempt = tree.parseResults.getOrElse(Assertions.fail("RemoteBreak has no ParseAttempt"))
+                Assertions.assert(breakAttempt.success, "RemoteBreak not marked as successful")
+
+                tree.nodeChildren match {
+                    case child :: Nil => {
+                        val childAttempt = child.parseResults.getOrElse(throw new Exception("Internal error: Test is incorrect or Parsley is broken"))
+                        Assertions.assertResult(childAttempt.rawInput)("scala")
+                        0
+                    }
+                    case _ => Assertions.fail("RemoteBreak has more than one child")
+                }
+            }
+
+        }
         val _ = p.attach(mock).parse("scala")
     }
 
