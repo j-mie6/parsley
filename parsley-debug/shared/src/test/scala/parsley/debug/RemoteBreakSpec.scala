@@ -7,83 +7,140 @@ package parsley.debug
 
 import parsley.Parsley
 import parsley.Parsley.*
-import parsley.character.string
-import parsley.syntax.character.stringLift
-import parsley.ParsleyTest
+import parsley.character.*
+import parsley.syntax.character.{charLift, stringLift}
+import parsley.state.*
+import parsley.debug.*
 import parsley.debug.combinator.DebuggerOps
+import parsley.ParsleyTest
+
 import org.scalatest.Assertions
 import org.typelevel.scalaccompat.annotation.unused
 
-private [debug] class MockedDebugView(private val exp: Iterator[Int]) extends DebugView.Reusable with DebugView.Pauseable {
+
+// Mock for breakpoint stepping
+private [debug] class MockedPauseableView(exp: Iterator[Int]) extends DebugView.Reusable with DebugView.Pauseable {
   override private [debug] def render(@unused input: =>String, @unused tree: =>DebugTree): Unit = ()
+
   override private [debug] def renderWait(@unused input: =>String, @unused tree: =>DebugTree): Int = if (exp.hasNext) exp.next() else Assertions.fail("Hit unexpected breakpoint")
 
   private [debug] def checkMetExpectations(): Unit = if (exp.hasNext) Assertions.fail(s"Did not hit all breakpoints. Still expecting: (${exp.mkString(", ")})")
 }
 
+// Mock for modifying state
+private [debug] class MockedManageableView(exp: Iterator[Seq[String]]) extends DebugView.Manageable {
+  override private[debug] def render(input: => String, tree: => DebugTree): Unit = ()
+
+  override private[debug] def renderWait(input: => String, tree: => DebugTree): Int = Assertions.fail("Should not have called renderWait")
+
+  override private[debug] def renderManage(input: => String, tree: => DebugTree, state: (Int, String)*): (Int, Seq[(Int, String)]) = {
+    if (!exp.hasNext) {
+        Assertions.fail("Unexpected call to renderManage")
+    }
+
+    val seq = exp.next();
+    val newState = state.map(_._1).zip(seq)
+
+    (0, newState)
+  }
+
+  private [debug] def checkMetExpectations(): Unit = if (exp.hasNext) Assertions.fail(s"Did not hit all breakpoints. Still expecting: ()")
+}
+
+
 class RemoteBreakSpec extends ParsleyTest {
 
+    behavior of "Remote breakpoint"
+
     /* The test runner handling mocking functionality given a parser set with breakpoints, the input, and breakpoint return values */
-    private def testExpecting(expectations: Int*)(p: Parsley[_], input: String): Unit = {
-        val mock = new MockedDebugView(expectations.iterator)
-        p.attach(mock).parse(input)
+    private def testExpectingSkips(expectations: Int*)(p: Parsley[_], input: String): Unit = {
+        val mock = new MockedPauseableView(expectations.iterator)
+        val _ = p.attach(mock).parse(input)
         mock.checkMetExpectations()
     }
 
-    private def testExpectingNone = testExpecting() _
-
-    behavior of "Remote breakpoints"
+    private def testExpectingNoSkips = testExpectingSkips() _
 
     it should "call renderWait after hitting a breakpoint" in {
         val p: Parsley[_] = "J"
-        testExpecting(0)(p.break(EntryBreak), "J")
-        testExpecting(0)(p.break(ExitBreak), "J")
+        testExpectingSkips(0)(p.break(EntryBreak), "J")
+        testExpectingSkips(0)(p.break(ExitBreak), "J")
     }
 
     it should "not break when given NoBreak" in {
         val p: Parsley[_] = string("A").break(NoBreak)
-        testExpectingNone(p, "A")
+        testExpectingNoSkips(p, "A")
     }
 
     it should "break twice when given FullBreak" in {
         val p: Parsley[_] = "M"
-        testExpecting(0, 0)(p.break(FullBreak), "M")
+        testExpectingSkips(0, 0)(p.break(FullBreak), "M")
     }
 
     it should "skip one breakpoint" in {
         val p: Parsley[_] = string("I").break(ExitBreak)
-        testExpecting(1)(p ~> p, "II")
+        testExpectingSkips(1)(p ~> p, "II")
     }
 
     it should "skip breakpoints many times" in {
         val p1: Parsley[_] = string("E").break(FullBreak)
         val p2: Parsley[_] = p1 ~> p1 ~> p1
-        testExpecting(1, 1, 1)(p2, "EEE")
+        testExpectingSkips(1, 1, 1)(p2, "EEE")
     }
 
     it should "skip many breakpoints at once" in {
         val p1: Parsley[_] = string("!").break(FullBreak)
         val p2: Parsley[_] = p1 ~> p1 ~> p1
-        testExpecting(7)(p2.break(FullBreak), "!!!")
+        testExpectingSkips(7)(p2.break(FullBreak), "!!!")
     }
 
     it should "never break if the parser wasn't reached" in {
         val p: Parsley[_] = "1" ~> string("2").break(FullBreak)
-        testExpectingNone(p, "02")
+        testExpectingNoSkips(p, "02")
     }
 
     it should "break many times with iterative combinators" in {
         val p: Parsley[_] = string("5").break(EntryBreak)
-        testExpecting(0, 0, 0, 0)(many(p), "555")
+        testExpectingSkips(0, 0, 0, 0)(many(p), "555")
     }
 
     it should "stay silent after skipping more breakpoints than there are" in {
         val p: Parsley[_] = string(".").break(FullBreak)
-        testExpecting(10)(p ~> p, "..")
+        testExpectingSkips(10)(p ~> p, "..")
     }
 
     it should "skip indefinitely with the special case of -1" in {
         val p: Parsley[_] = string("#").break(EntryBreak)
-        testExpecting(-1)(many(p), "#####")
+        testExpectingSkips(-1)(many(p), "#####")
     }
+
+    // ---------------------------------------------------
+
+    /* */
+    private def testExpectingRefs(expectations: Seq[String]*)(p: Parsley[_], input: String, shouldSucceed: Boolean): Unit = {
+        val mock = new MockedManageableView(expectations.iterator)
+        (p.attach(mock).parse(input), shouldSucceed) match {
+            case (_: parsley.Failure[_], true) => Assertions.fail("Parser failed, should've succeeded")
+            case (_: parsley.Success[_], false) => Assertions.fail("Parser succeeded, should've failed")
+            case _ => mock.checkMetExpectations()
+        }
+    }
+
+    def refString(r: Ref[String]): Parsley[String] = r.get.flatMap(parsley.character.string(_))
+
+    it should "preserve references that aren't passed to break" in {
+        val openTag = atomic('<' <~ notFollowedBy('/'))
+        val leftTag = openTag ~> stringOfSome(letter) <~ '>'
+        val p = leftTag.fillRef { name => char(' ').break(ExitBreak). <~ ("</" ~> refString(name) <~ ">") }
+        testExpectingRefs(Seq.empty)(p, "<hi> </hi>", true)
+    }
+
+    // TOOD: Relies on fixing existential types
+    
+    // it should "preserve references that aren't modified" in {
+    //     val openTag = atomic('<' <~ notFollowedBy('/'))
+    //     val leftTag = openTag ~> character.stringOfSome(letter) <~ '>'
+    //     val p = leftTag.fillRef { name => char(' ').break(ExitBreak, (name, StringCodec)) <~ ("</" ~> refString(name) <~ ">") }
+    //     testExpectingRefs(Seq.empty)(p, "<hi> </hi>", true)
+    // }
 }
