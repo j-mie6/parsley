@@ -36,6 +36,8 @@ class ReuseSpec extends ParsleyTest {
             override def isIterative: Boolean = false
 
             override def fullInput: String = "bar"
+            
+            override def isNewlyGenerated: Boolean = false
         }
 
         info("it should not throw when running a reusable frontend multiple times")
