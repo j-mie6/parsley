@@ -98,10 +98,9 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
       * @param refs         References managed by this breakpoint.
       */
     def triggerBreak(fullInput: String, isAfter: Boolean, codedRefs: Option[Seq[CodedRef]]): Option[Seq[CodedRef]] = {
-        val debugTree: TransientDebugTree = if (isAfter) builderStack.head else {
-            builderStack.head.copy(parse = Some(new ParseAttempt("", 0, 0, (0,0), (0,0), Some(()))),
-                                   children = builderStack.tail.init)
-        }
+        val debugTree: TransientDebugTree = (if (isAfter) builderStack.head else {
+            builderStack.head.copy(children = builderStack.tail.init)
+        }).copy(parse = Some(new ParseAttempt("", 0, 0, (0,0), (0,0), Some(()))))
 
         if (firstBreakpoint) {
             debugTree.resetNewlyGeneratedFlags()

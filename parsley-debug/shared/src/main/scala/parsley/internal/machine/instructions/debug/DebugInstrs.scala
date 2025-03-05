@@ -107,8 +107,6 @@ private [internal] class DropSnapshot(dtx: DivergenceContext) extends Instr {
 private [internal] class TriggerBreakpoint(dbgCtx: DebugContext, isAfter: Boolean, refs: RefCodec*) extends Instr {
     
     override def apply(ctx: Context): Unit = {
-        dbgCtx.addParseAttempt(new ParseAttempt("", 0, 0, (0,0), (0,0), Some(()))) // Dummy success
-
         // Encode ref using associated Codec
         def encode[A](refCodec: RefCodec) = refCodec.codec.encode(ctx.regs(refCodec.ref.addr).asInstanceOf[refCodec.A])
         
