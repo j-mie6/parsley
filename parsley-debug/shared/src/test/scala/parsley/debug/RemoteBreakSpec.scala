@@ -176,9 +176,9 @@ class RemoteBreakSpec extends ParsleyTest {
 
     // Making a parser given a reference
     def refParser[A, B](mkParser: A => Parsley[B])(r: Ref[A]): Parsley[B] = r.get.flatMap(mkParser)
-    val refChar = refParser(parsley.character.char)
-    val refString = refParser(parsley.character.string)
-    val refBool = refParser(if (_ : Boolean) trueParser else falseParser) // TODO use ifP
+    val refChar = refParser(parsley.character.char) _
+    val refString = refParser(parsley.character.string) _
+    val refBool = refParser(if (_ : Boolean) trueParser else falseParser) _ // TODO use ifP
 
     // Parsing different types in open tags
     def leftTag[A](p: Parsley[A]): Parsley[A] = (atomic('<' <~ notFollowedBy('/'))) ~> p <~ '>'
@@ -248,7 +248,7 @@ class RemoteBreakSpec extends ParsleyTest {
         testExpectingRefs(Seq("z"))(p, "<a> </z>", true)
     }
 
-        it should "modify Ref[Boolean]" in {
+    it should "modify Ref[Boolean]" in {
         val p = leftTagBool.fillRef { name => {
             class NameRefCodec extends RefCodec {
                 type A = Boolean
