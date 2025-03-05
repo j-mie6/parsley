@@ -1336,7 +1336,7 @@ private [parsley] abstract class ParsleyImpl {
       * @since 5.0.0
       * @group iter
       */
-    final def many[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = secretSome(fresh(factory.newBuilder), p, "many")
+    final def many[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = secretSome(transFresh(factory.newBuilder), p, "many")
     // this is needed for Scala 2 to avoid manual ascription (and ascribes cleaner), but isn't really needed for Scala 3 and increases doc/API footprint
     // we can add them later if we really wanted to. Alternatively, p.many(factory) would remove this problem entirely and provide better intellisense.
     //final private [parsley] def many[A, CC[_]](p: Parsley[A], factory: IterableFactory[CC]): Parsley[CC[A]] = many[A, CC[A]](p, factory)
