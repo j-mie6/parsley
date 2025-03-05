@@ -9,7 +9,6 @@ import parsley.Parsley
 import parsley.Parsley.*
 import parsley.combinator.*
 import parsley.character.*
-import parsley.syntax.*
 import parsley.syntax.character.{charLift, stringLift}
 import parsley.state.*
 import parsley.debug.*
