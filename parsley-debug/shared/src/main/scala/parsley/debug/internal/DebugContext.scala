@@ -46,7 +46,7 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
         XAssert.assert(!(ch.size > 1), s"The root tree has somehow gained multiple children. (${ch.size})")
 
         // This should never fail.
-        ch.head.withoutBreakpoints
+        ch.head.withoutBreakpoints().withoutNewlyGeneratedFlags()
     }
 
     // Add an attempt of parsing at the current stack point.
@@ -90,12 +90,20 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
         case _ => false
     } 
 
+    private var firstBreakpoint: Boolean = true
+
     /** Trigger a breakpoint.
       *
       * @param fullInput    The full parser input.
       * @param refs         References managed by this breakpoint.
       */
     def triggerBreak(fullInput: String, codedRefs: Option[Seq[CodedRef]]): Option[Seq[CodedRef]] = {
+        val debugTree: TransientDebugTree = builderStack.head
+        if (firstBreakpoint) {
+            debugTree.resetNewlyGeneratedFlags()
+            firstBreakpoint = false
+        }
+
         view match {
             case view: DebugView.Pauseable => {
                 if (breakpointSkips > 0) { // Skip to next breakpoint
@@ -105,7 +113,9 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
                         case view: DebugView.Manageable => {
                             
                             // Wait for RemoteView to return breakpoint skips and updated state
-                            val (newSkips, newRefs): (Int, Seq[CodedRef]) = view.renderManage(fullInput, builderStack.head, codedRefs.get*)
+                            val (newSkips, newRefs): (Int, Seq[CodedRef]) = view.renderManage(fullInput, debugTree, codedRefs.get*)
+                            
+                            debugTree.resetNewlyGeneratedFlags()
                             
                             // Update breakpoint skips
                             breakpointSkips = newSkips
@@ -113,7 +123,7 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
                         }
 
                         // Update breakpoint using Pausable render call
-                        case _ => breakpointSkips = view.renderWait(fullInput, builderStack.head)
+                        case _ => breakpointSkips = view.renderWait(fullInput, debugTree)
                     }
                     
                 }
@@ -122,6 +132,7 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
             case _ =>
         }
 
+        debugTree.resetNewlyGeneratedFlags()
         None
     }
 
