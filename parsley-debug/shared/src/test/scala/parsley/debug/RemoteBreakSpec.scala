@@ -174,6 +174,10 @@ class RemoteBreakSpec extends ParsleyTest {
         }}
 
         val mock = new MockedManageableView(expectations.iterator)
+        runManageableTest(p, mock, input, shouldSucceed)
+    }
+
+    private def runManageableTest(p: Parsley[_], mock: MockedManageableView, input: String, shouldSucceed: Boolean): Unit = {
         (p.attach(mock).parse(input), shouldSucceed) match {
             case (res: parsley.Failure[_], true) => Assertions.fail(f"Parser should've succeeded, failed with ${res}")
             case (res: parsley.Success[_], false) => Assertions.fail(f"Parser should've failed, succeeded with ${res}")
@@ -201,10 +205,12 @@ class RemoteBreakSpec extends ParsleyTest {
     val myDouble = myNumeric[Double] _
     val myBool = { (b: Boolean) => if (b) trueParser else falseParser }
 
-    // it should "preserve references that aren't passed to break" in {
-    //     val p = leftTagLetters.fillRef { name => char(' ').break(ExitBreak). <~ ("</" ~> refString(name) <~ ">") }
-    //     testExpectingRefs(Seq.empty)(p, "<hi> </hi>", true)
-    // }
+    it should "preserve references that aren't passed to break" in {
+        val leftTag = (atomic('<' <~ notFollowedBy('/'))) ~> "hello" <~ '>'
+        val p = leftTag.fillRef { r => char(' ').break(ExitBreak) <~ (string("</") ~> r.get.flatMap(string) <~ ">")}
+        val mock = new MockedManageableView(Iterator(Seq.empty))
+        runManageableTest(p, mock, "<hello> </hello>", true)
+    }
     
     it should "preserve references that are passed in and not returned" in {
         testExpectingRefs(Seq.empty)(stringOfSome(letter), StringCodec, string)("<hello> </hi>", false)
