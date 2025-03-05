@@ -173,6 +173,7 @@ class RemoteBreakSpec extends ParsleyTest {
     // Parsers for standard expressions
     val trueParser = "true" as true
     val falseParser = "false" as false
+    val shortParser = digit.foldLeft1[Short](0)((n, d) => (n * 10 + d.asDigit).toShort)
     val intParser = digit.foldLeft1[Int](0)((n, d) => n * 10 + d.asDigit)
 
     // Making a parser given a reference
@@ -180,6 +181,7 @@ class RemoteBreakSpec extends ParsleyTest {
     val refChar = refParser(parsley.character.char) _
     val refString = refParser(parsley.character.string) _
     val refBool = refParser(if (_ : Boolean) trueParser else falseParser) _ // TODO use ifP
+    val refShort = refParser { (x : Short) => parsley.character.string(x.toString) as x } _
     val refInt = refParser { (x : Int) => parsley.character.string(x.toString) as x } _
 
     // Parsing different types in open tags
@@ -187,6 +189,7 @@ class RemoteBreakSpec extends ParsleyTest {
     val leftTagLetter = leftTag(letter)
     val leftTagLetters = leftTag(stringOfSome(letter))
     val leftTagBool = leftTag(choice(trueParser, falseParser))
+    val leftTagShort = leftTag(shortParser)
     val leftTagInt = leftTag(intParser)
 
     it should "preserve references that aren't passed to break" in {
@@ -265,6 +268,20 @@ class RemoteBreakSpec extends ParsleyTest {
         testExpectingRefs(Seq("true"))(p, "<false> </true>", true)
     }
 
+    it should "modify Ref[Short]" in {
+        val p = leftTagShort.fillRef { name => {
+            class NameRefCodec extends RefCodec {
+                type A = Short
+
+                val ref: Ref[A] = name
+                val codec: Codec[A] = ShortCodec
+            }
+            char(' ').break(ExitBreak, new NameRefCodec) <~ (string("</") ~> refShort(name) <~ ">")
+        }}
+        
+        testExpectingRefs(Seq("127"))(p, "<0> </127>", true)
+    }
+    
     it should "modify Ref[Int]" in {
         val p = leftTagInt.fillRef { name => {
             class NameRefCodec extends RefCodec {
