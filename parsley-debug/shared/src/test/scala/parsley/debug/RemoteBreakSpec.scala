@@ -169,18 +169,22 @@ class RemoteBreakSpec extends ParsleyTest {
 
     // Some common test utils
 
-    def refString(r: Ref[String]): Parsley[String] = r.get.flatMap(parsley.character.string(_))
+    def refParser[A, B](mkParser: A => Parsley[B])(r: Ref[A]): Parsley[B] = r.get.flatMap(mkParser)
+    val refChar = refParser(parsley.character.char)
+    val refString = refParser(parsley.character.string)
 
-    val openTag = atomic('<' <~ notFollowedBy('/'))
-    val leftTag = openTag ~> stringOfSome(letter) <~ '>'
+    def leftTag[A](p: Parsley[A]): Parsley[A] = (atomic('<' <~ notFollowedBy('/'))) ~> p <~ '>'
+    val leftTagLetter = leftTag(letter)
+    val leftTagLetters = leftTag(stringOfSome(letter))
+
 
     it should "preserve references that aren't passed to break" in {
-        val p = leftTag.fillRef { name => char(' ').break(ExitBreak). <~ ("</" ~> refString(name) <~ ">") }
+        val p = leftTagLetters.fillRef { name => char(' ').break(ExitBreak). <~ ("</" ~> refString(name) <~ ">") }
         testExpectingRefs(Seq.empty)(p, "<hi> </hi>", true)
     }
     
     it should "preserve references that are passed in and not returned" in {
-        val p = leftTag.fillRef { name => {
+        val p = leftTagLetters.fillRef { name => {
             class NameRefCodec extends RefCodec {
                 type A = String
 
@@ -195,7 +199,7 @@ class RemoteBreakSpec extends ParsleyTest {
     }
 
     it should "modify references that are passed in and returned" in {
-        val p = leftTag.fillRef { name => {
+        val p = leftTagLetters.fillRef { name => {
             class NameRefCodec extends RefCodec {
                 type A = String
 
@@ -206,5 +210,34 @@ class RemoteBreakSpec extends ParsleyTest {
         }}
         
         testExpectingRefs(Seq("hi"))(p, "<hello> </hi>", true)
+    }
+
+    it should "modify references many times after passing them in and returning" in {
+        val p = leftTagLetters.fillRef { name => {
+            class NameRefCodec extends RefCodec {
+                type A = String
+
+                val ref: Ref[A] = name
+                val codec: Codec[A] = StringCodec
+            }
+            char(' ').break(ExitBreak, new NameRefCodec) <~ (string("</").break(ExitBreak, new NameRefCodec) ~> refString(name) <~ ">") 
+        }}
+        
+        testExpectingRefs(Seq("bye"), Seq("hi"))(p, "<hello> </hi>", true)
+    }
+
+    it should "modify Ref[Char]" in {
+        val leftTagLetter = leftTag(letter)
+        val p = leftTagLetter.fillRef { name => {
+            class NameRefCodec extends RefCodec {
+                type A = Char
+
+                val ref: Ref[A] = name
+                val codec: Codec[A] = CharCodec
+            }
+            char(' ').break(ExitBreak, new NameRefCodec) <~ (string("</") ~> refChar(name) <~ ">") 
+        }}
+        
+        testExpectingRefs(Seq("z"))(p, "<a> </z>", true)
     }
 }
