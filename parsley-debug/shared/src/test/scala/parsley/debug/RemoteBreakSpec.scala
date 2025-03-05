@@ -7,7 +7,9 @@ package parsley.debug
 
 import parsley.Parsley
 import parsley.Parsley.*
+import parsley.combinator.*
 import parsley.character.*
+import parsley.syntax.*
 import parsley.syntax.character.{charLift, stringLift}
 import parsley.state.*
 import parsley.debug.*
@@ -167,16 +169,23 @@ class RemoteBreakSpec extends ParsleyTest {
         }
     }
 
-    // Some common test utils
+    /** Some common test utils */
 
+    // Parsers for standard expressions
+    val trueParser = "true" as true
+    val falseParser = "false" as false
+
+    // Making a parser given a reference
     def refParser[A, B](mkParser: A => Parsley[B])(r: Ref[A]): Parsley[B] = r.get.flatMap(mkParser)
     val refChar = refParser(parsley.character.char)
     val refString = refParser(parsley.character.string)
+    val refBool = refParser(if (_ : Boolean) trueParser else falseParser) // TODO use ifP
 
+    // Parsing different types in open tags
     def leftTag[A](p: Parsley[A]): Parsley[A] = (atomic('<' <~ notFollowedBy('/'))) ~> p <~ '>'
     val leftTagLetter = leftTag(letter)
     val leftTagLetters = leftTag(stringOfSome(letter))
-
+    val leftTagBool = leftTag[Boolean](choice(trueParser, falseParser))
 
     it should "preserve references that aren't passed to break" in {
         val p = leftTagLetters.fillRef { name => char(' ').break(ExitBreak). <~ ("</" ~> refString(name) <~ ">") }
@@ -227,7 +236,6 @@ class RemoteBreakSpec extends ParsleyTest {
     }
 
     it should "modify Ref[Char]" in {
-        val leftTagLetter = leftTag(letter)
         val p = leftTagLetter.fillRef { name => {
             class NameRefCodec extends RefCodec {
                 type A = Char
@@ -239,5 +247,19 @@ class RemoteBreakSpec extends ParsleyTest {
         }}
         
         testExpectingRefs(Seq("z"))(p, "<a> </z>", true)
+    }
+
+        it should "modify Ref[Boolean]" in {
+        val p = leftTagBool.fillRef { name => {
+            class NameRefCodec extends RefCodec {
+                type A = Boolean
+
+                val ref: Ref[A] = name
+                val codec: Codec[A] = BooleanCodec
+            }
+            char(' ').break(ExitBreak, new NameRefCodec) <~ (string("</") ~> refBool(name) <~ ">") 
+        }}
+        
+        testExpectingRefs(Seq("true"))(p, "<false> </true>", true)
     }
 }
