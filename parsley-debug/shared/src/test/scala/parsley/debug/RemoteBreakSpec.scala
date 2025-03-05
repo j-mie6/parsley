@@ -173,18 +173,21 @@ class RemoteBreakSpec extends ParsleyTest {
     // Parsers for standard expressions
     val trueParser = "true" as true
     val falseParser = "false" as false
+    val intParser = digit.foldLeft1[Int](0)((n, d) => n * 10 + d.asDigit)
 
     // Making a parser given a reference
     def refParser[A, B](mkParser: A => Parsley[B])(r: Ref[A]): Parsley[B] = r.get.flatMap(mkParser)
     val refChar = refParser(parsley.character.char) _
     val refString = refParser(parsley.character.string) _
     val refBool = refParser(if (_ : Boolean) trueParser else falseParser) _ // TODO use ifP
+    val refInt = refParser { (x : Int) => parsley.character.string(x.toString) as x } _
 
     // Parsing different types in open tags
     def leftTag[A](p: Parsley[A]): Parsley[A] = (atomic('<' <~ notFollowedBy('/'))) ~> p <~ '>'
     val leftTagLetter = leftTag(letter)
     val leftTagLetters = leftTag(stringOfSome(letter))
-    val leftTagBool = leftTag[Boolean](choice(trueParser, falseParser))
+    val leftTagBool = leftTag(choice(trueParser, falseParser))
+    val leftTagInt = leftTag(intParser)
 
     it should "preserve references that aren't passed to break" in {
         val p = leftTagLetters.fillRef { name => char(' ').break(ExitBreak). <~ ("</" ~> refString(name) <~ ">") }
@@ -260,5 +263,19 @@ class RemoteBreakSpec extends ParsleyTest {
         }}
         
         testExpectingRefs(Seq("true"))(p, "<false> </true>", true)
+    }
+
+    it should "modify Ref[Int]" in {
+        val p = leftTagInt.fillRef { name => {
+            class NameRefCodec extends RefCodec {
+                type A = Int
+
+                val ref: Ref[A] = name
+                val codec: Codec[A] = IntCodec
+            }
+            char(' ').break(ExitBreak, new NameRefCodec) <~ (string("</") ~> refInt(name) <~ ">")
+        }}
+        
+        testExpectingRefs(Seq("256"))(p, "<255> </256>", true)
     }
 }
