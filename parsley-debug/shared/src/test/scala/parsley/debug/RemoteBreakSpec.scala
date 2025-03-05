@@ -175,14 +175,17 @@ class RemoteBreakSpec extends ParsleyTest {
     val falseParser = "false" as false
     val shortParser = digit.foldLeft1[Short](0)((n, d) => (n * 10 + d.asDigit).toShort)
     val intParser = digit.foldLeft1[Int](0)((n, d) => n * 10 + d.asDigit)
+    val longParser = digit.foldLeft1[Long](0)((n, d) => n * 10 + d.asDigit)
 
     // Making a parser given a reference
     def refParser[A, B](mkParser: A => Parsley[B])(r: Ref[A]): Parsley[B] = r.get.flatMap(mkParser)
     val refChar = refParser(parsley.character.char) _
     val refString = refParser(parsley.character.string) _
     val refBool = refParser(if (_ : Boolean) trueParser else falseParser) _ // TODO use ifP
-    val refShort = refParser { (x : Short) => parsley.character.string(x.toString) as x } _
-    val refInt = refParser { (x : Int) => parsley.character.string(x.toString) as x } _
+    def refNumeric[A] = refParser { (x: A) => parsley.character.string(x.toString) as x } _
+    val refShort = refNumeric[Short]
+    val refInt = refNumeric[Int]
+    val refLong = refNumeric[Long]
 
     // Parsing different types in open tags
     def leftTag[A](p: Parsley[A]): Parsley[A] = (atomic('<' <~ notFollowedBy('/'))) ~> p <~ '>'
@@ -191,6 +194,7 @@ class RemoteBreakSpec extends ParsleyTest {
     val leftTagBool = leftTag(choice(trueParser, falseParser))
     val leftTagShort = leftTag(shortParser)
     val leftTagInt = leftTag(intParser)
+    val leftTagLong = leftTag(longParser)
 
     it should "preserve references that aren't passed to break" in {
         val p = leftTagLetters.fillRef { name => char(' ').break(ExitBreak). <~ ("</" ~> refString(name) <~ ">") }
@@ -294,5 +298,19 @@ class RemoteBreakSpec extends ParsleyTest {
         }}
         
         testExpectingRefs(Seq("256"))(p, "<255> </256>", true)
+    }
+
+    it should "modify Ref[Long]" in {
+        val p = leftTagLong.fillRef { name => {
+            class NameRefCodec extends RefCodec {
+                type A = Long
+
+                val ref: Ref[A] = name
+                val codec: Codec[A] = LongCodec
+            }
+            char(' ').break(ExitBreak, new NameRefCodec) <~ (string("</") ~> refLong(name) <~ ">")
+        }}
+        
+        testExpectingRefs(Seq("2147483648"))(p, "<2147483647> </2147483648>", true)
     }
 }
