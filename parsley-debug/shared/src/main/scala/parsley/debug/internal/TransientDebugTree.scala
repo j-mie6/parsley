@@ -44,6 +44,8 @@ private [parsley] class TransientDebugTree(var name: String = "", var internal: 
       
     override def isIterative: Boolean = iterative
 
+    override def isNewlyGenerated: Boolean = newlyGenerated
+
     // Factors out inputs or results for parsers with children.
     private type Augment  = (Long, (Int, Int))
     private var augmentId = 0L

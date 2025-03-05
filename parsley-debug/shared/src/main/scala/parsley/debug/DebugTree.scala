@@ -50,6 +50,9 @@ private [debug] abstract class DebugTree extends Iterable[DebugTree] {
     /** Is this parser iterative? */
     def isIterative: Boolean
 
+    /** Has this node been generated since the last time it hit a breakpoint */
+    def isNewlyGenerated: Boolean
+
 // $COVERAGE-OFF$
     /** Provides a depth-first view of the tree as an iterator. */
     override def iterator: Iterator[DebugTree] = Iterator(this) ++ nodeChildren.iterator.flatMap(_.iterator)
