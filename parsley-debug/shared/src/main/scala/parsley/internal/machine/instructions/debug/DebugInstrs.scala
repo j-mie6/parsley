@@ -104,7 +104,7 @@ private [internal] class DropSnapshot(dtx: DivergenceContext) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] class TriggerBreakpoint(dbgCtx: DebugContext, refs: RefCodec*) extends Instr {
+private [internal] class TriggerBreakpoint(dbgCtx: DebugContext, isAfter: Boolean, refs: RefCodec*) extends Instr {
     
     override def apply(ctx: Context): Unit = {
         dbgCtx.addParseAttempt(new ParseAttempt("", 0, 0, (0,0), (0,0), Some(()))) // Dummy success
@@ -118,7 +118,7 @@ private [internal] class TriggerBreakpoint(dbgCtx: DebugContext, refs: RefCodec*
         ) else None
         
         // Trigger breakpoint and update refs (if manageable)
-        dbgCtx.triggerBreak(ctx.input, codedRefs) match {
+        dbgCtx.triggerBreak(ctx.input, isAfter, codedRefs) match {
             case None => 
             case Some(codedRefs) => for ((refAddr, refVal) <- codedRefs) {
                 val codec = refs.find(_.ref.addr == refAddr).get.codec

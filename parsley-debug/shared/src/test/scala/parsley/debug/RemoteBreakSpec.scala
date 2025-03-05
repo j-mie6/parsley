@@ -65,12 +65,11 @@ class RemoteBreakSpec extends ParsleyTest {
             private[debug] def render(input: => String, tree: => parsley.debug.DebugTree): Unit = ()
             private[debug] def renderWait(@unused input: => String, tree: => parsley.debug.DebugTree): Int = {
                 val breakAttempt: ParseAttempt = tree.parseResults.getOrElse(Assertions.fail("RemoteBreak has no ParseAttempt"))
+                
                 Assertions.assert(breakAttempt.success, "RemoteBreak not marked as successful")
-
                 tree.nodeChildren match {
                     case child :: Nil => {
-                        val childAttempt = child.parseResults.getOrElse(throw new Exception("Internal error: Test is incorrect or Parsley is broken"))
-                        Assertions.assertResult(childAttempt.rawInput)("cat ")
+                        Assertions.assert(child.parseResults.isEmpty, s"Child has consumed input: ${child.parseResults}")
                         0
                     }
                     case children => Assertions.fail(f"RemoteBreak does not have one child (${children.map(_.internalName)})")
@@ -301,5 +300,19 @@ class RemoteBreakSpec extends ParsleyTest {
         }
         val mock = new MockedManageableView(Iterator(Seq("A", "B")))
         runManageableTest(p, mock, "<a><b> </B></A>", true)
+    }
+
+    it should "modify correctly with EntryBreak" in {
+        val leftTag = (atomic('<' <~ notFollowedBy('/'))) ~> "hello" <~ '>'
+        val p = leftTag.fillRef { r => 
+            object TestRefCodec extends RefCodec {
+                type A = String
+
+                val ref: Ref[A] = r
+                val codec: Codec[A] = StringCodec
+            }
+            (string("</") ~> r.get.flatMap(string).break(EntryBreak, TestRefCodec) <~ ">")}
+        val mock = new MockedManageableView(Iterator(Seq("world")))
+        runManageableTest(p, mock, "<hello></world>", true)
     }
 }

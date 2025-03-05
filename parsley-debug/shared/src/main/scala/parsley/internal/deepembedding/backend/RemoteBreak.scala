@@ -25,12 +25,12 @@ private [deepembedding] final class InertBreak[A](p: StrictParsley[A], break: Br
 private [deepembedding] final class ActiveBreak[A](p: StrictParsley[A], break: Breakpoint, dbgCtx: DebugContext, refs: RefCodec*) extends StrictParsley[A] {
   override protected[backend] def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: StrictParsley.InstrBuffer, state: CodeGenState): M[R,Unit] = {
     break match {
-      case EntryBreak | FullBreak => instrs += new TriggerBreakpoint(dbgCtx, refs*)
+      case EntryBreak | FullBreak => instrs += new TriggerBreakpoint(dbgCtx, false, refs*)
       case _ =>
     }
     suspend[M, R, Unit](p.codeGen[M, R](producesResults)) |> {
         break match {
-          case ExitBreak | FullBreak => instrs += new TriggerBreakpoint(dbgCtx, refs*)
+          case ExitBreak | FullBreak => instrs += new TriggerBreakpoint(dbgCtx, true, refs*)
           case _ =>
         }
     }

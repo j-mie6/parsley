@@ -97,17 +97,22 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
       * @param fullInput    The full parser input.
       * @param refs         References managed by this breakpoint.
       */
-    def triggerBreak(fullInput: String, codedRefs: Option[Seq[CodedRef]]): Option[Seq[CodedRef]] = {
-        val debugTree: TransientDebugTree = builderStack.head
+    def triggerBreak(fullInput: String, isAfter: Boolean, codedRefs: Option[Seq[CodedRef]]): Option[Seq[CodedRef]] = {
+        val debugTree: TransientDebugTree = if (isAfter) builderStack.head else {
+            builderStack.head.copy(parse = Some(new ParseAttempt("", 0, 0, (0,0), (0,0), Some(()))),
+                                   children = builderStack.tail.init)
+        }
+
         if (firstBreakpoint) {
             debugTree.resetNewlyGeneratedFlags()
             firstBreakpoint = false
         }
 
-        view match {
+        val newRefs: Option[Seq[CodedRef]] = view match {
             case view: DebugView.Pauseable => {
                 if (breakpointSkips > 0) { // Skip to next breakpoint
                     breakpointSkips -= 1
+                    None
                 } else if (breakpointSkips != -1) { // Breakpoint exit
                     view match {
                         case view: DebugView.Manageable => {
@@ -115,25 +120,25 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
                             // Wait for RemoteView to return breakpoint skips and updated state
                             val (newSkips, newRefs): (Int, Seq[CodedRef]) = view.renderManage(fullInput, debugTree, codedRefs.get*)
                             
-                            debugTree.resetNewlyGeneratedFlags()
-                            
                             // Update breakpoint skips
                             breakpointSkips = newSkips
-                            return Some(newRefs)
+                            Some(newRefs)
                         }
 
                         // Update breakpoint using Pausable render call
-                        case _ => breakpointSkips = view.renderWait(fullInput, debugTree)
+                        case _ => {
+                            breakpointSkips = view.renderWait(fullInput, debugTree)
+                            None
+                        }
                     }
-                    
-                }
+                } else None
             }
             
-            case _ =>
+            case _ => None
         }
 
         debugTree.resetNewlyGeneratedFlags()
-        None
+        newRefs
     }
 
     // Push a new parser onto the parser callstack.
