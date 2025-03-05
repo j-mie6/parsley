@@ -59,12 +59,27 @@ class RemoteBreakSpec extends ParsleyTest {
       * 
       */
       
-    // TODO
-    // it should "break before input is consumed on EntryBreak" in {
-    //     val p: Parsley[_] = string("scala").break(EntryBreak)
-    //     val mock = new MockedPauseableView2(Iterator())
-    //     p.attach(mock).parse("scala")
-    // }
+    it should "break before input is consumed on EntryBreak" in {
+        val p: Parsley[_] = "cat " ~> string("gifs").break(EntryBreak)
+        val mock = new DebugView.Reusable with DebugView.Pauseable {
+            private[debug] def render(input: => String, tree: => parsley.debug.DebugTree): Unit = ()
+            private[debug] def renderWait(@unused input: => String, tree: => parsley.debug.DebugTree): Int = {
+                val breakAttempt: ParseAttempt = tree.parseResults.getOrElse(Assertions.fail("RemoteBreak has no ParseAttempt"))
+                Assertions.assert(breakAttempt.success, "RemoteBreak not marked as successful")
+
+                tree.nodeChildren match {
+                    case child :: Nil => {
+                        val childAttempt = child.parseResults.getOrElse(throw new Exception("Internal error: Test is incorrect or Parsley is broken"))
+                        Assertions.assertResult(childAttempt.rawInput)("cat ")
+                        0
+                    }
+                    case children => Assertions.fail(f"RemoteBreak does not have one child (${children.map(_.internalName)})")
+                }
+            }
+
+        }
+        val _ = p.attach(mock).parse("cat gifs")
+    }
 
     it should "break after input is consumed on ExitBreak" in {
         val p: Parsley[_] = string("scala").break(ExitBreak)
@@ -80,7 +95,7 @@ class RemoteBreakSpec extends ParsleyTest {
                         Assertions.assertResult(childAttempt.rawInput)("scala")
                         0
                     }
-                    case _ => Assertions.fail("RemoteBreak has more than one child")
+                    case children => Assertions.fail(f"RemoteBreak does not have one child (${children.map(_.internalName)})")
                 }
             }
 
