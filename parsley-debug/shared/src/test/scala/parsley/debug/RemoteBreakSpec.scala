@@ -14,6 +14,8 @@ import parsley.state.*
 import parsley.debug.*
 import parsley.debug.RefCodec.CodedRef
 import parsley.debug.combinator.DebuggerOps
+import parsley.token.*
+import parsley.token.descriptions.LexicalDesc
 import parsley.ParsleyTest
 
 import org.scalatest.Assertions
@@ -180,19 +182,24 @@ class RemoteBreakSpec extends ParsleyTest {
     }
 
     // Parsers for standard expressions
+    val lexer = new Lexer(LexicalDesc.plain)
     val trueParser = "true" as true
     val falseParser = "false" as false
     val boolParser = choice(trueParser, falseParser)
     val shortParser = digit.foldLeft1[Short](0)((n, d) => (n * 10 + d.asDigit).toShort)
     val intParser = digit.foldLeft1[Int](0)((n, d) => n * 10 + d.asDigit)
     val longParser = digit.foldLeft1[Long](0)((n, d) => n * 10 + d.asDigit)
+    val floatParser = lexer.lexeme.real.exactFloat
+    val doubleParser = lexer.lexeme.real.exactDouble
 
     // Making numerical parsers given a reference
     def myNumeric[A](x: A) = parsley.character.string(x.toString) as x
     val myShort = myNumeric[Short] _
     val myInt = myNumeric[Int] _
     val myLong = myNumeric[Long] _
-    val myBool = { b: Boolean => ifS(pure(b), trueParser, falseParser) }
+    val myFloat = myNumeric[Float] _
+    val myDouble = myNumeric[Double] _
+    val myBool = { (b: Boolean) => if (b) trueParser else falseParser }
 
     // it should "preserve references that aren't passed to break" in {
     //     val p = leftTagLetters.fillRef { name => char(' ').break(ExitBreak). <~ ("</" ~> refString(name) <~ ">") }
@@ -225,6 +232,14 @@ class RemoteBreakSpec extends ParsleyTest {
 
     it should "modify Ref[Long]" in {
         testExpectingRefs(Seq("2147483648"))(longParser, LongCodec, myLong)("<2147483647> </2147483648>", true)
+    }
+
+    it should "modify Ref[Float]" in {
+        testExpectingRefs(Seq("0.03125"))(floatParser, FloatCodec, myFloat)("<0.0> </0.03125>", true)
+    }
+
+    it should "modify Ref[Double]" in {
+        testExpectingRefs(Seq("0.00390625"))(doubleParser, DoubleCodec, myDouble)("<0.0> </0.00390625>", true)
     }
 
 
