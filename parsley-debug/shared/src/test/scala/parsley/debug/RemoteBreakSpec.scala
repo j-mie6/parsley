@@ -262,4 +262,29 @@ class RemoteBreakSpec extends ParsleyTest {
         val mock = new MockedManageableView(Iterator(Seq("hey"), Seq("bye"), Seq("hi")))
         runManageableTest(p, mock, "<hello>hey</hi>", true)
     }
+
+    it should "modify multiple references at the same time of different types" in {
+        val openTag = (atomic('<' <~ notFollowedBy('/')))
+
+        val aTagLeft = openTag ~> "a" <~ '>'
+        val bTagLeft = openTag ~> 'b' <~ '>'
+
+        val p = aTagLeft.fillRef { r1 => 
+            object Ref1Codec extends RefCodec {
+                type A = String
+                val ref: Ref[A] = r1
+                val codec: Codec[A] = StringCodec
+            }
+            bTagLeft.fillRef { r2 => 
+                object Ref2Codec extends RefCodec {
+                    type A = Char
+                    val ref: Ref[A] = r2
+                    val codec: Codec[A] = CharCodec
+                }
+                char(' ').break(ExitBreak, Ref1Codec, Ref2Codec) ~> ("</" ~> r2.get.flatMap(char) <~ '>')
+            } <~> "</" ~> r1.get.flatMap(string) <~ '>'
+        }
+        val mock = new MockedManageableView(Iterator(Seq("A", "B")))
+        runManageableTest(p, mock, "<a><b> </B></A>", true)
+    }
 }
