@@ -167,8 +167,8 @@ class RemoteBreakSpec extends ParsleyTest {
             object TestRefCodec extends RefCodec {
                 type A = B
 
-                val ref: Ref[B] = r
-                val codec: Codec[B] = refCodec
+                val ref: Ref[A] = r
+                val codec: Codec[A] = refCodec
             }
             char(' ').break(ExitBreak, TestRefCodec) <~ (string("</") ~> r.get.flatMap(mkParser) <~ ">")
         }}
@@ -248,9 +248,18 @@ class RemoteBreakSpec extends ParsleyTest {
         testExpectingRefs(Seq("0.00390625"))(doubleParser, DoubleCodec, myDouble)("<0.0> </0.00390625>", true)
     }
 
+    it should "modify the same reference many times" in {
+        val leftTag = (atomic('<' <~ notFollowedBy('/'))) ~> "hello"
+        val p = leftTag.fillRef { r => 
+            object TestRefCodec extends RefCodec {
+                type A = String
 
-
-    // it should "modify references many times" in {
-    //     testExpectingRefs(Seq("bye"), Seq("hi"))(stringOfSome(letter), StringCodec, string)("<hello> </hi>", true)
-    // }
+                val ref: Ref[A] = r
+                val codec: Codec[A] = StringCodec
+            }
+            (char('>').break(ExitBreak, TestRefCodec) ~> r.get.flatMap(string).break(ExitBreak, TestRefCodec)) <~ (string("</").break(ExitBreak, TestRefCodec) ~> r.get.flatMap(string) <~ ">")
+        }
+        val mock = new MockedManageableView(Iterator(Seq("hey"), Seq("bye"), Seq("hi")))
+        runManageableTest(p, mock, "<hello>hey</hi>", true)
+    }
 }
