@@ -65,7 +65,7 @@ object DebugView {
       * @see [[DebugView]]
       */
     trait Manageable extends DebugView with Pauseable {
-        private [debug] def renderManage(input: => String, tree: => DebugTree, state: CodedRef*): (Int, Seq[CodedRef])
+        private [debug] def renderManage(input: => String, tree: => DebugTree, refs: CodedRef*): (Int, Seq[CodedRef])
     }
 
     /** Signifies that the debug view inheriting from this can only be run once.
