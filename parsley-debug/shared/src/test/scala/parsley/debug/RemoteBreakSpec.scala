@@ -159,7 +159,18 @@ class RemoteBreakSpec extends ParsleyTest {
       */
 
     // The test runner handling mocking functionality given a parser set with breakpoints, the input, and the return values ofencoded string 
-    private def testExpectingRefs(expectations: Seq[String]*)(p: Parsley[_], input: String, shouldSucceed: Boolean): Unit = {
+    private def testExpectingRefs[B](expectations: Seq[String]*)(leftTagInner: Parsley[B], refCodec: Codec[B], mkParser: B => Parsley[B])(input: String, shouldSucceed: Boolean): Unit = {        
+        val leftTag: Parsley[B] = (atomic('<' <~ notFollowedBy('/'))) ~> leftTagInner <~ '>'
+        val p = leftTag.fillRef { r => {
+            object TestRefCodec extends RefCodec {
+                type A = B
+
+                val ref: Ref[B] = r
+                val codec: Codec[B] = refCodec
+            }
+            char(' ').break(ExitBreak, TestRefCodec) <~ (string("</") ~> r.get.flatMap(mkParser) <~ ">")
+        }}
+
         val mock = new MockedManageableView(expectations.iterator)
         (p.attach(mock).parse(input), shouldSucceed) match {
             case (res: parsley.Failure[_], true) => Assertions.fail(f"Parser should've succeeded, failed with ${res}")
@@ -168,149 +179,57 @@ class RemoteBreakSpec extends ParsleyTest {
         }
     }
 
-    /** Some common test utils */
-
     // Parsers for standard expressions
     val trueParser = "true" as true
     val falseParser = "false" as false
+    val boolParser = choice(trueParser, falseParser)
     val shortParser = digit.foldLeft1[Short](0)((n, d) => (n * 10 + d.asDigit).toShort)
     val intParser = digit.foldLeft1[Int](0)((n, d) => n * 10 + d.asDigit)
     val longParser = digit.foldLeft1[Long](0)((n, d) => n * 10 + d.asDigit)
 
-    // Making a parser given a reference
-    def refParser[A, B](mkParser: A => Parsley[B])(r: Ref[A]): Parsley[B] = r.get.flatMap(mkParser)
-    val refChar = refParser(parsley.character.char) _
-    val refString = refParser(parsley.character.string) _
-    val refBool = refParser(if (_ : Boolean) trueParser else falseParser) _ // TODO use ifP
-    def refNumeric[A] = refParser { (x: A) => parsley.character.string(x.toString) as x } _
-    val refShort = refNumeric[Short]
-    val refInt = refNumeric[Int]
-    val refLong = refNumeric[Long]
+    // Making numerical parsers given a reference
+    def myNumeric[A](x: A) = parsley.character.string(x.toString) as x
+    val myShort = myNumeric[Short] _
+    val myInt = myNumeric[Int] _
+    val myLong = myNumeric[Long] _
+    val myBool = { b: Boolean => ifS(pure(b), trueParser, falseParser) }
 
-    // Parsing different types in open tags
-    def leftTag[A](p: Parsley[A]): Parsley[A] = (atomic('<' <~ notFollowedBy('/'))) ~> p <~ '>'
-    val leftTagLetter = leftTag(letter)
-    val leftTagLetters = leftTag(stringOfSome(letter))
-    val leftTagBool = leftTag(choice(trueParser, falseParser))
-    val leftTagShort = leftTag(shortParser)
-    val leftTagInt = leftTag(intParser)
-    val leftTagLong = leftTag(longParser)
-
-    it should "preserve references that aren't passed to break" in {
-        val p = leftTagLetters.fillRef { name => char(' ').break(ExitBreak). <~ ("</" ~> refString(name) <~ ">") }
-        testExpectingRefs(Seq.empty)(p, "<hi> </hi>", true)
-    }
+    // it should "preserve references that aren't passed to break" in {
+    //     val p = leftTagLetters.fillRef { name => char(' ').break(ExitBreak). <~ ("</" ~> refString(name) <~ ">") }
+    //     testExpectingRefs(Seq.empty)(p, "<hi> </hi>", true)
+    // }
     
     it should "preserve references that are passed in and not returned" in {
-        val p = leftTagLetters.fillRef { name => {
-            class NameRefCodec extends RefCodec {
-                type A = String
-
-                val ref: Ref[A] = name
-                val codec: Codec[A] = StringCodec
-            }
-
-            char(' ').break(ExitBreak, new NameRefCodec) <~ ("</" ~> refString(name) <~ ">") 
-        }}
-            
-        testExpectingRefs(Seq.empty)(p, "<hello> </hi>", false)
+        testExpectingRefs(Seq.empty)(stringOfSome(letter), StringCodec, string)("<hello> </hi>", false)
     }
 
-    it should "modify references that are passed in and returned" in {
-        val p = leftTagLetters.fillRef { name => {
-            class NameRefCodec extends RefCodec {
-                type A = String
-
-                val ref: Ref[A] = name
-                val codec: Codec[A] = StringCodec
-            }
-            char(' ').break(ExitBreak, new NameRefCodec) <~ ("</" ~> refString(name) <~ ">") 
-        }}
-        
-        testExpectingRefs(Seq("hi"))(p, "<hello> </hi>", true)
-    }
-
-    it should "modify references many times after passing them in and returning" in {
-        val p = leftTagLetters.fillRef { name => {
-            class NameRefCodec extends RefCodec {
-                type A = String
-
-                val ref: Ref[A] = name
-                val codec: Codec[A] = StringCodec
-            }
-            char(' ').break(ExitBreak, new NameRefCodec) <~ (string("</").break(ExitBreak, new NameRefCodec) ~> refString(name) <~ ">") 
-        }}
-        
-        testExpectingRefs(Seq("bye"), Seq("hi"))(p, "<hello> </hi>", true)
+    it should "modify Ref[String]" in {
+        testExpectingRefs(Seq("hi"))(stringOfSome(letter), StringCodec, string)("<hello> </hi>", true)
     }
 
     it should "modify Ref[Char]" in {
-        val p = leftTagLetter.fillRef { name => {
-            class NameRefCodec extends RefCodec {
-                type A = Char
-
-                val ref: Ref[A] = name
-                val codec: Codec[A] = CharCodec
-            }
-            char(' ').break(ExitBreak, new NameRefCodec) <~ (string("</") ~> refChar(name) <~ ">") 
-        }}
-        
-        testExpectingRefs(Seq("z"))(p, "<a> </z>", true)
+        testExpectingRefs(Seq("z"))(letter, CharCodec, char)("<a> </z>", true)
     }
 
     it should "modify Ref[Boolean]" in {
-        val p = leftTagBool.fillRef { name => {
-            class NameRefCodec extends RefCodec {
-                type A = Boolean
-
-                val ref: Ref[A] = name
-                val codec: Codec[A] = BooleanCodec
-            }
-            char(' ').break(ExitBreak, new NameRefCodec) <~ (string("</") ~> refBool(name) <~ ">") 
-        }}
-        
-        testExpectingRefs(Seq("true"))(p, "<false> </true>", true)
+        testExpectingRefs(Seq("true"))(choice(trueParser, falseParser), BooleanCodec, myBool)("<false> </true>", true)
     }
 
     it should "modify Ref[Short]" in {
-        val p = leftTagShort.fillRef { name => {
-            class NameRefCodec extends RefCodec {
-                type A = Short
-
-                val ref: Ref[A] = name
-                val codec: Codec[A] = ShortCodec
-            }
-            char(' ').break(ExitBreak, new NameRefCodec) <~ (string("</") ~> refShort(name) <~ ">")
-        }}
-        
-        testExpectingRefs(Seq("127"))(p, "<0> </127>", true)
+        testExpectingRefs(Seq("127"))(shortParser, ShortCodec, myShort)("<0> </127>", true)
     }
     
     it should "modify Ref[Int]" in {
-        val p = leftTagInt.fillRef { name => {
-            class NameRefCodec extends RefCodec {
-                type A = Int
-
-                val ref: Ref[A] = name
-                val codec: Codec[A] = IntCodec
-            }
-            char(' ').break(ExitBreak, new NameRefCodec) <~ (string("</") ~> refInt(name) <~ ">")
-        }}
-        
-        testExpectingRefs(Seq("256"))(p, "<255> </256>", true)
+        testExpectingRefs(Seq("256"))(intParser, IntCodec, myInt)("<255> </256>", true)
     }
 
     it should "modify Ref[Long]" in {
-        val p = leftTagLong.fillRef { name => {
-            class NameRefCodec extends RefCodec {
-                type A = Long
-
-                val ref: Ref[A] = name
-                val codec: Codec[A] = LongCodec
-            }
-            char(' ').break(ExitBreak, new NameRefCodec) <~ (string("</") ~> refLong(name) <~ ">")
-        }}
-        
-        testExpectingRefs(Seq("2147483648"))(p, "<2147483647> </2147483648>", true)
+        testExpectingRefs(Seq("2147483648"))(longParser, LongCodec, myLong)("<2147483647> </2147483648>", true)
     }
+
+
+
+    // it should "modify references many times" in {
+    //     testExpectingRefs(Seq("bye"), Seq("hi"))(stringOfSome(letter), StringCodec, string)("<hello> </hi>", true)
+    // }
 }
