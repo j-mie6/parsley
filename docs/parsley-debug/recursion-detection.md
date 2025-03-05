@@ -34,7 +34,7 @@ object parsers {
 }
 ```
 ```scala mdoc:invisible
-parsley.debug.util.Collector.registerNames(Map(parsers.p -> "p", parsers.q -> "q", parsers.r -> "r"))
+parsley.debug.util.Collector.registerNames(Map(parsers.p -> "p", parsers.q -> "q", parsers.r -> "r"), None)
 ```
 
 While `parsers.top.parse("a")` would work fine, consider what happens if we pass the empty string:
@@ -97,7 +97,7 @@ object stateful {
 }
 ```
 ```scala mdoc:invisible
-parsley.debug.util.Collector.registerNames(Map(stateful.p -> "p", stateful.q -> "q", stateful.top -> "top"))
+parsley.debug.util.Collector.registerNames(Map(stateful.p -> "p", stateful.q -> "q", stateful.top -> "top"), None)
 ```
 
 This parser is a contrived example, admittedly, but illustrates what `detectDivergence` is capable of.
@@ -134,7 +134,7 @@ object nameless {
 }
 ```
 ```scala mdoc:invisible
-parsley.debug.util.Collector.registerNames(Map(nameless.top -> "top"))
+parsley.debug.util.Collector.registerNames(Map(nameless.top -> "top"), None)
 ```
 
 While we might expect this to work out much like the `stateful` example above, in reality we see
