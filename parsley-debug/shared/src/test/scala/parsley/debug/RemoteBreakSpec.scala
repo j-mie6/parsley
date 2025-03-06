@@ -204,6 +204,7 @@ class RemoteBreakSpec extends ParsleyTest {
     val trueParser = "true" as true
     val falseParser = "false" as false
     val boolParser = choice(trueParser, falseParser)
+    val byteParser = digit.foldLeft1[Byte](0)((n, d) => (n * 10 + d.asDigit).toByte)
     val shortParser = digit.foldLeft1[Short](0)((n, d) => (n * 10 + d.asDigit).toShort)
     val intParser = digit.foldLeft1[Int](0)((n, d) => n * 10 + d.asDigit)
     val longParser = digit.foldLeft1[Long](0)((n, d) => n * 10 + d.asDigit)
@@ -212,6 +213,7 @@ class RemoteBreakSpec extends ParsleyTest {
 
     // Making numerical parsers given a reference
     def myNumeric[A](x: A) = parsley.character.string(x.toString) as x
+    val myByte = myNumeric[Byte] _
     val myShort = myNumeric[Short] _
     val myInt = myNumeric[Int] _
     val myLong = myNumeric[Long] _
@@ -240,6 +242,10 @@ class RemoteBreakSpec extends ParsleyTest {
 
     it should "modify Ref[Boolean]" in {
         testExpectingRefs(Seq("true"))(choice(trueParser, falseParser), BooleanCodec, myBool)("<false> </true>", true)
+    }
+
+    it should "modify Ref[Byte]" in {
+        testExpectingRefs(Seq("1"))(byteParser, ByteCodec, myByte)("<0> </1>", true)
     }
 
     it should "modify Ref[Short]" in {
