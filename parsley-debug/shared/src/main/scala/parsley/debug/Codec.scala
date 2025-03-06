@@ -38,67 +38,61 @@ trait Codec[A] {
     /** Attempt to decode a string into type `A`
       *
       * @param s the string to decode
-      * @return a `Try[A]` containing the decoded value if successful
+      * @return a `Option[A]` containing the decoded value if successful
       */
-    def decode(s: String): Try[A]
+    def decode(s: String): Option[A]
 }
 
 object BooleanCodec extends Codec[Boolean] {
     def encode(b: Boolean): String = b.toString
 
-    def decode(s: String): Try[Boolean] = Try(s.toBoolean)
+    def decode(s: String): Option[Boolean] = Try(s.toBoolean).toOption
 }
 
 object ByteCodec extends Codec[Byte] {
     def encode(x: Byte): String = x.toString
 
-    def decode(s: String): Try[Byte] = Try(s.toByte)
+    def decode(s: String): Option[Byte] = Try(s.toByte).toOption
 }
 
 object ShortCodec extends Codec[Short] {
     def encode(x: Short): String = x.toString
 
-    def decode(s: String): Try[Short] = Try(s.toShort)
+    def decode(s: String): Option[Short] = Try(s.toShort).toOption
 }
 
 object IntCodec extends Codec[Int] {
     def encode(x: Int): String = x.toString
 
-    def decode(s: String): Try[Int] = Try(s.toInt)
+    def decode(s: String): Option[Int] = Try(s.toInt).toOption
 }
 
 object LongCodec extends Codec[Long] {
     def encode(x: Long): String = x.toString
 
-    def decode(s: String): Try[Long] = Try(s.toLong)
+    def decode(s: String): Option[Long] = Try(s.toLong).toOption
 }
 
 object FloatCodec extends Codec[Float] {
     def encode(x: Float): String = x.toString
 
-    def decode(s: String): Try[Float] = Try(s.toFloat)
+    def decode(s: String): Option[Float] = Try(s.toFloat).toOption
 }
 
 object DoubleCodec extends Codec[Double] {
     def encode(x: Double): String = x.toString
 
-    def decode(s: String): Try[Double] = Try(s.toDouble)
+    def decode(s: String): Option[Double] = Try(s.toDouble).toOption
 }
 
 object CharCodec extends Codec[Char] {
     def encode(c: Char): String = c.toString
 
-    def decode(s: String): Try[Char] = Try {
-        if (s.length != 1) {
-            throw new Exception("String must contain a single character")
-        }
-        
-        s.charAt(0)
-    }
+    def decode(s: String): Option[Char] = if (s.length() == 1) Some(s.charAt(0)) else None
 }
 
 object StringCodec extends Codec[String] {
     def encode(s: String): String = s
 
-    def decode(s: String): Try[String] = Try(s)
+    def decode(s: String): Option[String] = Some(s)
 }
