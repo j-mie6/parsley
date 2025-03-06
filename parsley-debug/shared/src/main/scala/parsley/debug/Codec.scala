@@ -44,7 +44,7 @@ trait Codec[A] {
 }
 
 object Codec {
-    implicit val boolCodec: Codec[Boolean] = new Codec[Boolean] {
+    implicit val booleanCodec: Codec[Boolean] = new Codec[Boolean] {
         def encode(b: Boolean): String = b.toString
 
         def decode(s: String): Option[Boolean] = Try(s.toBoolean).toOption
