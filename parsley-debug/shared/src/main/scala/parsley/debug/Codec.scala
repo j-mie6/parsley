@@ -43,56 +43,58 @@ trait Codec[A] {
     def decode(s: String): Option[A]
 }
 
-object BooleanCodec extends Codec[Boolean] {
-    def encode(b: Boolean): String = b.toString
+object Codec {
+    implicit val boolCodec = new Codec[Boolean] {
+        def encode(b: Boolean): String = b.toString
 
-    def decode(s: String): Option[Boolean] = Try(s.toBoolean).toOption
-}
+        def decode(s: String): Option[Boolean] = Try(s.toBoolean).toOption
+    }   
 
-object ByteCodec extends Codec[Byte] {
-    def encode(x: Byte): String = x.toString
+    implicit val byteCodec: Codec[Byte] = new Codec[Byte] {
+        def encode(x: Byte): String = x.toString
 
-    def decode(s: String): Option[Byte] = Try(s.toByte).toOption
-}
+        def decode(s: String): Option[Byte] = Try(s.toByte).toOption
+    }
 
-object ShortCodec extends Codec[Short] {
-    def encode(x: Short): String = x.toString
+    implicit val shortCodec = new Codec[Short] {
+        def encode(x: Short): String = x.toString
 
-    def decode(s: String): Option[Short] = Try(s.toShort).toOption
-}
+        def decode(s: String): Option[Short] = Try(s.toShort).toOption
+    }
 
-object IntCodec extends Codec[Int] {
-    def encode(x: Int): String = x.toString
+    implicit val intCodec = new Codec[Int] {
+        def encode(x: Int): String = x.toString
 
-    def decode(s: String): Option[Int] = Try(s.toInt).toOption
-}
+        def decode(s: String): Option[Int] = Try(s.toInt).toOption
+    }
 
-object LongCodec extends Codec[Long] {
-    def encode(x: Long): String = x.toString
+    implicit val longCodec = new Codec[Long] {
+        def encode(x: Long): String = x.toString
 
-    def decode(s: String): Option[Long] = Try(s.toLong).toOption
-}
+        def decode(s: String): Option[Long] = Try(s.toLong).toOption
+    }
 
-object FloatCodec extends Codec[Float] {
-    def encode(x: Float): String = x.toString
+    implicit val floatCodec = new Codec[Float] {
+        def encode(x: Float): String = x.toString
 
-    def decode(s: String): Option[Float] = Try(s.toFloat).toOption
-}
+        def decode(s: String): Option[Float] = Try(s.toFloat).toOption
+    }
 
-object DoubleCodec extends Codec[Double] {
-    def encode(x: Double): String = x.toString
+    implicit val doubleCodec = new Codec[Double] {
+        def encode(x: Double): String = x.toString
 
-    def decode(s: String): Option[Double] = Try(s.toDouble).toOption
-}
+        def decode(s: String): Option[Double] = Try(s.toDouble).toOption
+    }
 
-object CharCodec extends Codec[Char] {
-    def encode(c: Char): String = c.toString
+    implicit val charCodec = new Codec[Char] {
+        def encode(c: Char): String = c.toString
 
-    def decode(s: String): Option[Char] = if (s.length() == 1) Some(s.charAt(0)) else None
-}
+        def decode(s: String): Option[Char] = if (s.length() == 1) Some(s.charAt(0)) else None
+    }
 
-object StringCodec extends Codec[String] {
-    def encode(s: String): String = s
+    implicit val stringCodec = new Codec[String] {
+        def encode(s: String): String = s
 
-    def decode(s: String): Option[String] = Some(s)
+        def decode(s: String): Option[String] = Some(s)
+    }
 }
