@@ -46,7 +46,7 @@ object Collector {
       * @param parserInfo Parser info collected from the annotation.
       */
     def registerNames(names: Map[Parsley[_], String], parserInfo: Option[(String, List[(Int, Int)])]): Unit = {
-        parserInfo.map(info => ParserInfoCollector.addInfo(ParserInfo(info._1, info._2)))
+        parserInfo.map { case (filename, positions) => ParserInfoCollector.addInfo(ParserInfo(filename, positions)) }
         Renamer.addNames(names.map { case (k, v) => k.internal -> v })
     }
 
