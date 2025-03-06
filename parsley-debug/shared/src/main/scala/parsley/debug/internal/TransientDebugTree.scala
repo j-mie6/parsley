@@ -84,7 +84,7 @@ private [parsley] class TransientDebugTree(var name: String = "", var internal: 
                                  parse: Option[ParseAttempt] = parse, cNumber: Option[Long] = cNumber,
                                  children: mutable.ListBuffer[TransientDebugTree] = children,
                                  iterative: Boolean = iterative, newlyGenerated: Boolean = newlyGenerated): TransientDebugTree
-        = new TransientDebugTree(name, internal, fullInput, parse, cNumber, children, iterative)
+        = new TransientDebugTree(name, internal, fullInput, parse, cNumber, children, iterative, isNewlyGenerated)
         
     // Strips all `remoteBreak` nodes from the tree
     private [debug] def withoutBreakpoints(): TransientDebugTree = {

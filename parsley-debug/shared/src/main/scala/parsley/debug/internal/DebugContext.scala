@@ -98,16 +98,17 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
       * @param refs         References managed by this breakpoint.
       */
     def triggerBreak(fullInput: String, isAfter: Boolean, codedRefs: Option[Seq[CodedRef]]): Option[Seq[CodedRef]] = {
+        if (firstBreakpoint) {
+            builderStack.head.resetNewlyGeneratedFlags()
+            firstBreakpoint = false
+        }
+
         val debugTree: TransientDebugTree = (if (isAfter) builderStack.head else {
              // FIXME: Instead of `init`, this should take(n) where n is the number of children the next node would have.
              // This can only be known after the next parser runs, and needs to be passed in after saving/restoring the builderStack
             builderStack.head.copy(children = builderStack.tail.init)
         }).copy(parse = Some(new ParseAttempt("", 0, 0, (0,0), (0,0), Some(()))))
 
-        if (firstBreakpoint) {
-            debugTree.resetNewlyGeneratedFlags()
-            firstBreakpoint = false
-        }
 
         val newRefs: Option[Seq[CodedRef]] = view match {
             case view: DebugView.Pauseable => {
