@@ -44,7 +44,7 @@ trait Codec[A] {
 }
 
 object Codec {
-    implicit val boolCodec = new Codec[Boolean] {
+    implicit val boolCodec: Codec[Boolean] = new Codec[Boolean] {
         def encode(b: Boolean): String = b.toString
 
         def decode(s: String): Option[Boolean] = Try(s.toBoolean).toOption
@@ -56,43 +56,43 @@ object Codec {
         def decode(s: String): Option[Byte] = Try(s.toByte).toOption
     }
 
-    implicit val shortCodec = new Codec[Short] {
+    implicit val shortCodec: Codec[Short] = new Codec[Short] {
         def encode(x: Short): String = x.toString
 
         def decode(s: String): Option[Short] = Try(s.toShort).toOption
     }
 
-    implicit val intCodec = new Codec[Int] {
+    implicit val intCodec: Codec[Int] = new Codec[Int] {
         def encode(x: Int): String = x.toString
 
         def decode(s: String): Option[Int] = Try(s.toInt).toOption
     }
 
-    implicit val longCodec = new Codec[Long] {
+    implicit val longCodec: Codec[Long] = new Codec[Long] {
         def encode(x: Long): String = x.toString
 
         def decode(s: String): Option[Long] = Try(s.toLong).toOption
     }
 
-    implicit val floatCodec = new Codec[Float] {
+    implicit val floatCodec: Codec[Float] = new Codec[Float] {
         def encode(x: Float): String = x.toString
 
         def decode(s: String): Option[Float] = Try(s.toFloat).toOption
     }
 
-    implicit val doubleCodec = new Codec[Double] {
+    implicit val doubleCodec: Codec[Double] = new Codec[Double] {
         def encode(x: Double): String = x.toString
 
         def decode(s: String): Option[Double] = Try(s.toDouble).toOption
     }
 
-    implicit val charCodec = new Codec[Char] {
+    implicit val charCodec: Codec[Char] = new Codec[Char] {
         def encode(c: Char): String = c.toString
 
         def decode(s: String): Option[Char] = if (s.length() == 1) Some(s.charAt(0)) else None
     }
 
-    implicit val stringCodec = new Codec[String] {
+    implicit val stringCodec: Codec[String]  = new Codec[String] {
         def encode(s: String): String = s
 
         def decode(s: String): Option[String] = Some(s)
