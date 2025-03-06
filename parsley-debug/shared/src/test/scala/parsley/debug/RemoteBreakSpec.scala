@@ -12,6 +12,7 @@ import parsley.character.*
 import parsley.syntax.character.{charLift, stringLift}
 import parsley.state.*
 import parsley.debug.*
+import parsley.debug.Codec.*
 import parsley.debug.RefCodec.CodedRef
 import parsley.debug.combinator.DebuggerOps
 import parsley.token.*
@@ -229,43 +230,43 @@ class RemoteBreakSpec extends ParsleyTest {
     }
     
     it should "preserve references that are passed in and not returned" in {
-        testExpectingRefs(Seq.empty)(stringOfSome(letter), StringCodec, string)("<hello> </hi>", false)
+        testExpectingRefs(Seq.empty)(stringOfSome(letter), stringCodec, string)("<hello> </hi>", false)
     }
 
     it should "modify Ref[String]" in {
-        testExpectingRefs(Seq("hi"))(stringOfSome(letter), StringCodec, string)("<hello> </hi>", true)
+        testExpectingRefs(Seq("hi"))(stringOfSome(letter), stringCodec, string)("<hello> </hi>", true)
     }
 
     it should "modify Ref[Char]" in {
-        testExpectingRefs(Seq("z"))(letter, CharCodec, char)("<a> </z>", true)
+        testExpectingRefs(Seq("z"))(letter, charCodec, char)("<a> </z>", true)
     }
 
     it should "modify Ref[Boolean]" in {
-        testExpectingRefs(Seq("true"))(choice(trueParser, falseParser), BooleanCodec, myBool)("<false> </true>", true)
+        testExpectingRefs(Seq("true"))(choice(trueParser, falseParser), booleanCodec, myBool)("<false> </true>", true)
     }
 
     it should "modify Ref[Byte]" in {
-        testExpectingRefs(Seq("1"))(byteParser, ByteCodec, myByte)("<0> </1>", true)
+        testExpectingRefs(Seq("1"))(byteParser, byteCodec, myByte)("<0> </1>", true)
     }
 
     it should "modify Ref[Short]" in {
-        testExpectingRefs(Seq("127"))(shortParser, ShortCodec, myShort)("<0> </127>", true)
+        testExpectingRefs(Seq("127"))(shortParser, shortCodec, myShort)("<0> </127>", true)
     }
     
     it should "modify Ref[Int]" in {
-        testExpectingRefs(Seq("256"))(intParser, IntCodec, myInt)("<255> </256>", true)
+        testExpectingRefs(Seq("256"))(intParser, intCodec, myInt)("<255> </256>", true)
     }
 
     it should "modify Ref[Long]" in {
-        testExpectingRefs(Seq("2147483648"))(longParser, LongCodec, myLong)("<2147483647> </2147483648>", true)
+        testExpectingRefs(Seq("2147483648"))(longParser, longCodec, myLong)("<2147483647> </2147483648>", true)
     }
 
     it should "modify Ref[Float]" in {
-        testExpectingRefs(Seq("0.03125"))(floatParser, FloatCodec, myFloat)("<0.0> </0.03125>", true)
+        testExpectingRefs(Seq("0.03125"))(floatParser, floatCodec, myFloat)("<0.0> </0.03125>", true)
     }
 
     it should "modify Ref[Double]" in {
-        testExpectingRefs(Seq("0.00390625"))(doubleParser, DoubleCodec, myDouble)("<0.0> </0.00390625>", true)
+        testExpectingRefs(Seq("0.00390625"))(doubleParser, doubleCodec, myDouble)("<0.0> </0.00390625>", true)
     }
 
     it should "modify the same reference many times" in {
@@ -275,7 +276,7 @@ class RemoteBreakSpec extends ParsleyTest {
                 type A = String
 
                 val ref: Ref[A] = r
-                val codec: Codec[A] = StringCodec
+                val codec: Codec[A] = stringCodec
             }
             (char('>').break(ExitBreak, TestRefCodec) ~> r.get.flatMap(string).break(ExitBreak, TestRefCodec)) <~ (string("</").break(ExitBreak, TestRefCodec) ~> r.get.flatMap(string) <~ ">")
         }
@@ -293,13 +294,13 @@ class RemoteBreakSpec extends ParsleyTest {
             object Ref1Codec extends RefCodec {
                 type A = String
                 val ref: Ref[A] = r1
-                val codec: Codec[A] = StringCodec
+                val codec: Codec[A] = stringCodec
             }
             bTagLeft.fillRef { r2 => 
                 object Ref2Codec extends RefCodec {
                     type A = Char
                     val ref: Ref[A] = r2
-                    val codec: Codec[A] = CharCodec
+                    val codec: Codec[A] = charCodec
                 }
                 char(' ').break(ExitBreak, Ref1Codec, Ref2Codec) ~> ("</" ~> r2.get.flatMap(char) <~ '>')
             } <~> "</" ~> r1.get.flatMap(string) <~ '>'
@@ -315,7 +316,7 @@ class RemoteBreakSpec extends ParsleyTest {
                 type A = String
 
                 val ref: Ref[A] = r
-                val codec: Codec[A] = StringCodec
+                val codec: Codec[A] = stringCodec
             }
             (string("</") ~> r.get.flatMap(string).break(EntryBreak, TestRefCodec) <~ ">")}
         val mock = new MockedManageableView(Iterator(Seq("world")))
