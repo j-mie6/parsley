@@ -116,12 +116,9 @@ private [internal] class TriggerBreakpoint(dbgCtx: DebugContext, isAfter: Boolea
         ) else None
         
         // Trigger breakpoint and update refs (if manageable)
-        dbgCtx.triggerBreak(ctx.input, isAfter, codedRefs) match {
-            case None => 
-            case Some(codedRefs) => for ((refAddr, refVal) <- codedRefs) {
-                val codec = refs.find(_.ref.addr == refAddr).get.codec
-                codec.decode(refVal).map(ctx.writeReg(refAddr, _)) //FIXME: handle errors
-            }
+        for (newCodedRefs <- dbgCtx.triggerBreak(ctx.input, isAfter, codedRefs); (refAddr, refVal) <- newCodedRefs) {
+            val codec = refs.find(_.ref.addr == refAddr).get.codec
+            codec.decode(refVal).map(ctx.writeReg(refAddr, _)) //FIXME: handle errors
         }
 
         ctx.inc()
