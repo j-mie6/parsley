@@ -5,7 +5,8 @@
  */
 package parsley.internal.machine.instructions.debug
 
-import parsley.debug.ParseAttempt
+import parsley.debug.{ParseAttempt, RefCodec}
+import parsley.debug.RefCodec.CodedRef
 import parsley.debug.internal.{DebugContext, DivergenceContext}
 
 import parsley.internal.deepembedding.frontend.LazyParsley
@@ -100,5 +101,33 @@ private [internal] class DropSnapshot(dtx: DivergenceContext) extends Instr {
 
     // $COVERAGE-OFF$
     override def toString: String = "DropSnapshot"
+    // $COVERAGE-ON$
+}
+
+private [internal] class TriggerBreakpoint(dbgCtx: DebugContext, isAfter: Boolean, refs: RefCodec*) extends Instr {
+    
+    override def apply(ctx: Context): Unit = {
+        // Encode ref using associated Codec
+        def encode[A](refCodec: RefCodec) = refCodec.codec.encode(ctx.regs(refCodec.ref.addr).asInstanceOf[refCodec.A])
+        
+        // Encode all refs if view is manageable
+        val codedRefs: Option[Seq[CodedRef]] = if (dbgCtx.manageableView) (
+            Some(refs.map(refCodec => (refCodec.ref.addr, encode(refCodec))))
+        ) else None
+        
+        // Trigger breakpoint and update refs (if manageable)
+        // All errors here are silent
+        for {
+            newCodedRefs <- dbgCtx.triggerBreak(ctx.input, isAfter, codedRefs)
+            (refAddr, refVal) <- newCodedRefs
+            rc <- refs.find(_.ref.addr == refAddr)
+            decoded <- rc.codec.decode(refVal)
+        } ctx.writeReg(refAddr, decoded)
+        
+        ctx.inc()
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = "TriggerBreakpoint"
     // $COVERAGE-ON$
 }

@@ -22,7 +22,7 @@ import parsley.debug.{DebugTree, ParseAttempt}
 private [parsley] class TransientDebugTree(var name: String = "", var internal: String = "", val fullInput: String,
                                            var parse: Option[ParseAttempt] = None, var cNumber: Option[Long] = None,
                                            val children: mutable.ListBuffer[TransientDebugTree] = mutable.ListBuffer.empty,
-                                           var iterative: Boolean = false) extends DebugTree {
+                                           var iterative: Boolean = false, var newlyGenerated: Boolean = true) extends DebugTree {
     // These are user-facing, and will depend heavily on what the parser looks like.
     // $COVERAGE-OFF$
     override def parserName: String = name
@@ -43,6 +43,8 @@ private [parsley] class TransientDebugTree(var name: String = "", var internal: 
     // To cover both cases, we also check if it is iterative.
       
     override def isIterative: Boolean = iterative
+
+    override def isNewlyGenerated: Boolean = newlyGenerated
 
     // Factors out inputs or results for parsers with children.
     private type Augment  = (Long, (Int, Int))
@@ -75,5 +77,30 @@ private [parsley] class TransientDebugTree(var name: String = "", var internal: 
                 case ((aid, (ast, aen)), st) => s"${st.take(basis(ast))}{$aid}${st.drop(basis(aen))}"
             })
         }
+    }
+
+    // Make a copy with possibly different fields
+    private [debug] def copy(name: String = name, internal: String = internal, fullInput: String = fullInput,
+            parse: Option[ParseAttempt] = parse, cNumber: Option[Long] = cNumber,
+            children: mutable.ListBuffer[TransientDebugTree] = children,
+            iterative: Boolean = iterative, newlyGenerated: Boolean = newlyGenerated): TransientDebugTree
+        = new TransientDebugTree(name, internal, fullInput, parse, cNumber, children, iterative, isNewlyGenerated)
+        
+    // Strips all `remoteBreak` nodes from the tree
+    private [debug] def withoutBreakpoints(): TransientDebugTree = {
+        val childrenWithoutBreak = children.map(_.withoutBreakpoints())
+        if (internalName == "remoteBreak") {
+            childrenWithoutBreak.head // Debug nodes *should* only ever have one and only one child
+        } else new TransientDebugTree(name, internal, fullInput, parse, cNumber, childrenWithoutBreak, iterative)
+    }
+
+    private [debug] def resetNewlyGeneratedFlags(): Unit = {
+        newlyGenerated = false
+        children.foreach(_.resetNewlyGeneratedFlags())
+    }
+
+    private [debug] def withoutNewlyGeneratedFlags(): TransientDebugTree = {
+        resetNewlyGeneratedFlags()
+        this
     }
 }

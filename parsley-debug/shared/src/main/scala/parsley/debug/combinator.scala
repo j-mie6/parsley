@@ -266,13 +266,15 @@ object combinator {
       *
       * @param parser The parser to debug.
       * @param break Indicate whether to break on entry or exit to the parser.
+      * @param refs Stateful references to be updated.
       * @tparam A Output type of original parser.
       * @return A modified parser which will pause parsing and ask the view to render the produced
       *         debug tree after a call to [[Parsley.parse]] is made.
       */
-    def break[A](parser: Parsley[A], break: Breakpoint): Parsley[A] = new Parsley(new RemoteBreak(parser.internal, break))
 
-    /** Dot accessor versions of the combinators.  */
+    def break[A](parser: Parsley[A], break: Breakpoint, refs: RefCodec*): Parsley[A] = new Parsley(new RemoteBreak(parser.internal, break, refs*))
+
+    /** Dot accessor versions of the combinators. */
     implicit class DebuggerOps[A](par: Parsley[A]) {
         //def attachDebugger(toStringRules: PartialFunction[Any, Boolean]): DebuggedPair[A] = combinator.attachDebugger(par, toStringRules)
         //def attachReusable(toStringRules: PartialFunction[Any, Boolean]): () => DebuggedPair[A] = combinator.attachReusable(par, toStringRules)
@@ -286,7 +288,7 @@ object combinator {
         def attachReusable(view: =>DebugView.Reusable): () => Parsley[A] = combinator.attachReusable(par, view, DefaultStringRules)
         //def attach(implicit view: DebugFrontend): Parsley[A] = combinator.attach(par, defaultRules)
         def named(name: String): Parsley[A] = combinator.named(par, name)
-        def break(break: Breakpoint): Parsley[A] = combinator.break(par, break)
+        def break(break: Breakpoint, refs: RefCodec*): Parsley[A] = combinator.break(par, break, refs*)
     }
     // $COVERAGE-ON$
 

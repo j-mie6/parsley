@@ -10,13 +10,14 @@ import scala.collection.mutable
 import parsley.XAssert
 import parsley.debug.ParseAttempt
 import parsley.internal.deepembedding.frontend.LazyParsley
-import parsley.internal.deepembedding.frontend.debug.RemoteBreak
-import parsley.debug.*
+import parsley.debug.DebugView
+import parsley.debug.RefCodec.CodedRef
 
 // Class used to hold details about a parser being debugged.
 // This is normally held as a value inside an implicit variable.
 // Anything caught by the toStringRules will have a parse result of that type toString-ed for memory
 // efficiency.
+
 private [parsley] class DebugContext(private val toStringRules: PartialFunction[Any, Boolean], private val view: DebugView) {
     // Create a new dummy root of the tree that will act as filler for the rest of the tree to build
     // off of (as there is no "nil" representation for the tree... other than null, which should be
@@ -45,7 +46,7 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
         XAssert.assert(!(ch.size > 1), s"The root tree has somehow gained multiple children. (${ch.size})")
 
         // This should never fail.
-        ch.head
+        ch.head.withoutBreakpoints().withoutNewlyGeneratedFlags()
     }
 
     // Add an attempt of parsing at the current stack point.
@@ -83,47 +84,72 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
       */
     private var breakpointSkips: Int = 0
 
-    /** Handle a breakpoint.
+    /** True if associated DebugView extends the Manageable trait */
+    def manageableView: Boolean = view match {
+        case _: DebugView.Manageable => true 
+        case _ => false
+    } 
+
+    private var firstBreakpoint: Boolean = true
+
+    /** Trigger a breakpoint.
       *
-      * @param tree         The debug tree that has been created thus far.
       * @param fullInput    The full parser input.
-      * @param view         The DebugView instance. This must extend DebugView.Pauseable to work.
+      * @param refs         References managed by this breakpoint.
       */
-    private def handleBreak(tree: TransientDebugTree, fullInput: String): Unit = view match {
-        case view: DebugView.Pauseable => {
-            if (breakpointSkips > 0) {
-                breakpointSkips -= 1
-            } else {
-                breakpointSkips = view.renderWait(fullInput, tree)
-            }
+    def triggerBreak(fullInput: String, isAfter: Boolean, codedRefs: Option[Seq[CodedRef]]): Option[Seq[CodedRef]] = {
+        if (firstBreakpoint) {
+            builderStack.head.resetNewlyGeneratedFlags()
+            firstBreakpoint = false
         }
-        case _ => 
+
+        val debugTree: TransientDebugTree = (if (isAfter) builderStack.head else {
+             // FIXME: Instead of `init`, this should take(n) where n is the number of children the next node would have.
+             // This can only be known after the next parser runs, and needs to be passed in after saving/restoring the builderStack
+            builderStack.head.copy(children = builderStack.tail.init)
+        }).copy(parse = Some(new ParseAttempt("", 0, 0, (0,0), (0,0), Some(()))))
+
+
+        val newRefs: Option[Seq[CodedRef]] = view match {
+            case view: DebugView.Pauseable => {
+                if (breakpointSkips > 0) { // Skip to next breakpoint
+                    breakpointSkips -= 1
+                    None
+                } else if (breakpointSkips != -1) { // Breakpoint exit
+                    view match {
+                        case view: DebugView.Manageable => {
+                            
+                            // Wait for RemoteView to return breakpoint skips and updated state
+                            val (newSkips, newRefs): (Int, Seq[CodedRef]) = view.renderManage(fullInput, debugTree, codedRefs.get*)
+                            
+                            // Update breakpoint skips
+                            breakpointSkips = newSkips
+                            Some(newRefs)
+                        }
+
+                        // Update breakpoint using Pausable render call
+                        case _ => {
+                            breakpointSkips = view.renderWait(fullInput, debugTree)
+                            None
+                        }
+                    }
+                } else None
+            }
+            
+            case _ => None
+        }
+
+        debugTree.resetNewlyGeneratedFlags()
+        newRefs
     }
 
     // Push a new parser onto the parser callstack.
     def push(fullInput: String, parser: LazyParsley[_], isIterative: Boolean, userAssignedName: Option[String]): Unit = {
-        // Send the debug tree here if EntryBreak
-        parser match {
-            case break: RemoteBreak[_] => break.break match {
-                case EntryBreak | FullBreak => handleBreak(builderStack.head, fullInput)
-                case _ => 
-            }
-            case _ =>
-        }
 
         val newTree = new TransientDebugTree(fullInput = fullInput)
         newTree.name = Renamer.nameOf(userAssignedName, parser)
         newTree.internal = Renamer.internalName(parser)
         newTree.iterative = isIterative
-
-        // Send the debug tree here if ExitBreak
-        parser match {
-            case break: RemoteBreak[_] => break.break match {
-                case ExitBreak | FullBreak => handleBreak(newTree, fullInput)
-                case _ => 
-            }
-            case _ =>
-        }
 
         //val uid = nextUid()
         //builderStack.head.children(s"${newTree.name}-#$uid") = newTree

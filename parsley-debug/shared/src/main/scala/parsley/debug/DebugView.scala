@@ -5,6 +5,7 @@
  */
 package parsley.debug
 
+import parsley.debug.RefCodec.CodedRef
 import parsley.debug.internal.XIllegalStateException
 import org.typelevel.scalaccompat.annotation.unused
 
@@ -54,7 +55,17 @@ object DebugView {
         *           n == 0 to just step through this breakpoint.
         *           n >= 1 to step through the next n breakpoints.
         */
-      private [debug] def renderWait(input: => String, tree: => DebugTree): Int
+        private [debug] def renderWait(input: => String, tree: => DebugTree): Int
+    }
+
+    /** Signifies that the debug view inheriting from this can wait on a certain render call, updating the state of Refs.
+      * 
+      * This can be extended to make remote state management, breakpoint stepping possible.
+      *
+      * @see [[DebugView]]
+      */
+    trait Manageable extends DebugView with Pauseable {
+        private [debug] def renderManage(input: => String, tree: => DebugTree, refs: CodedRef*): (Int, Seq[CodedRef])
     }
 
     /** Signifies that the debug view inheriting from this can only be run once.
