@@ -44,6 +44,20 @@ trait Codec[A] {
 }
 
 object Codec {
+
+    /** The implicit conversion of a reference to an encodable object
+      * 
+      * @constructor This constructor should not be called manually, it is designed to be used via Scala's implicit resolution.
+      * @param r The reference
+      * @param c The string encoder-decoder for type `B`
+      */
+    implicit class RefOps[B](r: Ref[B])(implicit c: Codec[B]) extends RefCodec {
+        type A = B
+        override val ref: Ref[B] = r
+        override val codec: Codec[B] = c
+
+    }
+
     implicit val booleanCodec: Codec[Boolean] = new Codec[Boolean] {
         def encode(b: Boolean): String = b.toString
 
