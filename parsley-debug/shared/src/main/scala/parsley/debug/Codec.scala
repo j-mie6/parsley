@@ -55,8 +55,8 @@ object Codec {
         type A = B
         override val ref: Ref[B] = r
         override val codec: Codec[B] = c
-
     }
+    
 
     implicit val booleanCodec: Codec[Boolean] = new Codec[Boolean] {
         def encode(b: Boolean): String = b.toString
