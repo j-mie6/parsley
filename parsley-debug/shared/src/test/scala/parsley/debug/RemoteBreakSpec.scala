@@ -176,7 +176,7 @@ class RemoteBreakSpec extends ParsleyTest {
       */
 
     // The test runner handling mocking functionality given a parser set with breakpoints, the input, and the return values ofencoded string 
-    private def testExpectingRefs[B](expectations: Seq[String]*)(leftTagInner: Parsley[B], mkParser: B => Parsley[B])(input: String, shouldSucceed: Boolean)(implicit c: Codec[B]): Unit = {
+    private def testExpectingRefs[B: Codec](expectations: Seq[String]*)(leftTagInner: Parsley[B], mkParser: B => Parsley[B])(input: String, shouldSucceed: Boolean): Unit = {
         val leftTag: Parsley[B] = (atomic('<' <~ notFollowedBy('/'))) ~> leftTagInner <~ '>'
         val p = leftTag.fillRef { r => {
             char(' ').break(ExitBreak, r) <~ (string("</") ~> r.get.flatMap(mkParser) <~ ">")
