@@ -61,7 +61,7 @@
 
   <div class="row links">
     
-    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M13/">API</a>
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M14/">API</a>
     
     <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
   <g class="svg-shape">
@@ -77,7 +77,7 @@
 
   <div class="row">
     
-    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M13/">API</a>
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M14/">API</a>
     
     <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
   <g class="svg-shape">
@@ -163,7 +163,7 @@
         These are both encoded in <code>parsley</code> as combinators within <code>parsley.errors.patterns</code>.</p>
         <div class="callout info">
           <i class="icofont-laika info">&#xef4e;</i>
-          <p><em>The Scaladoc for this page can be found at <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M13/parsley/errors/patterns$.html"><code>parsley.errors.patterns</code></a>.</em></p>
+          <p><em>The Scaladoc for this page can be found at <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M14/parsley/errors/patterns$.html"><code>parsley.errors.patterns</code></a>.</em></p>
         </div>
         
         <h2 id="verified-errors" class="section"><a class="anchor-link left" href="#verified-errors"><i class="icofont-laika link">&#xef71;</i></a><em>Verified Errors</em></h2>
@@ -190,10 +190,10 @@
 
 </span><span class="comment">// assume that a `lexer` is available
 </span><span class="keyword">val</span><span> </span><span class="identifier">float</span><span> = </span><span class="identifier">lexer</span><span>.</span><span class="identifier">nonlexeme</span><span>.</span><span class="identifier">floating</span><span>.</span><span class="identifier">decimal</span><span>
-</span><span class="comment">// float: parsley.Parsley[BigDecimal] = parsley.Parsley@1d8e442f
+</span><span class="comment">// float: parsley.Parsley[BigDecimal] = parsley.Parsley@16c6a801
 </span><span class="keyword">val</span><span> </span><span class="identifier">_noFloat</span><span> =
     </span><span class="identifier">float</span><span>.</span><span class="identifier">verifiedExplain</span><span>(</span><span class="string-literal">&quot;floating-point values may not be used as array indices&quot;</span><span>)
-</span><span class="comment">// _noFloat: parsley.Parsley[Nothing] = parsley.Parsley@1819744
+</span><span class="comment">// _noFloat: parsley.Parsley[Nothing] = parsley.Parsley@228b164b
 </span><span>
 </span><span class="identifier">_noFloat</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;hello&quot;</span><span>)
 </span><span class="comment">// res0: parsley.Result[String, Nothing] = Failure((line 1, column 1):
@@ -208,11 +208,11 @@
 //    ^^^^^)
 </span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">int</span><span> = </span><span class="identifier">lexer</span><span>.</span><span class="identifier">nonlexeme</span><span>.</span><span class="identifier">unsigned</span><span>.</span><span class="identifier">decimal</span><span>
-</span><span class="comment">// int: parsley.Parsley[BigInt] = parsley.Parsley@1aeea9ce
+</span><span class="comment">// int: parsley.Parsley[BigInt] = parsley.Parsley@34dcc6f6
 </span><span class="keyword">val</span><span> </span><span class="identifier">_noPlus</span><span> = (</span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;+&#39;</span><span>) ~&gt; </span><span class="identifier">int</span><span>).</span><span class="identifier">verifiedFail</span><span> { </span><span class="identifier">n</span><span> =&gt;
     </span><span class="type-name">Seq</span><span>(</span><span class="string-literal">s&quot;the number </span><span class="substitution">$n</span><span class="string-literal"> may not be preceeded by </span><span class="escape-sequence">\&quot;</span><span class="string-literal">+</span><span class="escape-sequence">\&quot;</span><span class="string-literal">&quot;</span><span>)
 }
-</span><span class="comment">// _noPlus: parsley.Parsley[Nothing] = parsley.Parsley@168bb0c8
+</span><span class="comment">// _noPlus: parsley.Parsley[Nothing] = parsley.Parsley@515e2260
 </span><span class="identifier">_noPlus</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;+10&quot;</span><span>)
 </span><span class="comment">// res2: parsley.Result[String, Nothing] = Failure((line 1, column 1):
 //   the number 10 may not be preceeded by &quot;+&quot;
@@ -231,7 +231,7 @@
         </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">adjustWidth</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">BigInt</span><span>, </span><span class="identifier">width</span><span>: </span><span class="type-name">Int</span><span>) = </span><span class="number-literal">1</span><span>
     }
 }
-</span><span class="comment">// _noPlus: parsley.Parsley[Nothing] = parsley.Parsley@594a8a2b
+</span><span class="comment">// _noPlus: parsley.Parsley[Nothing] = parsley.Parsley@6d8f01a0
 </span><span class="identifier">_noPlus</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;+10&quot;</span><span>)
 </span><span class="comment">// res3: parsley.Result[String, Nothing] = Failure((line 1, column 1):
 //   a number may not be preceeded by &quot;+&quot;
@@ -250,7 +250,7 @@
         }
     }
 }
-</span><span class="comment">// _noFloat: parsley.Parsley[Nothing] = parsley.Parsley@2ccfb56d
+</span><span class="comment">// _noFloat: parsley.Parsley[Nothing] = parsley.Parsley@75a87e6e
 </span><span>
 </span><span class="identifier">_noFloat</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;3.142&quot;</span><span>)
 </span><span class="comment">// res4: parsley.Result[String, Nothing] = Failure((line 1, column 1):
@@ -282,11 +282,11 @@
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">patterns</span><span>.</span><span class="type-name">PreventativeErrors</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">ident</span><span> = </span><span class="identifier">lexer</span><span>.</span><span class="identifier">nonlexeme</span><span>.</span><span class="identifier">names</span><span>.</span><span class="identifier">identifier</span><span>
-</span><span class="comment">// ident: parsley.Parsley[String] = parsley.Parsley@2baca30f
+</span><span class="comment">// ident: parsley.Parsley[String] = parsley.Parsley@443fbd31
 </span><span class="keyword">val</span><span> </span><span class="identifier">_noDot</span><span> = (</span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;.&#39;</span><span>) ~&gt; </span><span class="identifier">ident</span><span>).</span><span class="identifier">preventativeFail</span><span> { </span><span class="identifier">v</span><span> =&gt;
     </span><span class="type-name">Seq</span><span>(</span><span class="string-literal">s&quot;accessing field </span><span class="substitution">$v</span><span class="string-literal"> is not permitted here&quot;</span><span>)
 }
-</span><span class="comment">// _noDot: parsley.Parsley[Unit] = parsley.Parsley@4e228047
+</span><span class="comment">// _noDot: parsley.Parsley[Unit] = parsley.Parsley@79012376
 </span><span class="identifier">_noDot</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;hi&quot;</span><span>)
 </span><span class="comment">// res5: parsley.Result[String, Unit] = Success(())
 </span><span class="identifier">_noDot</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;.foo&quot;</span><span>)
