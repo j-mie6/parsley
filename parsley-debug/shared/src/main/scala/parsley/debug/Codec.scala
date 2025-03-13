@@ -52,7 +52,7 @@ object Codec {
       * @tparam B the type to be contained in this reference during runtime
       * @return The encodable object storing `r`
       */
-    implicit def encodable[B](r: Ref[B])(implicit c: Codec[B]) = new RefCodec {
+    implicit def encodable[B](r: Ref[B])(implicit c: Codec[B]): RefCodec = new RefCodec {
         type A = B
         override val ref: Ref[A] = r
         override val codec: Codec[A] = c
