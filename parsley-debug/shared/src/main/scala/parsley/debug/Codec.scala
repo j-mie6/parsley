@@ -44,6 +44,21 @@ trait Codec[A] {
 }
 
 object Codec {
+
+    /** Implicitly converts a reference to an encodable object
+      *
+      * @param r The reference
+      * @param c The string encoder-decoder for type `B`
+      * @tparam B the type to be contained in this reference during runtime
+      * @return The encodable object storing `r`
+      */
+    implicit def encodable[B](r: Ref[B])(implicit c: Codec[B]): RefCodec = new RefCodec {
+        type A = B
+        override val ref: Ref[A] = r
+        override val codec: Codec[A] = c
+    }
+    
+
     implicit val booleanCodec: Codec[Boolean] = new Codec[Boolean] {
         def encode(b: Boolean): String = b.toString
 
