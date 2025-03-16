@@ -45,7 +45,7 @@ object ParsleySitePlugin extends AutoPlugin {
             val notBackport = true || !githubIsWorkflowBuild.value
             val githubLink = GenericSiteSettings.githubLink.value
             val apiLink = tlSiteApiUrl.value.map(url => TextLink.external(url.toString, "API"))
-            val redirections = redirects.theme(tlBaseVersion.value, githubIsWorkflowBuild.value)
+            val redirections = redirects.theme(tlBaseVersion.value)
 
             tlSiteHelium.value.extendWith(redirections)
             .site.layout(
@@ -196,13 +196,13 @@ object redirects {
 
     private def redirects(latest: String) = {
         // TODO: this can be made less brittle, surely can be derived from the above configuration?
-        val versions = List("latest", "stable", "4.4.x", "4.4", "4.5.x", "4.5", "4.6.x", "4.6", /*"5.0.x",*/ "5.0")
+        val versions = List("latest", "stable", /*"4.4.x",*/ "4.4", /*"4.5.x",*/ "4.5", /*"4.6.x",*/ "4.6", /*"5.0.x",*/ "5.0")
         val versionMappings = List(
             "latest" -> latest,
             "stable" -> "4.6",
-            "4.4.x" -> "4.4",
-            "4.5.x" -> "4.5",
-            "4.6.x" -> "4.6",
+            //"4.4.x" -> "4.4",
+            //"4.5.x" -> "4.5",
+            //"4.6.x" -> "4.6",
             //"5.0.x" -> "5.0",
         )
 
@@ -231,7 +231,7 @@ object redirects {
         versioned ++ unversioned
     }
 
-    def theme(latest: String, isCI: Boolean) = new ThemeProvider {
+    def theme(latest: String) = new ThemeProvider {
       def build[F[_]: Async]: Resource[F, Theme[F]] =
         ThemeBuilder[F]("Parsley Redirects")
           .addInputs(
@@ -239,23 +239,18 @@ object redirects {
             // for simplicity, we treat these as unversioned pages
             // such that they are completely managed by the primary branch
             redirects(latest).foldLeft(InputTree[F]) { case (tree, (from, to)) =>
-              tree.addString(html(to, isCI), from)
+              tree.addString(html(to), from)
             }
           )
           .build
     }
 
-    // FIXME: the inParsley hack is gross, really we should use an appropriate number of ../s
-    private def html(to: Path, isCI: Boolean): String =
+    private def html(to: Path): String =
         s"""|<!DOCTYPE html>
             |<meta charset="utf-8">
-            |<meta http-equiv="refresh" content="0; URL=${inParsley(to, isCI)}">
+            |<meta http-equiv="refresh" content="0; URL=${to.relative}">
             |<link rel="canonical" href="$to">
             |""".stripMargin
-
-    // thanks to the j-mie6.github.io/parsley hosting, when deploying to CI we actually need to
-    // add a `/parsley` correction to the generated links...
-    private def inParsley(to: Path, isCI: Boolean): String = if (isCI) s"/parsley$to" else to.toString
 
     private implicit class PathUtils(val path: Path) extends AnyVal {
         def fromVersion(version: String): Path =  Path.Root / version / path.relative
