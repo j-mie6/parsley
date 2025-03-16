@@ -1,5 +1,6 @@
 function render(hit) {
-  const path = hit.fields.path
+  // Check if the path has a leading slash, if so, remove it
+  const path = hit.fields.path.startsWith("/") ? hit.fields.path.slice(1) : hit.fields.path
   const htmlPath = `${path}.html`
   const link = new URL(htmlPath, baseUrl)
   const title = hit.highlights["title"] || hit.fields["title"]
