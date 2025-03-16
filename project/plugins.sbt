@@ -19,6 +19,8 @@ libraryDependencySchemes ++= Seq(
 
 addSbtPlugin("org.typelevel" % "sbt-typelevel" % sbtTypelevelVersion)
 addSbtPlugin("org.typelevel" % "sbt-typelevel-site" % sbtTypelevelVersion)
+// adds search functionality to the wiki
+addSbtPlugin("pink.cozydev" % "protosearch-sbt" % "0.0-87982b9-SNAPSHOT")
 
 // CI Stuff
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.16.0")
