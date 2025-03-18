@@ -90,7 +90,7 @@ object ParsleySitePlugin extends AutoPlugin {
                     case (git, api) => LinkGroup.create(git, api)
                 }.toSeq,
                 teasers = Seq(
-                    Teaser("Modern", "Parsley employs modern design developed over five years of research, supporting many parser combinator design pattterns out of the box."),
+                    Teaser("Modern", "Parsley employs modern design developed over five years of research, supporting many parser combinator design patterns out of the box."),
                     Teaser("Stack-Safe", "Parsley promises to not stack-overflow during the runtime of the parser, preventing vulnerabilities."),
                     Teaser("Great Errors", "Parsley has good out-of-the-box error messages, with a lot of support for improving the content of error messages and their formatting."),
                     Teaser("Easily Debuggable", "Parsley parsers are easy to debug thanks to special combinators and debuggers."),
