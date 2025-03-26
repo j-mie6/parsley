@@ -6,6 +6,8 @@
 package parsley
 package experimental.generic
 
+import scala.annotation.tailrec
+import scala.collection.mutable
 import scala.quoted.*
 import generic.*
 
@@ -15,8 +17,12 @@ Problem space:
     * How can we resolve defaults (https://github.com/com-lihaoyi/cask/blob/master/cask/src-3/cask/router/Macros.scala)
 */
 
-class DummyBridge1[T, R] extends ErrorBridge
-class DummyBridge2[T1, T2, R] extends ErrorBridge
+abstract class Bridge1[T, R] extends ErrorBridge {
+    def apply(p1: Parsley[T]): Parsley[R]
+}
+abstract class Bridge2[T1, T2, R] extends ErrorBridge {
+    def apply(p1: Parsley[T1], p2: Parsley[T2]): Parsley[R]
+}
 
 inline transparent def bridge[T]: ErrorBridge = bridge[T, T]
 inline transparent def bridge[T, S >: T]: ErrorBridge = ${bridgeImpl[T, S]}
@@ -27,6 +33,7 @@ def bridgeImpl[T: Type, S: Type](using Quotes): Expr[ErrorBridge] = {
     println(clsDef)
     clsDef match {
         case Some(cls) =>
+            // FIXME: rule out path-dependent types that are unresolvable
             val DefDef("<init>", paramClauses, _, _) = cls.primaryConstructor.tree: @unchecked
             // paramClauses is a list of lists, including *generics*
             // our bridge arity is related to the first non-type bracket
@@ -34,7 +41,6 @@ def bridgeImpl[T: Type, S: Type](using Quotes): Expr[ErrorBridge] = {
                 case TermParamClause(ps) => ps
             }: @unchecked
             val numBridgeParams = bridgeParams.length
-            // FIXME: default check doesn't work, primary constructor doesn't have the default args...
             val badArgs = otherParams.flatten.zipWithIndex.collect {
                 case (ValDef(name, ty, _), n) if !isPos(ty.tpe) && defaulted(cls, numBridgeParams + n + 1).isEmpty => name
             }
@@ -47,12 +53,30 @@ def bridgeImpl[T: Type, S: Type](using Quotes): Expr[ErrorBridge] = {
             println(bridgeTyArgs.map(_.typeSymbol))
             val arity = bridgeTyArgs.length
             bridgeTyArgs.map(_.asType) match {
-                case List('[t1]) => '{new DummyBridge1[t1, S]}
-                case List('[t1], '[t2]) => '{new DummyBridge2[t1, t2, S]}
+                case List('[t1]) =>
+                    '{new Bridge1[t1, S] {
+                        //  ap1(pos.map(con), x)
+                        def apply(x1: Parsley[t1]): Parsley[S] = x1.map(${constructor1[t1, S]})
+                    }}
+                case List('[t1], '[t2]) => '{new Bridge2[t1, t2, S] {}}
+                // TODO: 20 more of these
                 case _ => '{???}
             }
         case None => report.errorAndAbort("cannot make bridge for non-class/object type")
     }
+}
+
+class Bar[A](val x: Boolean)(val y: String = "hello world")
+
+// NOT handling positions
+// Everything but first set of brackets have defaults
+def constructor1[T: Type, R: Type](using Quotes): Expr[T => R] = {
+    import quotes.reflect.*
+    // if R is an AppliedType, we need to deconstruct it, because the constructor will need the things
+    println(TypeRepr.of[R].dealias)
+    import quotes.reflect.*
+    println('{(x: Boolean) => new Bar[T](x)()}.asTerm)
+    '{???}
 }
 
 def isPos(using Quotes)(ty: quotes.reflect.TypeRepr): Boolean = ty.asType match {
@@ -60,11 +84,21 @@ def isPos(using Quotes)(ty: quotes.reflect.TypeRepr): Boolean = ty.asType match 
     case _                                   => false
 }
 
+def defaultName(n: Int) = s"$$lessinit$$greater$$default$$$n"
+
 def defaulted(using Quotes)(cls: quotes.reflect.Symbol, n: Int): Option[quotes.reflect.Symbol] = {
     import quotes.reflect.*
-    val DefName = s"$$lessinit$$greater$$default$$$n"
+    val DefName = defaultName(n)
     // find the first method that have the defName
     cls.companionModule.declaredMethods.map(_.tree).collectFirst {
         case dfn@DefDef(DefName, _, _, _) => dfn.symbol
     }
+}
+
+// returns the structure of the secondary arguments, but needs turning into tree.
+@tailrec
+def transformDefaults(using Quotes)(cls: quotes.reflect.Symbol, nonPrimaryArgs: List[List[_]], n: Int = 1, buf: mutable.ListBuffer[List[Option[quotes.reflect.Symbol]]] = mutable.ListBuffer.empty): List[List[Option[quotes.reflect.Symbol]]] = nonPrimaryArgs match {
+    case Nil => buf.toList
+    case args :: restArgs =>
+        transformDefaults(cls, restArgs, n + args.length, buf += args.zipWithIndex.map((_, i) => defaulted(cls, i + n)))
 }
