@@ -839,6 +839,9 @@ import parsley.Parsley
 
 def many[A](p: =>Parsley[A]): Parsley[List[A]] = (p <::> many(p)) </> Nil
 ```
+```scala mdoc:invisible
+lazy val _ = many(Parsley.empty): @scala.annotation.unused
+```
 
 And the answer ties back to what I mentioned earlier: there is a difference in quite how recursive
 each of the two are. In the first example, `go` physically refers back to itself, and so that is a
