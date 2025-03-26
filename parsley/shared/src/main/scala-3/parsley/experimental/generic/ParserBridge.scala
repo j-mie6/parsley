@@ -28,7 +28,6 @@ inline transparent def bridge[T]: ErrorBridge = bridge[T, T]
 inline transparent def bridge[T, S >: T]: ErrorBridge = ${bridgeImpl[T, S]}
 def bridgeImpl[T: Type, S: Type](using Quotes): Expr[ErrorBridge] = {
     import quotes.reflect.*
-
     val tyRepr = TypeRepr.of[T]
     tyRepr match {
         case Bridgeable(cls, bridgeParams, otherParams) =>

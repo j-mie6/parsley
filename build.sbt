@@ -15,6 +15,7 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 val releaseFlags = Seq("-Xdisable-assertions", "-opt:l:method,inline", "-opt-inline-from", "parsley.**", "-opt-warnings:at-inline-failed")
 val noReleaseFlagsScala3 = true // maybe some day this can be turned off...
 
+// FIXME: remove the Scala 3 default (and fatal warnings in docs)
 inThisBuild(List(
   tlBaseVersion := "5.0",
   organization := "com.github.j-mie6",
@@ -29,7 +30,6 @@ inThisBuild(List(
   tlCiReleaseBranches := Seq(mainBranch),
   tlCiScalafmtCheck := false,
   tlCiHeaderCheck := true,
-  tlFatalWarnings := false,
   githubWorkflowJavaVersions := Seq(Java11, Java17, Java21),
   githubWorkflowAddedJobs += testCoverageJob(githubWorkflowGeneratedCacheSteps.value.toList),
   githubWorkflowConcurrency := None, // this allows us to not fail the pipeline on double commit
