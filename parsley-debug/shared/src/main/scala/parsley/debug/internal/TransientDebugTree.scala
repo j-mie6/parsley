@@ -36,12 +36,12 @@ private [parsley] class TransientDebugTree(var name: String = "", var internal: 
 
     override def nodeChildren: List[DebugTree] = children.toList
 
-    
-    // If the parser needs bubbling then we do not see it because it is transparent. 
-    // If it does not need bubbling then it is either an iterative, opaque parser 
+
+    // If the parser needs bubbling then we do not see it because it is transparent.
+    // If it does not need bubbling then it is either an iterative, opaque parser
     // or a non-iterative, opaque parser.
     // To cover both cases, we also check if it is iterative.
-      
+
     override def isIterative: Boolean = iterative
 
     override def isNewlyGenerated: Boolean = newlyGenerated
@@ -83,9 +83,10 @@ private [parsley] class TransientDebugTree(var name: String = "", var internal: 
     private [debug] def copy(name: String = name, internal: String = internal, fullInput: String = fullInput,
             parse: Option[ParseAttempt] = parse, cNumber: Option[Long] = cNumber,
             children: mutable.ListBuffer[TransientDebugTree] = children,
-            iterative: Boolean = iterative, newlyGenerated: Boolean = newlyGenerated): TransientDebugTree
-        = new TransientDebugTree(name, internal, fullInput, parse, cNumber, children, iterative, isNewlyGenerated)
-        
+            iterative: Boolean = iterative, newlyGenerated: Boolean = newlyGenerated): TransientDebugTree = {
+        new TransientDebugTree(name, internal, fullInput, parse, cNumber, children, iterative, newlyGenerated)
+    }
+
     // Strips all `remoteBreak` nodes from the tree
     private [debug] def withoutBreakpoints(): TransientDebugTree = {
         val childrenWithoutBreak = children.map(_.withoutBreakpoints())
