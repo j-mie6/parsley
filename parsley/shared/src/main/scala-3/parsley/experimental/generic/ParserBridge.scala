@@ -14,7 +14,6 @@ import generic.*
 /*
 Problem space:
     * How are error bridges incorporated in (annotation?)
-    * How can we resolve defaults (https://github.com/com-lihaoyi/cask/blob/master/cask/src-3/cask/router/Macros.scala)
 */
 
 abstract class Bridge1[T, R] extends ErrorBridge {
@@ -87,8 +86,6 @@ object Bridgeable {
 def constructor1[T: Type, R: Type](using Quotes): Expr[T => R] = {
     import quotes.reflect.*
     // if R is an AppliedType, we need to deconstruct it, because the constructor will need the things
-    println(TypeRepr.of[R].dealias)
-    import quotes.reflect.*
     println('{(x: Boolean) => new Bar[T](x)()}.asTerm)
     '{???}
 }

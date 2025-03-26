@@ -1,7 +1,7 @@
 import _root_.parsley.build.mima
 
 val projectName = "parsley"
-val Scala213 = "2.13.14"
+val Scala213 = "2.13.16"
 val Scala212 = "2.12.18"
 val Scala3 = "3.3.3"
 val Java11 = JavaSpec.temurin("11")
