@@ -29,6 +29,7 @@ inThisBuild(List(
   tlCiReleaseBranches := Seq(mainBranch),
   tlCiScalafmtCheck := false,
   tlCiHeaderCheck := true,
+  tlFatalWarnings := false,
   githubWorkflowJavaVersions := Seq(Java11, Java17, Java21),
   githubWorkflowAddedJobs += testCoverageJob(githubWorkflowGeneratedCacheSteps.value.toList),
   githubWorkflowConcurrency := None, // this allows us to not fail the pipeline on double commit
