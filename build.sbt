@@ -15,7 +15,6 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 val releaseFlags = Seq("-Xdisable-assertions", "-opt:l:method,inline", "-opt-inline-from", "parsley.**", "-opt-warnings:at-inline-failed")
 val noReleaseFlagsScala3 = true // maybe some day this can be turned off...
 
-// FIXME: remove the Scala 3 default (and fatal warnings in docs)
 inThisBuild(List(
   tlBaseVersion := "5.0",
   organization := "com.github.j-mie6",
@@ -24,7 +23,7 @@ inThisBuild(List(
   licenses := List("BSD-3-Clause" -> url("https://opensource.org/licenses/BSD-3-Clause")),
   versionScheme := Some("early-semver"),
   crossScalaVersions := Seq(Scala213, Scala212, Scala3),
-  scalaVersion := Scala3,
+  scalaVersion := Scala213,
   mimaBinaryIssueFilters ++= mima.issueFilters,
   // CI Configuration
   tlCiReleaseBranches := Seq(mainBranch),
