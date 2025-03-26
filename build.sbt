@@ -23,7 +23,7 @@ inThisBuild(List(
   licenses := List("BSD-3-Clause" -> url("https://opensource.org/licenses/BSD-3-Clause")),
   versionScheme := Some("early-semver"),
   crossScalaVersions := Seq(Scala213, Scala212, Scala3),
-  scalaVersion := Scala213,
+  scalaVersion := Scala3,
   mimaBinaryIssueFilters ++= mima.issueFilters,
   // CI Configuration
   tlCiReleaseBranches := Seq(mainBranch),

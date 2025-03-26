@@ -7,13 +7,12 @@ package parsley
 package experimental.generic
 
 import scala.quoted.*
-import scala.deriving.*
 import generic.*
 
 /*
 Problem space:
     * How are error bridges incorporated in (annotation?)
-    * How can we resolve defaults?
+    * How can we resolve defaults (https://github.com/com-lihaoyi/cask/blob/master/cask/src-3/cask/router/Macros.scala)
 */
 
 class DummyBridge1[T, R] extends ErrorBridge
@@ -34,9 +33,10 @@ def bridgeImpl[T: Type, S: Type](using Quotes): Expr[ErrorBridge] = {
             val bridgeParams :: otherParams = paramClauses.collect {
                 case TermParamClause(ps) => ps
             }: @unchecked
+            val numBridgeParams = bridgeParams.length
             // FIXME: default check doesn't work, primary constructor doesn't have the default args...
-            val badArgs = otherParams.flatten.collect {
-                case ValDef(name, ty, default) if default.isEmpty && !isPos(ty.tpe) => name
+            val badArgs = otherParams.flatten.zipWithIndex.collect {
+                case (ValDef(name, ty, _), n) if !isPos(ty.tpe) && defaulted(cls, numBridgeParams + n + 1).isEmpty => name
             }
             if (badArgs.nonEmpty) {
                 report.errorAndAbort(s"Arguments ${badArgs.mkString(",")} are not `Pos`, do not have defaults, and are not in first set of brackets; cannot construct bridge")
@@ -58,4 +58,13 @@ def bridgeImpl[T: Type, S: Type](using Quotes): Expr[ErrorBridge] = {
 def isPos(using Quotes)(ty: quotes.reflect.TypeRepr): Boolean = ty.asType match {
     case '[parsley.experimental.generic.Pos] => true
     case _                                   => false
+}
+
+def defaulted(using Quotes)(cls: quotes.reflect.Symbol, n: Int): Option[quotes.reflect.Symbol] = {
+    import quotes.reflect.*
+    val DefName = s"$$lessinit$$greater$$default$$$n"
+    // find the first method that have the defName
+    cls.companionModule.declaredMethods.map(_.tree).collectFirst {
+        case dfn@DefDef(DefName, _, _, _) => dfn.symbol
+    }
 }
