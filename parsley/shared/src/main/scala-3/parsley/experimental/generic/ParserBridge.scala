@@ -29,17 +29,9 @@ inline transparent def bridge[T, S >: T]: ErrorBridge = ${bridgeImpl[T, S]}
 def bridgeImpl[T: Type, S: Type](using Quotes): Expr[ErrorBridge] = {
     import quotes.reflect.*
 
-    val clsDef = TypeRepr.of[T].classSymbol
-    println(clsDef)
-    clsDef match {
-        case Some(cls) =>
-            // FIXME: rule out path-dependent types that are unresolvable
-            val DefDef("<init>", paramClauses, _, _) = cls.primaryConstructor.tree: @unchecked
-            // paramClauses is a list of lists, including *generics*
-            // our bridge arity is related to the first non-type bracket
-            val bridgeParams :: otherParams = paramClauses.collect {
-                case TermParamClause(ps) => ps
-            }: @unchecked
+    val tyRepr = TypeRepr.of[T]
+    tyRepr match {
+        case Bridgeable(cls, bridgeParams, otherParams) =>
             val numBridgeParams = bridgeParams.length
             val badArgs = otherParams.flatten.zipWithIndex.collect {
                 case (ValDef(name, ty, _), n) if !isPos(ty.tpe) && defaulted(cls, numBridgeParams + n + 1).isEmpty => name
@@ -51,7 +43,7 @@ def bridgeImpl[T: Type, S: Type](using Quotes): Expr[ErrorBridge] = {
                 case ValDef(_, ty, _) if !isPos(ty.tpe) => ty.tpe
             }
             println(bridgeTyArgs.map(_.typeSymbol))
-            val arity = bridgeTyArgs.length
+            //val arity = bridgeTyArgs.length
             bridgeTyArgs.map(_.asType) match {
                 case List('[t1]) =>
                     '{new Bridge1[t1, S] {
@@ -62,11 +54,34 @@ def bridgeImpl[T: Type, S: Type](using Quotes): Expr[ErrorBridge] = {
                 // TODO: 20 more of these
                 case _ => '{???}
             }
-        case None => report.errorAndAbort("cannot make bridge for non-class/object type")
+        case _ => report.errorAndAbort("can only make bridges for constructible classes or objects")
     }
 }
 
 class Bar[A](val x: Boolean)(val y: String = "hello world")
+
+object Bridgeable {
+    def unapply(using Quotes)(ty: quotes.reflect.TypeRepr): Option[(quotes.reflect.Symbol, List[quotes.reflect.ValDef], List[List[quotes.reflect.ValDef]])] = {
+        import quotes.reflect.*
+        val clsDef = ty.classSymbol
+        clsDef match {
+            case Some(cls) =>
+                val primCon = cls.primaryConstructor
+                if (primCon.isNoSymbol) None
+                else primCon.tree match {
+                    // this even works for objects, as they are singletons with an empty constructor,
+                    // returning (cls, Nil, Nil)
+                    case DefDef("<init>", paramClauses, _, _) =>
+                        val bridgeParams :: otherParams = paramClauses.collect {
+                            case TermParamClause(ps) => ps
+                        }: @unchecked
+                        Some((cls, bridgeParams, otherParams))
+                    case _ => None
+                }
+            case None => None
+        }
+    }
+}
 
 // NOT handling positions
 // Everything but first set of brackets have defaults
