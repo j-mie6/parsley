@@ -25,7 +25,7 @@ abstract class Bridge2[T1, T2, R] extends ErrorBridge {
 
 inline transparent def bridge[T]: ErrorBridge = bridge[T, T]
 inline transparent def bridge[T, S >: T]: ErrorBridge = ${bridgeImpl[T, S]}
-private def bridgeImpl[T: Type, S: Type](using Quotes): Expr[ErrorBridge] = BridgeImpl().synthesise[T, S]
+private def bridgeImpl[T: Type, S >: T: Type](using Quotes): Expr[ErrorBridge] = BridgeImpl().synthesise[T, S]
 // having a class here simplifies the importing of quotes.reflect.* for the enum
 private class BridgeImpl(using Quotes) {
     import quotes.reflect.*
@@ -35,8 +35,9 @@ private class BridgeImpl(using Quotes) {
         case Err(name: String)
     }
 
-    def synthesise[T: Type, S: Type] = {
+    def synthesise[T: Type, S >: T: Type] = {
         val tyRepr = TypeRepr.of[T]
+        val tyArgs = tyRepr.typeArgs
         tyRepr match {
             case Bridgeable(cls, tyParams, bridgeParams, otherParams) =>
                 val numBridgeParams = bridgeParams.length
@@ -53,7 +54,7 @@ private class BridgeImpl(using Quotes) {
                     case List('[t1]) =>
                         '{new Bridge1[t1, S] {
                             //  ap1(pos.map(con), x)
-                            def apply(x1: Parsley[t1]): Parsley[S] = x1.map(${constructor1[t1, S]})
+                            def apply(x1: Parsley[t1]): Parsley[S] = x1.map(${constructor1[t1, T](cls, tyArgs, categorisedArgs)})
                         }}
                     case List('[t1], '[t2]) => '{new Bridge2[t1, t2, S] {}}
                     // TODO: 20 more of these
@@ -86,10 +87,47 @@ private class BridgeImpl(using Quotes) {
 
     // NOT handling positions
     // Everything but first set of brackets have defaults
-    private def constructor1[T: Type, R: Type]: Expr[T => R] = {
+    private def constructor1[T: Type, R: Type](cls: Symbol, clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]]): Expr[T => R] = {
         // if R is an AppliedType, we need to deconstruct it, because the constructor will need the things
-        //println('{(x: Boolean) => new Bar[T](x)()}.asTerm)
+        given Printer[Tree] = Printer.TreeStructure
+        println('{(x: Boolean) => new Bar[T](x)()}.asTerm.show)
         /*
+        // via show
+        Inlined(Some(TypeIdent("BridgeImpl")), Nil,
+            Block(
+                List(
+                    DefDef(
+                        "$anonfun",
+                        List(TermParamClause(List(ValDef("x", TypeIdent("Boolean"), None)))),
+                        Inferred(),
+                        Some(
+                            Block(Nil,
+                                Apply(
+                                    Apply(
+                                        TypeApply(
+                                            Select(
+                                                New(Applied(TypeIdent("Bar"), List(Inferred()))),
+                                                "<init>"
+                                            ),
+                                            List(Inferred())
+                                        ),
+                                        List(Ident("x"))
+                                    ),
+                                    List(
+                                        Apply(
+                                            TypeApply(Select(Ident("Bar"), "$lessinit$greater$default$2"), List(Inferred())),
+                                            List(Ident("x"))
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ),
+                Closure(Ident("$anonfun"), None))
+            )
+        )
+
         // can't say I know what this is about tbf
         Inlined(Ident(BridgeImpl),List(),
             Block(
@@ -141,7 +179,37 @@ private class BridgeImpl(using Quotes) {
             )
         )
         */
-        '{???}
+        '{(x: T) => val _ = x: @scala.annotation.unused; ${
+            val tys: List[TypeTree] = clsTyArgs.map(tyRep => TypeTree.of(using tyRep.asType))
+            val objTy = New(Applied(TypeTree.ref(cls), tys))
+            val con = objTy.select(cls.primaryConstructor).appliedToTypes(clsTyArgs)
+            val conBridged = con.appliedTo('{x}.asTerm)
+            // at this point, we have applied the constructor to the bridge args (except for positions FIXME:)
+            // we now need to apply the other default arguments and/or position
+            /*
+            List(
+                                    Apply(
+                                        // apparently, this has generics applied to it too? interesting
+                                        TypeApply(
+                                            Select(Ident(Bar),$lessinit$greater$default$2),
+                                            List(TypeTree[TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),class Int)])
+                                        ),
+                                        // so, turns out a default argument is given all the curried arguments before it as arguments
+                                        // when default arguments come before us, it's not clear if that's given a block val?
+                                        // the bytecode suggests so, but it would be good to see an AST example
+                                        List(Ident(x))
+                                    )
+                                )
+            */
+            // TODO: process otherArgs to find the defaults (they have their symbols, but we need to type apply and feed all prior args to it)
+            // this will likely involve creating multiple val clauses.
+            val defaults = Nil
+            val saturated = conBridged.appliedToArgss(defaults)
+            println(saturated)
+            println(otherArgs)
+            //saturated.asExprOf[R]
+            '{???}
+        }}
     }
 
     private object Bridgeable {

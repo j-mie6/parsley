@@ -5,7 +5,7 @@
  */
 package parsley
 
-case class Foo[A](x: Int)(y: String = "hello world", z: experimental.generic.Pos)
+case class Foo[A](x: Int)(y: String = "hello world"/*, z: experimental.generic.Pos*/)
 
 def foo[A] = experimental.generic.bridge[Foo[A]]
 
