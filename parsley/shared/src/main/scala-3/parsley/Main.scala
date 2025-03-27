@@ -5,22 +5,22 @@
  */
 package parsley
 
-case class Foo[A](x: Int)(y: String = "hello world")
+case class Foo[A](x: Int)(y: String = "hello world", z: experimental.generic.Pos)
 
 def foo[A] = experimental.generic.bridge[Foo[A]]
 
-abstract class Bar {
+/*abstract class Bar {
     type T
     def x: T
 }
 object Baz extends Bar {
     type T = Foo[Boolean]
     def x = Foo(5)()
-}
+}*/
 
-inline def bar(b: Bar) = experimental.generic.bridge[b.T]
-val b2 = experimental.generic.bridge[Baz.type]
-val b = bar(Baz)
+//inline def bar(b: Bar) = experimental.generic.bridge[b.T]
+//val b2 = experimental.generic.bridge[Baz.type]
+//val b = bar(Baz)
 
 
 /*
