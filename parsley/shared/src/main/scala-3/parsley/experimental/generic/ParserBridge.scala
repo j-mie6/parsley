@@ -41,10 +41,13 @@ private class BridgeImpl(using Quotes) {
             case Bridgeable(cls, bridgeParams, otherParams) =>
                 val numBridgeParams = bridgeParams.length
                 val categorisedArgs = categoriseArgs(cls, otherParams, numBridgeParams + 1)
+                // Used for the types of the lambda passed to combinator
                 val bridgeTyArgs = bridgeParams.collect {
                     case ValDef(_, ty, _) if !isPos(ty.tpe) => ty.tpe
                 }
-                println(bridgeTyArgs.map(_.typeSymbol))
+                // TODO: look for unique position
+                // TODO: ensure validation if Err is encounted (report separately, but then abort if failed (Option))
+                //println(bridgeTyArgs.map(_.typeSymbol))
                 println(categorisedArgs)
                 //val arity = bridgeTyArgs.length
                 bridgeTyArgs.map(_.asType) match {
@@ -67,9 +70,7 @@ private class BridgeImpl(using Quotes) {
     }
 
     private def defaultName(n: Int) = s"$$lessinit$$greater$$default$$$n"
-    private def defaulted(cls: Symbol, n: Int): Option[Symbol] = {
-        cls.companionModule.declaredMethod(defaultName(n)).headOption
-    }
+    private def defaulted(cls: Symbol, n: Int): Option[Symbol] = cls.companionModule.declaredMethod(defaultName(n)).headOption
 
     @tailrec
     private def categoriseArgs(cls: Symbol, nonPrimaryArgs: List[List[ValDef]], n: Int, buf: mutable.ListBuffer[List[BridgeArg]] = mutable.ListBuffer.empty): List[List[BridgeArg]] = nonPrimaryArgs match {
@@ -89,6 +90,58 @@ private class BridgeImpl(using Quotes) {
     private def constructor1[T: Type, R: Type]: Expr[T => R] = {
         // if R is an AppliedType, we need to deconstruct it, because the constructor will need the things
         println('{(x: Boolean) => new Bar[T](x)()}.asTerm)
+        /*
+        // can't say I know what this is about tbf
+        Inlined(Ident(BridgeImpl),List(),
+            Block(
+                List(
+                    DefDef(
+                        // I'm guessing this needs to be uniquely generated
+                        $anonfun,
+                        List(List(ValDef(x,Ident(Boolean),EmptyTree))),
+                        // this is just the type R
+                        TypeTree[AppliedType(TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class experimental)),object generic),Bar),
+                                             List(TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),class Int)))],
+                        Block(List(),
+                            Apply(
+                                Apply(
+                                    TypeApply(
+                                        Select(
+                                            New(
+                                                // seemingly also the type R (slightly different form)
+                                                AppliedTypeTree(
+                                                    Ident(Bar),
+                                                    List(TypeTree[TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),class Int)])
+                                                )
+                                            ),
+                                            <init>
+                                        ),
+                                        // arguments to R, would need to break the tree
+                                        List(TypeTree[TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),class Int)])
+                                    ),
+                                    List(Ident(x))
+                                ),
+                                List(
+                                    Apply(
+                                        // apparently, this has generics applied to it too? interesting
+                                        TypeApply(
+                                            Select(Ident(Bar),$lessinit$greater$default$2),
+                                            List(TypeTree[TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),class Int)])
+                                        ),
+                                        // so, turns out a default argument is given all the curried arguments before it as arguments
+                                        // when default arguments come before us, it's not clear if that's given a block val?
+                                        // the bytecode suggests so, but it would be good to see an AST example
+                                        List(Ident(x))
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ),
+                Closure(List(),Ident($anonfun),EmptyTree)
+            )
+        )
+        */
         '{???}
     }
 
