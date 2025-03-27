@@ -150,15 +150,14 @@ private class BridgeImpl(using Quotes) {
             clsDef match {
                 case Some(cls) =>
                     val primCon = cls.primaryConstructor
-                    if (primCon.isNoSymbol) None
-                    else {
+                    Option.when(!primCon.isNoSymbol) {
                         // some of the arguments lists may be type introductions
                         // we should filter those out and handle separately
                         val (tyParamss, valParamss) = primCon.paramSymss.partition(_.forall(_.isType))
                         valParamss match {
                             // TODO: this .flatten might not work with curried types; but they don't exist yet?
-                            case bridgeParams :: otherParams => Some((cls, tyParamss.flatten, bridgeParams, otherParams))
-                            case Nil                         => Some((cls, tyParamss.flatten, Nil, Nil))
+                            case bridgeParams :: otherParams => (cls, tyParamss.flatten, bridgeParams, otherParams)
+                            case Nil                         => (cls, tyParamss.flatten, Nil, Nil)
                         }
                     }
                 case None => None
