@@ -5,9 +5,15 @@
  */
 package parsley
 
-case class Foo[A](x: Int)(y: String = "hello world"/*, z: experimental.generic.Pos*/)
+case class Foo[A](x: Int)(val y: Int = x/*, z: experimental.generic.Pos*/)
 
 def foo[A] = experimental.generic.bridge[Foo[A]]
+
+@main
+def bridgeTest() = {
+    val b = foo[Int]
+    println(b(Parsley.pure(7)).parse("").map(_.y))
+}
 
 /*abstract class Bar {
     type T

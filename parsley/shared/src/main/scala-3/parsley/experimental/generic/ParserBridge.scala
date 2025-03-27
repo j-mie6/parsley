@@ -27,6 +27,7 @@ inline transparent def bridge[T]: ErrorBridge = bridge[T, T]
 inline transparent def bridge[T, S >: T]: ErrorBridge = ${bridgeImpl[T, S]}
 private def bridgeImpl[T: Type, S >: T: Type](using Quotes): Expr[ErrorBridge] = BridgeImpl().synthesise[T, S]
 // having a class here simplifies the importing of quotes.reflect.* for the enum
+// (FIXME: it is considered back practice, so I will probably just make a parametric enum later)
 private class BridgeImpl(using Quotes) {
     import quotes.reflect.*
     private enum BridgeArg {
@@ -48,7 +49,7 @@ private class BridgeImpl(using Quotes) {
                 }
                 // TODO: look for unique position
                 // TODO: ensure validation if Err is encounted (report separately, but then abort if failed (Option))
-                println(categorisedArgs)
+                //println(categorisedArgs)
                 //val arity = bridgeTyArgs.length
                 bridgeTyArgs.map(_.typeSymbol.typeRef.asType) match {
                     case List('[t1]) =>
@@ -85,49 +86,10 @@ private class BridgeImpl(using Quotes) {
             })
     }
 
-    // NOT handling positions
+    // NOT handling positions yet
     // Everything but first set of brackets have defaults
     private def constructor1[T: Type, R: Type](cls: Symbol, clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]]): Expr[T => R] = {
-        // if R is an AppliedType, we need to deconstruct it, because the constructor will need the things
-        given Printer[Tree] = Printer.TreeStructure
-        println('{(x: Boolean) => new Bar[T](x)()}.asTerm.show)
         /*
-        // via show
-        Inlined(Some(TypeIdent("BridgeImpl")), Nil,
-            Block(
-                List(
-                    DefDef(
-                        "$anonfun",
-                        List(TermParamClause(List(ValDef("x", TypeIdent("Boolean"), None)))),
-                        Inferred(),
-                        Some(
-                            Block(Nil,
-                                Apply(
-                                    Apply(
-                                        TypeApply(
-                                            Select(
-                                                New(Applied(TypeIdent("Bar"), List(Inferred()))),
-                                                "<init>"
-                                            ),
-                                            List(Inferred())
-                                        ),
-                                        List(Ident("x"))
-                                    ),
-                                    List(
-                                        Apply(
-                                            TypeApply(Select(Ident("Bar"), "$lessinit$greater$default$2"), List(Inferred())),
-                                            List(Ident("x"))
-                                        )
-                                    )
-                                )
-                            )
-                        )
-                    )
-                ),
-                Closure(Ident("$anonfun"), None))
-            )
-        )
-
         // can't say I know what this is about tbf
         Inlined(Ident(BridgeImpl),List(),
             Block(
@@ -139,76 +101,48 @@ private class BridgeImpl(using Quotes) {
                         // this is just the type R
                         TypeTree[AppliedType(TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class experimental)),object generic),Bar),
                                              List(TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),class Int)))],
-                        Block(List(),
-                            Apply(
-                                Apply(
-                                    TypeApply(
-                                        Select(
-                                            New(
-                                                // seemingly also the type R (slightly different form)
-                                                AppliedTypeTree(
-                                                    Ident(Bar),
-                                                    List(TypeTree[TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),class Int)])
-                                                )
-                                            ),
-                                            <init>
-                                        ),
-                                        // arguments to R, would need to break the tree
-                                        List(TypeTree[TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),class Int)])
-                                    ),
-                                    List(Ident(x))
-                                ),
-                                List(
-                                    Apply(
-                                        // apparently, this has generics applied to it too? interesting
-                                        TypeApply(
-                                            Select(Ident(Bar),$lessinit$greater$default$2),
-                                            List(TypeTree[TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),class Int)])
-                                        ),
-                                        // so, turns out a default argument is given all the curried arguments before it as arguments
-                                        // when default arguments come before us, it's not clear if that's given a block val?
-                                        // the bytecode suggests so, but it would be good to see an AST example
-                                        List(Ident(x))
-                                    )
-                                )
-                            )
-                        )
+                        /* snip, the body */
                     )
                 ),
                 Closure(List(),Ident($anonfun),EmptyTree)
             )
         )
         */
-        '{(x: T) => val _ = x: @scala.annotation.unused; ${
+        '{(x: T) => ${
+            val qx = 'x.asTerm
             val tys: List[TypeTree] = clsTyArgs.map(tyRep => TypeTree.of(using tyRep.asType))
             val objTy = New(Applied(TypeTree.ref(cls), tys))
             val con = objTy.select(cls.primaryConstructor).appliedToTypes(clsTyArgs)
-            val conBridged = con.appliedTo('{x}.asTerm)
-            // at this point, we have applied the constructor to the bridge args (except for positions FIXME:)
-            // we now need to apply the other default arguments and/or position
-            /*
-            List(
-                                    Apply(
-                                        // apparently, this has generics applied to it too? interesting
-                                        TypeApply(
-                                            Select(Ident(Bar),$lessinit$greater$default$2),
-                                            List(TypeTree[TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),class Int)])
-                                        ),
-                                        // so, turns out a default argument is given all the curried arguments before it as arguments
-                                        // when default arguments come before us, it's not clear if that's given a block val?
-                                        // the bytecode suggests so, but it would be good to see an AST example
-                                        List(Ident(x))
-                                    )
-                                )
-            */
-            // TODO: process otherArgs to find the defaults (they have their symbols, but we need to type apply and feed all prior args to it)
-            // this will likely involve creating multiple val clauses.
-            val defaults = Nil
-            val saturated = conBridged.appliedToArgss(defaults)
-            println(saturated)
-            println(otherArgs)
-            //saturated.asExprOf[R]
-            '{???}
+            val conBridged = con.appliedTo(qx)
+            // at this point, we have applied the constructor to the bridge args (except for positions)
+            // we now need to apply the other default arguments
+            // Each default argument takes all the previous sets of arguments (flattened).
+            // this means old default arguments will need to be stored in vals within an enclosing block.
+            // we'll need to collect the references to all these into a ListBuffer, which will be repeatedly
+            // toList'd as applications are formed.
+            def defBindings(owner: Symbol, paramss: List[List[BridgeArg]], seeds: mutable.ListBuffer[Term], defaults: mutable.ListBuffer[List[Term]])(k: List[List[Term]] => Term): Term = paramss match {
+                case Nil => k(defaults.toList)
+                case params :: paramss =>
+                    val mySeeds = seeds.toList
+                    val terms = for param <- params yield param match
+                        case BridgeArg.Pos => report.errorAndAbort("positions are currently not supported in bridges")
+                        case BridgeArg.Default(n, sym) =>
+                            Ident(cls.companionModule.termRef).select(sym).appliedToTypes(clsTyArgs).appliedToArgs(mySeeds)
+                        case BridgeArg.Err(name) =>
+                            report.error(s"Argument $name for class ${cls.name} is neither a default or position outside of the primary arguments, a bridge cannot be formed")
+                            // FIXME: need to deal with error gace semi-gracefully at the base case
+                            ???
+
+                    ValDef.let(owner, terms) { xs =>
+                        defBindings(owner, paramss, seeds ++= xs, defaults += xs)(k)
+                    }
+            }
+
+            val saturated = defBindings(qx.symbol.owner, otherArgs, mutable.ListBuffer.from(List(qx)), mutable.ListBuffer.empty) { defaults =>
+                conBridged.appliedToArgss(defaults)
+            }
+            //println(saturated)
+            saturated.asExprOf[R]
         }}
     }
 
@@ -224,6 +158,7 @@ private class BridgeImpl(using Quotes) {
                         val (tyParamss, valParamss) = primCon.paramSymss.partition(_.forall(_.isType))
                         valParamss match {
                             // TODO: this .flatten might not work with curried types; but they don't exist yet?
+                            // (might have to be careful with extension methods too, but extension bridges seem... weird)
                             case bridgeParams :: otherParams => (cls, tyParamss.flatten, bridgeParams, otherParams)
                             case Nil                         => (cls, tyParamss.flatten, Nil, Nil)
                         }
@@ -235,3 +170,5 @@ private class BridgeImpl(using Quotes) {
 }
 
 class Bar[A](val x: Boolean)(val y: String = "hello world")
+
+def lotsOfDefs(x: Int)(y: Int = x)(z: Int = y) = z
