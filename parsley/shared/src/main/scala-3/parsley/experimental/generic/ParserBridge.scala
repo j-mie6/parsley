@@ -38,19 +38,18 @@ private class BridgeImpl(using Quotes) {
     def synthesise[T: Type, S: Type] = {
         val tyRepr = TypeRepr.of[T]
         tyRepr match {
-            case Bridgeable(cls, bridgeParams, otherParams) =>
+            case Bridgeable(cls, tyParams, bridgeParams, otherParams) =>
                 val numBridgeParams = bridgeParams.length
                 val categorisedArgs = categoriseArgs(cls, otherParams, numBridgeParams + 1)
                 // Used for the types of the lambda passed to combinator
                 val bridgeTyArgs = bridgeParams.collect {
-                    case ValDef(_, ty, _) if !isPos(ty.tpe) => ty.tpe
+                    case sym if !isPos(sym.termRef) => sym.termRef
                 }
                 // TODO: look for unique position
                 // TODO: ensure validation if Err is encounted (report separately, but then abort if failed (Option))
-                //println(bridgeTyArgs.map(_.typeSymbol))
                 println(categorisedArgs)
                 //val arity = bridgeTyArgs.length
-                bridgeTyArgs.map(_.asType) match {
+                bridgeTyArgs.map(_.typeSymbol.typeRef.asType) match {
                     case List('[t1]) =>
                         '{new Bridge1[t1, S] {
                             //  ap1(pos.map(con), x)
@@ -73,14 +72,14 @@ private class BridgeImpl(using Quotes) {
     private def defaulted(cls: Symbol, n: Int): Option[Symbol] = cls.companionModule.declaredMethod(defaultName(n)).headOption
 
     @tailrec
-    private def categoriseArgs(cls: Symbol, nonPrimaryArgs: List[List[ValDef]], n: Int, buf: mutable.ListBuffer[List[BridgeArg]] = mutable.ListBuffer.empty): List[List[BridgeArg]] = nonPrimaryArgs match {
+    private def categoriseArgs(cls: Symbol, nonPrimaryArgs: List[List[Symbol]], n: Int, buf: mutable.ListBuffer[List[BridgeArg]] = mutable.ListBuffer.empty): List[List[BridgeArg]] = nonPrimaryArgs match {
         case Nil => buf.toList
         case args :: restArgs =>
             categoriseArgs(cls, restArgs, n + args.length, buf += args.zipWithIndex.map {
-                case (ValDef(name, ty, _), i) => defaulted(cls, i + n) match {
-                    case None if isPos(ty.tpe) => BridgeArg.Pos
-                    case Some(sym)             => BridgeArg.Default(i + n, sym)
-                    case None                  => BridgeArg.Err(name)
+                case (sym, i) => defaulted(cls, i + n) match {
+                    case None if isPos(sym.termRef) => BridgeArg.Pos
+                    case Some(sym)                  => BridgeArg.Default(i + n, sym)
+                    case None                       => BridgeArg.Err(sym.name)
                 }
             })
     }
@@ -89,7 +88,7 @@ private class BridgeImpl(using Quotes) {
     // Everything but first set of brackets have defaults
     private def constructor1[T: Type, R: Type]: Expr[T => R] = {
         // if R is an AppliedType, we need to deconstruct it, because the constructor will need the things
-        println('{(x: Boolean) => new Bar[T](x)()}.asTerm)
+        //println('{(x: Boolean) => new Bar[T](x)()}.asTerm)
         /*
         // can't say I know what this is about tbf
         Inlined(Ident(BridgeImpl),List(),
@@ -146,21 +145,21 @@ private class BridgeImpl(using Quotes) {
     }
 
     private object Bridgeable {
-        def unapply(ty: TypeRepr): Option[(Symbol, List[ValDef], List[List[ValDef]])] = {
+        def unapply(ty: TypeRepr): Option[(Symbol, List[Symbol], List[Symbol], List[List[Symbol]])] = {
             val clsDef = ty.classSymbol
             clsDef match {
                 case Some(cls) =>
                     val primCon = cls.primaryConstructor
                     if (primCon.isNoSymbol) None
-                    else primCon.tree match {
-                        // this even works for objects, as they are singletons with an empty constructor,
-                        // returning (cls, Nil, Nil)
-                        case DefDef("<init>", paramClauses, _, _) =>
-                            val bridgeParams :: otherParams = paramClauses.collect {
-                                case TermParamClause(ps) => ps
-                            }: @unchecked
-                            Some((cls, bridgeParams, otherParams))
-                        case _ => None
+                    else {
+                        // some of the arguments lists may be type introductions
+                        // we should filter those out and handle separately
+                        val (tyParamss, valParamss) = primCon.paramSymss.partition(_.forall(_.isType))
+                        valParamss match {
+                            // TODO: this .flatten might not work with curried types; but they don't exist yet?
+                            case bridgeParams :: otherParams => Some((cls, tyParamss.flatten, bridgeParams, otherParams))
+                            case Nil                         => Some((cls, tyParamss.flatten, Nil, Nil))
+                        }
                     }
                 case None => None
             }
