@@ -87,31 +87,12 @@ private class BridgeImpl(using Quotes) {
     // NOT handling positions yet
     // Everything but first set of brackets have defaults
     private def constructor1[T: Type, R: Type](cls: Symbol, clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]]): Expr[T => R] = {
-        /*
-        // can't say I know what this is about tbf
-        Inlined(Ident(BridgeImpl),List(),
-            Block(
-                List(
-                    DefDef(
-                        // I'm guessing this needs to be uniquely generated
-                        $anonfun,
-                        List(List(ValDef(x,Ident(Boolean),EmptyTree))),
-                        // this is just the type R
-                        TypeTree[AppliedType(TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class experimental)),object generic),Bar),
-                                             List(TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),class Int)))],
-                        /* snip, the body */
-                    )
-                ),
-                Closure(List(),Ident($anonfun),EmptyTree)
-            )
-        )
-        */
-        '{(x: T) => ${
-            val qx = 'x.asTerm
+        Lambda(Symbol.spliceOwner, MethodType(List("x1"))(_ => List(TypeRepr.of[T]), _ => TypeRepr.of[R]), { (lamSym, params) =>
+            val lamParams = params.asInstanceOf[List[Term]] // FIXME: grrrrrrrr why has Scala given me Tree and not Term?!
             val tys: List[TypeTree] = clsTyArgs.map(tyRep => TypeTree.of(using tyRep.asType))
             val objTy = New(Applied(TypeTree.ref(cls), tys))
             val con = objTy.select(cls.primaryConstructor).appliedToTypes(clsTyArgs)
-            val conBridged = con.appliedTo(qx)
+            val conBridged = con.appliedToArgs(lamParams)
             // at this point, we have applied the constructor to the bridge args (except for positions)
             // we now need to apply the other default arguments
             // Each default argument takes all the previous sets of arguments (flattened).
@@ -135,13 +116,12 @@ private class BridgeImpl(using Quotes) {
                         defBindings(owner, paramss, seeds ++= xs, defaults += xs)(k)
                     }
             }
-
-            val saturated = defBindings(qx.symbol.owner, otherArgs, mutable.ListBuffer.from(List(qx)), mutable.ListBuffer.empty) { defaults =>
+            val saturated = defBindings(lamSym, otherArgs, mutable.ListBuffer.from(lamParams), mutable.ListBuffer.empty) { defaults =>
                 conBridged.appliedToArgss(defaults)
             }
-            println(saturated)
-            saturated.asExprOf[R]
-        }}
+            //println(saturated)
+            saturated
+        }).asExprOf[T => R]
     }
 
     private object Bridgeable {
