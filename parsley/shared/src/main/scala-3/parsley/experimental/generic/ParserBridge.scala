@@ -45,13 +45,11 @@ private class BridgeImpl(using Quotes) {
                 val categorisedArgs = categoriseArgs(cls, otherParams, numBridgeParams + 1)
                 // Used for the types of the lambda passed to combinator
                 val bridgeTyArgs = bridgeParams.collect {
-                    case sym if !isPos(sym.termRef) => sym.termRef
+                    case sym if !isPos(sym.termRef) => sym.termRef.typeSymbol.typeRef.substituteTypes(tyParams, tyArgs)
                 }
                 // TODO: look for unique position
                 // TODO: ensure validation if Err is encounted (report separately, but then abort if failed (Option))
-                //println(categorisedArgs)
-                //val arity = bridgeTyArgs.length
-                bridgeTyArgs.map(_.typeSymbol.typeRef.asType) match {
+                bridgeTyArgs.map(_.asType) match {
                     case List('[t1]) =>
                         '{new Bridge1[t1, S] {
                             //  ap1(pos.map(con), x)
@@ -141,7 +139,7 @@ private class BridgeImpl(using Quotes) {
             val saturated = defBindings(qx.symbol.owner, otherArgs, mutable.ListBuffer.from(List(qx)), mutable.ListBuffer.empty) { defaults =>
                 conBridged.appliedToArgss(defaults)
             }
-            //println(saturated)
+            println(saturated)
             saturated.asExprOf[R]
         }}
     }
@@ -168,7 +166,3 @@ private class BridgeImpl(using Quotes) {
         }
     }
 }
-
-class Bar[A](val x: Boolean)(val y: String = "hello world")
-
-def lotsOfDefs(x: Int)(y: Int = x)(z: Int = y) = z
