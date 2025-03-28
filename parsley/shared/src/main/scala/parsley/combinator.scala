@@ -430,7 +430,7 @@ object combinator {
       * @param p the parser to execute multiple times.
       * @return a parser that parses `p` until it fails, returning the list of all the successful results.
       */
-    @deprecated("This combinator will be removed in 5.0.0, use `Parsley.many` instead", "4.5.0")
+    @deprecated("This combinator will be removed in 5.0.0, use `Parsley.some` instead", "4.5.0")
     def some[A](p: Parsley[A]): Parsley[List[A]] = manyN(1, p)
     // $COVERAGE-ON$
 
