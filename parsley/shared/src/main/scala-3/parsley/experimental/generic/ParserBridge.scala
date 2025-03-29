@@ -45,15 +45,15 @@ private class BridgeImpl(using Quotes) {
                 val categorisedArgs = categoriseArgs(cls, otherParams, numBridgeParams + 1)
                 // Used for the types of the lambda passed to combinator
                 val bridgeTyArgs = bridgeParams.collect {
-                    case sym if !isPos(sym.termRef) => sym.termRef.typeSymbol.typeRef.substituteTypes(tyParams, tyArgs)
+                    case sym if !isPos(sym.termRef) => (sym.name, sym.termRef.typeSymbol.typeRef.substituteTypes(tyParams, tyArgs))
                 }
                 // TODO: look for unique position
                 // TODO: ensure validation if Err is encounted (report separately, but then abort if failed (Option))
-                bridgeTyArgs.map(_.asType) match {
+                bridgeTyArgs.map(_._2.asType) match {
                     case List('[t1]) =>
                         '{new Bridge1[t1, S] {
                             //  ap1(pos.map(con), x)
-                            def apply(x1: Parsley[t1]): Parsley[S] = x1.map(${constructor1[t1, T](cls, tyArgs, categorisedArgs)})
+                            def apply(x1: Parsley[t1]): Parsley[S] = x1.map(${constructor[T](cls, bridgeTyArgs, tyArgs, categorisedArgs).asExprOf[t1 => T]})
                         }}
                     case List('[t1], '[t2]) => '{new Bridge2[t1, t2, S] {}}
                     // TODO: 20 more of these
@@ -85,10 +85,10 @@ private class BridgeImpl(using Quotes) {
     }
 
     // NOT handling positions yet
-    // Everything but first set of brackets have defaults
-    private def constructor1[T: Type, R: Type](cls: Symbol, clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]]): Expr[T => R] = {
-        Lambda(Symbol.spliceOwner, MethodType(List("x1"))(_ => List(TypeRepr.of[T]), _ => TypeRepr.of[R]), { (lamSym, params) =>
-            val lamParams = params.asInstanceOf[List[Term]] // FIXME: grrrrrrrr why has Scala given me Tree and not Term?!
+    private def constructor[R: Type](cls: Symbol, lamArgs: List[(String, TypeRepr)], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]]): Term = {
+        val (paramNames, lamTys) = lamArgs.unzip
+        Lambda(Symbol.spliceOwner, MethodType(paramNames)(_ => lamTys, _ => TypeRepr.of[R]), { (lamSym, params) =>
+            val lamParams = params.map(_.asExpr.asTerm) // grrrrrrrr why has Scala given me Tree and not Term?!
             val tys: List[TypeTree] = clsTyArgs.map(tyRep => TypeTree.of(using tyRep.asType))
             val objTy = New(Applied(TypeTree.ref(cls), tys))
             val con = objTy.select(cls.primaryConstructor).appliedToTypes(clsTyArgs)
@@ -121,7 +121,7 @@ private class BridgeImpl(using Quotes) {
             }
             //println(saturated)
             saturated
-        }).asExprOf[T => R]
+        })
     }
 
     private object Bridgeable {
