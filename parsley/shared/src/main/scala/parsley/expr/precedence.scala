@@ -108,8 +108,11 @@ object precedence {
       */
     def apply[A](table: Prec[A]): Parsley[A] = crushLevels(table)
 
-    private def crushLevels[A](lvls: Prec[A]): Parsley[A] = lvls match {
-        case Atoms(atom0, atoms @ _*) => choice((atom0 +: atoms): _*)
-        case Level(lvls, ops) => ops.chain(crushLevels(lvls))
+    private def crushLevels[A](lvls: Prec[A]): Parsley[A] = {
+        print("crushing it...")
+        lvls match {
+            case Atoms(atom0, atoms @ _*) => choice((atom0 +: atoms): _*)
+            case Level(lvls, ops) => ops.chain(crushLevels(lvls))
+        }
     }
 }
