@@ -44,16 +44,27 @@ private class BridgeImpl(using Quotes) {
                 val numBridgeParams = bridgeParams.length
                 val categorisedArgs = categoriseArgs(cls, otherParams, numBridgeParams + 1)
                 // Used for the types of the lambda passed to combinator
-                val bridgeTyArgs = bridgeParams.collect {
-                    case sym if !isPos(sym.termRef) => (sym.name, sym.termRef.typeSymbol.typeRef.substituteTypes(tyParams, tyArgs))
+                val bridgeTyArgs = bridgeParams.map /*collect*/ {
+                    // FIXME: switch back to collect and handle this properly
+                    case sym if isPos(sym.termRef) => report.errorAndAbort("Currently, `Pos` cannot appear in the first set of arguments")
+                    case sym /*if !isPos(sym.termRef)*/ => (sym.name, sym.termRef.typeSymbol.typeRef.substituteTypes(tyParams, tyArgs))
+                }
+                val existsUniquePosition = categorisedArgs.flatten.foldLeft(false) {
+                    case (false, BridgeArg.Pos) => true
+                    case (true, BridgeArg.Pos)  => report.errorAndAbort("When `Pos` appears in a bridged type, it must be unique")
+                    case (pos, _)               => pos
                 }
                 // TODO: look for unique position
-                // TODO: ensure validation if Err is encounted (report separately, but then abort if failed (Option))
+                // TODO: ensure validation if Err is encountered (report separately, but then abort if failed (Option))
                 bridgeTyArgs.map(_._2.asType) match {
                     case List('[t1]) =>
                         '{new Bridge1[t1, S] {
-                            //  ap1(pos.map(con), x)
-                            def apply(x1: Parsley[t1]): Parsley[S] = x1.map(${constructor[T](cls, bridgeTyArgs, tyArgs, categorisedArgs).asExprOf[t1 => T]})
+                            def apply(x1: Parsley[t1]): Parsley[S] = ${
+                                val con = constructor[T](cls, bridgeTyArgs, tyArgs, categorisedArgs, existsUniquePosition)
+                                if existsUniquePosition then
+                                    '{lift.lift2(${con.asExprOf[(parsley.experimental.generic.Pos, t1) => T]}, parsley.position.pos, x1)}
+                                else '{x1.map(${con.asExprOf[t1 => T]})}
+                            }
                         }}
                     case List('[t1], '[t2]) => '{new Bridge2[t1, t2, S] {}}
                     // TODO: 20 more of these
@@ -84,46 +95,52 @@ private class BridgeImpl(using Quotes) {
             })
     }
 
+    private def prependIf[A, B >: A](b: Boolean, x: =>B, xs: List[A]): List[B] = if b then x :: xs else xs
+
     // NOT handling positions yet
-    private def constructor[R: Type](cls: Symbol, lamArgs: List[(String, TypeRepr)], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]]): Term = {
-        val (paramNames, lamTys) = lamArgs.unzip
+    private def constructor[R: Type](cls: Symbol, lamArgs: List[(String, TypeRepr)], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]], requiresPosition: Boolean): Term = {
+        val (paramNames, lamTys) = prependIf(requiresPosition, "pos" -> TypeRepr.of[Pos], lamArgs).unzip
         // grrrrrrrr why has Scala given me Tree and not Term?!
-        Lambda(Symbol.spliceOwner, MethodType(paramNames)(_ => lamTys, _ => TypeRepr.of[R]),
-              (lamSym, params) => appliedCon(cls, lamSym, params.map(_.asExpr.asTerm), clsTyArgs, otherArgs))
+        Lambda(Symbol.spliceOwner, MethodType(paramNames)(_ => lamTys, _ => TypeRepr.of[R]), { (lamSym, params) =>
+            val paramTerms = params.map(_.asExpr.asTerm)
+            val (posParam, paramTermsWithoutPos) = paramTerms match
+                case posParam :: paramTerms if requiresPosition => (Some(posParam), paramTerms)
+                case paramTerms => (None, paramTerms)
+            appliedCon(cls, lamSym, paramTermsWithoutPos, clsTyArgs, otherArgs, posParam)
+        })
     }
 
-    private def appliedCon(cls: Symbol, owner: Symbol, params: List[Term], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]]): Term = {
+    private def appliedCon(cls: Symbol, owner: Symbol, params: List[Term], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]], posParam: Option[Term]): Term = {
         val tys: List[TypeTree] = clsTyArgs.map(tyRep => TypeTree.of(using tyRep.asType))
         val objTy = New(Applied(TypeTree.ref(cls), tys))
         val con = objTy.select(cls.primaryConstructor).appliedToTypes(clsTyArgs)
-        val conBridged = con.appliedToArgs(params)
+        val conBridged = con.appliedToArgs(params) // TODO: this doesn't work when positions can be in the first set
         // at this point, we have applied the constructor to the bridge args (except for positions)
         // we now need to apply the other default arguments
         // Each default argument takes all the previous sets of arguments (flattened).
         // this means old default arguments will need to be stored in vals within an enclosing block.
         // we'll need to collect the references to all these into a ListBuffer, which will be repeatedly
         // toList'd as applications are formed.
-        def defBindings(owner: Symbol, paramss: List[List[BridgeArg]], seeds: mutable.ListBuffer[Term], defaults: mutable.ListBuffer[List[Term]])(k: List[List[Term]] => Term): Term = paramss match {
-            case Nil => k(defaults.toList)
+        def defBindings(owner: Symbol, paramss: List[List[BridgeArg]], seeds: mutable.ListBuffer[List[Term]], extras: mutable.ListBuffer[List[Term]])(k: List[List[Term]] => Term): Term = paramss match {
+            case Nil => k(extras.toList)
             case params :: paramss =>
                 val mySeeds = seeds.toList
-                val terms = for param <- params yield param match
-                    case BridgeArg.Pos => report.errorAndAbort("positions are currently not supported in bridges")
+                val terms = params.map {
+                    case BridgeArg.Pos => posParam.get
                     case BridgeArg.Default(n, sym) =>
-                        Ident(cls.companionModule.termRef).select(sym).appliedToTypes(clsTyArgs).appliedToArgs(mySeeds)
+                        Ident(cls.companionModule.termRef).select(sym).appliedToTypes(clsTyArgs).appliedToArgss(mySeeds)
                     case BridgeArg.Err(name) =>
                         report.error(s"Argument $name for class ${cls.name} is neither a default or position outside of the primary arguments, a bridge cannot be formed")
                         // FIXME: need to deal with error gace semi-gracefully at the base case
                         ???
-
+                }
                 ValDef.let(owner, terms) { xs =>
-                    defBindings(owner, paramss, seeds ++= xs, defaults += xs)(k)
+                    defBindings(owner, paramss, seeds += xs, extras += xs)(k)
                 }
         }
-        val saturated = defBindings(owner, otherArgs, mutable.ListBuffer.from(params), mutable.ListBuffer.empty) { defaults =>
+        val saturated = defBindings(owner, otherArgs, mutable.ListBuffer(params), mutable.ListBuffer.empty) { defaults =>
             conBridged.appliedToArgss(defaults)
         }
-        //println(saturated)
         saturated
     }
 
@@ -149,3 +166,31 @@ private class BridgeImpl(using Quotes) {
         }
     }
 }
+
+
+/*Block(
+    List(DefDef(
+        $anonfun,
+        List(List(
+            ValDef(pos,TypeTree[AppliedType(TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),Tuple2),List(TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),Int), TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),Int)))],EmptyTree),
+            ValDef(arg1,TypeTree[TypeRef(NoPrefix,type B)],EmptyTree)
+        )),
+        TypeTree[AppliedType(TypeRef(ThisType(TypeRef(NoPrefix,module class parsley)),class Foo),List(TypeRef(NoPrefix,type B)))],
+        Block(List(
+            ValDef(x,TypeTree[TypeRef(NoPrefix,type B)],
+                Apply(TypeApply(Select(Ident(Foo),$lessinit$greater$default$2),List(TypeTree[TypeRef(NoPrefix,type B)])),
+                      List(Ident(arg1)))),
+            ValDef(x,TypeTree[AppliedType(TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),Tuple2),List(TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),Int), TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),Int)))],
+                Ident(pos))
+            ),
+            Apply(
+                Apply(
+                    TypeApply(
+                        Select(New(AppliedTypeTree(TypeTree[TypeRef(ThisType(TypeRef(NoPrefix,module class parsley)),class Foo)],List(TypeTree[TypeRef(NoPrefix,type B)]))),<init>),
+                        List(TypeTree[TypeRef(NoPrefix,type B)])
+                    ),
+                    List(Ident(arg1))),
+                List(Ident(x), Ident(x))
+            )))),
+    Closure(List(),Ident($anonfun),EmptyTree)
+)*/
