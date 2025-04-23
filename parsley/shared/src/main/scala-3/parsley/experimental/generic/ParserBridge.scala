@@ -87,41 +87,44 @@ private class BridgeImpl(using Quotes) {
     // NOT handling positions yet
     private def constructor[R: Type](cls: Symbol, lamArgs: List[(String, TypeRepr)], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]]): Term = {
         val (paramNames, lamTys) = lamArgs.unzip
-        Lambda(Symbol.spliceOwner, MethodType(paramNames)(_ => lamTys, _ => TypeRepr.of[R]), { (lamSym, params) =>
-            val lamParams = params.map(_.asExpr.asTerm) // grrrrrrrr why has Scala given me Tree and not Term?!
-            val tys: List[TypeTree] = clsTyArgs.map(tyRep => TypeTree.of(using tyRep.asType))
-            val objTy = New(Applied(TypeTree.ref(cls), tys))
-            val con = objTy.select(cls.primaryConstructor).appliedToTypes(clsTyArgs)
-            val conBridged = con.appliedToArgs(lamParams)
-            // at this point, we have applied the constructor to the bridge args (except for positions)
-            // we now need to apply the other default arguments
-            // Each default argument takes all the previous sets of arguments (flattened).
-            // this means old default arguments will need to be stored in vals within an enclosing block.
-            // we'll need to collect the references to all these into a ListBuffer, which will be repeatedly
-            // toList'd as applications are formed.
-            def defBindings(owner: Symbol, paramss: List[List[BridgeArg]], seeds: mutable.ListBuffer[Term], defaults: mutable.ListBuffer[List[Term]])(k: List[List[Term]] => Term): Term = paramss match {
-                case Nil => k(defaults.toList)
-                case params :: paramss =>
-                    val mySeeds = seeds.toList
-                    val terms = for param <- params yield param match
-                        case BridgeArg.Pos => report.errorAndAbort("positions are currently not supported in bridges")
-                        case BridgeArg.Default(n, sym) =>
-                            Ident(cls.companionModule.termRef).select(sym).appliedToTypes(clsTyArgs).appliedToArgs(mySeeds)
-                        case BridgeArg.Err(name) =>
-                            report.error(s"Argument $name for class ${cls.name} is neither a default or position outside of the primary arguments, a bridge cannot be formed")
-                            // FIXME: need to deal with error gace semi-gracefully at the base case
-                            ???
+        // grrrrrrrr why has Scala given me Tree and not Term?!
+        Lambda(Symbol.spliceOwner, MethodType(paramNames)(_ => lamTys, _ => TypeRepr.of[R]),
+              (lamSym, params) => appliedCon(cls, lamSym, params.map(_.asExpr.asTerm), clsTyArgs, otherArgs))
+    }
 
-                    ValDef.let(owner, terms) { xs =>
-                        defBindings(owner, paramss, seeds ++= xs, defaults += xs)(k)
-                    }
-            }
-            val saturated = defBindings(lamSym, otherArgs, mutable.ListBuffer.from(lamParams), mutable.ListBuffer.empty) { defaults =>
-                conBridged.appliedToArgss(defaults)
-            }
-            //println(saturated)
-            saturated
-        })
+    private def appliedCon(cls: Symbol, owner: Symbol, params: List[Term], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]]): Term = {
+        val tys: List[TypeTree] = clsTyArgs.map(tyRep => TypeTree.of(using tyRep.asType))
+        val objTy = New(Applied(TypeTree.ref(cls), tys))
+        val con = objTy.select(cls.primaryConstructor).appliedToTypes(clsTyArgs)
+        val conBridged = con.appliedToArgs(params)
+        // at this point, we have applied the constructor to the bridge args (except for positions)
+        // we now need to apply the other default arguments
+        // Each default argument takes all the previous sets of arguments (flattened).
+        // this means old default arguments will need to be stored in vals within an enclosing block.
+        // we'll need to collect the references to all these into a ListBuffer, which will be repeatedly
+        // toList'd as applications are formed.
+        def defBindings(owner: Symbol, paramss: List[List[BridgeArg]], seeds: mutable.ListBuffer[Term], defaults: mutable.ListBuffer[List[Term]])(k: List[List[Term]] => Term): Term = paramss match {
+            case Nil => k(defaults.toList)
+            case params :: paramss =>
+                val mySeeds = seeds.toList
+                val terms = for param <- params yield param match
+                    case BridgeArg.Pos => report.errorAndAbort("positions are currently not supported in bridges")
+                    case BridgeArg.Default(n, sym) =>
+                        Ident(cls.companionModule.termRef).select(sym).appliedToTypes(clsTyArgs).appliedToArgs(mySeeds)
+                    case BridgeArg.Err(name) =>
+                        report.error(s"Argument $name for class ${cls.name} is neither a default or position outside of the primary arguments, a bridge cannot be formed")
+                        // FIXME: need to deal with error gace semi-gracefully at the base case
+                        ???
+
+                ValDef.let(owner, terms) { xs =>
+                    defBindings(owner, paramss, seeds ++= xs, defaults += xs)(k)
+                }
+        }
+        val saturated = defBindings(owner, otherArgs, mutable.ListBuffer.from(params), mutable.ListBuffer.empty) { defaults =>
+            conBridged.appliedToArgss(defaults)
+        }
+        //println(saturated)
+        saturated
     }
 
     private object Bridgeable {
