@@ -255,8 +255,6 @@ private [parsley] object TaggedWith {
             }
         }
 
-        private case class TaggedTable[A](table: LazyPrec[A], bubblesIterative: Boolean)
-
         override def visit[A](self: Precedence[A], context: ParserTracker)(table: LazyPrec[A]): DL[A] = {
             handlePossiblySeen(self, context) {
                 visitPrecTable(table, context).map { taggedTable => TaggingResult(
@@ -266,15 +264,17 @@ private [parsley] object TaggedWith {
             }
         }
 
-        private def visitPrecTable[A](table: LazyPrec[A], context: ParserTracker): M[R, TaggedTable[A]] = table match {
+        private case class TaggedLazyPrec[A](table: LazyPrec[A], bubblesIterative: Boolean)
+
+        private def visitPrecTable[A](table: LazyPrec[A], context: ParserTracker): M[R, TaggedLazyPrec[A]] = table match {
             case Atoms(atoms) => TraverseHelper.traverse(atoms)(visit(_, context)).map { taggedAtoms =>
-                new TaggedTable(new Atoms(taggedAtoms.map(_.parser.get)), taggedAtoms.exists(_.bubblesIterative))
+                new TaggedLazyPrec(new Atoms(taggedAtoms.map(_.parser.get)), taggedAtoms.exists(_.bubblesIterative))
             }
-            case Level(lower, fixity, operators) => for {
+            case Level(lower, lOps) => for {
                 taggedLower <- visitPrecTable(lower, context)
-                taggedOperators <- TraverseHelper.traverse(operators)(visit(_, context))
-            } yield new TaggedTable(
-                new Level(taggedLower.table, fixity, taggedOperators.map(_.parser.get)),
+                taggedOperators <- TraverseHelper.traverse(lOps.ops)(visit(_, context))
+            } yield new TaggedLazyPrec(
+                new Level(taggedLower.table, LazyOps(lOps.f)(taggedOperators.map(_.parser.get))),
                 taggedLower.bubblesIterative || taggedOperators.exists(_.bubblesIterative)
             )
         }
