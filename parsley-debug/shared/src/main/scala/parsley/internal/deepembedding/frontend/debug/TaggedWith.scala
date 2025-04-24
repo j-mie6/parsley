@@ -18,6 +18,8 @@ import parsley.internal.deepembedding.ContOps.{perform, result, suspend, zipWith
 import parsley.internal.deepembedding.backend.StrictParsley
 import parsley.internal.deepembedding.backend.debug.TagFactory
 import parsley.internal.deepembedding.frontend._ // scalastyle:ignore underscore.import
+import parsley.internal.deepembedding.frontend.LazyPrec.Atoms
+import parsley.internal.deepembedding.frontend.LazyPrec.Level
 
 // Wrapper class signifying debugged classes
 // TODO: the origin is needed to figure out the name later on... but couldn't we resolve the name here and avoid forwarding on to the backend (send string instead)?
@@ -252,6 +254,29 @@ private [parsley] object TaggedWith {
             handle2Ary(self, context)(p, op) { (p, op) => {
                     Lazy(new ChainPre(p.get, op.get))
                 }
+            }
+        }
+
+        private case class TaggedTable[A](table: LazyPrec[A], bubblesIterative: Boolean)
+
+        override def visit[A](self: Precedence[A], context: ParserTracker)(table: LazyPrec[A]): DL[A] = {
+            handlePossiblySeen(self, context) {
+                visitPrecTable(table, context).map { taggedTable => { TaggingResult(
+                    parser = Lazy(new Precedence(taggedTable.table)),
+                    bubblesIterative = taggedTable.bubblesIterative
+                )}}
+            }
+        }
+
+        private def visitPrecTable[A](table: LazyPrec[A], context: ParserTracker): M[R, TaggedTable[A]] = table match {
+            case Atoms(atoms) => TraverseHelper.traverse(atoms)(visit(_, context)).map { taggedAtoms =>
+                new TaggedTable(new Atoms(taggedAtoms.map(_.parser.get)), taggedAtoms.exists(_.bubblesIterative))
+            }
+            case Level(lower, fixity, operators) => {
+                for {
+                    taggedLower <- visitPrecTable(lower, context)
+                    taggedOperators <- TraverseHelper.traverse(operators)(visit(_, context))
+                } yield new TaggedTable(new Level(taggedLower.table, fixity, taggedOperators.map(_.parser.get)), taggedLower.bubblesIterative || taggedOperators.exists(_.bubblesIterative))
             }
         }
 
