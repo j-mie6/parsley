@@ -244,16 +244,14 @@ private [parsley] object TaggedWith {
         }
 
         override def visit[A](self: <|>[A], context: ParserTracker)(p: LazyParsley[A], q: LazyParsley[A]): DL[A] = {
-            handle2Ary(self, context)(p, q) { (p, q) => {
-                    Lazy(new <|>(p.get, q.get, self.debugName))
-                }
+            handle2Ary(self, context)(p, q) { (p, q) =>
+                Lazy(new <|>(p.get, q.get, self.debugName))
             }
         }
 
         override def visit[A](self: ChainPre[A], context: ParserTracker)(p: LazyParsley[A], op: =>LazyParsley[A => A]): DL[A] = {
-            handle2Ary(self, context)(p, op) { (p, op) => {
-                    Lazy(new ChainPre(p.get, op.get))
-                }
+            handle2Ary(self, context)(p, op) { (p, op) =>
+                Lazy(new ChainPre(p.get, op.get))
             }
         }
 
@@ -283,10 +281,10 @@ private [parsley] object TaggedWith {
         // the generic unary/binary overrides above cannot handle this properly, as they lose the UsesReg trait
         override def visit[S](self: Put[S], context: ParserTracker)(ref: Ref[S], p: LazyParsley[S]): DL[Unit] = {
             handlePossiblySeen(self, context) {
-                visit(p, context).map(p => { TaggingResult(
+                visit(p, context).map { p => TaggingResult(
                     parser = Lazy( new Put(ref, p.parser.get)),
                     bubblesIterative = p.bubblesIterative
-                )})
+                )}
             }
         }
         override def visit[S, A](self: NewReg[S, A], context: ParserTracker)(ref: Ref[S], init: LazyParsley[S], body: =>LazyParsley[A]): DL[A] = {
