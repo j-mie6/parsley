@@ -15,6 +15,7 @@ import parsley.debug.combinator.attachDebugger
 import parsley.expr.chain
 import parsley.internal.deepembedding.frontend.debug.TaggedWith
 import parsley.internal.deepembedding.singletons
+import parsley.internal.deepembedding.frontend.LazyPrec.{Atoms, Level}
 
 class TotalAttachmentSpec extends ParsleyTest {
     private final class RandomParserCreator(maxDepth: Int) {
@@ -96,6 +97,25 @@ class TotalAttachmentSpec extends ParsleyTest {
                 visitUnknown(op, parentIsTag = false): @unused
                 CUnit
             } else failure()
+        
+        override def visit[A](self: Precedence[A], parentIsTag: Boolean)(table: LazyPrec[A]): ConstUnit[A] = {
+            if (parentIsTag == self.isOpaque) {
+                visitLazyPrec(table, parentIsTag = false): @unused
+                CUnit
+            } else failure()
+        }
+
+        private def visitLazyPrec[A](table: LazyPrec[A], parentIsTag: Boolean): ConstUnit[A] = table match {
+            case Atoms(atoms) => {
+                atoms.foreach(visitUnknown(_, parentIsTag))
+                CUnit
+            }
+            case Level(lvls, ops) => {
+                visitLazyPrec(lvls, parentIsTag)
+                ops.ops.foreach(visitUnknown(_, parentIsTag))
+                CUnit
+            }
+        }
 
         // Somehow IntelliJ Scala thinks this is tail-recursive... but ScalaC does not?
         //noinspection NoTailRecursionAnnotation
@@ -107,6 +127,7 @@ class TotalAttachmentSpec extends ParsleyTest {
                 case g: GenericLazyParsley[_]         => visitGeneric(g.asInstanceOf[GenericLazyParsley[A]], parentIsTag)
                 case alt: <|>[_]                      => alt.visit(this, parentIsTag)
                 case cpre: ChainPre[_]                => cpre.visit(this, parentIsTag)
+                case prec: Precedence[_]              => prec.visit(this, parentIsTag)
                 case _                                => if (parentIsTag) CUnit else failure()
             }
 
