@@ -46,7 +46,7 @@ private class BridgeImpl(using Quotes) {
                 // Used for the types of the lambda passed to combinator
                 val bridgeTyArgs = bridgeParams.map /*collect*/ {
                     // FIXME: switch back to collect and handle this properly
-                    case sym if isPos(sym.termRef) => report.errorAndAbort("Currently, `Pos` cannot appear in the first set of arguments")
+                    case sym if isPos(sym) => report.errorAndAbort("Currently, `Pos` cannot appear in the first set of arguments")
                     case sym /*if !isPos(sym.termRef)*/ => (sym.name, sym.termRef.typeSymbol.typeRef.substituteTypes(tyParams, tyArgs))
                 }
                 val existsUniquePosition = categorisedArgs.flatten.foldLeft(false) {
@@ -62,7 +62,7 @@ private class BridgeImpl(using Quotes) {
                             def apply(x1: Parsley[t1]): Parsley[S] = ${
                                 val con = constructor[T](cls, bridgeTyArgs, tyArgs, categorisedArgs, existsUniquePosition)
                                 if existsUniquePosition then
-                                    '{lift.lift2(${con.asExprOf[(parsley.experimental.generic.Pos, t1) => T]}, parsley.position.pos, x1)}
+                                    '{lift.lift2(${con.asExprOf[((Int, Int), t1) => T]}, parsley.position.pos, x1)}
                                 else '{x1.map(${con.asExprOf[t1 => T]})}
                             }
                         }}
@@ -74,9 +74,13 @@ private class BridgeImpl(using Quotes) {
         }
     }
 
-    private def isPos(ty: TypeRepr): Boolean = ty.asType match {
-        case '[parsley.experimental.generic.Pos] => true
-        case _                                   => false
+    private def isPos(ty: Symbol): Boolean = {
+        val hasAnnotation = ty.hasAnnotation(TypeRepr.of[parsley.experimental.generic.isPosition].typeSymbol)
+        if (hasAnnotation) ty.termRef.asType match {
+            case '[(Int, Int)] =>
+            case _             => report.errorAndAbort(s"attribute ${ty.name} can only be annotated with @isPosition if it has type (Int, Int)")
+        }
+        hasAnnotation
     }
 
     private def defaultName(n: Int) = s"$$lessinit$$greater$$default$$$n"
@@ -88,9 +92,9 @@ private class BridgeImpl(using Quotes) {
         case args :: restArgs =>
             categoriseArgs(cls, restArgs, n + args.length, buf += args.zipWithIndex.map {
                 case (sym, i) => defaulted(cls, i + n) match {
-                    case None if isPos(sym.termRef) => BridgeArg.Pos
-                    case Some(sym)                  => BridgeArg.Default(i + n, sym)
-                    case None                       => BridgeArg.Err(sym.name)
+                    case None if isPos(sym) => BridgeArg.Pos
+                    case Some(sym)          => BridgeArg.Default(i + n, sym)
+                    case None               => BridgeArg.Err(sym.name)
                 }
             })
     }
@@ -99,7 +103,7 @@ private class BridgeImpl(using Quotes) {
 
     // NOT handling positions yet
     private def constructor[R: Type](cls: Symbol, lamArgs: List[(String, TypeRepr)], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]], requiresPosition: Boolean): Term = {
-        val (paramNames, lamTys) = prependIf(requiresPosition, "pos" -> TypeRepr.of[Pos], lamArgs).unzip
+        val (paramNames, lamTys) = prependIf(requiresPosition, "pos" -> TypeRepr.of[(Int, Int)], lamArgs).unzip
         // grrrrrrrr why has Scala given me Tree and not Term?!
         Lambda(Symbol.spliceOwner, MethodType(paramNames)(_ => lamTys, _ => TypeRepr.of[R]), { (lamSym, params) =>
             val paramTerms = params.map(_.asExpr.asTerm)

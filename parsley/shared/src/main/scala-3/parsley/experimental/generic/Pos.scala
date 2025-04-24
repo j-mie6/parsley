@@ -5,4 +5,4 @@
  */
 package parsley.experimental.generic
 
-type Pos = (Int, Int)
+class isPosition extends scala.annotation.StaticAnnotation
