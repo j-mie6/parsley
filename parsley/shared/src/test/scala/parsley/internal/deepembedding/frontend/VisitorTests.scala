@@ -43,6 +43,8 @@ class VisitorTests extends ParsleyTest {
 
             override def visit[A](self: ChainPre[A], context: Unit)(p: LazyParsley[A], op: => LazyParsley[A => A]): ConstUnit[A] = CUnit
 
+            override def visit[A](self: Precedence[A], context: Unit)(table: LazyPrec[A]): ConstUnit[A] = CUnit
+
             override def visitUnknown[A](self: LazyParsley[A], context: Unit): ConstUnit[A] = CUnit
         }
 
