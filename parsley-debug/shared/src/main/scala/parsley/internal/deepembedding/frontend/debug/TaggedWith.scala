@@ -259,10 +259,10 @@ private [parsley] object TaggedWith {
 
         override def visit[A](self: Precedence[A], context: ParserTracker)(table: LazyPrec[A]): DL[A] = {
             handlePossiblySeen(self, context) {
-                visitPrecTable(table, context).map { taggedTable => { TaggingResult(
+                visitPrecTable(table, context).map { taggedTable => TaggingResult(
                     parser = Lazy(new Precedence(taggedTable.table)),
                     bubblesIterative = taggedTable.bubblesIterative
-                )}}
+                )}
             }
         }
 
@@ -270,12 +270,13 @@ private [parsley] object TaggedWith {
             case Atoms(atoms) => TraverseHelper.traverse(atoms)(visit(_, context)).map { taggedAtoms =>
                 new TaggedTable(new Atoms(taggedAtoms.map(_.parser.get)), taggedAtoms.exists(_.bubblesIterative))
             }
-            case Level(lower, fixity, operators) => {
-                for {
-                    taggedLower <- visitPrecTable(lower, context)
-                    taggedOperators <- TraverseHelper.traverse(operators)(visit(_, context))
-                } yield new TaggedTable(new Level(taggedLower.table, fixity, taggedOperators.map(_.parser.get)), taggedLower.bubblesIterative || taggedOperators.exists(_.bubblesIterative))
-            }
+            case Level(lower, fixity, operators) => for {
+                taggedLower <- visitPrecTable(lower, context)
+                taggedOperators <- TraverseHelper.traverse(operators)(visit(_, context))
+            } yield new TaggedTable(
+                new Level(taggedLower.table, fixity, taggedOperators.map(_.parser.get)),
+                taggedLower.bubblesIterative || taggedOperators.exists(_.bubblesIterative)
+            )
         }
 
         // the generic unary/binary overrides above cannot handle this properly, as they lose the UsesReg trait
