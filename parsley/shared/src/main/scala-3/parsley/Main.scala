@@ -4,10 +4,19 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 package parsley
+import parsley.experimental.generic.*
 
-case class Foo[A](arg1: A)(@parsley.experimental.generic.isPosition val y: (Int, Int))
+case class Pos(line: Int, col: Int, offset: Int)
+object Pos {
+    import parsley.position.{line, col, offset}
+    given PositionLike[Pos] with {
+        val pos = lift.lift3(Pos.apply, line, col, offset)
+    }
+}
 
-def foo[B] = experimental.generic.bridge[Foo[B]]
+case class Foo[A](arg1: A)(@isPosition val y: Pos)
+
+def foo[B] = bridge[Foo[B]]
 
 @main
 def bridgeTest() = {

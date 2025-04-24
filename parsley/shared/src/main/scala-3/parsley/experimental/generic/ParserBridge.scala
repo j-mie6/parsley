@@ -31,7 +31,7 @@ private def bridgeImpl[T: Type, S >: T: Type](using Quotes): Expr[ErrorBridge] =
 private class BridgeImpl(using Quotes) {
     import quotes.reflect.*
     private enum BridgeArg {
-        case Pos
+        case Pos(impl: PosImpl[?])
         case Default(n: Int, sym: Symbol)
         case Err(name: String)
     }
@@ -46,13 +46,13 @@ private class BridgeImpl(using Quotes) {
                 // Used for the types of the lambda passed to combinator
                 val bridgeTyArgs = bridgeParams.map /*collect*/ {
                     // FIXME: switch back to collect and handle this properly
-                    case sym if isPos(sym) => report.errorAndAbort("Currently, `Pos` cannot appear in the first set of arguments")
+                    case sym if isPos(sym).nonEmpty => report.errorAndAbort("Currently, `Pos` cannot appear in the first set of arguments")
                     case sym /*if !isPos(sym.termRef)*/ => (sym.name, sym.termRef.typeSymbol.typeRef.substituteTypes(tyParams, tyArgs))
                 }
-                val existsUniquePosition = categorisedArgs.flatten.foldLeft(false) {
-                    case (false, BridgeArg.Pos) => true
-                    case (true, BridgeArg.Pos)  => report.errorAndAbort("When `Pos` appears in a bridged type, it must be unique")
-                    case (pos, _)               => pos
+                val existsUniquePosition = categorisedArgs.flatten.foldLeft(Option.empty[PosImpl[?]]) {
+                    case (None, BridgeArg.Pos(impl)) => Some(impl)
+                    case (Some(_), BridgeArg.Pos(_)) => report.errorAndAbort("When `Pos` appears in a bridged type, it must be unique")
+                    case (pos, _)                    => pos
                 }
                 // TODO: look for unique position
                 // TODO: ensure validation if Err is encountered (report separately, but then abort if failed (Option))
@@ -60,10 +60,12 @@ private class BridgeImpl(using Quotes) {
                     case List('[t1]) =>
                         '{new Bridge1[t1, S] {
                             def apply(x1: Parsley[t1]): Parsley[S] = ${
-                                val con = constructor[T](cls, bridgeTyArgs, tyArgs, categorisedArgs, existsUniquePosition)
-                                if existsUniquePosition then
-                                    '{lift.lift2(${con.asExprOf[((Int, Int), t1) => T]}, parsley.position.pos, x1)}
-                                else '{x1.map(${con.asExprOf[t1 => T]})}
+                                val con = constructor[T](cls, bridgeTyArgs, tyArgs, categorisedArgs, existsUniquePosition.map(_.tyRepr))
+                                existsUniquePosition match {
+                                    case Some(impl@PosImpl(_, given Type[posTy])) =>
+                                        '{lift.lift2(${con.asExprOf[(posTy, t1) => T]}, ${impl.parser}, x1)}
+                                    case None => '{x1.map(${con.asExprOf[t1 => T]})}
+                                }
                             }
                         }}
                     case List('[t1], '[t2]) => '{new Bridge2[t1, t2, S] {}}
@@ -74,13 +76,19 @@ private class BridgeImpl(using Quotes) {
         }
     }
 
-    private def isPos(ty: Symbol): Boolean = {
-        val hasAnnotation = ty.hasAnnotation(TypeRepr.of[parsley.experimental.generic.isPosition].typeSymbol)
-        if (hasAnnotation) ty.termRef.asType match {
-            case '[(Int, Int)] =>
-            case _             => report.errorAndAbort(s"attribute ${ty.name} can only be annotated with @isPosition if it has type (Int, Int)")
+    private case class PosImpl[T: Type](inst: Expr[PositionLike[T]], ty: Type[T]) {
+        def parser: Expr[Parsley[T]] = '{$inst.pos}
+        def tyRepr = TypeRepr.of[T]
+    }
+    private def isPos(sym: Symbol): Option[PosImpl[?]] = {
+        val hasAnnotation = sym.hasAnnotation(TypeRepr.of[parsley.experimental.generic.isPosition].typeSymbol)
+        sym.termRef.widen.asType match {
+            case ty@'[t] if hasAnnotation => Expr.summon[parsley.experimental.generic.PositionLike[t]] match {
+                case Some(inst) => Some(PosImpl[t](inst, ty))
+                case None => report.errorAndAbort(s"attribute ${sym.name} can only be annotated with @isPosition if it is `PositionLike`")
+            }
+            case _ => None
         }
-        hasAnnotation
     }
 
     private def defaultName(n: Int) = s"$$lessinit$$greater$$default$$$n"
@@ -92,9 +100,11 @@ private class BridgeImpl(using Quotes) {
         case args :: restArgs =>
             categoriseArgs(cls, restArgs, n + args.length, buf += args.zipWithIndex.map {
                 case (sym, i) => defaulted(cls, i + n) match {
-                    case None if isPos(sym) => BridgeArg.Pos
-                    case Some(sym)          => BridgeArg.Default(i + n, sym)
-                    case None               => BridgeArg.Err(sym.name)
+                    case Some(sym) => BridgeArg.Default(i + n, sym)
+                    case None => isPos(sym) match {
+                        case Some(impl) => BridgeArg.Pos(impl)
+                        case None => BridgeArg.Err(sym.name)
+                    }
                 }
             })
     }
@@ -102,8 +112,9 @@ private class BridgeImpl(using Quotes) {
     private def prependIf[A, B >: A](b: Boolean, x: =>B, xs: List[A]): List[B] = if b then x :: xs else xs
 
     // NOT handling positions yet
-    private def constructor[R: Type](cls: Symbol, lamArgs: List[(String, TypeRepr)], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]], requiresPosition: Boolean): Term = {
-        val (paramNames, lamTys) = prependIf(requiresPosition, "pos" -> TypeRepr.of[(Int, Int)], lamArgs).unzip
+    private def constructor[R: Type](cls: Symbol, lamArgs: List[(String, TypeRepr)], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]], posRepr: Option[TypeRepr]): Term = {
+        val requiresPosition = posRepr.isDefined
+        val (paramNames, lamTys) = prependIf(requiresPosition, "pos" -> posRepr.get, lamArgs).unzip
         // grrrrrrrr why has Scala given me Tree and not Term?!
         Lambda(Symbol.spliceOwner, MethodType(paramNames)(_ => lamTys, _ => TypeRepr.of[R]), { (lamSym, params) =>
             val paramTerms = params.map(_.asExpr.asTerm)
@@ -130,7 +141,7 @@ private class BridgeImpl(using Quotes) {
             case params :: paramss =>
                 val mySeeds = seeds.toList
                 val terms = params.map {
-                    case BridgeArg.Pos => posParam.get
+                    case BridgeArg.Pos(_) => posParam.get
                     case BridgeArg.Default(n, sym) =>
                         Ident(cls.companionModule.termRef).select(sym).appliedToTypes(clsTyArgs).appliedToArgss(mySeeds)
                     case BridgeArg.Err(name) =>
@@ -170,31 +181,3 @@ private class BridgeImpl(using Quotes) {
         }
     }
 }
-
-
-/*Block(
-    List(DefDef(
-        $anonfun,
-        List(List(
-            ValDef(pos,TypeTree[AppliedType(TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),Tuple2),List(TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),Int), TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),Int)))],EmptyTree),
-            ValDef(arg1,TypeTree[TypeRef(NoPrefix,type B)],EmptyTree)
-        )),
-        TypeTree[AppliedType(TypeRef(ThisType(TypeRef(NoPrefix,module class parsley)),class Foo),List(TypeRef(NoPrefix,type B)))],
-        Block(List(
-            ValDef(x,TypeTree[TypeRef(NoPrefix,type B)],
-                Apply(TypeApply(Select(Ident(Foo),$lessinit$greater$default$2),List(TypeTree[TypeRef(NoPrefix,type B)])),
-                      List(Ident(arg1)))),
-            ValDef(x,TypeTree[AppliedType(TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),Tuple2),List(TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),Int), TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),Int)))],
-                Ident(pos))
-            ),
-            Apply(
-                Apply(
-                    TypeApply(
-                        Select(New(AppliedTypeTree(TypeTree[TypeRef(ThisType(TypeRef(NoPrefix,module class parsley)),class Foo)],List(TypeTree[TypeRef(NoPrefix,type B)]))),<init>),
-                        List(TypeTree[TypeRef(NoPrefix,type B)])
-                    ),
-                    List(Ident(arg1))),
-                List(Ident(x), Ident(x))
-            )))),
-    Closure(List(),Ident($anonfun),EmptyTree)
-)*/
