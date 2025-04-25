@@ -19,6 +19,7 @@ import parsley.internal.deepembedding.backend.StrictParsley
 import parsley.internal.deepembedding.backend.debug.TagFactory
 import parsley.internal.deepembedding.frontend._ // scalastyle:ignore underscore.import
 import parsley.internal.deepembedding.frontend.LazyPrec.{Atoms, Level}
+import parsley.internal.deepembedding.Traverse.traverse
 
 // Wrapper class signifying debugged classes
 // TODO: the origin is needed to figure out the name later on... but couldn't we resolve the name here and avoid forwarding on to the backend (send string instead)?
@@ -266,12 +267,12 @@ private [parsley] object TaggedWith {
         private case class TaggedLazyPrec[A](table: LazyPrec[A], bubblesIterative: Boolean)
 
         private def visitLazyPrec[A](table: LazyPrec[A], context: ParserTracker): M[R, TaggedLazyPrec[A]] = table match {
-            case Atoms(atoms) => TraverseHelper.traverse(atoms)(visit(_, context)).map { taggedAtoms =>
+            case Atoms(atoms) => traverse(atoms)(visit(_, context)).map { taggedAtoms =>
                 new TaggedLazyPrec(new Atoms(taggedAtoms.map(_.parser.get)), taggedAtoms.exists(_.bubblesIterative))
             }
             case Level(lower, lOps) => for {
                 taggedLower <- visitLazyPrec(lower, context)
-                taggedOperators <- TraverseHelper.traverse(lOps.ops)(visit(_, context))
+                taggedOperators <- traverse(lOps.ops)(visit(_, context))
             } yield new TaggedLazyPrec(
                 new Level(taggedLower.table, LazyOps(lOps.f)(taggedOperators.map(_.parser.get))),
                 taggedLower.bubblesIterative || taggedOperators.exists(_.bubblesIterative)
