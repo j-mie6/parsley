@@ -18,8 +18,7 @@ import parsley.internal.deepembedding.ContOps.{perform, result, suspend, zipWith
 import parsley.internal.deepembedding.backend.StrictParsley
 import parsley.internal.deepembedding.backend.debug.TagFactory
 import parsley.internal.deepembedding.frontend._ // scalastyle:ignore underscore.import
-import parsley.internal.deepembedding.frontend.LazyPrec.Atoms
-import parsley.internal.deepembedding.frontend.LazyPrec.Level
+import parsley.internal.deepembedding.frontend.LazyPrec.{Atoms, Level}
 
 // Wrapper class signifying debugged classes
 // TODO: the origin is needed to figure out the name later on... but couldn't we resolve the name here and avoid forwarding on to the backend (send string instead)?
@@ -257,7 +256,7 @@ private [parsley] object TaggedWith {
 
         override def visit[A](self: Precedence[A], context: ParserTracker)(table: LazyPrec[A]): DL[A] = {
             handlePossiblySeen(self, context) {
-                visitPrecTable(table, context).map { taggedTable => TaggingResult(
+                visitLazyPrec(table, context).map { taggedTable => TaggingResult(
                     parser = Lazy(new Precedence(taggedTable.table)),
                     bubblesIterative = taggedTable.bubblesIterative
                 )}
@@ -266,12 +265,12 @@ private [parsley] object TaggedWith {
 
         private case class TaggedLazyPrec[A](table: LazyPrec[A], bubblesIterative: Boolean)
 
-        private def visitPrecTable[A](table: LazyPrec[A], context: ParserTracker): M[R, TaggedLazyPrec[A]] = table match {
+        private def visitLazyPrec[A](table: LazyPrec[A], context: ParserTracker): M[R, TaggedLazyPrec[A]] = table match {
             case Atoms(atoms) => TraverseHelper.traverse(atoms)(visit(_, context)).map { taggedAtoms =>
                 new TaggedLazyPrec(new Atoms(taggedAtoms.map(_.parser.get)), taggedAtoms.exists(_.bubblesIterative))
             }
             case Level(lower, lOps) => for {
-                taggedLower <- visitPrecTable(lower, context)
+                taggedLower <- visitLazyPrec(lower, context)
                 taggedOperators <- TraverseHelper.traverse(lOps.ops)(visit(_, context))
             } yield new TaggedLazyPrec(
                 new Level(taggedLower.table, LazyOps(lOps.f)(taggedOperators.map(_.parser.get))),
