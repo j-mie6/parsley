@@ -2,8 +2,8 @@ package parsley.internal.deepembedding.frontend
 
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 import parsley.internal.deepembedding.ContOps
-import parsley.internal.deepembedding.ContOps.{result, suspend, ContAdapter}
-import parsley.internal.deepembedding.Traverse.{traverse, traverse_}
+import parsley.internal.deepembedding.ContOps.{suspend, ContAdapter}
+import parsley.internal.deepembedding.Traverse.{traverse}
 import parsley.internal.deepembedding.frontend.LazyPrec.{Atoms, Level, traverse_ => traversePrec_}
 
 private [parsley] final class Precedence[A](table: LazyPrec[A]) extends LazyParsley[A] {
