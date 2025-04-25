@@ -3,6 +3,7 @@ package parsley.internal.deepembedding.frontend
 import parsley.expr.Fixity
 import parsley.internal.deepembedding.ContOps
 import parsley.internal.deepembedding.ContOps.{ContAdapter}
+import parsley.internal.deepembedding.Traverse.{traverse_ => ltraverse_}
 import parsley.expr.Ops
 import scala.annotation.unchecked.uncheckedVariance
 
@@ -53,7 +54,7 @@ object LazyPrec {
     fAtom: LazyParsley[_] => M[R, B],
     fOp: LazyParsley[_] => M[R, B]
   ): M[R, Unit] = table match {
-    case Atoms(atoms) => TraverseHelper.traverse_[M, R, LazyParsley[_], B](atoms)(fAtom)
-    case Level(lower, lOps) => traverse_[M, R, B](lower)(fAtom, fOp) >> TraverseHelper.traverse_[M, R, LazyParsley[_], B](lOps.ops)(fOp)
+    case Atoms(atoms) => ltraverse_[M, R, LazyParsley[_], B](atoms)(fAtom)
+    case Level(lower, lOps) => traverse_[M, R, B](lower)(fAtom, fOp) >> ltraverse_[M, R, LazyParsley[_], B](lOps.ops)(fOp)
   }
 }
