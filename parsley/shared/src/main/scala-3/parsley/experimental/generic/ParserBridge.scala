@@ -33,7 +33,7 @@ private class BridgeImpl(using Quotes) {
     private enum BridgeArg {
         case Pos(impl: PosImpl[?])
         case Default(n: Int, sym: Symbol)
-        case Err(name: String)
+        case Err(name: String, pos: Option[Position])
     }
 
     def synthesise[T: Type, S >: T: Type] = {
@@ -85,7 +85,9 @@ private class BridgeImpl(using Quotes) {
         sym.termRef.widen.asType match {
             case ty@'[t] if hasAnnotation => Expr.summon[parsley.experimental.generic.PositionLike[t]] match {
                 case Some(inst) => Some(PosImpl[t](inst, ty))
-                case None => report.errorAndAbort(s"attribute ${sym.name} can only be annotated with @isPosition if it is `PositionLike`")
+                case None =>
+                    val typeName = TypeRepr.of[t].show(using Printer.TypeReprShortCode)
+                    report.errorAndAbort(s"attribute ${sym.name} can only use @isPosition with a `parsley.generic.PositionLike[$typeName]` instance in scope", sym.pos.get)
             }
             case _ => None
         }
@@ -103,7 +105,7 @@ private class BridgeImpl(using Quotes) {
                     case Some(sym) => BridgeArg.Default(i + n, sym)
                     case None => isPos(sym) match {
                         case Some(impl) => BridgeArg.Pos(impl)
-                        case None => BridgeArg.Err(sym.name)
+                        case None => BridgeArg.Err(sym.name, sym.pos)
                     }
                 }
             })
@@ -130,6 +132,7 @@ private class BridgeImpl(using Quotes) {
         val objTy = New(Applied(TypeTree.ref(cls), tys))
         val con = objTy.select(cls.primaryConstructor).appliedToTypes(clsTyArgs)
         val conBridged = con.appliedToArgs(params) // TODO: this doesn't work when positions can be in the first set
+        val kaboom: Term = '{???}.asTerm
         // at this point, we have applied the constructor to the bridge args (except for positions)
         // we now need to apply the other default arguments
         // Each default argument takes all the previous sets of arguments (flattened).
@@ -144,10 +147,9 @@ private class BridgeImpl(using Quotes) {
                     case BridgeArg.Pos(_) => posParam.get
                     case BridgeArg.Default(n, sym) =>
                         Ident(cls.companionModule.termRef).select(sym).appliedToTypes(clsTyArgs).appliedToArgss(mySeeds)
-                    case BridgeArg.Err(name) =>
-                        report.error(s"Argument $name for class ${cls.name} is neither a default or position outside of the primary arguments, a bridge cannot be formed")
-                        // FIXME: need to deal with error gace semi-gracefully at the base case
-                        ???
+                    case BridgeArg.Err(name, pos) =>
+                        report.error(s"Argument $name for class ${cls.name} is neither a default or position outside of the primary arguments, a bridge cannot be formed", pos.get)
+                        kaboom
                 }
                 ValDef.let(owner, terms) { xs =>
                     defBindings(owner, paramss, seeds += xs, extras += xs)(k)
