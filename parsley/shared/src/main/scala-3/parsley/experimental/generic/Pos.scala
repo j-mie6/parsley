@@ -13,6 +13,6 @@ abstract class PositionLike[T] {
 }
 object PositionLike {
     given PositionLike[(Int, Int)] with {
-        val pos = position.pos
+        inline def pos = position.pos
     }
 }
