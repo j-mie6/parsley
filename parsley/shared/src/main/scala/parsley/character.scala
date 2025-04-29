@@ -479,7 +479,7 @@ object character {
     def stringOfSome(pc: Parsley[Char]): Parsley[String] = {
         val pf = pure[(StringBuilder, Char) => StringBuilder](_ += _)
         // Can't use the regular foldLeft1 here, because we need a fresh StringBuilder each time.
-        expr.infix.secretLeft1(pc.map(new StringBuilder += _), pc, pf).map(_.toString)
+        expr.infix.secretLeft1(pc.impure.map(new StringBuilder += _), pc, pf).map(_.toString)
     }
 
     // TODO: optimise, this can be _really_ tightly implemented with a substring on the input
