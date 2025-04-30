@@ -28,24 +28,18 @@ private [deepembedding] final class Precedence[A](choice: StrictParsley[ShuntInp
 }
 
 private [deepembedding] object Precedence {
-  def apply[A](table: StrictPrec[A]): Precedence[A] = {
-    val options = buildChoiceOptions(table, 0)
-    if (options.isEmpty) {
-      throw new IllegalArgumentException("Precedence table must have at least one operator")
-    } else if (options.length == 1) {
-      new Precedence(options.head)
-    } else if (options.length == 2) {
-      new Precedence(<|>(options.head, options(1)))
-    } else {
-      new Precedence(new Choice(options.head, options(1), SinglyLinkedList(options(2), options.drop(3): _*)))
-    }
+  def apply[A](table: StrictPrec[A]): Precedence[A] = buildChoiceOptions(table, 0) match {
+    case Nil => throw new IllegalArgumentException("Precedence table must have at least one operator")
+    case a :: Nil => new Precedence(a)
+    case a :: b :: Nil => new Precedence(<|>(a, b))
+    case a :: b :: rest => new Precedence(new Choice(a, b, SinglyLinkedList(rest.head, rest.tail: _*)))
   }
 
   private def buildChoiceOptions(table: StrictPrec[_], lvl: Int): List[StrictParsley[ShuntInput]] = table match {
     case StrictPrec.Atoms(atoms) => atoms.map(a => <*>(new Pure(r => Atom(r)), a))
     case StrictPrec.Level(lower, ops) =>
-      val lowerChoice = buildChoiceOptions(lower, lvl + 1)
-      val opChoice = ops.ops.map(o => <*>(new Pure(r => Operator(r, ops.f, lvl)), o))
-      lowerChoice ++ opChoice
+      val lowerOptions = buildChoiceOptions(lower, lvl + 1)
+      val opOptions = ops.ops.map(o => <*>(new Pure(r => Operator(r, ops.f, lvl)), o))
+      lowerOptions ++ opOptions
   }
 }
