@@ -18,7 +18,7 @@ private [parsley] final class Precedence[A](table: LazyPrec[A]) extends LazyPars
 
   override protected def preprocess[M[_, +_]: ContOps, R, A_ >: A](implicit lets: LetMap): M[R,StrictParsley[A_]] = for {
     strictPrec <- buildStrictPrec[M, R, A](table)
-  } yield new backend.Precedence(strictPrec)
+  } yield backend.Precedence(strictPrec)
 
   private def buildStrictPrec[M[_, +_]: ContOps, R, X](lp: LazyPrec[X])(implicit lets: LetMap): M[R, backend.StrictPrec[X]] = lp match {
     case Atoms(atoms) => traverse(atoms)(_.optimised[M, R, X]).map(backend.StrictPrec.Atoms(_))
