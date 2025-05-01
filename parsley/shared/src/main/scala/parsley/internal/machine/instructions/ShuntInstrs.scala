@@ -12,11 +12,12 @@ private [internal] case class Operator(f: Any, fix: Fixity, prec: Int) extends S
 
 private [internal] case class ShuntingYardState(
   atoms: mutable.Stack[Either[Operator, Atom]],
-  operators: mutable.Stack[Operator]
+  operators: mutable.Stack[Operator],
+  var failOnNoConsumed: Boolean
 )
 
 object ShuntingYardState {
-  def empty = new ShuntingYardState(mutable.Stack.empty, mutable.Stack.empty)
+  def empty = new ShuntingYardState(mutable.Stack.empty, mutable.Stack.empty, true)
 }
 
 private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixLabel: Int) extends Instr {
@@ -31,10 +32,12 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
       input match {
         case a@Atom(_) =>
           state.atoms.push(Right(a))
+          state.failOnNoConsumed = false
           ctx.pc = postfixInfixLabel
         case o@Operator(_, fix, prec) => fix match {
           case Prefix => {
             state.atoms.push(Left(o))
+            state.failOnNoConsumed = true
             ctx.pc = prefixAtomLabel
           }
           case InfixL => {
@@ -43,6 +46,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
               reduce(state)
             }
             state.operators.push(o)
+            state.failOnNoConsumed = true
             ctx.pc = prefixAtomLabel
           }
           case InfixR | InfixN | Postfix => {
@@ -51,6 +55,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
               reduce(state)
             }
             state.operators.push(o)
+            state.failOnNoConsumed = fix != Postfix
             if (fix == Postfix) ctx.pc = postfixInfixLabel
             else ctx.pc = prefixAtomLabel
           }
@@ -60,25 +65,33 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
       // In this case, there was an error in Choice
       // It is a soft error in which nothing was consumed so we are at the end of the input
       val state = ctx.stack.peek[ShuntingYardState]
-      
-      forceReducePrefixes(state)
-      while (state.operators.nonEmpty) reduce(state)
-      forceReducePrefixes(state)
-      
-      if (state.atoms.size != 1) {
-        throw new IllegalStateException(f"Expected a single result, but got ${state.atoms.size} results")
-        // ctx.fail()
-      }
-      popAST(state.atoms) match {
-        case Atom(v) => ctx.stack.exchange(v) // pops the state to clean up, replace with result
-        case _ => {
-          throw new IllegalStateException("Expected an atom, but got an operator as the final result")
+      println("State: " + state)
+
+      if (state.failOnNoConsumed) {
+        // throw new IllegalStateException("Expected a prefix operator, but got an atom")
+        ctx.good = false
+        ctx.handlers = ctx.handlers.tail
+        ctx.fail()
+      } else {
+        forceReducePrefixes(state)
+        while (state.operators.nonEmpty) reduce(state)
+        forceReducePrefixes(state)
+        
+        if (state.atoms.size != 1) {
+          throw new IllegalStateException(f"Expected a single result, but got ${state.atoms.size} results")
           // ctx.fail()
         }
+        popAST(state.atoms) match {
+          case Atom(v) => ctx.stack.exchange(v) // pop state and push result to stack
+          case _ => {
+            throw new IllegalStateException("Expected an atom, but got an operator as the final result")
+            // ctx.fail()
+          }
+        }
+        ctx.handlers = ctx.handlers.tail
+        ctx.addErrorToHintsAndPop()
+        ctx.inc()
       }
-      ctx.handlers = ctx.handlers.tail
-      ctx.addErrorToHintsAndPop()
-      ctx.inc()
     }
   }
 
