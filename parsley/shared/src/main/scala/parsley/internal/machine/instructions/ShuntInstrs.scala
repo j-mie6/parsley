@@ -4,6 +4,8 @@ import scala.collection.mutable
 
 import parsley.internal.machine.Context
 import parsley.expr.{Fixity, Prefix, InfixL, InfixR, InfixN, Postfix}
+import parsley.internal.errors.CaretWidth
+import parsley.internal.errors.FlexibleCaret
 
 private [internal] sealed trait ShuntInput
 
@@ -25,7 +27,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
     if (ctx.good) {
       val input = ctx.stack.pop[ShuntInput]()
       val state = ctx.stack.peek[ShuntingYardState]
-      // println("State: " + state)
+      println("State: " + state)
 
       ctx.updateCheckOffset()
       
@@ -54,6 +56,13 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
             while (state.operators.nonEmpty && state.operators.top.prec > prec) {
               reduce(state)
             }
+            if (fix == InfixN && state.operators.nonEmpty && state.operators.top.fix == InfixN && state.operators.top.prec == prec) {
+              // This is a special case in which non-associative operators are chained
+              ctx.handlers = ctx.handlers.tail
+              ctx.offset -= 1 // needs to be token length
+              ctx.failWithMessage(new FlexibleCaret(1) , "Non-associative operator cannot be chained") // needs to be token length
+              return
+            }
             state.operators.push(o)
             state.failOnNoConsumed = fix != Postfix
             if (fix == Postfix) ctx.pc = postfixInfixLabel
@@ -65,7 +74,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
       // In this case, there was an error in Choice
       // It is a soft error in which nothing was consumed so we are at the end of the input
       val state = ctx.stack.peek[ShuntingYardState]
-      // println("State: " + state)
+      println("State: " + state)
 
       if (state.failOnNoConsumed) {
         // The prefix/atom choice did not match, malformed expression
