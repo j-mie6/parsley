@@ -19,26 +19,31 @@ object ShuntingYardState {
   def empty = new ShuntingYardState(mutable.Stack.empty, mutable.Stack.empty)
 }
 
-private [internal] final class Shunt(var label: Int) extends InstrWithLabel {
+private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixLabel: Int) extends Instr {
   override def apply(ctx: Context): Unit = {
     if (ctx.good) {
-      // A choice was made and a new "token" is at the top of the stack
-      // This is the body of the for loop in the standard algorithm
       val input = ctx.stack.pop[ShuntInput]()
       val state = ctx.stack.peek[ShuntingYardState]
+      println("State: " + state)
 
+      ctx.updateCheckOffset()
+      
       input match {
         case a@Atom(_) =>
           state.atoms.push(Right(a))
-          ctx.inc()
+          ctx.pc = postfixInfixLabel
         case o@Operator(_, fix, prec) => fix match {
-          case Prefix => state.atoms.push(Left(o))
+          case Prefix => {
+            state.atoms.push(Left(o))
+            ctx.pc = prefixAtomLabel
+          }
           case InfixL => {
             maybeReducePrefixes(prec, state)
             while (state.operators.nonEmpty && state.operators.top.prec >= prec) {
               reduce(state)
             }
             state.operators.push(o)
+            ctx.pc = prefixAtomLabel
           }
           case InfixR | InfixN | Postfix => {
             maybeReducePrefixes(prec, state)
@@ -46,25 +51,30 @@ private [internal] final class Shunt(var label: Int) extends InstrWithLabel {
               reduce(state)
             }
             state.operators.push(o)
+            if (fix == Postfix) ctx.pc = postfixInfixLabel
+            else ctx.pc = prefixAtomLabel
           }
         }
       }
-      ctx.updateCheckOffset()
-      ctx.pc = label
     } else ctx.catchNoConsumed(ctx.handlers.check) {
       // In this case, there was an error in Choice
       // It is a soft error in which nothing was consumed so we are at the end of the input
       val state = ctx.stack.peek[ShuntingYardState]
       
+      forceReducePrefixes(state)
       while (state.operators.nonEmpty) reduce(state)
       forceReducePrefixes(state)
       
       if (state.atoms.size != 1) {
-        throw new IllegalStateException("Expected a single result, but got multiple")
+        throw new IllegalStateException(f"Expected a single result, but got ${state.atoms.size} results")
+        // ctx.fail()
       }
       popAST(state.atoms) match {
         case Atom(v) => ctx.stack.exchange(v) // pops the state to clean up, replace with result
-        case _ => throw new IllegalStateException("Expected an atom, but got an operator as the final result")
+        case _ => {
+          throw new IllegalStateException("Expected an atom, but got an operator as the final result")
+          // ctx.fail()
+        }
       }
       ctx.handlers = ctx.handlers.tail
       ctx.addErrorToHintsAndPop()
@@ -73,7 +83,10 @@ private [internal] final class Shunt(var label: Int) extends InstrWithLabel {
   }
 
   private def popAST(atoms: mutable.Stack[Either[Operator, Atom]]): Atom = atoms.pop() match {
-    case Left(_) => throw new IllegalStateException("Expected an atom, but got an operator")
+    case Left(_) => {
+      throw new IllegalStateException("Expected an atom, but got an operator")
+      // ctx.fail()
+    }
     case Right(a) => a 
   }
 
@@ -123,5 +136,11 @@ private [internal] final class Shunt(var label: Int) extends InstrWithLabel {
       }
   }
 
-  override def toString(): String = s"Shunt($label)"
+  override def relabel(labels: Array[Int]): this.type = {
+    prefixAtomLabel = labels(prefixAtomLabel)
+    postfixInfixLabel = labels(postfixInfixLabel)
+    this
+  }
+
+  override def toString(): String = s"Shunt(Pre/Atom label: $prefixAtomLabel, Post/Infix label: $postfixInfixLabel)"
 }

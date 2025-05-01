@@ -6,19 +6,25 @@ import parsley.internal.deepembedding.singletons.Pure
 import parsley.internal.collection.mutable.SinglyLinkedList
 import parsley.internal.machine.instructions
 import parsley.internal.machine.instructions.{ShuntInput, Atom, Operator}
+import parsley.expr.Prefix
 
 private[deepembedding] case class PrecOperators[A, B](val ops: StrictOps[A, B], val precedence: Int)
 
-private [deepembedding] final class Precedence[A](choice: StrictParsley[ShuntInput]) extends StrictParsley[A] {
+private [deepembedding] final class Precedence[A](prefixAtomChoice: StrictParsley[ShuntInput], postfixInfixChoice: StrictParsley[ShuntInput]) extends StrictParsley[A] {
   override protected[backend] def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: StrictParsley.InstrBuffer, state: CodeGenState): M[R,Unit] = {
-    val start = state.freshLabel()
-    val handler = state.freshLabel()
+    val prefixAtomLabel = state.freshLabel()
+    val postfixInfixLabel = state.freshLabel()
+    val shuntLabel = state.freshLabel()
     instrs += new instructions.Fresh(instructions.ShuntingYardState.empty)
-    instrs += new instructions.PushHandler(handler)
-    instrs += new instructions.Label(start)
-    suspend(choice.codeGen[M, R](producesResults = true)) |> {
-      instrs += new instructions.Label(handler)
-      instrs += new instructions.Shunt(start)
+    instrs += new instructions.PushHandler(shuntLabel)
+    instrs += new instructions.Label(prefixAtomLabel)
+    suspend(prefixAtomChoice.codeGen[M, R](producesResults = true)) >> {
+      instrs += new instructions.Jump(shuntLabel)
+      instrs += new instructions.Label(postfixInfixLabel)
+      suspend(postfixInfixChoice.codeGen[M, R](producesResults = true)) |> {
+        instrs += new instructions.Label(shuntLabel)
+        instrs += new instructions.Shunt(prefixAtomLabel, postfixInfixLabel)
+      }
     }
   }
 
@@ -28,18 +34,28 @@ private [deepembedding] final class Precedence[A](choice: StrictParsley[ShuntInp
 }
 
 private [deepembedding] object Precedence {
-  def apply[A](table: StrictPrec[A]): Precedence[A] = buildChoiceOptions(table, 0) match {
-    case Nil => throw new IllegalArgumentException("Precedence table must have at least one operator")
-    case a :: Nil => new Precedence(a)
-    case a :: b :: Nil => new Precedence(<|>(a, b))
-    case a :: b :: rest => new Precedence(new Choice(a, b, SinglyLinkedList(rest.head, rest.tail: _*)))
+  def apply[A](table: StrictPrec[A]): Precedence[A] = {
+    val (prefixAtomOptions, postfixInfixOptions) = buildChoiceOptions(table, 0)
+    val prefixAtomChoice = buildChoiceNode(prefixAtomOptions)
+    val postfixInfixChoice = buildChoiceNode(postfixInfixOptions)
+    new Precedence(prefixAtomChoice, postfixInfixChoice)
   }
 
-  private def buildChoiceOptions(table: StrictPrec[_], lvl: Int): List[StrictParsley[ShuntInput]] = table match {
-    case StrictPrec.Atoms(atoms) => atoms.map(a => <*>(new Pure(r => Atom(r)), a))
+  private def buildChoiceNode[A](options: List[StrictParsley[A]]): StrictParsley[A] = options match {
+    case Nil => throw new IllegalArgumentException("Cannot build choice node with empty options") // TODO: what goes here?
+    case a :: Nil => a
+    case a :: b :: Nil => <|>(a, b)
+    case a :: b :: rest => new Choice(a, b, SinglyLinkedList(rest.head, rest.tail: _*))
+  }
+
+  private def buildChoiceOptions(table: StrictPrec[_], lvl: Int): (List[StrictParsley[ShuntInput]], List[StrictParsley[ShuntInput]]) = table match {
+    case StrictPrec.Atoms(atoms) => (atoms.map(a => <*>(new Pure(r => Atom(r)), a)), Nil)
     case StrictPrec.Level(lower, ops) =>
       val lowerOptions = buildChoiceOptions(lower, lvl + 1)
       val opOptions = ops.ops.map(o => <*>(new Pure(r => Operator(r, ops.f, lvl)), o))
-      lowerOptions ++ opOptions
+      ops.f match {
+        case Prefix => (lowerOptions._1 ++ opOptions, lowerOptions._2)
+        case _      => (lowerOptions._1, lowerOptions._2 ++ opOptions)
+      }
   }
 }
