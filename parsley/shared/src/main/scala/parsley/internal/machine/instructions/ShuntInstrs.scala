@@ -25,7 +25,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
     if (ctx.good) {
       val input = ctx.stack.pop[ShuntInput]()
       val state = ctx.stack.peek[ShuntingYardState]
-      println("State: " + state)
+      // println("State: " + state)
 
       ctx.updateCheckOffset()
       
@@ -65,32 +65,26 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
       // In this case, there was an error in Choice
       // It is a soft error in which nothing was consumed so we are at the end of the input
       val state = ctx.stack.peek[ShuntingYardState]
-      println("State: " + state)
+      // println("State: " + state)
 
       if (state.failOnNoConsumed) {
-        // throw new IllegalStateException("Expected a prefix operator, but got an atom")
+        // The prefix/atom choice did not match, malformed expression
         ctx.good = false
         ctx.handlers = ctx.handlers.tail
         ctx.fail()
       } else {
+        // The postfix/infix choice did not match, this is the end of the input
         forceReducePrefixes(state)
         while (state.operators.nonEmpty) reduce(state)
         forceReducePrefixes(state)
         
-        if (state.atoms.size != 1) {
-          throw new IllegalStateException(f"Expected a single result, but got ${state.atoms.size} results")
-          // ctx.fail()
-        }
         popAST(state.atoms) match {
           case Atom(v) => ctx.stack.exchange(v) // pop state and push result to stack
-          case _ => {
-            throw new IllegalStateException("Expected an atom, but got an operator as the final result")
-            // ctx.fail()
-          }
         }
         ctx.handlers = ctx.handlers.tail
         ctx.addErrorToHintsAndPop()
         ctx.inc()
+        // ctx.ret()
       }
     }
   }
@@ -106,7 +100,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
   private def popPrefix(atoms: mutable.Stack[Either[Operator, Atom]]): Operator = atoms.pop() match {
     case Left(op) => op.fix match {
       case Prefix => op
-      case _ => throw new IllegalStateException("Expected a prefix operator, but got an atom")
+      case _ => throw new IllegalStateException("Expected a prefix operator, but got a different operator type")
     }
     case Right(_) => throw new IllegalStateException("Expected a prefix operator, but got an atom")
   }
@@ -115,14 +109,15 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
     val op = state.operators.pop()
     op.fix match {
       case InfixR | InfixL | InfixN => {
-        if (state.atoms.size < 2) throw new IllegalStateException("Not enough operands for infix operator")
+        // this failure case should not occur due to the choice constraints
+        // if (state.atoms.size < 2) throw new IllegalStateException("Not enough operands for infix operator")
         val right = popAST(state.atoms)
         val left = popAST(state.atoms)
         val result = op.f.asInstanceOf[(Any, Any) => Any](left.v, right.v)
         state.atoms.push(Right(Atom(result)))
       }
       case Postfix => {
-        if (state.atoms.isEmpty) throw new IllegalStateException("Not enough operands for postfix operator")
+        // if (state.atoms.isEmpty) throw new IllegalStateException("Not enough operands for postfix operator")
         val right = popAST(state.atoms)
         val result = op.f.asInstanceOf[Any => Any](right.v)
         state.atoms.push(Right(Atom(result)))
