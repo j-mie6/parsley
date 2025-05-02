@@ -27,7 +27,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
     if (ctx.good) {
       val input = ctx.stack.pop[ShuntInput]()
       val state = ctx.stack.peek[ShuntingYardState]
-      println("State: " + state)
+      // println("State: " + state)
 
       ctx.updateCheckOffset()
       
@@ -58,9 +58,10 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
             }
             if (fix == InfixN && state.operators.nonEmpty && state.operators.top.fix == InfixN && state.operators.top.prec == prec) {
               // This is a special case in which non-associative operators are chained
+              val currentOffset = ctx.offset
+              ctx.restoreState()
               ctx.handlers = ctx.handlers.tail
-              ctx.offset -= 1 // needs to be token length
-              ctx.failWithMessage(new FlexibleCaret(1) , "Non-associative operator cannot be chained") // needs to be token length
+              ctx.failWithMessage(new FlexibleCaret(currentOffset-ctx.offset) , "Non-associative operator cannot be chained") // needs to be token length
               return
             }
             state.operators.push(o)
@@ -70,16 +71,18 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
           }
         }
       }
+      updateState(ctx)
     } else ctx.catchNoConsumed(ctx.handlers.check) {
       // In this case, there was an error in Choice
       // It is a soft error in which nothing was consumed so we are at the end of the input
       val state = ctx.stack.peek[ShuntingYardState]
-      println("State: " + state)
+      // println("State: " + state)
 
       if (state.failOnNoConsumed) {
         // The prefix/atom choice did not match, malformed expression
         ctx.good = false
         ctx.handlers = ctx.handlers.tail
+        popState(ctx)
         ctx.fail()
       } else {
         // The postfix/infix choice did not match, this is the end of the input
@@ -93,6 +96,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
         ctx.handlers = ctx.handlers.tail
         ctx.addErrorToHintsAndPop()
         ctx.inc()
+        popState(ctx)
         // ctx.ret()
       }
     }
@@ -151,6 +155,15 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
         val result = prefixOp.f.asInstanceOf[Any => Any](operand.v)
         state.atoms.push(Right(Atom(result)))
       }
+  }
+
+  private def updateState(ctx: Context): Unit = {
+    popState(ctx)
+    ctx.saveState()
+  }
+
+  private def popState(ctx: Context): Unit = {
+    ctx.states = ctx.states.tail
   }
 
   override def relabel(labels: Array[Int]): this.type = {
