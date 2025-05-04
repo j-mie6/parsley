@@ -107,7 +107,6 @@ object precedence {
       * @since 4.0.0
       */
     def apply[A](table: Prec[A]): Parsley[A] = {
-      val lazyPrec = frontend.LazyPrec.fromPrec(table)
-      new Parsley(new frontend.Precedence(lazyPrec))
+      new Parsley(new frontend.Precedence(frontend.LazyPrec(table)))
     }
 }

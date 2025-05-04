@@ -4,12 +4,11 @@ import scala.collection.mutable
 
 import parsley.internal.machine.Context
 import parsley.expr.{Fixity, Prefix, InfixL, InfixR, InfixN, Postfix}
-import parsley.internal.errors.CaretWidth
 import parsley.internal.errors.FlexibleCaret
 
 private [internal] sealed trait ShuntInput
 
-private [internal] case class Atom(v: Any) extends ShuntInput
+private [internal] case class Atom(v: Any, lvl: Int) extends ShuntInput
 private [internal] case class Operator(f: Any, fix: Fixity, prec: Int) extends ShuntInput
 
 private [internal] case class ShuntingYardState(
@@ -22,7 +21,7 @@ object ShuntingYardState {
   def empty = new ShuntingYardState(mutable.Stack.empty, mutable.Stack.empty, true)
 }
 
-private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixLabel: Int) extends Instr {
+private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixLabel: Int, wraps: List[Any => Any]) extends Instr {
   override def apply(ctx: Context): Unit = {
     if (ctx.good) {
       val input = ctx.stack.pop[ShuntInput]()
@@ -32,7 +31,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
       ctx.updateCheckOffset()
       
       input match {
-        case a@Atom(_) =>
+        case a@Atom(_, _) =>
           state.atoms.push(Right(a))
           state.failOnNoConsumed = false
           ctx.pc = postfixInfixLabel
@@ -91,7 +90,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
         forceReducePrefixes(state)
         
         popAST(state.atoms) match {
-          case Atom(v) => ctx.stack.exchange(v) // pop state and push result to stack
+          case Atom(v, lvl) => ctx.stack.exchange(wrap(lvl, 0)(v))
         }
         ctx.handlers = ctx.handlers.tail
         ctx.addErrorToHintsAndPop()
@@ -126,14 +125,18 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
         // if (state.atoms.size < 2) throw new IllegalStateException("Not enough operands for infix operator")
         val right = popAST(state.atoms)
         val left = popAST(state.atoms)
-        val result = op.f.asInstanceOf[(Any, Any) => Any](left.v, right.v)
-        state.atoms.push(Right(Atom(result)))
+        val result = op.fix match {
+          case InfixL => op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec)(left.v), wrap(right.lvl, op.prec + 1)(right.v))
+          case InfixR => op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec + 1)(left.v), wrap(right.lvl, op.prec)(right.v))
+          case InfixN => op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec + 1)(left.v), wrap(right.lvl, op.prec + 1)(right.v))
+        }
+        state.atoms.push(Right(Atom(result, op.prec)))
       }
       case Postfix => {
         // if (state.atoms.isEmpty) throw new IllegalStateException("Not enough operands for postfix operator")
         val right = popAST(state.atoms)
-        val result = op.f.asInstanceOf[Any => Any](right.v)
-        state.atoms.push(Right(Atom(result)))
+        val result = op.f.asInstanceOf[Any => Any](wrap(right.lvl, op.prec)(right.v))
+        state.atoms.push(Right(Atom(result, op.prec)))
       }
       case _ => throw new IllegalStateException("Unexpected Prefix in operator stack")
     }
@@ -143,8 +146,8 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
     while (state.atoms.size >= 2 && state.atoms(1).isLeft && state.atoms(1).swap.getOrElse(throw new IllegalStateException("Expected a prefix operator")).prec > nextOpPrec) {
       val operand = popAST(state.atoms)
       val prefixOp = popPrefix(state.atoms)
-      val result = prefixOp.f.asInstanceOf[Any => Any](operand.v)
-      state.atoms.push(Right(Atom(result)))
+      val result = prefixOp.f.asInstanceOf[Any => Any](wrap(operand.lvl, prefixOp.prec)(operand.v))
+      state.atoms.push(Right(Atom(result, prefixOp.prec)))
     }
   }
 
@@ -152,9 +155,15 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
     while (state.atoms.size >= 2 && state.atoms(1).isLeft) {
         val operand = popAST(state.atoms)
         val prefixOp = popPrefix(state.atoms)
-        val result = prefixOp.f.asInstanceOf[Any => Any](operand.v)
-        state.atoms.push(Right(Atom(result)))
+        val result = prefixOp.f.asInstanceOf[Any => Any](wrap(operand.lvl, prefixOp.prec)(operand.v))
+        state.atoms.push(Right(Atom(result, prefixOp.prec)))
       }
+  }
+
+  private def wrap(currentLvl: Int, targetLvl: Int): (Any => Any) = {
+    assume(targetLvl <= currentLvl)
+    if (targetLvl == currentLvl) return identity
+    (currentLvl - 1 to targetLvl by -1).map(wraps).reduce(_ andThen _)
   }
 
   private def updateState(ctx: Context): Unit = {

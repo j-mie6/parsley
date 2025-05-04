@@ -124,7 +124,7 @@ private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle
     def visit(self: SkipManyUntil, context: T)(body: LazyParsley[Any]): U[Unit]
 
     // Precedence parser visitor.
-    def visit[A](self: Precedence[A], context: T)(table: LazyPrec[A]): U[A]
+    def visit[A](self: Precedence[A], context: T)(table: LazyPrec): U[A]
 
     // Error parser visitors.
     def visit[A](self: ErrorLabel[A], context: T)(p: LazyParsley[A], label: String, labels: Seq[String]): U[A]

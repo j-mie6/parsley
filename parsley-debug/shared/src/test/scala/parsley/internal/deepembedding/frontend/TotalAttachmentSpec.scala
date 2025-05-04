@@ -15,7 +15,6 @@ import parsley.debug.combinator.attachDebugger
 import parsley.expr.chain
 import parsley.internal.deepembedding.frontend.debug.TaggedWith
 import parsley.internal.deepembedding.singletons
-import parsley.internal.deepembedding.frontend.LazyPrec.{Atoms, Level}
 
 class TotalAttachmentSpec extends ParsleyTest {
     private final class RandomParserCreator(maxDepth: Int) {
@@ -98,23 +97,17 @@ class TotalAttachmentSpec extends ParsleyTest {
                 CUnit
             } else failure()
         
-        override def visit[A](self: Precedence[A], parentIsTag: Boolean)(table: LazyPrec[A]): ConstUnit[A] = {
+        override def visit[A](self: Precedence[A], parentIsTag: Boolean)(table: LazyPrec): ConstUnit[A] = {
             if (parentIsTag == self.isOpaque) {
                 visitLazyPrec(table, parentIsTag = false): @unused
                 CUnit
             } else failure()
         }
 
-        private def visitLazyPrec[A](table: LazyPrec[A], parentIsTag: Boolean): ConstUnit[A] = table match {
-            case Atoms(atoms) => {
-                atoms.foreach(visitUnknown(_, parentIsTag))
-                CUnit
-            }
-            case Level(lvls, ops) => {
-                visitLazyPrec(lvls, parentIsTag)
-                ops.ops.foreach(visitUnknown(_, parentIsTag))
-                CUnit
-            }
+        private def visitLazyPrec[A](table: LazyPrec, parentIsTag: Boolean): ConstUnit[A] = {
+            table.atoms.foreach(visitUnknown(_, parentIsTag))
+            table.ops.foreach(op => visitUnknown(op.op, parentIsTag))
+            CUnit
         }
 
         // Somehow IntelliJ Scala thinks this is tail-recursive... but ScalaC does not?

@@ -22,6 +22,7 @@ import scala.annotation.unchecked.uncheckedVariance
 abstract class Ops[-A, B] {
   private[parsley] val f: Fixity
   private[parsley] val operators: Seq[Parsley[f.Op[A @uncheckedVariance, B]]]
+  private[parsley] val wrap: A => B
 }
 
 /** This helper object is used to build values of `Ops[A, A]`, for homogeneous precedence parsing.
@@ -48,8 +49,12 @@ object Ops {
       */
     def apply[A](fixity: Fixity)(op0: Parsley[fixity.Op[A, A]], ops: Parsley[fixity.Op[A, A]]*): Ops[A, A] = GOps[A, A](fixity)(op0, ops: _*)
 
-    private [expr] def apply[A, B](fixity: Fixity)(op: Parsley[fixity.Op[A, B]])(implicit wrap: A => B): Ops[A, B] = new Ops[A, B] {
-      val f: fixity.type = fixity
-      val operators = Seq(op)
+    private [expr] def apply[A, B](fixity: Fixity)(op: Parsley[fixity.Op[A, B]])(implicit wrap: A => B): Ops[A, B] = {
+      val w = wrap
+      new Ops[A, B] {
+        val f: fixity.type = fixity
+        val operators = Seq(op)
+        val wrap = w
+      }
     }
 }

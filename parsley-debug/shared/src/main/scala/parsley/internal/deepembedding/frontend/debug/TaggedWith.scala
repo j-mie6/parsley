@@ -18,7 +18,6 @@ import parsley.internal.deepembedding.ContOps.{perform, result, suspend, zipWith
 import parsley.internal.deepembedding.backend.StrictParsley
 import parsley.internal.deepembedding.backend.debug.TagFactory
 import parsley.internal.deepembedding.frontend._ // scalastyle:ignore underscore.import
-import parsley.internal.deepembedding.frontend.LazyPrec.{Atoms, Level}
 import parsley.internal.deepembedding.Traverse.traverse
 
 // Wrapper class signifying debugged classes
@@ -255,7 +254,7 @@ private [parsley] object TaggedWith {
             }
         }
 
-        override def visit[A](self: Precedence[A], context: ParserTracker)(table: LazyPrec[A]): DL[A] = {
+        override def visit[A](self: Precedence[A], context: ParserTracker)(table: LazyPrec): DL[A] = {
             handlePossiblySeen(self, context) {
                 visitLazyPrec(table, context).map { taggedTable => TaggingResult(
                     parser = Lazy(new Precedence(taggedTable.table)),
@@ -264,18 +263,21 @@ private [parsley] object TaggedWith {
             }
         }
 
-        private case class TaggedLazyPrec[A](table: LazyPrec[A], bubblesIterative: Boolean)
+        private case class TaggedLazyPrec(table: LazyPrec, bubblesIterative: Boolean)
 
-        private def visitLazyPrec[A](table: LazyPrec[A], context: ParserTracker): M[R, TaggedLazyPrec[A]] = table match {
-            case Atoms(atoms) => traverse(atoms)(visit(_, context)).map { taggedAtoms =>
-                new TaggedLazyPrec(new Atoms(taggedAtoms.map(_.parser.get)), taggedAtoms.exists(_.bubblesIterative))
-            }
-            case Level(lower, lOps) => for {
-                taggedLower <- visitLazyPrec(lower, context)
-                taggedOperators <- traverse(lOps.ops)(visit(_, context))
-            } yield new TaggedLazyPrec(
-                new Level(taggedLower.table, LazyOps(lOps.f)(taggedOperators.map(_.parser.get))),
-                taggedLower.bubblesIterative || taggedOperators.exists(_.bubblesIterative)
+        private def visitLazyPrec(table: LazyPrec, context: ParserTracker): M[R, TaggedLazyPrec] = for {
+            taggedAtoms <- traverse(table.atoms)(visit(_, context))
+            taggedOperators <- traverse(table.ops)(op => for {
+                p <- visit(op.op, context)
+            } yield (op.fixity, p, op.prec))
+        } yield {
+            new TaggedLazyPrec(
+                new LazyPrec(
+                    taggedAtoms.map(_.parser.get),
+                    taggedOperators.map(op => LazyOp(op._1, op._2.parser.get, op._3)),
+                    table.wraps
+                ),
+                taggedAtoms.exists(_.bubblesIterative) || taggedOperators.exists(_._2.bubblesIterative)
             )
         }
 

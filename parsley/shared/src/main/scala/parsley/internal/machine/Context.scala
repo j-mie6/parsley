@@ -35,7 +35,6 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     private var calls: CallStack = Stack.empty
     /** State stack consisting of offsets and positions that can be rolled back */
     private [machine] var states: StateStack = Stack.empty
-    /** Stack consisting of offsets at previous checkpoints, which may query to test for consumed input */
     /** Current operational status of the machine */
     private [machine] var good: Boolean = true
     private [machine] var running: Boolean = true
@@ -126,7 +125,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
 
     private [parsley] def run[Err: ErrorBuilder, A](): Result[Err, A] = go[Err, A]()
     @tailrec private def go[Err: ErrorBuilder, A](): Result[Err, A] = {
-        //println(pretty)
+        // println(pretty)
         if (running) { // this is the likeliest branch, so should be executed with fewest comparisons
             instrs(pc)(this)
             go[Err, A]()

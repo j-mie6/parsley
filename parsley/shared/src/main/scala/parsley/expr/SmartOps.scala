@@ -34,9 +34,13 @@ object GOps {
       * @note currently a bug in scaladoc incorrect displays this functions type, it should be: `fixity.Op[A, B]`, NOT `Op[A, B]`.
       * @since 2.2.0
       */
-    def apply[A, B](fixity: Fixity)(op0: Parsley[fixity.Op[A, B]], ops: Parsley[fixity.Op[A, B]]*)(implicit wrap: A => B): Ops[A, B] = new Ops[A, B] {
-      val f: fixity.type = fixity
-      val operators = op0 +: ops
+    def apply[A, B](fixity: Fixity)(op0: Parsley[fixity.Op[A, B]], ops: Parsley[fixity.Op[A, B]]*)(implicit wrap: A => B): Ops[A, B] = {
+      val w = wrap
+      new Ops[A, B] {
+        val f: fixity.type = fixity
+        val operators = op0 +: ops
+        val wrap = w
+      }
     }
 }
 
