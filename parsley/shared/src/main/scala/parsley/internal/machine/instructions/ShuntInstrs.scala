@@ -59,7 +59,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
               val currentOffset = ctx.offset
               ctx.restoreState()
               ctx.handlers = ctx.handlers.tail
-              ctx.expectedFailWithReason(Nil, "Operator cannot be applied in sequence as it is non-associative", currentOffset-ctx.offset)
+              ctx.expectedFailWithReason(Nil, "operator cannot be applied in sequence as it is non-associative", currentOffset-ctx.offset)
               return
             }
             state.operators.push(o)

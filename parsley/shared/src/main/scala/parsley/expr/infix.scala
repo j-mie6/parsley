@@ -5,12 +5,12 @@
  */
 package parsley.expr
 
-import parsley.Parsley, Parsley.notFollowedBy
+import parsley.Parsley
 import parsley.XAnnotation.{implicitNotFound212, implicitNotFound213}
-import parsley.errors.combinator.ErrorMethods
 import parsley.syntax.zipped.zippedSyntax2
 
 import parsley.internal.deepembedding.frontend
+import parsley.errors.patterns.PreventativeErrors
 
 /** This module contains the very useful chaining family of combinators,
   * which are mostly used to parse operators and expressions of varying fixities.
@@ -184,7 +184,7 @@ object infix {
 
     //TODO: document
     def nonassoc[A, B](p: Parsley[A])(op: Parsley[(A, A) => B])(implicit wrap: A => B): Parsley[B] = {
-        val guardNonAssoc = notFollowedBy(op).explain("non-associative operators cannot be chained together")
+        val guardNonAssoc = op.preventativeExplain("operator cannot be applied in sequence as it is non-associative")
         p <**> ((op, p).zipped((f, y) => f(_, y)) </> wrap) <~ guardNonAssoc
     }
 
