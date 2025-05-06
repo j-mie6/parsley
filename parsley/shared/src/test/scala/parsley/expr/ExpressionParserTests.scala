@@ -3,11 +3,12 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package parsley
+package parsley.expr
 
 import Predef.{ArrowAssoc => _, _}
 
-import token.{descriptions => desc}
+import parsley._
+import parsley.token.{descriptions => desc}
 import parsley.character.digit
 import parsley.syntax.character.{charLift, stringLift}
 import parsley.expr.{chain, infix, mixed}

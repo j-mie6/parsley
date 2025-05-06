@@ -48,13 +48,4 @@ object Ops {
       * @since 2.2.0
       */
     def apply[A](fixity: Fixity)(op0: Parsley[fixity.Op[A, A]], ops: Parsley[fixity.Op[A, A]]*): Ops[A, A] = GOps[A, A](fixity)(op0, ops: _*)
-
-    private [expr] def apply[A, B](fixity: Fixity)(op: Parsley[fixity.Op[A, B]])(implicit wrap: A => B): Ops[A, B] = {
-      val w = wrap
-      new Ops[A, B] {
-        val f: fixity.type = fixity
-        val operators = Seq(op)
-        val wrap = w
-      }
-    }
 }
