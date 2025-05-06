@@ -75,7 +75,7 @@
 
   <div class="row links">
     
-    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M14/">API</a>
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M15/">API</a>
     
     <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
   <g class="svg-shape">
@@ -92,7 +92,7 @@
 
   <div class="row">
     
-    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M14/">API</a>
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M15/">API</a>
     
     <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
   <g class="svg-shape">
@@ -177,7 +177,7 @@
         more performant way at a cost to expressive power.</p>
         <div class="callout info">
           <i class="icofont-laika info">&#xef4e;</i>
-          <p><em>The Scaladoc for this page can be found at <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M14/parsley/state$.html"><code>parsley.state</code></a>.</em></p>
+          <p><em>The Scaladoc for this page can be found at <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M15/parsley/state$.html"><code>parsley.state</code></a>.</em></p>
         </div>
         
         <h2 id="references" class="section"><a class="anchor-link left" href="#references"><i class="icofont-laika link">&#xef71;</i></a>References</h2>
@@ -264,9 +264,9 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">charLift</span><span>, </span><span class="identifier">stringLift</span><span>}
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">openTag</span><span> = </span><span class="identifier">atomic</span><span>(</span><span class="char-literal">&#39;&lt;&#39;</span><span> &lt;~ </span><span class="identifier">notFollowedBy</span><span>(</span><span class="char-literal">&#39;/&#39;</span><span>))
-</span><span class="comment">// openTag: Parsley[Char] = parsley.Parsley@6292b6e5
+</span><span class="comment">// openTag: Parsley[Char] = parsley.Parsley@4c5b487
 </span><span class="keyword">val</span><span> </span><span class="identifier">tagName</span><span> = </span><span class="identifier">stringOfSome</span><span>(</span><span class="identifier">letter</span><span>)
-</span><span class="comment">// tagName: Parsley[String] = parsley.Parsley@3abc8b9a
+</span><span class="comment">// tagName: Parsley[String] = parsley.Parsley@38425f02
 </span><span>
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">content</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">optional</span><span>(</span><span class="identifier">tag</span><span>)
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">tag</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = (</span><span class="identifier">openTag</span><span> ~&gt; </span><span class="identifier">tagName</span><span> &lt;~ </span><span class="char-literal">&#39;&gt;&#39;</span><span>).</span><span class="identifier">fillRef</span><span> { </span><span class="identifier">name</span><span> =&gt;
@@ -349,7 +349,7 @@
         if the corresponding closing bracket cannot be parsed, it will use an
         unconditional <a href="errors/patterns.html#verified-errors"><em>Verified Error</em></a> to report a message based on the last opened bracket. The results are below:</p>
         <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="identifier">brackets</span><span>
-</span><span class="comment">// p: Parsley[Unit] = parsley.Parsley@30d85bc3
+</span><span class="comment">// p: Parsley[Unit] = parsley.Parsley@8ed395e
 </span><span>
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;()()()&quot;</span><span>)
 </span><span class="comment">// res5: parsley.Result[String, Unit] = Success(())
@@ -428,7 +428,7 @@
     } ~&gt;
     </span><span class="identifier">i</span><span>.</span><span class="identifier">get</span><span> &lt;~ </span><span class="identifier">eof</span><span>
 }
-</span><span class="comment">// abcs: Parsley[Int] = parsley.Parsley@611abe1e
+</span><span class="comment">// abcs: Parsley[Int] = parsley.Parsley@35f93e3a
 </span><span>
 </span><span class="identifier">abcs</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;aabbcc&quot;</span><span>)
 </span><span class="comment">// res12: parsley.Result[String, Int] = Success(2)

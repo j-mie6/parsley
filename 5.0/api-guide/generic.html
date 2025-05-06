@@ -75,7 +75,7 @@
 
   <div class="row links">
     
-    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M14/">API</a>
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M15/">API</a>
     
     <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
   <g class="svg-shape">
@@ -92,7 +92,7 @@
 
   <div class="row">
     
-    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M14/">API</a>
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M15/">API</a>
     
     <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
   <g class="svg-shape">
@@ -182,7 +182,7 @@
         you to get started using the technique straight away if you wish.</p>
         <div class="callout info">
           <i class="icofont-laika info">&#xef4e;</i>
-          <p><em>The Scaladoc for this page can be found at <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M14/parsley/generic$.html"><code>parsley.generic</code></a>.</em></p>
+          <p><em>The Scaladoc for this page can be found at <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M15/parsley/generic$.html"><code>parsley.generic</code></a>.</em></p>
         </div>
         
         <h2 id="what-are-parser-bridges" class="section"><a class="anchor-link left" href="#what-are-parser-bridges"><i class="icofont-laika link">&#xef71;</i></a>What are <em>Parser Bridges</em>?</h2>
@@ -192,7 +192,7 @@
 </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Foo</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Int</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Int</span><span>)
 </span><span class="comment">// with px, py of type Parsley[Int]
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = (</span><span class="identifier">px</span><span>, </span><span class="identifier">py</span><span>).</span><span class="identifier">zipped</span><span>(</span><span class="type-name">Foo</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>))
-</span><span class="comment">// p: Parsley[Foo] = parsley.Parsley@2c43a7a6</span></code></pre>
+</span><span class="comment">// p: Parsley[Foo] = parsley.Parsley@710d1895</span></code></pre>
         <p>These work fine for the most part, however, there are couple of problems with this:</p>
         <ol class="arabic">
           <li>In Scala 3, <code>Foo(_, _)</code> actually needs to be written as <code>Foo.apply</code>, which introduces some (minor) noise;
@@ -219,7 +219,7 @@
         with <code>Parsley</code> values. If we assume that the companion object of <code>Foo</code> has been turned into such a
         bridge (definition below), the above example can be written as:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">q</span><span> = </span><span class="type-name">Foo</span><span>(</span><span class="identifier">px</span><span>, </span><span class="identifier">py</span><span>)
-</span><span class="comment">// q: Parsley[Foo] = parsley.Parsley@2473353e</span></code></pre>
+</span><span class="comment">// q: Parsley[Foo] = parsley.Parsley@5ddb2bcc</span></code></pre>
         <p>In this version, the act of constructing the <code>Foo</code> value has been abstracted behind the bridge, <code>Foo</code>:
         this means that the underlying implementation can vary without changing the parser.</p>
         <p><span class="paragraph"> What are <em>Generic Bridges</em>? </span>
@@ -229,7 +229,7 @@
         <code>parsley</code> provides some basic ones to get you started.</p>
         
         <h2 id="how-to-use" class="section"><a class="anchor-link left" href="#how-to-use"><i class="icofont-laika link">&#xef71;</i></a>How to use</h2>
-        <p>The <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M14/parsley/generic$.html"><code>parsley.generic</code></a> module contains <code>ParserBridge1</code> through
+        <p>The <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M15/parsley/generic$.html"><code>parsley.generic</code></a> module contains <code>ParserBridge1</code> through
         <code>ParserBridge22</code> as well as <code>ParserBridge0</code>; they all extend <code>ParserBridgeSingleton</code>, which provides
         some additional combinators as well as <code>ErrorBridge</code>, which allows labels and a reason to be attached
         to a bridge.</p>
@@ -291,7 +291,7 @@
         giving it access to <code>from</code> and <code>&lt;#</code> only (no <code>apply</code> for this one!). What this means is that
         you can now write the following:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">nullLit</span><span> = </span><span class="type-name">NullLit</span><span> &lt;# </span><span class="string-literal">&quot;null&quot;</span><span>
-</span><span class="comment">// nullLit: Parsley[Expr] = parsley.Parsley@3b21b80f
+</span><span class="comment">// nullLit: Parsley[Expr] = parsley.Parsley@43e120f7
 </span><span class="identifier">nullLit</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;null&quot;</span><span>)
 </span><span class="comment">// res2: parsley.Result[String, Expr] = Success(NullLit)</span></code></pre>
         <p>Without any further configuration, notice that the result of parsing <code>&quot;null&quot;</code> is indeed <code>NullLit</code>,
@@ -372,7 +372,7 @@
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="comment">// from `parsley-cats`, produces `NonEmptyList` instead of `List`
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">cats</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">sepBy1</span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">tupleOrParens</span><span> = </span><span class="type-name">TupleOrParens</span><span>(</span><span class="string-literal">&quot;(&quot;</span><span> ~&gt; </span><span class="identifier">sepBy1</span><span>(</span><span class="identifier">nullLit</span><span>, </span><span class="string-literal">&quot;,&quot;</span><span>) &lt;~ </span><span class="string-literal">&quot;)&quot;</span><span>)
-</span><span class="comment">// tupleOrParens: Parsley[Expr] = parsley.Parsley@1ddc39c5
+</span><span class="comment">// tupleOrParens: Parsley[Expr] = parsley.Parsley@73841d61
 </span><span class="identifier">tupleOrParens</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;(null)&quot;</span><span>)
 </span><span class="comment">// res4: parsley.Result[String, Expr] = Success(NullLit)
 </span><span class="identifier">tupleOrParens</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;(null,null)&quot;</span><span>)
