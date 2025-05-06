@@ -79,7 +79,7 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
-        def verifiedUnexpected: Parsley[Nothing] = con(p).void.verifiedWithVanillaRaw(_ => None)
+        def verifiedUnexpected: Parsley[Nothing] = new VerifiedErrors(con(p).void).verifiedWithVanillaRaw(_ => None)
 
         /** Ensures this parser does not succeed, failing with a vanilla error with an unexpected message and caret spanning the parse and a given reason.
           *
@@ -92,7 +92,7 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
-        def verifiedExplain(reason: String): Parsley[Nothing] = con(p).void.verifiedWithVanillaRaw(_ => Some(reason))
+        def verifiedExplain(reason: String): Parsley[Nothing] = new VerifiedErrors(con(p).void).verifiedWithVanillaRaw(_ => Some(reason))
 
         /** Ensures this parser does not succeed, failing with a vanilla error with an unexpected message and caret spanning the parse and a reason generated
           * from this parser's result.
@@ -179,7 +179,7 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
-        def preventativeFail(msg0: String, msgs: String*): Parsley[Unit] = this.preventativeFail(_ => msg0 +: msgs)
+        def preventativeFail(msg0: String, msgs: String*): Parsley[Unit] = con(p).void.preventativeFail(_ => msg0 +: msgs)
 
         /** Ensures this parser does not succeed, failing with a vanilla error with an unexpected message and caret spanning the parse and a reason generated
           * from this parser's result.
@@ -208,7 +208,7 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
-        def preventativeExplain(reason: String, labels: String*): Parsley[Unit] = this.preventativeExplain(_ => reason, labels: _*)
+        def preventativeExplain(reason: String, labels: String*): Parsley[Unit] = con(p).void.preventativeExplain(_ => reason, labels: _*)
 
         /** Ensures this parser does not succeed, failing with an error as described by the given `ErrorGen` object.
           *
