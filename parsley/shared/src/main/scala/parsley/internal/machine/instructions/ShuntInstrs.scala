@@ -4,7 +4,6 @@ import scala.collection.mutable
 
 import parsley.internal.machine.Context
 import parsley.expr.{Fixity, Prefix, InfixL, InfixR, InfixN, Postfix}
-import parsley.internal.errors.FlexibleCaret
 
 private [internal] sealed trait ShuntInput
 
@@ -60,7 +59,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
               val currentOffset = ctx.offset
               ctx.restoreState()
               ctx.handlers = ctx.handlers.tail
-              ctx.failWithMessage(new FlexibleCaret(currentOffset-ctx.offset) , "Non-associative operator cannot be chained") // needs to be token length
+              ctx.expectedFailWithReason(Nil, "Operator cannot be applied in sequence as it is non-associative", currentOffset-ctx.offset)
               return
             }
             state.operators.push(o)
