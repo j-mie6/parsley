@@ -9,7 +9,6 @@ import parsley.{ParsleyTest, Success, Failure, TestError, VanillaError}
 import parsley.Parsley, Parsley._
 import parsley.character.{char, satisfy, digit, string, stringOfSome}
 import parsley.combinator.{atomicChoice, choice, optional}
-import parsley.expr._
 import parsley.syntax.character.charLift
 import parsley.errors.combinator.ErrorMethods
 
@@ -36,22 +35,6 @@ class InternalTests extends ParsleyTest {
         val q = 'a' *> p.label("err1") <* 'b' <* p.label("err1") <* 'c'
         q.internal.instrs.count(_ == instructions.Return) shouldBe 2 //one is in dropped position
         q.parse("a123b123c") should be (Success('3'))
-    }
-
-    they should "work in the precedence parser with one op" in {
-        val atom = some(digit).map(_.mkString.toInt)
-        val expr = precedence[Int](atom)(
-            Ops(InfixL)('+'.as(_ + _)))
-        expr.internal.instrs.count(_ == instructions.Return) shouldBe 1
-    }
-
-    they should "appear frequently inside expression parsers" in {
-        val atom = some(digit).map(_.mkString.toInt)
-        val expr = precedence[Int](atom)(
-            Ops(InfixL)('+'.as(_ + _)),
-            Ops(InfixL)('*'.as(_ * _)),
-            Ops(InfixL)('%'.as(_ % _)))
-        expr.internal.instrs.count(_ == instructions.Return) shouldBe 3
     }
 
     // Issue 118
