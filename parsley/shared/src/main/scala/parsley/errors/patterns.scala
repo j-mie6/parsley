@@ -67,7 +67,7 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
-        def verifiedFail(msg0: String, msgs: String*): Parsley[Nothing] = p.void.verifiedFail(_ => msg0 +: msgs)
+        def verifiedFail(msg0: String, msgs: String*): Parsley[Nothing] = con(p).void.verifiedFail(_ => msg0 +: msgs)
 
         /** Ensures this parser does not succeed, failing with a vanilla error with an unexpected message and caret spanning the parse.
           *
@@ -79,7 +79,7 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
-        def verifiedUnexpected: Parsley[Nothing] = p.void.verifiedWithVanillaRaw(_ => None)
+        def verifiedUnexpected: Parsley[Nothing] = con(p).void.verifiedWithVanillaRaw(_ => None)
 
         /** Ensures this parser does not succeed, failing with a vanilla error with an unexpected message and caret spanning the parse and a given reason.
           *
@@ -92,7 +92,7 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
-        def verifiedExplain(reason: String): Parsley[Nothing] = p.void.verifiedWithVanillaRaw(_ => Some(reason))
+        def verifiedExplain(reason: String): Parsley[Nothing] = con(p).void.verifiedWithVanillaRaw(_ => Some(reason))
 
         /** Ensures this parser does not succeed, failing with a vanilla error with an unexpected message and caret spanning the parse and a reason generated
           * from this parser's result.
