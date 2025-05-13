@@ -25,7 +25,8 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
     if (ctx.good) {
       val input = ctx.stack.pop[ShuntInput]()
       val state = ctx.stack.peek[ShuntingYardState]
-      // println("State: " + state)
+      
+      println("State: " + state)
 
       ctx.updateCheckOffset()
       
@@ -36,6 +37,17 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
           ctx.pc = postfixInfixLabel
         case o@Operator(_, fix, prec) => fix match {
           case Prefix => {
+            if (
+              (state.operators.nonEmpty && o.prec < state.operators.top.prec)
+              || (state.atoms.nonEmpty && state.atoms.top.isLeft && o.prec < state.atoms.top.swap.getOrElse(throw new IllegalStateException("Expected a prefix operator")).prec)
+            ) {
+              // This is a malformed expression
+              val currentOffset = ctx.offset
+              ctx.restoreState()
+              ctx.handlers = ctx.handlers.tail
+              ctx.expectedFail(Nil, currentOffset-ctx.offset)
+              return
+            }
             state.atoms.push(Left(o))
             state.failOnNoConsumed = true
             ctx.pc = prefixAtomLabel
@@ -70,33 +82,35 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
         }
       }
       updateState(ctx)
-    } else ctx.catchNoConsumed(ctx.handlers.check) {
-      // In this case, there was an error in Choice
-      // It is a soft error in which nothing was consumed so we are at the end of the input
-      val state = ctx.stack.peek[ShuntingYardState]
-      // println("State: " + state)
-
-      if (state.failOnNoConsumed) {
-        // The prefix/atom choice did not match, malformed expression
-        ctx.good = false
+    } else {
+      if (ctx.offset != ctx.handlers.check || ctx.stack.peek[ShuntingYardState].failOnNoConsumed) {
+        // consumed input or prefix/atom choice did not match, hard failure
         ctx.handlers = ctx.handlers.tail
         popState(ctx)
         ctx.fail()
-      } else {
-        // The postfix/infix choice did not match, this is the end of the input
-        forceReducePrefixes(state)
-        while (state.operators.nonEmpty) reduce(state)
-        forceReducePrefixes(state)
-        
-        popAST(state.atoms) match {
-          case Atom(v, lvl) => ctx.stack.exchange(wrap(lvl, 0)(v))
-        }
-        ctx.handlers = ctx.handlers.tail
-        ctx.addErrorToHintsAndPop()
-        ctx.inc()
-        popState(ctx)
-        // ctx.ret()
+        return
       }
+      // In this case, there was an error in Choice
+      // It is a soft error in which nothing was consumed and we were looking for an infix/postfix
+      // we are at the end of the expression
+      
+      ctx.good = true
+      val state = ctx.stack.peek[ShuntingYardState]
+      println("State: " + state)
+
+      forceReducePrefixes(state)
+      while (state.operators.nonEmpty) reduce(state)
+      forceReducePrefixes(state)
+
+      assume(state.atoms.size == 1, "Expected exactly one atom at the end of expression")
+      
+      popAST(state.atoms) match {
+        case Atom(v, lvl) => ctx.stack.exchange(wrap(lvl, 0)(v))
+      }
+      ctx.handlers = ctx.handlers.tail
+      ctx.addErrorToHintsAndPop()
+      popState(ctx)
+      ctx.inc()
     }
   }
 
@@ -160,7 +174,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
   }
 
   private def wrap(currentLvl: Int, targetLvl: Int): (Any => Any) = {
-    assume(targetLvl <= currentLvl)
+    assume(targetLvl <= currentLvl, "Target level must be less than or equal to current level")
     if (targetLvl == currentLvl) return identity
     (currentLvl - 1 to targetLvl by -1).map(wraps).reduce(_ andThen _)
   }

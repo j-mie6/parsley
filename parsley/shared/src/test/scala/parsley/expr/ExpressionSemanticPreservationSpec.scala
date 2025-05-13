@@ -1,17 +1,18 @@
 package parsley.expr
 
-
-import org.scalatest.matchers._
-import org.scalatest.propspec.AnyPropSpec
-import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-
 import parsley.syntax.character.{charLift, stringLift}
 import parsley.character
 import parsley.Parsley
+import parsley.ParsleyTest
+import ExprGen._
+import parsley.errors.ErrorBuilder
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import parsley.Success
+import parsley.Failure
 
-class ExpressionSemanticPreservationSpec extends AnyPropSpec with ScalaCheckPropertyChecks with should.Matchers {
-    implicit val config: PropertyCheckConfiguration = new PropertyCheckConfiguration(minSuccessful = 50)
-
+class ExpressionSemanticPreservationSpec extends AnyFlatSpec with Matchers {
+    implicit val eb: ErrorBuilder[String] = ErrorBuilder.stringError
     val originalExpr: Parsley[Int] = originalPrecedence(
         OriginalOps[Int](InfixN)("==" #> ((a, b) => if (a == b) 1 else 0)) +:
         OriginalOps[Int](InfixL)('+' #> (_ + _), '-' #> (_ - _)) +:
@@ -32,7 +33,7 @@ class ExpressionSemanticPreservationSpec extends AnyPropSpec with ScalaCheckProp
         newExpr.parse(input) shouldBe originalExpr.parse(input)
     }
 
-    property("successfully parsing basic expressions should not vary based on optimisations") {
+    "the new precedence implementation" should "successfully parse basic expressions and not vary based on optimisations" in {
         val cases: List[String] = List(
             "1+1",
             "1*1",
@@ -45,7 +46,7 @@ class ExpressionSemanticPreservationSpec extends AnyPropSpec with ScalaCheckProp
         }
     }
 
-    property("failing to parse basic expressions should not vary based on optimisations") {
+    it should "fail to parse basic expressions and not vary based on optimisations" in {
         val cases: List[String] = List(
             "1+",
             "1*",
@@ -62,7 +63,7 @@ class ExpressionSemanticPreservationSpec extends AnyPropSpec with ScalaCheckProp
         }
     }
 
-    property("parsing expressions with parentheses should not vary based on optimisations") {
+    it should "parse expressions with parentheses and not vary based on optimisations" in {
         val cases: List[String] = List(
             "(1+1)",
             "(1*1)",
@@ -79,7 +80,7 @@ class ExpressionSemanticPreservationSpec extends AnyPropSpec with ScalaCheckProp
         }
     }
 
-    property("parsing chained non-associative operators should not vary based on optimisations") {
+    it should "parse chained non-associative operators and not vary based on optimisations" in {
         val cases: List[String] = List(
             "1==2==3",
             "1==2*3==4+5",
@@ -87,6 +88,25 @@ class ExpressionSemanticPreservationSpec extends AnyPropSpec with ScalaCheckProp
 
         for (input <- cases) {
             compositeAndShuntAreTheSame(input)
+        }
+    }
+
+    it should "parse random expressions and not vary based on optimisations" in {
+        val (originalExpr, newExpr, opsDefs) = exprPairGen.sample.get
+        val successInputs = successInputsGen(opsDefs).sample.get
+        for (input <- successInputs) {
+            println(opsDefs)
+            println(input)
+            println(originalExpr.parse(input))
+            println(newExpr.parse(input))
+            val originalResult = originalExpr.parse(input)
+            val newResult = newExpr.parse(input)
+
+            originalResult match {
+                case Success(_) => originalResult shouldBe newResult
+                case Failure(_) => newResult shouldBe a [Failure[_]]
+            }
+            // originalExpr.parse(input) shouldBe newExpr.parse(input)
         }
     }
 }
