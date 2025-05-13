@@ -11,7 +11,7 @@ private [internal] case class Atom(v: Any, lvl: Int) extends ShuntInput
 private [internal] case class Operator(f: Any, fix: Fixity, prec: Int) extends ShuntInput
 
 private [internal] case class ShuntingYardState(
-  atoms: mutable.Stack[Either[Operator, Atom]],
+  atoms: mutable.Stack[Atom],
   operators: mutable.Stack[Operator],
   var failOnNoConsumed: Boolean
 )
@@ -26,21 +26,18 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
       val input = ctx.stack.pop[ShuntInput]()
       val state = ctx.stack.peek[ShuntingYardState]
       
-      println("State: " + state)
+      // println("State: " + state)
 
       ctx.updateCheckOffset()
       
       input match {
         case a@Atom(_, _) =>
-          state.atoms.push(Right(a))
+          state.atoms.push(a)
           state.failOnNoConsumed = false
           ctx.pc = postfixInfixLabel
         case o@Operator(_, fix, prec) => fix match {
           case Prefix => {
-            if (
-              (state.operators.nonEmpty && o.prec < state.operators.top.prec)
-              || (state.atoms.nonEmpty && state.atoms.top.isLeft && o.prec < state.atoms.top.swap.getOrElse(throw new IllegalStateException("Expected a prefix operator")).prec)
-            ) {
+            if (state.operators.nonEmpty && o.prec < state.operators.top.prec) { // TODO: check case
               // This is a malformed expression
               val currentOffset = ctx.offset
               ctx.restoreState()
@@ -48,12 +45,11 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
               ctx.expectedFail(Nil, currentOffset-ctx.offset)
               return
             }
-            state.atoms.push(Left(o))
+            state.operators.push(o)
             state.failOnNoConsumed = true
             ctx.pc = prefixAtomLabel
           }
           case InfixL => {
-            maybeReducePrefixes(prec, state)
             while (state.operators.nonEmpty && state.operators.top.prec >= prec) {
               reduce(state)
             }
@@ -62,7 +58,6 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
             ctx.pc = prefixAtomLabel
           }
           case InfixR | InfixN | Postfix => {
-            maybeReducePrefixes(prec, state)
             while (state.operators.nonEmpty && state.operators.top.prec > prec) {
               reduce(state)
             }
@@ -96,15 +91,13 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
       
       ctx.good = true
       val state = ctx.stack.peek[ShuntingYardState]
-      println("State: " + state)
+      // println("State: " + state)
 
-      forceReducePrefixes(state)
       while (state.operators.nonEmpty) reduce(state)
-      forceReducePrefixes(state)
 
       assume(state.atoms.size == 1, "Expected exactly one atom at the end of expression")
       
-      popAST(state.atoms) match {
+      state.atoms.pop() match {
         case Atom(v, lvl) => ctx.stack.exchange(wrap(lvl, 0)(v))
       }
       ctx.handlers = ctx.handlers.tail
@@ -114,63 +107,26 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
     }
   }
 
-  private def popAST(atoms: mutable.Stack[Either[Operator, Atom]]): Atom = atoms.pop() match {
-    case Left(_) => {
-      throw new IllegalStateException("Expected an atom, but got an operator")
-      // ctx.fail()
-    }
-    case Right(a) => a 
-  }
-
-  private def popPrefix(atoms: mutable.Stack[Either[Operator, Atom]]): Operator = atoms.pop() match {
-    case Left(op) => op.fix match {
-      case Prefix => op
-      case _ => throw new IllegalStateException("Expected a prefix operator, but got a different operator type")
-    }
-    case Right(_) => throw new IllegalStateException("Expected a prefix operator, but got an atom")
-  }
-
   private def reduce(state: ShuntingYardState): Unit = {
     val op = state.operators.pop()
     op.fix match {
       case InfixR | InfixL | InfixN => {
-        // this failure case should not occur due to the choice constraints
-        // if (state.atoms.size < 2) throw new IllegalStateException("Not enough operands for infix operator")
-        val right = popAST(state.atoms)
-        val left = popAST(state.atoms)
+        val right = state.atoms.pop()
+        val left = state.atoms.pop()
         val result = op.fix match {
           case InfixL => op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec)(left.v), wrap(right.lvl, op.prec + 1)(right.v))
           case InfixR => op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec + 1)(left.v), wrap(right.lvl, op.prec)(right.v))
           case InfixN => op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec + 1)(left.v), wrap(right.lvl, op.prec + 1)(right.v))
+          case _ => throw new IllegalStateException("Will never happen") // TODO: remove this
         }
-        state.atoms.push(Right(Atom(result, op.prec)))
+        state.atoms.push(Atom(result, op.prec))
       }
-      case Postfix => {
-        // if (state.atoms.isEmpty) throw new IllegalStateException("Not enough operands for postfix operator")
-        val right = popAST(state.atoms)
+      case Postfix | Prefix => {
+        val right = state.atoms.pop()
         val result = op.f.asInstanceOf[Any => Any](wrap(right.lvl, op.prec)(right.v))
-        state.atoms.push(Right(Atom(result, op.prec)))
+        state.atoms.push(Atom(result, op.prec))
       }
-      case _ => throw new IllegalStateException("Unexpected Prefix in operator stack")
     }
-  }
-
-  private def maybeReducePrefixes(nextOpPrec: Int, state: ShuntingYardState): Unit = {
-    while (state.atoms.size >= 2 && state.atoms(1).isLeft && state.atoms(1).swap.getOrElse(throw new IllegalStateException("Expected a prefix operator")).prec > nextOpPrec) {
-      val operand = popAST(state.atoms)
-      val prefixOp = popPrefix(state.atoms)
-      val result = prefixOp.f.asInstanceOf[Any => Any](wrap(operand.lvl, prefixOp.prec)(operand.v))
-      state.atoms.push(Right(Atom(result, prefixOp.prec)))
-    }
-  }
-
-  private def forceReducePrefixes(state: ShuntingYardState): Unit = {
-    while (state.atoms.size >= 2 && state.atoms(1).isLeft) {
-        val operand = popAST(state.atoms)
-        val prefixOp = popPrefix(state.atoms)
-        val result = prefixOp.f.asInstanceOf[Any => Any](wrap(operand.lvl, prefixOp.prec)(operand.v))
-        state.atoms.push(Right(Atom(result, prefixOp.prec)))
-      }
   }
 
   private def wrap(currentLvl: Int, targetLvl: Int): (Any => Any) = {

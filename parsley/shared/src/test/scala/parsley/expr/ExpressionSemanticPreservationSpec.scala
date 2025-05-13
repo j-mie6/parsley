@@ -3,7 +3,6 @@ package parsley.expr
 import parsley.syntax.character.{charLift, stringLift}
 import parsley.character
 import parsley.Parsley
-import parsley.ParsleyTest
 import ExprGen._
 import parsley.errors.ErrorBuilder
 import org.scalatest.flatspec.AnyFlatSpec
@@ -92,21 +91,23 @@ class ExpressionSemanticPreservationSpec extends AnyFlatSpec with Matchers {
     }
 
     it should "parse random expressions and not vary based on optimisations" in {
-        val (originalExpr, newExpr, opsDefs) = exprPairGen.sample.get
-        val successInputs = successInputsGen(opsDefs).sample.get
-        for (input <- successInputs) {
-            println(opsDefs)
-            println(input)
-            println(originalExpr.parse(input))
-            println(newExpr.parse(input))
-            val originalResult = originalExpr.parse(input)
-            val newResult = newExpr.parse(input)
+        for (_ <- 0 until 500) {
+            val (originalExpr, newExpr, opsDefs) = exprPairGen.sample.get
+            val successInputs = successInputsGen(opsDefs).sample.get
+            for (input <- successInputs) {
+                println(opsDefs)
+                println(input)
+                println(originalExpr.parse(input))
+                println(newExpr.parse(input))
+                val originalResult = originalExpr.parse(input)
+                val newResult = newExpr.parse(input)
 
-            originalResult match {
-                case Success(_) => originalResult shouldBe newResult
-                case Failure(_) => newResult shouldBe a [Failure[_]]
+                originalResult match {
+                    case Success(_) => originalResult shouldBe newResult
+                    case Failure(_) => newResult shouldBe a [Failure[_]]
+                }
+                // originalExpr.parse(input) shouldBe newExpr.parse(input)
             }
-            // originalExpr.parse(input) shouldBe newExpr.parse(input)
         }
     }
 }

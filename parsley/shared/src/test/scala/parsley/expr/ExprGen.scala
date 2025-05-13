@@ -33,8 +33,8 @@ object ExprGen {
     )
 
     private val postfixOps: Set[UnaryOp] = Set(
-        // ("!", (a: Int) => (1 to a).product),
-        // ("++", (a: Int) => a + 1) // This will cause ambiguity with infix +
+        ("!", (a: Int) => (1 to a).product),
+        ("++", (a: Int) => a + 1) // This will cause ambiguity with infix +
     )
 
     private def prefixOpsDefGen(availableOps: Set[UnaryOp]): Gen[(OpsDef, Set[UnaryOp])] = for {
