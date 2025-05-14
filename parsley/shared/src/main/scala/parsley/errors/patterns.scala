@@ -49,7 +49,7 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
-        def verifiedFail(msggen: A => Seq[String]): Parsley[Nothing] = this.verifiedWith {
+        def verifiedFail(msggen: A => Seq[String]): Parsley[Nothing] = p.verifiedWith {
             new SpecializedGen[A] {
                 override def messages(x: A) = msggen(x)
             }
@@ -67,7 +67,7 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
-        def verifiedFail(msg0: String, msgs: String*): Parsley[Nothing] = this.verifiedFail(_ => msg0 +: msgs)
+        def verifiedFail(msg0: String, msgs: String*): Parsley[Nothing] = con(p).void.verifiedFail(_ => msg0 +: msgs)
 
         /** Ensures this parser does not succeed, failing with a vanilla error with an unexpected message and caret spanning the parse.
           *
@@ -79,7 +79,7 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
-        def verifiedUnexpected: Parsley[Nothing] = this.verifiedWithVanillaRaw(_ => None)
+        def verifiedUnexpected: Parsley[Nothing] = new VerifiedErrors(con(p).void).verifiedWithVanillaRaw(_ => None)
 
         /** Ensures this parser does not succeed, failing with a vanilla error with an unexpected message and caret spanning the parse and a given reason.
           *
@@ -92,7 +92,7 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
-        def verifiedExplain(reason: String): Parsley[Nothing] = this.verifiedWithVanillaRaw(_ => Some(reason))
+        def verifiedExplain(reason: String): Parsley[Nothing] = new VerifiedErrors(con(p).void).verifiedWithVanillaRaw(_ => Some(reason))
 
         /** Ensures this parser does not succeed, failing with a vanilla error with an unexpected message and caret spanning the parse and a reason generated
           * from this parser's result.
@@ -121,14 +121,14 @@ object patterns {
           */
         def verifiedWith(err: ErrorGen[A]): Parsley[Nothing] = amend(err(withWidth(atomic(con(p)).hide)))
 
-        @inline private def verifiedWithVanilla(unexGen: A => VanillaGen.UnexpectedItem, reasonGen: A => Option[String]) = verifiedWith {
+        @inline private [VerifiedErrors] def verifiedWithVanilla(unexGen: A => VanillaGen.UnexpectedItem, reasonGen: A => Option[String]) = verifiedWith {
             new VanillaGen[A] {
                 override def unexpected(x: A) = unexGen(x)
                 override def reason(x: A) = reasonGen(x)
             }
         }
 
-        @inline private def verifiedWithVanillaRaw(reasonGen: A => Option[String]) = verifiedWithVanilla(_ => VanillaGen.RawItem, reasonGen)
+        @inline private [VerifiedErrors] def verifiedWithVanillaRaw(reasonGen: A => Option[String]) = verifiedWithVanilla(_ => VanillaGen.RawItem, reasonGen)
     }
 
     /** This class exposes combinators related to the ''Preventative Errors'' parser design pattern.
@@ -179,7 +179,7 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
-        def preventativeFail(msg0: String, msgs: String*): Parsley[Unit] = this.preventativeFail(_ => msg0 +: msgs)
+        def preventativeFail(msg0: String, msgs: String*): Parsley[Unit] = con(p).void.preventativeFail(_ => msg0 +: msgs)
 
         /** Ensures this parser does not succeed, failing with a vanilla error with an unexpected message and caret spanning the parse and a reason generated
           * from this parser's result.
@@ -208,7 +208,7 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
-        def preventativeExplain(reason: String, labels: String*): Parsley[Unit] = this.preventativeExplain(_ => reason, labels: _*)
+        def preventativeExplain(reason: String, labels: String*): Parsley[Unit] = con(p).void.preventativeExplain(_ => reason, labels: _*)
 
         /** Ensures this parser does not succeed, failing with an error as described by the given `ErrorGen` object.
           *
