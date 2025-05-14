@@ -7,6 +7,8 @@ import parsley.internal.collection.mutable.SinglyLinkedList
 import parsley.internal.machine.instructions
 import parsley.internal.machine.instructions.{ShuntInput, Atom, Operator}
 import parsley.expr.Prefix
+import parsley.internal.deepembedding.singletons.Fail
+import parsley.internal.errors.FlexibleCaret
 
 private [deepembedding] final class Precedence[A](prefixAtomChoice: StrictParsley[ShuntInput], postfixInfixChoice: StrictParsley[ShuntInput], wraps: List[Any => Any]) extends StrictParsley[A] {
   override protected[backend] def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: StrictParsley.InstrBuffer, state: CodeGenState): M[R,Unit] = {
@@ -40,7 +42,7 @@ private [deepembedding] object Precedence {
   }
 
   private def buildChoiceNode[A](options: List[StrictParsley[A]]): StrictParsley[A] = options match {
-    case Nil => throw new IllegalArgumentException("Cannot build choice node with empty options") // TODO: what goes here?
+    case Nil => new Fail(new FlexibleCaret(0))
     case a :: Nil => a
     case a :: b :: Nil => <|>(a, b)
     case a :: b :: rest => new Choice(a, b, SinglyLinkedList(rest.head, rest.tail: _*))
@@ -52,15 +54,4 @@ private [deepembedding] object Precedence {
       table.ops.filter(_.fixity != Prefix).map(o => <*>(new Pure(r => Operator(r, o.fixity, o.prec)), o.op))
     )    
   }
-
-  // private def buildChoiceOptions(table: StrictPrec[_], lvl: Int): (List[StrictParsley[ShuntInput]], List[StrictParsley[ShuntInput]]) = table match {
-  //   case StrictPrec.Atoms(atoms) => (atoms.map(a => <*>(new Pure(r => Atom(r)), a)), Nil)
-  //   case StrictPrec.Level(lower, ops) =>
-  //     val lowerOptions = buildChoiceOptions(lower, lvl + 1)
-  //     val opOptions = ops.ops.map(o => <*>(new Pure(r => Operator(r, ops.f, lvl)), o))
-  //     ops.f match {
-  //       case Prefix => (lowerOptions._1 ++ opOptions, lowerOptions._2)
-  //       case _      => (lowerOptions._1, lowerOptions._2 ++ opOptions)
-  //     }
-  // }
 }
