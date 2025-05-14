@@ -57,7 +57,21 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
             state.failOnNoConsumed = true
             ctx.pc = prefixAtomLabel
           }
-          case InfixR | InfixN | Postfix => {
+          case Postfix => {
+            if (state.operators.nonEmpty && state.operators.top.fix == Postfix && state.operators.top.prec < prec) {
+              // This was an unexpected postfix operator
+              ctx.restoreState()
+              produceResult(ctx)
+              return
+            }
+            while (state.operators.nonEmpty && state.operators.top.prec >= prec) {
+              reduce(state)
+            }
+            state.operators.push(o)
+            state.failOnNoConsumed = false
+            ctx.pc = postfixInfixLabel
+          }
+          case InfixR | InfixN => {
             while (state.operators.nonEmpty && state.operators.top.prec > prec) {
               reduce(state)
             }
@@ -70,16 +84,15 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
               return
             }
             state.operators.push(o)
-            state.failOnNoConsumed = fix != Postfix
-            if (fix == Postfix) ctx.pc = postfixInfixLabel
-            else ctx.pc = prefixAtomLabel
+            state.failOnNoConsumed = true
+            ctx.pc = prefixAtomLabel
           }
         }
       }
       updateState(ctx)
     } else {
       if (ctx.offset != ctx.handlers.check || ctx.stack.peek[ShuntingYardState].failOnNoConsumed) {
-        // consumed input or prefix/atom choice did not match, hard failure
+        // consumed input and/or prefix/atom choice did not match, hard failure
         ctx.handlers = ctx.handlers.tail
         popState(ctx)
         ctx.fail()
@@ -90,21 +103,25 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
       // we are at the end of the expression
       
       ctx.good = true
-      val state = ctx.stack.peek[ShuntingYardState]
-      // println("State: " + state)
-
-      while (state.operators.nonEmpty) reduce(state)
-
-      assume(state.atoms.size == 1, "Expected exactly one atom at the end of expression")
-      
-      state.atoms.pop() match {
-        case Atom(v, lvl) => ctx.stack.exchange(wrap(lvl, 0)(v))
-      }
-      ctx.handlers = ctx.handlers.tail
-      ctx.addErrorToHintsAndPop()
+      produceResult(ctx)
       popState(ctx)
-      ctx.inc()
+      ctx.addErrorToHintsAndPop()
     }
+  }
+
+  private def produceResult(ctx: Context): Unit = {
+    val state = ctx.stack.pop[ShuntingYardState]()
+    // println("State: " + state)
+
+    while (state.operators.nonEmpty) reduce(state)
+
+    assume(state.atoms.size == 1, "Expected exactly one atom at the end of reduction")
+    
+    state.atoms.pop() match {
+      case Atom(v, lvl) => ctx.stack.push(wrap(lvl, 0)(v))
+    }
+    ctx.handlers = ctx.handlers.tail
+    ctx.inc()
   }
 
   private def reduce(state: ShuntingYardState): Unit = {
