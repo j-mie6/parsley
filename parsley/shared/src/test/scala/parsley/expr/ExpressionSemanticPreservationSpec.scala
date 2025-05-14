@@ -93,7 +93,7 @@ class ExpressionSemanticPreservationSpec extends AnyFlatSpec with Matchers {
     it should "parse random expressions and not vary based on optimisations" in {
         for (_ <- 0 until 1000) {
             val (originalExpr, newExpr, opsDefs) = exprPairGen.sample.get
-            val inputs = inputsGen(opsDefs, 100).sample.get
+            val inputs = inputsGen(opsDefs, 500).sample.get
             for (input <- inputs) {
                 val originalResult = originalExpr.parse(input)
                 val newResult = newExpr.parse(input)

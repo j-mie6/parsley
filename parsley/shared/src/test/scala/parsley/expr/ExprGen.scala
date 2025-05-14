@@ -93,7 +93,7 @@ object ExprGen {
 
     val exprPairGen: Gen[(Parsley[TestExpr], Parsley[TestExpr], List[OpsDef])] = {
         def loop(infixPool: Set[BinaryOp], prefixPool: Set[UnaryOp], postfixPool: Set[UnaryOp], acc: List[OpsDef]): Gen[List[OpsDef]] = {
-            if (infixPool.isEmpty && prefixPool.isEmpty && postfixPool.isEmpty) {
+            def continue(): Gen[List[OpsDef]] = if (infixPool.isEmpty && prefixPool.isEmpty && postfixPool.isEmpty) {
                 Gen.const(acc)
             } else {
                 fixityGen.flatMap {
@@ -111,6 +111,15 @@ object ExprGen {
                         }
                     case _ => loop(infixPool, prefixPool, postfixPool, acc)
                 }
+            }
+            
+            if (acc.nonEmpty) {
+                Gen.frequency(
+                    2 -> Gen.const(acc),
+                    3 -> continue()
+                )
+            } else {
+                continue()
             }
         }
 
