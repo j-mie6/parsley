@@ -168,7 +168,7 @@ _An exception to this policy is made for any version `3.x.y`, which reaches EoL 
 | `4.2.0` | 22nd January 2023  | EoL reached (`4.2.14`)          |
 | `4.3.0` | 8th July 2023      | EoL reached (`4.3.1`)           |
 | `4.4.0` | 6th October 2023   | EoL reached (`4.4.1`)           |
-| `4.5.0` | 6th January 2023   | Supported until 15th May 2025   |
+| `4.5.0` | 6th January 2023   | EoL reached (`4.5.3`)           |
 | `4.6.0` | 15th February 2025 | Enjoying indefinite support     |
 
 ## Bug Reports [![Percentage of issues still open](https://isitmaintained.com/badge/open/j-mie6/Parsley.svg)](https://isitmaintained.com/project/j-mie6/Parsley "Percentage of issues still open") [![Maintainability](https://img.shields.io/codeclimate/maintainability/j-mie6/parsley)](https://codeclimate.com/github/j-mie6/parsley) [![Test Coverage](https://img.shields.io/codeclimate/coverage-letter/j-mie6/parsley)](https://codeclimate.com/github/j-mie6/parsley)
