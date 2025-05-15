@@ -8,7 +8,7 @@ package parsley.expr
 import parsley.Parsley, Parsley._
 import parsley.XAnnotation.{implicitNotFound212, implicitNotFound213}
 import parsley.lift.lift4
-import parsley.syntax.zipped.Zipped2
+import parsley.syntax.zipped.zippedSyntax2
 
 /** This module contains specialist combinators for mixing unary and binary operators
   * on the same level. This is only sensible when mixing infix-left and postfix
@@ -56,7 +56,7 @@ object mixed {
                       @implicitNotFound212("Please provide a wrapper function from A to C") wrap: A => C): Parsley[C] = {
         lazy val rest: Parsley[C] = (
                 uop <*> rest
-            <|> (p <**> ((bop, rest).zipped(flip(_, _) _) <|> pure(wrap)))
+              | (p <**> ((bop, rest).zipped(flip(_, _) _) | pure(wrap)))
         )
         rest
     }
@@ -99,9 +99,9 @@ object mixed {
         lazy val uops = _uop.foldLeft(identity[C] _)(_ compose _)
         lazy val rest: Parsley[C => C] = (
                 lift4((b: (C, A) => B, y: A, u: C => C, r: C => C) => (x: C) => r(u(b(x, y))), bop, p, uops, rest)
-            <|> pure(identity[C] _)
+              | pure(identity[C] _)
         )
-        chain.postfix(p.map(wrap), _uop) <**> rest
+        chain.postfix(p.map(wrap))(_uop) <**> rest
     }
 
     private def flip[A, B, C](f: (A, B) => C, y: B)(x: A) = f(x, y)

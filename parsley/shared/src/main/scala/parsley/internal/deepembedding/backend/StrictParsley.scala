@@ -9,6 +9,7 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 
 import parsley.XAssert._
+import parsley.exceptions.CorruptedReferenceException
 import parsley.state.Ref
 
 import parsley.internal.collection.mutable.ResizableArray
@@ -16,7 +17,6 @@ import parsley.internal.deepembedding.ContOps, ContOps.{perform, ContAdapter}
 import parsley.internal.machine.instructions, instructions.{Instr, Label}
 
 import StrictParsley.*
-import org.typelevel.scalaccompat.annotation.nowarn3
 
 /** This is the root type of the parsley "backend": it represents a combinator tree
   * where the join-points in the tree (recursive or otherwise) have been factored into
@@ -37,15 +37,14 @@ private [deepembedding] trait StrictParsley[+A] {
       *   1. any sharable, fail-only, handler instructions are then generated at the end of the instruction stream
       *   1. jump-labels in the code are removed, and tail-call optimisation is applied
       *
-      * @param numRegsUsedByParent the number of registers in use by the parent (should one exist), required by callee-save
-      * @param usedRefs the registers used by this parser (these may require allocation)
+      * @param minRef the number of references determined to currently exist according to the context (or -1 if this is root)
+      * @param usedRefs the references used by this parser (these may require allocation)
       * @param recs a stream of pairs of rec nodes and the generators for their strict parsers
       *             (this is just because more `Cont` operations are performed later)
       * @param state the code generator state
       * @return the final array of instructions for this parser
       */
-    final private [deepembedding] def generateInstructions[M[_, +_]: ContOps](minRef: Int, usedRefs: Set[Ref[_]],
-                                                                              bodyMap: Map[Let[_], StrictParsley[_]])
+    final private [deepembedding] def generateInstructions[M[_, +_]: ContOps](minRef: Int, usedRefs: Set[Ref[_]], bodyMap: Map[Let[_], StrictParsley[_]])
                                                                             (implicit state: CodeGenState): Array[Instr] = {
         implicit val instrs: InstrBuffer = newInstrBuffer
         perform {
@@ -99,30 +98,30 @@ private [deepembedding] object StrictParsley {
     /** Make a fresh instruction buffer */
     private def newInstrBuffer: InstrBuffer = new ResizableArray()
 
-    /** If required, generates callee-save around a main body of instructions.
+    /** Allocates references, and, if required, generates an instruction to expand array size.
       *
       * This is needed when using `flatMap`, as it is unaware of the register
-      * context of its parent, other than the number used. The expectation is
-      * that such a parser will save all the registers used by its parents that
-      * it itself does not explicitly use and restore them when it is completed
-      * (if the parent has not allocated a register it may be assumed that
-      * it is local to the `flatMap`: this is a documented limitation of the
-      * system).
+      * context of its parents.
       *
-      * @param numRegsUsedByParent the size of the current register array as dictated by the parent
-      * @param bodyGen a computation that generates instructions into the instruction buffer
-      * @param reqRegs the number of registered used by the parser in question
-      * @param allocatedRegs the slots used by the registered allocated local to the parser
+      * @param minRef the number of references in existance, according to the context
+      * @param usedRefs the referenced used in this parser that may need allocation
       * @param instrs the instruction buffer
-      * @param state the code generation state, for label generation
       */
     private def allocateAndExpandRefs(minRef: Int, usedRefs: Set[Ref[_]])(implicit instrs: InstrBuffer): Unit = {
-        var nextSlot = math.max(minRef, 0)
-        usedRefs.foreach { (r: Ref[_]) =>
-            if (!r.allocated) {
-                r.allocate(nextSlot)
-                nextSlot += 1
-            }
+        val blockedSlots = usedRefs.collect {
+            case r if r.allocated => r.addr
+        }
+        @tailrec
+        def nextFreeSlot(n: Int): Int = if (blockedSlots.contains(n)) nextFreeSlot(n+1) else n
+
+        var nextSlot = nextFreeSlot(math.max(minRef, 0))
+        for (r <- usedRefs if !r.allocated) {
+            r.allocate(nextSlot)
+            nextSlot = nextFreeSlot(nextSlot+1)
+        }
+        // check that no two references have the same address!
+        if (usedRefs.groupBy(_.addr).valuesIterator.exists(_.size > 1)) {
+            throw new CorruptedReferenceException() // scalastyle:ignore throw
         }
         val totalSlotsRequired = nextSlot
         // if this is -1, then we are the top level and have no parent, otherwise it needs to be done
@@ -242,9 +241,9 @@ private [deepembedding] trait MZero extends StrictParsley[Nothing]
 /** This is the escapulated state required for code generation,
   * which is threaded through the entire backend.
   *
-  * @param numRegs the number of registers required by the parser being generated
+  * @param numRefs the number of references required by the parser being generated
   */
-private [deepembedding] class CodeGenState(val numRegs: Int) {
+private [deepembedding] class CodeGenState(val numRefs: Int) {
     /** The next jump-label identifier. */
     private var current = 0
     /** The shared-parsers that have been referenced at some point in the generation so far. */
@@ -295,7 +294,7 @@ private [deepembedding] class CodeGenState(val numRegs: Int) {
     /** A map of reasons to the assigned jump-label to its instruction. */
     private val applyReasonMap = mutable.Map.empty[String, Int]
     /** A map of registers to the assigned jump-label to its instruction. */
-    private val putAndFailMap: mutable.Map[Ref[_], Int] @nowarn3 = mutable.Map.empty[Ref[_], Int]: @nowarn3
+    private val putAndFailMap = mutable.Map.empty[Ref[_], Int]
     /** A map of dislodge amounts to the assigned jump-label to its instruction. */
     private val dislodgeAndFailMap = mutable.Map.empty[Int, Int]
 
@@ -332,7 +331,7 @@ private [deepembedding] class CodeGenState(val numRegs: Int) {
         }
         val putAndFail = putAndFailMap.view.map {
             case (reg, i) => new instructions.PutAndFail(reg.addr) -> i
-        }: @nowarn3
+        }
         val dislodgeAndFail = dislodgeAndFailMap.view.map {
             case (n, i) => new instructions.DislodgeAndFail(n) -> i
         }

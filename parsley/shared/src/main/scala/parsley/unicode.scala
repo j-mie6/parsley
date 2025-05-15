@@ -5,7 +5,7 @@
  */
 package parsley
 
-import parsley.Parsley.{empty, fresh, many, pure, some}
+import parsley.Parsley.{empty, many, some}
 import parsley.errors.combinator.ErrorMethods
 import parsley.token.errors.{Label, LabelConfig, NotConfigured}
 
@@ -15,7 +15,7 @@ import parsley.internal.deepembedding.singletons
   *
   * In particular, this module contains: combinators that can read specific characters; combinators that represent character classes and their negations;
   * combinators for reading specific strings; as well as a selection of pre-made parsers to parse specific kinds of character, like digits and letters.
-  * Unlike [[parsley.character `character`]], this module handles full utf-16 codepoints, which can be up to two 16-bit characters long.
+  * Unlike [[parsley.character$ `character`]], this module handles full utf-16 codepoints, which can be up to two 16-bit characters long.
   *
   * @since 4.4.0
   *
@@ -370,7 +370,7 @@ object unicode {
       *
       * @example {{{
       * scala> import parsley.unicode.{letter, letterOrDigit, stringOfMany}
-      * scala> import parsley.syntax.zipped.Zipped2
+      * scala> import parsley.syntax.zipped._
       * scala> val ident = (letter, stringOfMany(letterOrDigit)).zipped((c, s) => s"&#36;{Character.toString(c)}&#36;s")
       * scala> ident.parse("abdc9d")
       * val res0 = Success("abdc9d")
@@ -385,11 +385,7 @@ object unicode {
       * @since 4.4.0
       * @group string
       */
-    def stringOfMany(pc: Parsley[Int]): Parsley[String] = {
-        val pf = pure(addCodepoint(_, _))
-        // Can't use the regular foldLeft here, because we need a fresh StringBuilder each time.
-        expr.infix.secretLeft1(fresh(new StringBuilder), pc, pf).map(_.toString)
-    }
+    def stringOfMany(pc: Parsley[Int]): Parsley[String] = many(pc, StringFactories.intFactory)
 
     // TODO: test
     /** This combinator parses codepoints matching the given predicate '''zero''' or more times, collecting
@@ -401,7 +397,7 @@ object unicode {
       *
       * @example {{{
       * scala> import parsley.unicode.{letter, stringOfMany}
-      * scala> import parsley.syntax.zipped.Zipped2
+      * scala> import parsley.syntax.zipped._
       * scala> val ident = (letter, stringOfMany(Character.isLetterOrDigit(_))).zipped((c, s) => s"&#36;{Character.toString(c)}&#36;s")
       * scala> ident.parse("abdc9d")
       * val res0 = Success("abdc9d")
@@ -442,11 +438,7 @@ object unicode {
       * @since 4.4.0
       * @group string
       */
-    def stringOfSome(pc: Parsley[Int]): Parsley[String] = {
-        val pf = pure(addCodepoint(_, _))
-        // Can't use the regular foldLeft1 here, because we need a fresh StringBuilder each time.
-        expr.infix.secretLeft1(pc.map(addCodepoint(new StringBuilder, _)), pc, pf).map(_.toString)
-    }
+    def stringOfSome(pc: Parsley[Int]): Parsley[String] = some(pc, StringFactories.intFactory)
 
     // TODO: test
     /** This combinator parses codepoints matching the given predicate '''one''' or more times, collecting
@@ -507,12 +499,12 @@ object unicode {
       * @note just an alias for [[parsley.character.strings(str0* `character.strings`]], to allow for more ergonomic imports.
       * @group string
       */
-    def strings(str0: String, strs: String*): Parsley[String] = character.strings(str0, strs: _*)
+    def strings(str0: String, strs: String*): Parsley[String] = character.strings(str0, strs*)
 
     /** This combinator tries to parse each of the key-value pairs `kvs` (and `kv0`), until one of them succeeds.
       *
       * Each argument to this combinator is a pair of a string and a parser to perform if that string can be parsed.
-      * `strings(s0 -> p0, ...)` can be thought of as `atomicChoice(string(s0) *> p0, ...)`, however, the given
+      * `strings(s0 -> p0, ...)` can be thought of as `atomicChoice(string(s0) ~> p0, ...)`, however, the given
       * ordering of key-value pairs does not dictate the order in which the parses are tried. In particular, it
       * will favour keys that are the prefix of another key first, so that it has ''Longest Match'' semantics.
       * it will try to minimise backtracking too, making it a much more efficient option than `atomicChoice`.
@@ -543,7 +535,7 @@ object unicode {
       * @note just an alias for [[parsley.character.strings[A](kv0* `character.strings`]], to allow for more ergonomic imports.
       * @group string
       */
-    def strings[A](kv0: (String, Parsley[A]), kvs: (String, Parsley[A])*): Parsley[A] = character.strings(kv0, kvs: _*)
+    def strings[A](kv0: (String, Parsley[A]), kvs: (String, Parsley[A])*): Parsley[A] = character.strings(kv0, kvs*)
     // $COVERAGE-ON$
 
     /** This parser will parse '''any''' single codepoint from the input, failing if there is no input remaining.
@@ -607,7 +599,7 @@ object unicode {
       * @group spec
       * @see [[crlf `crlf`]]
       */
-    val endOfLine: Parsley[Int] = (newline <|> crlf).label("end of line")
+    val endOfLine: Parsley[Int] = (newline |: crlf).label("end of line")
 
     /** This parser tries to parse a tab (`'\t'`) character, and returns it if successful.
       *

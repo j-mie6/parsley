@@ -9,12 +9,12 @@ import parsley.Parsley
 import parsley.token.Lexeme
 import parsley.token.errors.ErrorConfig
 
-private [token] final class LexemeCombined(combined: Combined, lexeme: Lexeme, err: ErrorConfig) extends Combined(err) {
+private [token] final class LexemeCombined(combined: CombinedParsers, lexeme: Lexeme, err: ErrorConfig) extends CombinedParsers(err) {
     override lazy val decimal: Parsley[Either[BigInt,BigDecimal]] = lexeme(combined.decimal)
     override lazy val hexadecimal: Parsley[Either[BigInt,BigDecimal]] = lexeme(combined.hexadecimal)
     override lazy val octal: Parsley[Either[BigInt,BigDecimal]] = lexeme(combined.octal)
     override lazy val binary: Parsley[Either[BigInt,BigDecimal]] = lexeme(combined.binary)
-    override lazy val  number: Parsley[Either[BigInt,BigDecimal]] = lexeme(combined.number)
+    override lazy val number: Parsley[Either[BigInt,BigDecimal]] = lexeme(combined.number)
 
     override protected[numeric] def bounded[T](number: Parsley[Either[BigInt,BigDecimal]], bits: Bits, radix: Int)
                                               (implicit ev: CanHold[bits.self,T]): Parsley[Either[T, BigDecimal]] =

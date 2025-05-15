@@ -49,8 +49,8 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
-        def verifiedFail(msggen: A => Seq[String]): Parsley[Nothing] = this.verifiedWith {
-            new SpecialisedGen[A] {
+        def verifiedFail(msggen: A => Seq[String]): Parsley[Nothing] = p.verifiedWith {
+            new SpecializedGen[A] {
                 override def messages(x: A) = msggen(x)
             }
         }
@@ -67,7 +67,7 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
-        def verifiedFail(msg0: String, msgs: String*): Parsley[Nothing] = this.verifiedFail(_ => msg0 +: msgs)
+        def verifiedFail(msg0: String, msgs: String*): Parsley[Nothing] = con(p).void.verifiedFail(_ => msg0 +: msgs)
 
         /** Ensures this parser does not succeed, failing with a vanilla error with an unexpected message and caret spanning the parse.
           *
@@ -79,38 +79,7 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
-        def verifiedUnexpected: Parsley[Nothing] = this.verifiedWithVanillaRaw(_ => None)
-
-        // $COVERAGE-OFF$
-        /** Ensures this parser does not succeed, failing with a vanilla error with an unexpected message and caret spanning the parse and a given reason.
-          *
-          * If this parser succeeds, input is consumed and this combinator will fail, producing an unexpected message the same width as
-          * the parse along with the given reason. However, if this parser fails, no input is consumed and an empty error is generated.
-          * This parser will produce no labels if it fails.
-          *
-          * @param reason the reason that this parser is illegal.
-          * @since 4.2.0
-          * @note $autoAmend
-          * @note $atomicNonTerminal
-          */
-        @deprecated("This combinator will be removed in 5.0.0, use `verifiedExplain` instead", "4.5.0")
-        def verifiedUnexpected(reason: String): Parsley[Nothing] = this.verifiedWithVanillaRaw(_ => Some(reason))
-
-        /** Ensures this parser does not succeed, failing with a vanilla error with an unexpected message and caret spanning the parse and a reason generated
-          * from this parser's result.
-          *
-          * If this parser succeeds, input is consumed and this combinator will fail, producing an unexpected message the same width as
-          * the parse along with a reason generated from the successful parse. However, if this parser fails, no input is consumed and an empty error
-          * is generated. This parser will produce no labels if it fails.
-          *
-          * @param reason a function that produces a reason for the error given the parsed result.
-          * @since 4.2.0
-          * @note $autoAmend
-          * @note $atomicNonTerminal
-          */
-        @deprecated("This combinator will be removed in 5.0.0, use `verifiedExplain` instead", "4.5.0")
-        def verifiedUnexpected(reason: A => String): Parsley[Nothing] = this.verifiedWithVanillaRaw(x => Some(reason(x)))
-        // $COVERAGE-ON$
+        def verifiedUnexpected: Parsley[Nothing] = new VerifiedErrors(con(p).void).verifiedWithVanillaRaw(_ => None)
 
         /** Ensures this parser does not succeed, failing with a vanilla error with an unexpected message and caret spanning the parse and a given reason.
           *
@@ -123,7 +92,7 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
-        def verifiedExplain(reason: String): Parsley[Nothing] = this.verifiedWithVanillaRaw(_ => Some(reason))
+        def verifiedExplain(reason: String): Parsley[Nothing] = new VerifiedErrors(con(p).void).verifiedWithVanillaRaw(_ => Some(reason))
 
         /** Ensures this parser does not succeed, failing with a vanilla error with an unexpected message and caret spanning the parse and a reason generated
           * from this parser's result.
@@ -150,16 +119,16 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
-        def verifiedWith(err: ErrorGen[A]): Parsley[Nothing] = amend(err(withWidth(atomic(con(p)).newHide)))
+        def verifiedWith(err: ErrorGen[A]): Parsley[Nothing] = amend(err(withWidth(atomic(con(p)).hide)))
 
-        @inline private def verifiedWithVanilla(unexGen: A => VanillaGen.UnexpectedItem, reasonGen: A => Option[String]) = verifiedWith {
+        @inline private [VerifiedErrors] def verifiedWithVanilla(unexGen: A => VanillaGen.UnexpectedItem, reasonGen: A => Option[String]) = verifiedWith {
             new VanillaGen[A] {
                 override def unexpected(x: A) = unexGen(x)
                 override def reason(x: A) = reasonGen(x)
             }
         }
 
-        @inline private def verifiedWithVanillaRaw(reasonGen: A => Option[String]) = verifiedWithVanilla(_ => VanillaGen.RawItem, reasonGen)
+        @inline private [VerifiedErrors] def verifiedWithVanillaRaw(reasonGen: A => Option[String]) = verifiedWithVanilla(_ => VanillaGen.RawItem, reasonGen)
     }
 
     /** This class exposes combinators related to the ''Preventative Errors'' parser design pattern.
@@ -194,7 +163,7 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
-        def preventativeFail(msggen: A => Seq[String]): Parsley[Unit] = this.preventWith(new SpecialisedGen[A] {
+        def preventativeFail(msggen: A => Seq[String]): Parsley[Unit] = this.preventWith(new SpecializedGen[A] {
             override def messages(x: A) = msggen(x)
         })
 
@@ -210,7 +179,7 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
-        def preventativeFail(msg0: String, msgs: String*): Parsley[Unit] = this.preventativeFail(_ => msg0 +: msgs)
+        def preventativeFail(msg0: String, msgs: String*): Parsley[Unit] = con(p).void.preventativeFail(_ => msg0 +: msgs)
 
         /** Ensures this parser does not succeed, failing with a vanilla error with an unexpected message and caret spanning the parse and a reason generated
           * from this parser's result.
@@ -239,7 +208,7 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
-        def preventativeExplain(reason: String, labels: String*): Parsley[Unit] = this.preventativeExplain(_ => reason, labels: _*)
+        def preventativeExplain(reason: String, labels: String*): Parsley[Unit] = con(p).void.preventativeExplain(_ => reason, labels: _*)
 
         /** Ensures this parser does not succeed, failing with an error as described by the given `ErrorGen` object.
           *
@@ -254,7 +223,7 @@ object patterns {
           * @note $atomicNonTerminal
           */
         def preventWith(err: ErrorGen[A], labels: String*): Parsley[Unit] = {
-            val inner: Parsley[Either[(A, Int), Unit]] = withWidth(atomic(con(p)).newHide) <+> unit
+            val inner: Parsley[Either[(A, Int), Unit]] = withWidth(atomic(con(p)).hide) <+> unit
             val labelledErr = labels match {
                 case l1 +: ls       => err.parser.label(l1, ls: _*)
                 case _              => err.parser

@@ -44,7 +44,7 @@ testing generated error messages.
 Error messages within `parsley` take two different forms: *vanilla*
 or *specialised*. The error chosen depends on the combinators used
 to produce it: `empty`, `unexpected`, `char`, `string`, etc all produce vanilla errors; and `fail` and its derivatives produce
-specialised errors. An `ErrorBuilder` must describe how to format
+specialised errors. An `ErrorBuilder` must describe how to build
 both kinds of error; their structure is explained below.
 
 ### Vanilla Errors
@@ -134,21 +134,13 @@ exposing unnecessary information into the rest of the system.
 After these types are specified, the methods of the typeclass
 can be implemented. These put together the primtive-most components
 and compose them into the larger whole. The documentation of the
-typeclass details the role of these well enough, however. For example's sake, however, these are the two shapes of call that will
-be made for the different types of error messages:
+typeclass details the role of these well enough, however. For example's sake, however, these
+are the two shapes of call that will be made for the different types of error messages:
 
 #### Vanilla
-```
-(line 1, column 5):
-  unexpected end of input
-  expected "(", "negate", digit, or letter
-  '-' is a binary operator
-  >3+4-
-       ^
-```
 ```scala mdoc:silent:nest
 val builder = implicitly[ErrorBuilder[String]]
-builder.format (
+val err = builder.build (
     builder.pos(1, 5),
     builder.source(None),
     builder.vanillaError (
@@ -164,31 +156,27 @@ builder.format (
         builder.combineMessages(List(
             builder.reason("'-' is a binary operator")
         )),
-        builder.lineInfo("3+4-", Nil, Nil, 4, 4)
+        builder.lineInfo("3+4-", Nil, Nil, 1, 4, 1)
     )
 )
 ```
+```scala mdoc:passthrough
+println(s"""```
+$err
+```""")
+```
+
 One builder call not shown here, is a call to
 `builder.unexpectedToken`. This is a bigger discussion and is
 deferred to [Token Extraction in `ErrorBuilder`]
 
 #### Specialised
-```
-In file 'foo.txt' (line 2, column 6):
-  first message
-  second message
-  >first line of input
-  >second line
-        ^^^
-  >third line
-  >fourth line
-```
 ```scala mdoc:silent:nest
 val builder = implicitly[ErrorBuilder[String]]
-builder.format (
+val err = builder.build (
     builder.pos(2, 6),
     builder.source(Some("foo.txt")),
-    builder.specialisedError (
+    builder.specializedError (
         builder.combineMessages(List(
             builder.message("first message"),
             builder.message("second message"),
@@ -196,10 +184,16 @@ builder.format (
         builder.lineInfo("second line",
                          List("first line of input"),
                          List("third line", "fourth line"),
+                         2,
                          5,
                          3)
     )
 )
+```
+```scala mdoc:passthrough
+println(s"""```
+$err
+```""")
 ```
 
 ## Constructing Test Errors
@@ -214,7 +208,7 @@ case class VanillaError(
     unexpected: Option[TestErrorItem],
     expecteds: Set[TestErrorItem],
     reasons: Set[String]) extends TestErrorLines
-case class SpecialisedError(msgs: Set[String]) extends TestErrorLines
+case class SpecializedError(msgs: Set[String]) extends TestErrorLines
 
 sealed trait TestErrorItem
 case class TestRaw(item: String) extends TestErrorItem
@@ -222,7 +216,7 @@ case class TestNamed(item: String) extends TestErrorItem
 case object TestEndOfInput extends TestErrorItem
 ```
 
-This type, as will become evident from the formatter derived
+This type, as will become evident from the builder derived
 from it, is lossy and does not perfectly encode all the
 information available. Notice that `TestErrorItem` is a supertype
 of `TestRaw`, `TestNamed`, and `TestEndOfInput`: this is
@@ -257,18 +251,18 @@ methods make it very easy to fill in the gaps:
 ```scala
 class TestErrorBuilder extends ErrorBuilder[TestError] {
     //...
-    def format(pos: (Int, Int), source: Unit,
-               lines: TestErrorLines): TestError = TestError(pos, lines)
+    def build(pos: (Int, Int), source: Unit,
+              lines: TestErrorLines): TestError = TestError(pos, lines)
     def vanillaError(
         unexpected: Option[TestErrorItem],
         expected: Set[TestErrorItem],
         reasons: Set[String],
         line: Unit
       ): TestErrorLines = VanillaError(unexpected, expected, reasons)
-    def specialisedError(
+    def specializedError(
         msgs: Set[String],
         line: Unit
-      ): TestErrorLines = SpecialisedError(msgs)
+      ): TestErrorLines = SpecializedError(msgs)
     def pos(line: Int, col: Int): (Int, Int) = (line, col)
     def source(sourceName: Option[String]): Unit = ()
     def combineExpectedItems(alts: Set[TestErrorItem]): Set[TestErrorItem] = alts
@@ -287,7 +281,7 @@ class TestErrorBuilder extends ErrorBuilder[TestError] {
         line: String,
         linesBefore: Seq[String],
         linesAfter: Seq[String],
-        errorPointsAt: Int, errorWidth: Int
+        lineNum: Int, errorPointsAt: Int, errorWidth: Int
       ): Unit = ()
 
     // The implementation of this is usually provided by a mixed-in

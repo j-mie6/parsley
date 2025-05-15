@@ -44,8 +44,8 @@ They can be made in three different ways:
     not guarantee uniqueness of scoping. The state will **not** be initialised.
 
     @:callout(warning)
-    Using the same globally constructed reference in two places is undefined
-    behaviour and should *not* be done.
+    Using the same globally constructed reference in two different parsers (in terms of calling
+    `.parse` on them) is undefined behaviour and should *not* be done.
     @:@
 
 References themselves have two core operations, with several more built on top:
@@ -175,11 +175,11 @@ def brackets = Brackets.empty.makeRef { bs =>
     def scope[A](p: Parsley[A]): Parsley[A] = bs.updateDuring(identity[Brackets])(p)
 
     lazy val matching: Parsley[Unit] = scope {
-        many {
+        many(
               open('(') ~> matching <~ close(')')
             | open('[') ~> matching <~ close(']')
             | open('{') ~> matching <~ close('}')
-        }.void
+        ).void
     }
     matching <~ eof
 }
@@ -243,7 +243,7 @@ Another application of long-term state is to track indentation levels in
 a whitespace-sensitive language: here the start of a new cause, statement
 or block will record the current column number, and further statements
 must verify that the column number is correct. Leaving a block will restore
-the identation level back to how it was before. This is similar to how
+the indentation level back to how it was before. This is similar to how
 matching brackets worked.
 
 ## Stateful Combinators
