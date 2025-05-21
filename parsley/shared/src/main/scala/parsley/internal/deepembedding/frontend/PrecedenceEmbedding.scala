@@ -16,7 +16,7 @@ private [parsley] final class Precedence[A](table: LazyPrec) extends LazyParsley
       strictOp <- suspend(op.op.optimised[M, R, Any])
     } yield backend.StrictOp(op.fixity, strictOp, op.prec))
   } yield {
-    val strictPrec = new backend.StrictPrec(atoms, ops, table.wraps)
+    val strictPrec = new backend.StrictPrec(atoms, ops, table.wraps.toArray)
     backend.Precedence(strictPrec)
   }
 

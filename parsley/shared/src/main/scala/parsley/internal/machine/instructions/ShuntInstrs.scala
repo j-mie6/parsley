@@ -20,7 +20,7 @@ object ShuntingYardState {
   def empty = new ShuntingYardState(mutable.Stack.empty, mutable.Stack.empty, true)
 }
 
-private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixLabel: Int, wraps: List[Any => Any]) extends Instr {
+private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixLabel: Int, wraps: Array[Any => Any]) extends Instr {
   override def apply(ctx: Context): Unit = {
     if (ctx.good) {
       val input = ctx.stack.pop[ShuntInput]()
