@@ -37,7 +37,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
           ctx.pc = postfixInfixLabel
         case o@Operator(_, fix, prec) => fix match {
           case Prefix => {
-            if (state.operators.nonEmpty && o.prec < state.operators.top.prec) { // TODO: check case
+            if (state.operators.nonEmpty && prec < state.operators.top.prec) {
               // This is a malformed expression
               val currentOffset = ctx.offset
               ctx.restoreState()
@@ -49,16 +49,8 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
             state.failOnNoConsumed = true
             ctx.pc = prefixAtomLabel
           }
-          case InfixL => {
-            while (state.operators.nonEmpty && state.operators.top.prec >= prec) {
-              reduce(state)
-            }
-            state.operators.push(o)
-            state.failOnNoConsumed = true
-            ctx.pc = prefixAtomLabel
-          }
           case Postfix => {
-            if (state.operators.nonEmpty && state.operators.top.fix == Postfix && state.operators.top.prec < prec) {
+            if (state.operators.nonEmpty && state.operators.top.fix == Postfix && prec > state.operators.top.prec) {
               // This was an unexpected postfix operator
               ctx.restoreState()
               produceResult(ctx)
@@ -70,6 +62,14 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
             state.operators.push(o)
             state.failOnNoConsumed = false
             ctx.pc = postfixInfixLabel
+          }
+          case InfixL => {
+            while (state.operators.nonEmpty && state.operators.top.prec >= prec) {
+              reduce(state)
+            }
+            state.operators.push(o)
+            state.failOnNoConsumed = true
+            ctx.pc = prefixAtomLabel
           }
           case InfixR | InfixN => {
             while (state.operators.nonEmpty && state.operators.top.prec > prec) {

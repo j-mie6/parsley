@@ -4,14 +4,13 @@ import parsley.syntax.character.{charLift, stringLift}
 import parsley.character
 import parsley.Parsley
 import ExprGen._
-import parsley.errors.ErrorBuilder
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
 import parsley.Success
 import parsley.Failure
+import parsley.ParsleyTest
+import parsley.VanillaError
+import parsley.SpecializedError
 
-class ExpressionSemanticPreservationSpec extends AnyFlatSpec with Matchers {
-    implicit val eb: ErrorBuilder[String] = ErrorBuilder.stringError
+class ExpressionSemanticPreservationSpec extends ParsleyTest {
     val originalExpr: Parsley[Int] = originalPrecedence(
         OriginalOps[Int](InfixN)("==" #> ((a, b) => if (a == b) 1 else 0)) +:
         OriginalOps[Int](InfixL)('+' #> (_ + _), '-' #> (_ - _)) +:
@@ -102,6 +101,40 @@ class ExpressionSemanticPreservationSpec extends AnyFlatSpec with Matchers {
                     case Success(_) => originalResult shouldBe newResult
                     case Failure(_) => newResult shouldBe a [Failure[_]]
                 }
+
+                // originalResult match {
+                //     case Success(_) => originalResult shouldBe newResult
+                //     case Failure(originalError) => newResult match {
+                //         case Failure(newError) => {
+                //             originalError.pos shouldBe newError.pos
+                //             originalError.lines match {
+                //                 case VanillaError(unexpected, expecteds, reasons, width) => newError.lines match {
+                //                     case VanillaError(newUnexpected, newExpecteds, newReasons, newWidth) => {
+                //                         if (unexpected != newUnexpected) {
+                //                             println(opsDefs)
+                //                             println(input)
+                //                             println(originalResult)
+                //                             println(newResult)
+                //                         }
+                //                         unexpected shouldBe newUnexpected
+                //                         // expecteds shouldBe newExpecteds
+                //                         reasons shouldBe newReasons
+                //                         width shouldBe newWidth
+                //                     }
+                //                     case _ => fail("Expected VanillaError but got something else")
+                //                 }
+                //                 case SpecializedError(msgs, width) => newError.lines match {
+                //                     case SpecializedError(newMsgs, newWidth) => {
+                //                         msgs shouldBe newMsgs
+                //                         width shouldBe newWidth
+                //                     }
+                //                     case _ => fail("Expected SpecializedError but got something else")
+                //                 }
+                //             }
+                //         }
+                //         case Success(_) => fail("Expected failure but got success")
+                //     }
+                // }
             }
         }
     }

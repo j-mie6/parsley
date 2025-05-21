@@ -9,10 +9,10 @@ import parsley.generic.ParserBridge1
 import parsley.generic.ParserBridge2
 
 object ExprGen {
-    private type UnaryOp = (Parsley[_], TestExpr => TestExpr)
-    private type BinaryOp = (Parsley[_], (TestExpr, TestExpr) => TestExpr)
+    private type UnaryOp = (String, TestExpr => TestExpr)
+    private type BinaryOp = (String, (TestExpr, TestExpr) => TestExpr)
 
-    case class OpsDef(fixity: Fixity, ops: List[(Parsley[_], Any)])
+    case class OpsDef(fixity: Fixity, ops: List[(String, Any)])
 
     private val fixityGen: Gen[Fixity] = Gen.oneOf(
         InfixL,
@@ -57,7 +57,7 @@ object ExprGen {
         ("-", InfixMinus(_, _)),
         ("*", InfixMult(_, _)),
         ("/", InfixDiv(_, _)),
-        (atomic("=="), InfixEq(_, _))
+        ("==", InfixEq(_, _))
     )
 
     private val prefixOps: Set[UnaryOp] = Set(
@@ -132,7 +132,7 @@ object ExprGen {
             lazy val originalExpr = originalPrecedence[TestExpr](
                 opsDefs.foldLeft(originalAtoms) {
                     case (acc, OpsDef(fixity, ops)) => {
-                        val opsWithFixity = ops.map { case (s, f) => s as f.asInstanceOf[fixity.Op[TestExpr, TestExpr]] }
+                        val opsWithFixity = ops.map { case (s, f) => atomic(s) as f.asInstanceOf[fixity.Op[TestExpr, TestExpr]] }
                         val originalOps = OriginalOps(fixity)(opsWithFixity(0), opsWithFixity.tail: _*)
                         acc :+ originalOps
                     }
@@ -144,7 +144,7 @@ object ExprGen {
             lazy val newExpr = precedence[TestExpr](
                 opsDefs.foldLeft(newAtoms) {
                     case (acc, OpsDef(fixity, ops)) => {
-                        val opsWithFixity = ops.map { case (s, f) => s as f.asInstanceOf[fixity.Op[TestExpr, TestExpr]] }
+                        val opsWithFixity = ops.map { case (s, f) => atomic(s) as f.asInstanceOf[fixity.Op[TestExpr, TestExpr]] }
                         val newOps = Ops(fixity)(opsWithFixity(0), opsWithFixity.tail: _*)
                         acc :+ newOps
                     }
