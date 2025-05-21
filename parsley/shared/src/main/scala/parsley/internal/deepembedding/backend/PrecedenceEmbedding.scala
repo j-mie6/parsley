@@ -9,6 +9,7 @@ import parsley.internal.machine.instructions.{ShuntInput, Atom, Operator}
 import parsley.expr.Prefix
 import parsley.internal.deepembedding.singletons.Fail
 import parsley.internal.errors.FlexibleCaret
+import parsley.expr.Fixity
 
 private [deepembedding] final class Precedence[A](prefixAtomChoice: StrictParsley[ShuntInput], postfixInfixChoice: StrictParsley[ShuntInput], wraps: Array[Any => Any]) extends StrictParsley[A] {
   override protected[backend] def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: StrictParsley.InstrBuffer, state: CodeGenState): M[R,Unit] = {
@@ -50,8 +51,8 @@ private [deepembedding] object Precedence {
 
   private def buildChoiceOptions(table: StrictPrec): (List[StrictParsley[ShuntInput]], List[StrictParsley[ShuntInput]]) = {
     return (
-      table.atoms.map(a => <*>(new Pure(r => Atom(r, table.wraps.length)), a)) ++ table.ops.filter(_.fixity == Prefix).map(o => <*>(new Pure(r => Operator(r, o.fixity, o.prec)), o.op)),
-      table.ops.filter(_.fixity != Prefix).map(o => <*>(new Pure(r => Operator(r, o.fixity, o.prec)), o.op))
+      table.atoms.map(a => <*>(new Pure(r => Atom(r, table.wraps.length)), a)) ++ table.ops.filter(_.fixity == Prefix).map(o => <*>(new Pure(r => Operator(r, Fixity.ordinal(o.fixity), o.prec)), o.op)),
+      table.ops.filter(_.fixity != Prefix).map(o => <*>(new Pure(r => Operator(r, Fixity.ordinal(o.fixity), o.prec)), o.op))
     )    
   }
 }

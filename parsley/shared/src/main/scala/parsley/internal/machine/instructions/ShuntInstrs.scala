@@ -4,13 +4,13 @@ import scala.collection.mutable
 
 import parsley.XAssert._
 import parsley.internal.machine.Context
-import parsley.expr.{Fixity, Prefix, InfixL, InfixR, InfixN, Postfix}
+import parsley.expr.Fixity.{PR, PO, IL, IR, IN}
 import scala.annotation.switch
 
 private [internal] sealed trait ShuntInput
 
 private [internal] case class Atom(v: Any, lvl: Int) extends ShuntInput
-private [internal] case class Operator(f: Any, fix: Fixity, prec: Int) extends ShuntInput
+private [internal] case class Operator(f: Any, fix: Int, prec: Int) extends ShuntInput
 
 private [internal] case class ShuntingYardState(
   atoms: mutable.Stack[Atom],
@@ -37,8 +37,8 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
           state.atoms.push(a)
           state.failOnNoConsumed = false
           ctx.pc = postfixInfixLabel
-        case o@Operator(_, fix, prec) => fix match {
-          case Prefix => {
+        case o@Operator(_, fix, prec) => (fix: @switch) match {
+          case PR => {
             if (state.operators.nonEmpty && prec < state.operators.top.prec) {
               // This is a malformed expression
               val currentOffset = ctx.offset
@@ -51,8 +51,8 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
             state.failOnNoConsumed = true
             ctx.pc = prefixAtomLabel
           }
-          case Postfix => {
-            if (state.operators.nonEmpty && state.operators.top.fix == Postfix && prec > state.operators.top.prec) {
+          case PO => {
+            if (state.operators.nonEmpty && state.operators.top.fix == PO && prec > state.operators.top.prec) {
               // This was an unexpected postfix operator
               ctx.restoreState()
               produceResult(ctx)
@@ -65,7 +65,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
             state.failOnNoConsumed = false
             ctx.pc = postfixInfixLabel
           }
-          case InfixL => {
+          case IL => {
             while (state.operators.nonEmpty && state.operators.top.prec >= prec) {
               reduce(state)
             }
@@ -73,11 +73,11 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
             state.failOnNoConsumed = true
             ctx.pc = prefixAtomLabel
           }
-          case InfixR | InfixN => {
+          case IR | IN => {
             while (state.operators.nonEmpty && state.operators.top.prec > prec) {
               reduce(state)
             }
-            if (fix == InfixN && state.operators.nonEmpty && state.operators.top.fix == InfixN && state.operators.top.prec == prec) {
+            if (fix == IN && state.operators.nonEmpty && state.operators.top.fix == IN && state.operators.top.prec == prec) {
               // This is a special case in which non-associative operators are chained
               val currentOffset = ctx.offset
               ctx.restoreState()
@@ -127,26 +127,26 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
 
   private def reduce(state: ShuntingYardState): Unit = {
     val op = state.operators.pop()
-    op.fix match {
-      case InfixL => {
+    (op.fix: @switch) match {
+      case IL => {
         val right = state.atoms.pop()
         val left = state.atoms.pop()
         val result = op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec)(left.v), wrap(right.lvl, op.prec + 1)(right.v))
         state.atoms.push(Atom(result, op.prec))
       }
-      case InfixR => {
+      case IR => {
         val right = state.atoms.pop()
         val left = state.atoms.pop()
         val result = op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec + 1)(left.v), wrap(right.lvl, op.prec)(right.v))
         state.atoms.push(Atom(result, op.prec))
       }
-      case InfixN => {
+      case IN => {
         val right = state.atoms.pop()
         val left = state.atoms.pop()
         val result = op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec + 1)(left.v), wrap(right.lvl, op.prec + 1)(right.v))
         state.atoms.push(Atom(result, op.prec))
       }
-      case Postfix | Prefix => {
+      case PO | PR => {
         val right = state.atoms.pop()
         val result = op.f.asInstanceOf[Any => Any](wrap(right.lvl, op.prec)(right.v))
         state.atoms.push(Atom(result, op.prec))
@@ -173,16 +173,6 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
     prefixAtomLabel = labels(prefixAtomLabel)
     postfixInfixLabel = labels(postfixInfixLabel)
     this
-  }
-
-  private def ordinal(fixity: Fixity): String = {
-    fixity match {
-      case InfixL => "IL"
-      case InfixR => "IR"
-      case InfixN => "IN"
-      case Postfix => "PO"
-      case Prefix => "PR"
-    }
   }
 
   override def toString(): String = s"Shunt(Pre/Atom label: $prefixAtomLabel, Post/Infix label: $postfixInfixLabel)"
