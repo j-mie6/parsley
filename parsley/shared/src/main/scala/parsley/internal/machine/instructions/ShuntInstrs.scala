@@ -2,8 +2,10 @@ package parsley.internal.machine.instructions
 
 import scala.collection.mutable
 
+import parsley.XAssert._
 import parsley.internal.machine.Context
 import parsley.expr.{Fixity, Prefix, InfixL, InfixR, InfixN, Postfix}
+import scala.annotation.switch
 
 private [internal] sealed trait ShuntInput
 
@@ -117,9 +119,8 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
 
     assume(state.atoms.size == 1, "Expected exactly one atom at the end of reduction")
     
-    state.atoms.pop() match {
-      case Atom(v, lvl) => ctx.stack.push(wrap(lvl, 0)(v))
-    }
+    val Atom(v, lvl) = state.atoms.pop()
+    ctx.stack.push(wrap(lvl, 0)(v))
     ctx.handlers = ctx.handlers.tail
     ctx.inc()
   }
@@ -127,15 +128,22 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
   private def reduce(state: ShuntingYardState): Unit = {
     val op = state.operators.pop()
     op.fix match {
-      case InfixR | InfixL | InfixN => {
+      case InfixL => {
         val right = state.atoms.pop()
         val left = state.atoms.pop()
-        val result = op.fix match {
-          case InfixL => op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec)(left.v), wrap(right.lvl, op.prec + 1)(right.v))
-          case InfixR => op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec + 1)(left.v), wrap(right.lvl, op.prec)(right.v))
-          case InfixN => op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec + 1)(left.v), wrap(right.lvl, op.prec + 1)(right.v))
-          case _ => throw new IllegalStateException("Will never happen") // TODO: remove this
-        }
+        val result = op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec)(left.v), wrap(right.lvl, op.prec + 1)(right.v))
+        state.atoms.push(Atom(result, op.prec))
+      }
+      case InfixR => {
+        val right = state.atoms.pop()
+        val left = state.atoms.pop()
+        val result = op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec + 1)(left.v), wrap(right.lvl, op.prec)(right.v))
+        state.atoms.push(Atom(result, op.prec))
+      }
+      case InfixN => {
+        val right = state.atoms.pop()
+        val left = state.atoms.pop()
+        val result = op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec + 1)(left.v), wrap(right.lvl, op.prec + 1)(right.v))
         state.atoms.push(Atom(result, op.prec))
       }
       case Postfix | Prefix => {
@@ -165,6 +173,16 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
     prefixAtomLabel = labels(prefixAtomLabel)
     postfixInfixLabel = labels(postfixInfixLabel)
     this
+  }
+
+  private def ordinal(fixity: Fixity): String = {
+    fixity match {
+      case InfixL => "IL"
+      case InfixR => "IR"
+      case InfixN => "IN"
+      case Postfix => "PO"
+      case Prefix => "PR"
+    }
   }
 
   override def toString(): String = s"Shunt(Pre/Atom label: $prefixAtomLabel, Post/Infix label: $postfixInfixLabel)"
