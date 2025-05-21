@@ -27,11 +27,12 @@ inline transparent def bridge[T]: ErrorBridge = bridge[T, T]
 inline transparent def bridge[T, S >: T]: ErrorBridge = ${bridgeImpl[T, S]}
 private def bridgeImpl[T: Type, S >: T: Type](using Quotes): Expr[ErrorBridge] = BridgeImpl().synthesise[T, S]
 // having a class here simplifies the importing of quotes.reflect.* for the enum
-// (FIXME: it is considered back practice, so I will probably just make a parametric enum later)
+// (FIXME: it is considered bad practice, so I will probably just make a parametric enum later)
 private class BridgeImpl(using Quotes) {
     import quotes.reflect.*
     private enum BridgeArg {
         case Pos(impl: PosImpl[?])
+        case Bridged(sym: Symbol)
         case Default(n: Int, sym: Symbol)
         case Err(name: String, pos: Option[Position])
     }
@@ -41,35 +42,42 @@ private class BridgeImpl(using Quotes) {
         val tyArgs = tyRepr.typeArgs
         tyRepr match {
             case Bridgeable(cls, tyParams, bridgeParams, otherParams) =>
-                val numBridgeParams = bridgeParams.length
-                val categorisedArgs = categoriseArgs(cls, otherParams, numBridgeParams + 1)
+                val categorisedArgs = categoriseArgs(cls, bridgeParams :: otherParams, 1, primary = true)
                 // Used for the types of the lambda passed to combinator
-                val bridgeTyArgs = bridgeParams.map /*collect*/ {
-                    // FIXME: switch back to collect and handle this properly
-                    case sym if isPos(sym).nonEmpty => report.errorAndAbort("Currently, `Pos` cannot appear in the first set of arguments")
-                    case sym /*if !isPos(sym.termRef)*/ => (sym.name, sym.termRef.typeSymbol.typeRef.substituteTypes(tyParams, tyArgs))
+                println(categorisedArgs)
+                val bridgePrimaryArgs = bridgeParams.collect {
+                    case sym if isPos(sym).isEmpty => (sym.name, sym.termRef.typeSymbol.typeRef.substituteTypes(tyParams, tyArgs))
                 }
                 val existsUniquePosition = categorisedArgs.flatten.foldLeft(Option.empty[PosImpl[?]]) {
                     case (None, BridgeArg.Pos(impl)) => Some(impl)
                     case (Some(_), BridgeArg.Pos(_)) => report.errorAndAbort("When `Pos` appears in a bridged type, it must be unique")
                     case (pos, _)                    => pos
                 }
+                val con = constructor[T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, existsUniquePosition.map(_.tyRepr))
                 // TODO: look for unique position
                 // TODO: ensure validation if Err is encountered (report separately, but then abort if failed (Option))
-                bridgeTyArgs.map(_._2.asType) match {
+                bridgePrimaryArgs.map(_._2.asType) match {
                     case List('[t1]) =>
                         '{new Bridge1[t1, S] {
-                            def apply(x1: Parsley[t1]): Parsley[S] = ${
-                                val con = constructor[T](cls, bridgeTyArgs, tyArgs, categorisedArgs, existsUniquePosition.map(_.tyRepr))
+                            def apply(p1: Parsley[t1]): Parsley[S] = ${
                                 existsUniquePosition match {
                                     case Some(impl@PosImpl(_, given Type[posTy])) =>
-                                        '{lift.lift2(${con.asExprOf[(posTy, t1) => T]}, ${impl.parser}, x1)}
-                                    case None => '{x1.map(${con.asExprOf[t1 => T]})}
+                                        '{lift.lift2(${con.asExprOf[(posTy, t1) => T]}, ${impl.parser}, p1)}
+                                    case None => '{p1.map(${con.asExprOf[t1 => T]})}
                                 }
                             }
                         }}
-                    case List('[t1], '[t2]) => '{new Bridge2[t1, t2, S] {}}
-                    // TODO: 20 more of these
+                    case List('[t1], '[t2]) =>
+                        '{new Bridge2[t1, t2, S] {
+                            def apply(p1: Parsley[t1], p2: Parsley[t2]): Parsley[S] = ${
+                                existsUniquePosition match {
+                                    case Some(impl@PosImpl(_, given Type[posTy])) =>
+                                        '{lift.lift3(${con.asExprOf[(posTy, t1, t2) => T]}, ${impl.parser}, p1, p2)}
+                                    case None => '{lift.lift2(${con.asExprOf[(t1, t2) => T]}, p1, p2)}
+                                }
+                            }
+                        }}
+                    // TODO: 19 more of these
                     case _ => '{???}
                 }
             case _ => report.errorAndAbort("can only make bridges for constructible classes or objects")
@@ -80,16 +88,15 @@ private class BridgeImpl(using Quotes) {
         def parser: Expr[Parsley[T]] = '{$inst.pos}
         def tyRepr = TypeRepr.of[T]
     }
-    private def isPos(sym: Symbol): Option[PosImpl[?]] = {
-        val hasAnnotation = sym.hasAnnotation(TypeRepr.of[parsley.experimental.generic.isPosition].typeSymbol)
+    private val annotation = TypeRepr.of[parsley.experimental.generic.isPosition].typeSymbol
+    private def isPos(sym: Symbol): Option[PosImpl[?]] = Option.when(sym.hasAnnotation(annotation)) {
         sym.termRef.widen.asType match {
-            case ty@'[t] if hasAnnotation => Expr.summon[parsley.experimental.generic.PositionLike[t]] match {
-                case Some(inst) => Some(PosImpl[t](inst, ty))
+            case ty@'[t] => Expr.summon[parsley.experimental.generic.PositionLike[t]] match {
+                case Some(inst) => PosImpl[t](inst, ty)
                 case None =>
                     val typeName = TypeRepr.of[t].show(using Printer.TypeReprShortCode)
                     report.errorAndAbort(s"attribute ${sym.name} can only use @isPosition with a `parsley.generic.PositionLike[$typeName]` instance in scope", sym.pos.get)
             }
-            case _ => None
         }
     }
 
@@ -97,41 +104,49 @@ private class BridgeImpl(using Quotes) {
     private def defaulted(cls: Symbol, n: Int): Option[Symbol] = cls.companionModule.declaredMethod(defaultName(n)).headOption
 
     @tailrec
-    private def categoriseArgs(cls: Symbol, nonPrimaryArgs: List[List[Symbol]], n: Int, buf: mutable.ListBuffer[List[BridgeArg]] = mutable.ListBuffer.empty): List[List[BridgeArg]] = nonPrimaryArgs match {
+    private def categoriseArgs(cls: Symbol, nonPrimaryArgs: List[List[Symbol]], n: Int, primary: Boolean, buf: mutable.ListBuffer[List[BridgeArg]] = mutable.ListBuffer.empty): List[List[BridgeArg]] = nonPrimaryArgs match {
         case Nil => buf.toList
         case args :: restArgs =>
-            categoriseArgs(cls, restArgs, n + args.length, buf += args.zipWithIndex.map {
+            categoriseArgs(cls, restArgs, n + args.length, primary = false, buf += args.zipWithIndex.map {
                 case (sym, i) => defaulted(cls, i + n) match {
-                    case Some(sym) => BridgeArg.Default(i + n, sym)
-                    case None => isPos(sym) match {
-                        case Some(impl) => BridgeArg.Pos(impl)
-                        case None => BridgeArg.Err(sym.name, sym.pos)
+                    // TODO: if it's primary, you could actually synthesise a default to the lifted constructor
+                    case Some(sym) if !primary => BridgeArg.Default(i + n, sym)
+                    case _ => isPos(sym) match {
+                        case Some(impl)       => BridgeArg.Pos(impl)
+                        case None if !primary => BridgeArg.Err(sym.name, sym.pos)
+                        case None             => BridgeArg.Bridged(sym)
                     }
                 }
             })
     }
 
-    private def prependIf[A, B >: A](b: Boolean, x: =>B, xs: List[A]): List[B] = if b then x :: xs else xs
-
-    // NOT handling positions yet
+    /** Constructs a lambda for a constructor applied to defaults and threading required metadata
+      *
+      * @param cls the class for the constructor
+      * @param lamArgs the arguments for the lambda (without positions or defaulted)
+      * @param clsTyArgs the type parameters provided to the constructor
+      * @param otherArgs any remaining non-primary arguments
+      * @param posRepr the position
+      * @return a lambda of the form `(lamArgs..) => cls[clsTyArgs](..)(otherArgs)`
+      */
     private def constructor[R: Type](cls: Symbol, lamArgs: List[(String, TypeRepr)], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]], posRepr: Option[TypeRepr]): Term = {
         val requiresPosition = posRepr.isDefined
-        val (paramNames, lamTys) = prependIf(requiresPosition, "pos" -> posRepr.get, lamArgs).unzip
+        val (paramNames, lamTys) = (posRepr.map("pos" -> _) ++: lamArgs).unzip
         // grrrrrrrr why has Scala given me Tree and not Term?!
         Lambda(Symbol.spliceOwner, MethodType(paramNames)(_ => lamTys, _ => TypeRepr.of[R]), { (lamSym, params) =>
             val paramTerms = params.map(_.asExpr.asTerm)
             val (posParam, paramTermsWithoutPos) = paramTerms match
                 case posParam :: paramTerms if requiresPosition => (Some(posParam), paramTerms)
                 case paramTerms => (None, paramTerms)
-            appliedCon(cls, lamSym, paramTermsWithoutPos, clsTyArgs, otherArgs, posParam)
+            appliedCon(cls, lamSym, paramTermsWithoutPos.toVector, clsTyArgs, otherArgs, posParam)
         })
     }
 
-    private def appliedCon(cls: Symbol, owner: Symbol, params: List[Term], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]], posParam: Option[Term]): Term = {
+    private def appliedCon(cls: Symbol, owner: Symbol, lamParams: IndexedSeq[Term], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]], posParam: Option[Term]): Term = {
         val tys: List[TypeTree] = clsTyArgs.map(tyRep => TypeTree.of(using tyRep.asType))
         val objTy = New(Applied(TypeTree.ref(cls), tys))
         val con = objTy.select(cls.primaryConstructor).appliedToTypes(clsTyArgs)
-        val conBridged = con.appliedToArgs(params) // TODO: this doesn't work when positions can be in the first set
+        //val conBridged = con.appliedToArgs(params) // TODO: this doesn't work when positions can be in the first set
         val kaboom: Term = '{???}.asTerm
         // at this point, we have applied the constructor to the bridge args (except for positions)
         // we now need to apply the other default arguments
@@ -143,6 +158,7 @@ private class BridgeImpl(using Quotes) {
             case Nil => k(extras.toList)
             case params :: paramss =>
                 val mySeeds = seeds.toList
+                var i = 0 // FIXME: get rid of this
                 val terms = params.map {
                     case BridgeArg.Pos(_) => posParam.get
                     case BridgeArg.Default(n, sym) =>
@@ -150,13 +166,17 @@ private class BridgeImpl(using Quotes) {
                     case BridgeArg.Err(name, pos) =>
                         report.error(s"Argument $name for class ${cls.name} is neither a default or position outside of the primary arguments, a bridge cannot be formed", pos.get)
                         kaboom
+                    case BridgeArg.Bridged(_) =>
+                        val p = lamParams(i)
+                        i += 1
+                        p
                 }
                 ValDef.let(owner, terms) { xs =>
                     defBindings(owner, paramss, seeds += xs, extras += xs)(k)
                 }
         }
-        val saturated = defBindings(owner, otherArgs, mutable.ListBuffer(params), mutable.ListBuffer.empty) { defaults =>
-            conBridged.appliedToArgss(defaults)
+        val saturated = defBindings(owner, otherArgs, mutable.ListBuffer.empty, mutable.ListBuffer.empty) { defaults =>
+            con.appliedToArgss(defaults)
         }
         saturated
     }

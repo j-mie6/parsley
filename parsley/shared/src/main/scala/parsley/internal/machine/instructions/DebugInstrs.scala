@@ -17,7 +17,7 @@ import parsley.internal.machine.XAssert._
 import Indenter.indentAndUnlines
 import InputSlicer.Pad
 import PrettyPortal.{Direction, Enter, Exit}
-import org.typelevel.scalaccompat.annotation.{nowarn, unused}
+import org.typelevel.scalaccompat.annotation.unused
 
 private [instructions] trait Colours {
     val ascii: Boolean
@@ -96,7 +96,7 @@ private [instructions] trait Logger extends PrettyPortal with InputSlicer with C
                 s"{stack: ${ctx.stack.mkString(", ")}}",
                 s"{registers: ${ctx.regs.zipWithIndex.map{case (x, i) => s"r$i: $x"}.mkString("[", ", ", "])}")}}",
                 "..."))
-        Console.in.read(): @nowarn
+        val _ = Console.in.read(): @unused
     }
 }
 

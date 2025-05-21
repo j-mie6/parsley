@@ -14,14 +14,14 @@ object Pos {
     }
 }
 
-case class Foo[A](arg1: A)(@isPosition val y: Pos)
+case class Foo[A](arg1: A, arg2: Int = 6)//(@isPosition val y: Pos)
 
 def foo[B] = bridge[Foo[B]]
 
 @main
 def bridgeTest() = {
     val b = foo[Int]
-    println((character.char('a') ~> b(Parsley.pure(7))).parse("a").map(_.y))
+    println((character.char('a') ~> b(Parsley.pure(7), Parsley.pure(4))).parse("a").map(_.arg2))
 }
 
 /*abstract class Bar {
