@@ -11,7 +11,7 @@ import parsley.internal.deepembedding.singletons.Fail
 import parsley.internal.errors.FlexibleCaret
 import parsley.expr.Fixity
 
-private [deepembedding] final class Precedence[A](prefixAtomChoice: StrictParsley[ShuntInput], postfixInfixChoice: StrictParsley[ShuntInput], wraps: Array[Any => Any]) extends StrictParsley[A] {
+private [deepembedding] final class Precedence[A](prefixAtomChoice: StrictParsley[ShuntInput], postfixInfixChoice: StrictParsley[ShuntInput], wraps: Array[Array[(Any => Any, Boolean)]]) extends StrictParsley[A] {
   override protected[backend] def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: StrictParsley.InstrBuffer, state: CodeGenState): M[R,Unit] = {
     val prefixAtomLabel = state.freshLabel()
     val postfixInfixLabel = state.freshLabel()
@@ -39,7 +39,7 @@ private [deepembedding] object Precedence {
     val (prefixAtomOptions, postfixInfixOptions) = buildChoiceOptions(table)
     val prefixAtomChoice = buildChoiceNode(prefixAtomOptions)
     val postfixInfixChoice = buildChoiceNode(postfixInfixOptions)
-    new Precedence(prefixAtomChoice, postfixInfixChoice, table.wraps)
+    new Precedence(prefixAtomChoice, postfixInfixChoice, buildPrecomputedWraps(table.wraps))
   }
 
   private def buildChoiceNode[A](options: List[StrictParsley[A]]): StrictParsley[A] = options match {
@@ -53,6 +53,32 @@ private [deepembedding] object Precedence {
     return (
       table.atoms.map(a => <*>(new Pure(r => Atom(r, table.wraps.length)), a)) ++ table.ops.filter(_.fixity == Prefix).map(o => <*>(new Pure(r => Operator(r, Fixity.ordinal(o.fixity), o.prec)), o.op)),
       table.ops.filter(_.fixity != Prefix).map(o => <*>(new Pure(r => Operator(r, Fixity.ordinal(o.fixity), o.prec)), o.op))
-    )    
+    )
+  }
+
+  private def buildPrecomputedWraps(wraps: Array[(Any => Any, Boolean)]): Array[Array[(Any => Any, Boolean)]] = {
+    val d = wraps.length + 1
+    val output = Array.ofDim[(Any => Any, Boolean)](d, d)
+
+    for (i <- 0 until d) output(i)(i) = (identity, true)
+    
+    for (from <- 0 until d) {
+      for (to <- from - 1 to 0 by -1) {
+        val (f, i) = output(from)(to + 1)
+        val (g, j) = wraps(to)
+
+        if (i) output(from)(to) = (g, j)
+        else if (j) output(from)(to) = (f, i)
+        else output(from)(to) = (f andThen g, false)
+      }
+    }
+    // for (from <- 0 until d) {
+    //   for (to <- 0 until d) {
+    //     println(s"$from, $to")
+    //     if (to > from) println("X")
+    //     else println(s"(${output(from)(to)._1}, ${output(from)(to)._2})")
+    //   }
+    // }
+    output
   }
 }

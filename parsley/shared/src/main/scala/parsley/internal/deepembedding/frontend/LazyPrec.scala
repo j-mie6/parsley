@@ -3,7 +3,7 @@ package parsley.internal.deepembedding.frontend
 import parsley.expr.Fixity
 import parsley.expr.{Prec, Atoms, Level}
 
-private [parsley] case class LazyPrec(atoms: List[LazyParsley[Any]], ops: List[LazyOp], wraps: List[Any => Any])
+private [parsley] case class LazyPrec(atoms: List[LazyParsley[Any]], ops: List[LazyOp], wraps: List[(Any => Any, Boolean)])
 
 private [parsley] case class LazyOp(fixity: Fixity, op: LazyParsley[Any], prec: Int)
 
@@ -15,7 +15,7 @@ object LazyPrec {
     case Level(lower, ops) => {
       val LazyPrec(lowerAtoms, lowerOps, lowerWraps) = fromPrec(lower, level + 1)
       val newOps = ops.operators.map(op => LazyOp(ops.f, op.internal, level))
-      new LazyPrec(lowerAtoms, lowerOps ++ newOps, ops.wrap +: lowerWraps)
+      new LazyPrec(lowerAtoms, lowerOps ++ newOps, (ops.wrap, ops.wrapIsIdentity) +: lowerWraps)
     }
   }
 }

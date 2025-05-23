@@ -21,7 +21,7 @@ object ShuntingYardState {
   def empty = new ShuntingYardState(new ArrayStack(), new ArrayStack(), true)
 }
 
-private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixLabel: Int, wraps: Array[Any => Any]) extends Instr {
+private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixLabel: Int, wraps: Array[Array[(Any => Any, Boolean)]]) extends Instr {
   override def apply(ctx: Context): Unit = {
     if (ctx.good) {
       val input = ctx.stack.pop[ShuntInput]()
@@ -124,7 +124,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
     assume(state.atoms.size == 1, "Expected exactly one atom at the end of reduction")
     
     val Atom(v, lvl) = state.atoms.pop[Atom]()
-    ctx.stack.push(wrap(lvl, 0)(v))
+    ctx.stack.push(wrap(lvl, 0, v))
     ctx.handlers = ctx.handlers.tail
     ctx.inc()
   }
@@ -135,33 +135,34 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
       case IL => {
         val right = state.atoms.pop[Atom]()
         val left = state.atoms.pop[Atom]()
-        val result = op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec)(left.v), wrap(right.lvl, op.prec + 1)(right.v))
+        val result = op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec, left.v), wrap(right.lvl, op.prec + 1, right.v))
         state.atoms.push(Atom(result, op.prec))
       }
       case IR => {
         val right = state.atoms.pop[Atom]()
         val left = state.atoms.pop[Atom]()
-        val result = op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec + 1)(left.v), wrap(right.lvl, op.prec)(right.v))
+        val result = op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec + 1, left.v), wrap(right.lvl, op.prec, right.v))
         state.atoms.push(Atom(result, op.prec))
       }
       case IN => {
         val right = state.atoms.pop[Atom]()
         val left = state.atoms.pop[Atom]()
-        val result = op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec + 1)(left.v), wrap(right.lvl, op.prec + 1)(right.v))
+        val result = op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec + 1, left.v), wrap(right.lvl, op.prec + 1, right.v))
         state.atoms.push(Atom(result, op.prec))
       }
       case PO | PR => {
         val right = state.atoms.pop[Atom]()
-        val result = op.f.asInstanceOf[Any => Any](wrap(right.lvl, op.prec)(right.v))
+        val result = op.f.asInstanceOf[Any => Any](wrap(right.lvl, op.prec, right.v))
         state.atoms.push(Atom(result, op.prec))
       }
     }
   }
 
-  private def wrap(currentLvl: Int, targetLvl: Int): (Any => Any) = {
-    assume(targetLvl <= currentLvl, "Target level must be less than or equal to current level")
-    if (targetLvl == currentLvl) return identity
-    (currentLvl - 1 to targetLvl by -1).map(wraps).reduce(_ andThen _)
+  private def wrap(from: Int, to: Int, input: Any): Any = {
+    assume(to <= from, "Target level must be less than or equal to current level")
+    val (f, i) = wraps(from)(to)
+    if (i) input // f is identity
+    else f(input)
   }
 
   private def updateState(ctx: Context): Unit = {
