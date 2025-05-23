@@ -72,13 +72,6 @@ private [deepembedding] object Precedence {
         else output(from)(to) = (f andThen g, false)
       }
     }
-    // for (from <- 0 until d) {
-    //   for (to <- 0 until d) {
-    //     println(s"$from, $to")
-    //     if (to > from) println("X")
-    //     else println(s"(${output(from)(to)._1}, ${output(from)(to)._2})")
-    //   }
-    // }
     output
   }
 }

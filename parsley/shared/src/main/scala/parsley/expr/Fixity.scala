@@ -69,17 +69,17 @@ case object InfixN extends Fixity {
 }
 
 private [parsley] object Fixity {
-  final val PR = 0
-  final val PO = 1
-  final val IL = 2
-  final val IR = 3
-  final val IN = 4
+  final val PrefixTag = 0
+  final val PostfixTag = 1
+  final val InfixLTag = 2
+  final val InfixRTag = 3
+  final val InfixNTag = 4
 
   def ordinal(f: Fixity): Int = f match {
-    case InfixL => IL
-    case InfixR => IR
-    case Prefix  => PR
-    case Postfix => PO
-    case InfixN  => IN
+    case InfixL => InfixLTag
+    case InfixR => InfixRTag
+    case Prefix  => PrefixTag
+    case Postfix => PostfixTag
+    case InfixN  => InfixNTag
   }
 }
