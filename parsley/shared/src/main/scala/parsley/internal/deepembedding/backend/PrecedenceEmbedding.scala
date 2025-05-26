@@ -11,7 +11,7 @@ import parsley.internal.deepembedding.singletons.Fail
 import parsley.internal.errors.FlexibleCaret
 import parsley.expr.Fixity
 
-private [deepembedding] final class Precedence[A](prefixAtomChoice: StrictParsley[ShuntInput], postfixInfixChoice: StrictParsley[ShuntInput], wraps: Array[Array[(Any => Any, Boolean)]]) extends StrictParsley[A] {
+private [deepembedding] final class Precedence[A](prefixAtomChoice: StrictParsley[ShuntInput], postfixInfixChoice: StrictParsley[ShuntInput], wraps: Array[Array[Any => Any]]) extends StrictParsley[A] {
   override protected[backend] def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: StrictParsley.InstrBuffer, state: CodeGenState): M[R,Unit] = {
     val prefixAtomLabel = state.freshLabel()
     val postfixInfixLabel = state.freshLabel()
@@ -56,20 +56,15 @@ private [deepembedding] object Precedence {
     )
   }
 
-  private def buildPrecomputedWraps(wraps: Array[(Any => Any, Boolean)]): Array[Array[(Any => Any, Boolean)]] = {
+  private def buildPrecomputedWraps(wraps: Array[Any => Any]): Array[Array[Any => Any]] = {
     val d = wraps.length + 1
-    val output = Array.ofDim[(Any => Any, Boolean)](d, d)
+    val output = Array.ofDim[Any => Any](d, d)
 
-    for (i <- 0 until d) output(i)(i) = (identity, true)
+    for (i <- 0 until d) output(i)(i) = identity
     
     for (from <- 0 until d) {
       for (to <- from - 1 to 0 by -1) {
-        val (f, i) = output(from)(to + 1)
-        val (g, j) = wraps(to)
-
-        if (i) output(from)(to) = (g, j)
-        else if (j) output(from)(to) = (f, i)
-        else output(from)(to) = (f andThen g, false)
+        output(from)(to) = output(from)(to + 1) andThen wraps(to)
       }
     }
     output

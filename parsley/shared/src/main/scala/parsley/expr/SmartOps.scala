@@ -40,10 +40,6 @@ object GOps {
         val f: fixity.type = fixity
         val operators = op0 +: ops
         val wrap = w
-        val wrapIsIdentity = w match {
-          case _: (A <:< B) => true
-          case _ => false
-        }
       }
     }
 }

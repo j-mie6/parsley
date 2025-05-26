@@ -23,7 +23,6 @@ abstract class Ops[-A, B] {
   private[parsley] val f: Fixity
   private[parsley] val operators: Seq[Parsley[f.Op[A @uncheckedVariance, B]]]
   private[parsley] val wrap: A => B
-  private[parsley] val wrapIsIdentity: Boolean
 }
 
 /** This helper object is used to build values of `Ops[A, A]`, for homogeneous precedence parsing.

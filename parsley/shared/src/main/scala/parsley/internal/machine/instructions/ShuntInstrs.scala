@@ -32,7 +32,7 @@ object ShuntingYardState {
   def empty = new ShuntingYardState(new ArrayStack(), new ArrayStack(), true)
 }
 
-private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixLabel: Int, wraps: Array[Array[(Any => Any, Boolean)]]) extends Instr {
+private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixLabel: Int, wraps: Array[Array[Any => Any]]) extends Instr {
   override def apply(ctx: Context): Unit = {
     if (ctx.good) {
       val input = ctx.stack.pop[ShuntInput]()
@@ -182,9 +182,11 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
 
   private def wrap(from: Int, to: Int, input: Any): Any = {
     assume(to <= from, "Target level must be less than or equal to current level")
-    val (f, i) = wraps(from)(to)
-    if (i) input // f is identity
-    else f(input)
+    wraps(from)(to) match {
+      // case _: =:=[_, _] => input // FIXME: remove =:= when 2.12 removed
+      case _: <:<[_, _] => input
+      case wrap => wrap(input)
+    }
   }
 
   private def updateState(ctx: Context): Unit = {
