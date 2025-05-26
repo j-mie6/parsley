@@ -71,11 +71,20 @@ private [internal] final class ChainPost(var label: Int) extends InstrWithLabel 
     // $COVERAGE-ON$
 }
 
+private [internal] final class PreOps(val op: Any => Any, val rest: PreOps)
+private [internal] object PreOps {
+    val empty: PreOps = null
+    private [instructions] def reduce(ops: PreOps, x: Any): Any = {
+        if (ops eq empty) x
+        else reduce(ops.rest, ops.op(x))
+    }
+}
+
 private [internal] final class ChainPre(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         if (ctx.good) {
             val f = ctx.stack.pop[Any => Any]()
-            ctx.stack.exchange(f.andThen(ctx.stack.peek[Any => Any]))
+            ctx.stack.exchange(new PreOps(f, ctx.stack.peek[PreOps]))
             ctx.updateCheckOffset()
             ctx.pc = label
         }
@@ -90,6 +99,18 @@ private [internal] final class ChainPre(var label: Int) extends InstrWithLabel {
     override def toString: String = s"ChainPre($label)"
     // $COVERAGE-ON$
 }
+private [internal] object ChainPreReduce extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        val x = ctx.stack.upop()
+        val f = ctx.stack.peek[PreOps]
+        ctx.exchangeAndContinue(PreOps.reduce(f, x))
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = s"ChainPreReduce"
+    // $COVERAGE-ON$
+}
+
 private [internal] final class Chainl(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         if (ctx.good) {
@@ -111,14 +132,21 @@ private [internal] final class Chainl(var label: Int) extends InstrWithLabel {
     // $COVERAGE-ON$
 }
 
+private [internal] final class ROps(val op: (Any, Any) => Any, val lx: Any, val rest: ROps)
+private [internal] object ROps {
+    val empty: ROps = null
+    private [instructions] def reduce(ops: ROps, rx: Any): Any = {
+        if (ops eq empty) rx
+        else reduce(ops.rest, ops.op(ops.lx, rx))
+    }
+}
+
 private [internal] final class ChainrJump(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         val f = ctx.stack.pop[(Any, Any) => Any]()
         val x = ctx.stack.upop()
-        val acc = ctx.stack.peek[Any => Any]
-        // We perform the acc after the tos function; the tos function is "closer" to the final p
-        ctx.stack.exchange((y: Any) => acc(f(x, y)))
+        ctx.stack.exchange(new ROps(f, x, ctx.stack.peek[ROps]))
         ctx.handlers = ctx.handlers.tail
         ctx.pc = label
     }
@@ -135,7 +163,7 @@ private [internal] final class ChainrOpHandler(wrap: Any => Any) extends Instr {
             ctx.handlers = ctx.handlers.tail
             ctx.addErrorToHintsAndPop()
             val y = ctx.stack.upop()
-            ctx.exchangeAndContinue(ctx.stack.peek[Any => Any](wrap(y)))
+            ctx.exchangeAndContinue(ROps.reduce(ctx.stack.peek[ROps], wrap(y)))
         }
     }
 

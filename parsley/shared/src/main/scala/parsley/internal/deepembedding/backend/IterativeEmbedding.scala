@@ -73,14 +73,14 @@ private [deepembedding] final class ChainPre[A](p: StrictParsley[A], op: StrictP
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val body = state.freshLabel()
         val handler = state.freshLabel()
-        if (producesResults) instrs += new instructions.Push(identity[Any] _)
+        if (producesResults) instrs += new instructions.Push(instructions.PreOps.empty)
         instrs += new instructions.PushHandler(handler)
         instrs += new instructions.Label(body)
         suspend(op.codeGen[M, R](producesResults)) >> {
             instrs += new instructions.Label(handler)
             instrs += (if (producesResults) new instructions.ChainPre(body) else new instructions.SkipMany(body))
             suspend(p.codeGen[M, R](producesResults)) |> {
-                if (producesResults) instrs += instructions.Apply
+                if (producesResults) instrs += instructions.ChainPreReduce
             }
         }
     }
@@ -116,7 +116,7 @@ private [deepembedding] final class Chainr[A, B](p: StrictParsley[A], op: Strict
         if (producesResults) {
             val body = state.freshLabel()
             val handler = state.freshLabel()
-            instrs += new instructions.Push(identity[Any] _)
+            instrs += new instructions.Push(instructions.ROps.empty)
             instrs += new instructions.Label(body)
             suspend(p.codeGen[M, R](producesResults=true)) >> {
                 instrs += new instructions.PushHandler(handler)
