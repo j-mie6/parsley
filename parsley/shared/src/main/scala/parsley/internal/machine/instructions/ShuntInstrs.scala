@@ -48,7 +48,8 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
           case PrefixTag => handlePrefixOperator(ctx, o, prec, state)
           case PostfixTag => handlePostfixOperator(ctx, o, prec, state)
           case InfixLTag => handleInfixLOperator(ctx, o, prec, state)
-          case InfixRTag | InfixNTag => handleInfixRNOperator(ctx, fix, o, prec, state)
+          case InfixRTag => handleInfixROperator(ctx, o, prec, state)
+          case InfixNTag => handleInfixNOperator(ctx, o, prec, state)
         }
       }
     } else handleBadContext(ctx)
@@ -60,7 +61,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
     updateState(ctx)
   }
   
-  def handlePrefixOperator(ctx: Context, o: Operator, prec: Int, state: ShuntingYardState): Unit =
+  def handlePrefixOperator(ctx: Context, o: Operator, prec: Int, state: ShuntingYardState): Unit = {
     if (!state.operators.isEmpty && prec.compare(state.operators.peek.prec) == -1) {
       // This is a malformed expression
       val currentOffset = ctx.offset
@@ -72,8 +73,9 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
       gotoPreAtom(ctx, state)
       updateState(ctx)
     }
+  }
 
-  def handlePostfixOperator(ctx: Context, o: Operator, prec: Int, state: ShuntingYardState): Unit =
+  def handlePostfixOperator(ctx: Context, o: Operator, prec: Int, state: ShuntingYardState): Unit = {
     if (!state.operators.isEmpty && state.operators.peek.fix == PostfixTag && prec.compare(state.operators.peek.prec) == 1) {
       // This was an unexpected postfix operator
       ctx.restoreState()
@@ -84,6 +86,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
       gotoPostInfix(ctx, state)
       updateState(ctx)
     }
+  }
 
   def handleInfixLOperator(ctx: Context, o: Operator, prec: Int, state: ShuntingYardState): Unit = {
     reduceWhilePrecGreaterOrEqual(state, prec)
@@ -91,9 +94,17 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
     gotoPreAtom(ctx, state)
     updateState(ctx)
   }
-  def handleInfixRNOperator(ctx: Context, fix: Int, o: Operator, prec: Int, state: ShuntingYardState): Unit = {
+
+  def handleInfixROperator(ctx: Context, o: Operator, prec: Int, state: ShuntingYardState): Unit = {
     reduceWhilePrecGreater(state, prec)
-    if (fix == InfixNTag && !state.operators.isEmpty && state.operators.peek.fix == InfixNTag && state.operators.peek.prec == prec) {
+    state.operators.push(o)
+    gotoPreAtom(ctx, state)
+    updateState(ctx)
+  }
+
+  def handleInfixNOperator(ctx: Context, o: Operator, prec: Int, state: ShuntingYardState): Unit = {
+    reduceWhilePrecGreater(state, prec)
+    if (!state.operators.isEmpty && state.operators.peek.fix == InfixNTag && state.operators.peek.prec == prec) {
       // This is a special case in which non-associative operators are chained
       val currentOffset = ctx.offset
       ctx.restoreState()
@@ -105,7 +116,8 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
       updateState(ctx)
     }
   }
-  def handleBadContext(ctx: Context): Unit =
+
+  def handleBadContext(ctx: Context): Unit = {
     if (ctx.offset != ctx.handlers.check || ctx.stack.peek[ShuntingYardState].failOnNoConsumed) {
       // consumed input and/or prefix/atom choice did not match, hard failure
       ctx.handlers = ctx.handlers.tail
@@ -121,6 +133,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
       popState(ctx)
       ctx.addErrorToHintsAndPop()
     }
+  }
 
   private def gotoPreAtom(ctx: Context, state: ShuntingYardState): Unit = {
     state.failOnNoConsumed = true
@@ -168,8 +181,8 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
         state.atoms.push(Atom(result, op.prec))
       }
       case PostfixTag | PrefixTag => {
-        val right = state.atoms.pop[Atom]()
-        val result = op.f.asInstanceOf[Any => Any](wrap(right.lvl, op.prec, right.v))
+        val operand = state.atoms.pop[Atom]()
+        val result = op.f.asInstanceOf[Any => Any](wrap(operand.lvl, op.prec, operand.v))
         state.atoms.push(Atom(result, op.prec))
       }
     }
