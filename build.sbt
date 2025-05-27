@@ -104,10 +104,11 @@ lazy val parsleyDebug = crossProject(JSPlatform, JVMPlatform, NativePlatform)
       }
     },
 
+    // 4.6 bumped 0.5 native, so old versions are no longer findable
     tlVersionIntroduced := Map(
-      "2.13" -> "4.5.0",
-      "2.12" -> "4.5.0",
-      "3"    -> "4.5.0",
+      "2.13" -> "4.6.0",
+      "2.12" -> "4.6.0",
+      "3"    -> "4.6.0",
     ),
   )
 
