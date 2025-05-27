@@ -5,6 +5,7 @@ import parsley.internal.machine.Context
 import parsley.expr.Fixity.{PrefixTag, PostfixTag, InfixLTag, InfixRTag, InfixNTag}
 import scala.annotation.switch
 import parsley.internal.machine.stacks.ArrayStack
+import scala.annotation.tailrec
 
 private [internal] sealed trait ShuntInput {
   val tag: Int
@@ -60,7 +61,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
   }
   
   def handlePrefixOperator(ctx: Context, o: Operator, prec: Int, state: ShuntingYardState): Unit =
-    if (!state.operators.isEmpty && prec < state.operators.peek.prec) {
+    if (!state.operators.isEmpty && prec.compare(state.operators.peek.prec) == -1) {
       // This is a malformed expression
       val currentOffset = ctx.offset
       ctx.restoreState()
@@ -73,31 +74,25 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
     }
 
   def handlePostfixOperator(ctx: Context, o: Operator, prec: Int, state: ShuntingYardState): Unit =
-    if (!state.operators.isEmpty && state.operators.peek.fix == PostfixTag && prec > state.operators.peek.prec) {
+    if (!state.operators.isEmpty && state.operators.peek.fix == PostfixTag && prec.compare(state.operators.peek.prec) == 1) {
       // This was an unexpected postfix operator
       ctx.restoreState()
       produceResult(ctx)
     } else {
-      while (!state.operators.isEmpty && state.operators.peek.prec >= prec) {
-        reduce(state)
-      }
+      reduceWhilePrecGreaterOrEqual(state, prec)
       state.operators.push(o)
       gotoPostInfix(ctx, state)
       updateState(ctx)
     }
 
   def handleInfixLOperator(ctx: Context, o: Operator, prec: Int, state: ShuntingYardState): Unit = {
-    while (!state.operators.isEmpty && state.operators.peek.prec >= prec) {
-      reduce(state)
-    }
+    reduceWhilePrecGreaterOrEqual(state, prec)
     state.operators.push(o)
     gotoPreAtom(ctx, state)
     updateState(ctx)
   }
   def handleInfixRNOperator(ctx: Context, fix: Int, o: Operator, prec: Int, state: ShuntingYardState): Unit = {
-    while (!state.operators.isEmpty && state.operators.peek.prec > prec) {
-      reduce(state)
-    }
+    reduceWhilePrecGreater(state, prec)
     if (fix == InfixNTag && !state.operators.isEmpty && state.operators.peek.fix == InfixNTag && state.operators.peek.prec == prec) {
       // This is a special case in which non-associative operators are chained
       val currentOffset = ctx.offset
@@ -141,7 +136,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
     val state = ctx.stack.pop[ShuntingYardState]()
     // println("State: " + state)
 
-    while (!state.operators.isEmpty) reduce(state)
+    reduceAll(state)
 
     assume(state.atoms.size == 1, "Expected exactly one atom at the end of reduction")
     
@@ -180,10 +175,37 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
     }
   }
 
+  @tailrec
+  def reduceAll(state: ShuntingYardState): Unit = {
+    if (state.operators.isEmpty) return
+    else {
+      reduce(state)
+      reduceAll(state)
+    }
+  }
+
+  @tailrec
+  def reduceWhilePrecGreater(state: ShuntingYardState, prec: Int): Unit = {
+    if (state.operators.isEmpty || state.operators.peek.prec.compare(prec) != 1) return
+    else {
+      reduce(state)
+      reduceWhilePrecGreater(state, prec)
+    }
+  }
+
+  @tailrec
+  def reduceWhilePrecGreaterOrEqual(state: ShuntingYardState, prec: Int): Unit = {
+    if (state.operators.isEmpty || state.operators.peek.prec.compare(prec) == -1) return
+    else {
+      reduce(state)
+      reduceWhilePrecGreaterOrEqual(state, prec)
+    }
+  }
+
   private def wrap(from: Int, to: Int, input: Any): Any = {
     assume(to <= from, "Target level must be less than or equal to current level")
     wraps(from)(to) match {
-      // case _: =:=[_, _] => input // FIXME: remove =:= when 2.12 removed
+      // case _: =:=[_, _] => input // Would be faster for 2.12 (which would wrap currently). Slower for other versions.
       case _: <:<[_, _] => input
       case wrap => wrap(input)
     }
