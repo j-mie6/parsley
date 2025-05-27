@@ -71,20 +71,18 @@ private [internal] final class ChainPost(var label: Int) extends InstrWithLabel 
     // $COVERAGE-ON$
 }
 
-private [internal] final class PreOps(val op: Any => Any, val rest: PreOps)
-private [internal] object PreOps {
-    val empty: PreOps = null
-    private [instructions] def reduce(ops: PreOps, x: Any): Any = {
-        if (ops eq empty) x
-        else reduce(ops.rest, ops.op(x))
-    }
+private final class AndThen[-A, B, +C](f: A => B, g: B => C) extends (A => C) {
+    final def apply(x: A): C = g match {
+        case g: AndThen[_, _, _] => g(f(x))
+        case g                   => g(f(x))
+    } 
 }
 
 private [internal] final class ChainPre(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         if (ctx.good) {
             val f = ctx.stack.pop[Any => Any]()
-            ctx.stack.exchange(new PreOps(f, ctx.stack.peek[PreOps]))
+            ctx.stack.exchange(new AndThen(f, ctx.stack.peek[Any => Any]))
             ctx.updateCheckOffset()
             ctx.pc = label
         }
@@ -97,17 +95,6 @@ private [internal] final class ChainPre(var label: Int) extends InstrWithLabel {
     }
     // $COVERAGE-OFF$
     override def toString: String = s"ChainPre($label)"
-    // $COVERAGE-ON$
-}
-private [internal] object ChainPreReduce extends Instr {
-    override def apply(ctx: Context): Unit = {
-        ensureRegularInstruction(ctx)
-        val x = ctx.stack.upop()
-        val f = ctx.stack.peek[PreOps]
-        ctx.exchangeAndContinue(PreOps.reduce(f, x))
-    }
-    // $COVERAGE-OFF$
-    override def toString: String = s"ChainPreReduce"
     // $COVERAGE-ON$
 }
 
