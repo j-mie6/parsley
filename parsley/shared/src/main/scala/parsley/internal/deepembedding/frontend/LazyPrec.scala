@@ -1,5 +1,7 @@
 package parsley.internal.deepembedding.frontend
 
+import scala.annotation.tailrec
+
 import parsley.expr.Fixity
 import parsley.expr.{Prec, Atoms, Level}
 
@@ -10,12 +12,12 @@ private [parsley] case class LazyOp(fixity: Fixity, op: LazyParsley[Any], prec: 
 object LazyPrec {
   def apply(table: Prec[_]): LazyPrec = fromPrec(table, 0)
 
-  def fromPrec(table: Prec[_], level: Int = 0): LazyPrec = table match {
-    case Atoms(atom0, atoms @ _*) => new LazyPrec((atom0 +: atoms).toList.map(_.internal), Nil, Nil)
+  @tailrec
+  def fromPrec(table: Prec[_], level: Int = 0, accAtoms: List[LazyParsley[Any]] = Nil, accOps: List[LazyOp] = Nil, accWraps: List[Any => Any] = Nil): LazyPrec = table match {
+    case Atoms(atom0, atoms @ _*) => LazyPrec((atom0 +: atoms).toList.map(_.internal) ++ accAtoms, accOps, accWraps)
     case Level(lower, ops) => {
-      val LazyPrec(lowerAtoms, lowerOps, lowerWraps) = fromPrec(lower, level + 1)
       val newOps = ops.operators.map(op => LazyOp(ops.f, op.internal, level))
-      new LazyPrec(lowerAtoms, lowerOps ++ newOps, ops.wrap +: lowerWraps)
+      fromPrec(lower, level + 1, accAtoms, accOps ++ newOps, accWraps :+ ops.wrap)
     }
   }
 }
