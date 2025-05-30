@@ -49,12 +49,10 @@ private [deepembedding] object Precedence {
     case a :: b :: rest => new Choice(a, b, SinglyLinkedList(rest.head, rest.tail: _*))
   }
 
-  private def buildChoiceOptions(table: StrictPrec): (List[StrictParsley[ShuntInput]], List[StrictParsley[ShuntInput]]) = {
-    return (
-      table.atoms.map(a => <*>(new Pure(r => Atom(r, table.wraps.length)), a).optimise) ++ table.ops.filter(_.fixity == Prefix).map(o => <*>(new Pure(r => Operator(r, Fixity.ordinal(o.fixity), o.prec)), o.op).optimise),
-      table.ops.filter(_.fixity != Prefix).map(o => <*>(new Pure(r => Operator(r, Fixity.ordinal(o.fixity), o.prec)), o.op).optimise)
-    )
-  }
+  private def buildChoiceOptions(table: StrictPrec): (List[StrictParsley[ShuntInput]], List[StrictParsley[ShuntInput]]) = (
+    table.atoms.map(a => <*>(new Pure(r => Atom(r, table.wraps.length)), a).optimise) ++ table.ops.filter(_.fixity == Prefix).map(o => <*>(new Pure(r => Operator(r, Fixity.ordinal(o.fixity), o.prec)), o.op).optimise),
+    table.ops.filter(_.fixity != Prefix).map(o => <*>(new Pure(r => Operator(r, Fixity.ordinal(o.fixity), o.prec)), o.op).optimise)
+  )
 
   private def buildPrecomputedWraps(wraps: Array[Any => Any]): Array[Array[Any => Any]] = {
     val d = wraps.length + 1

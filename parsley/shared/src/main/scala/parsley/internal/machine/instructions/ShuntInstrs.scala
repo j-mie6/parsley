@@ -43,73 +43,69 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
 
       if (input.tag == ShuntInput.AtomTag) handleAtom(ctx, input.asInstanceOf[Atom], state)
       else {
-        val o@Operator(_, fix, prec) = input.asInstanceOf[Operator]
+        val o@Operator(_, fix, _) = input.asInstanceOf[Operator]
         (fix: @switch) match {
-          case PrefixTag => handlePrefixOperator(ctx, o, prec, state)
-          case PostfixTag => handlePostfixOperator(ctx, o, prec, state)
-          case InfixLTag => handleInfixLOperator(ctx, o, prec, state)
-          case InfixRTag => handleInfixROperator(ctx, o, prec, state)
-          case InfixNTag => handleInfixNOperator(ctx, o, prec, state)
+          case PrefixTag => handlePrefixOperator(ctx, o, state)
+          case PostfixTag => handlePostfixOperator(ctx, o, state)
+          case InfixLTag => handleInfixLOperator(ctx, o, state)
+          case InfixRTag => handleInfixROperator(ctx, o, state)
+          case InfixNTag => handleInfixNOperator(ctx, o, state)
         }
       }
     } else handleBadContext(ctx)
   }
 
-  def handleAtom(ctx: Context, atom: Atom, state: ShuntingYardState): Unit = {
+  private def handleAtom(ctx: Context, atom: Atom, state: ShuntingYardState): Unit = {
     state.atoms.push(atom)
     gotoPostInfix(ctx, state)
     updateState(ctx)
   }
-  
-  def handlePrefixOperator(ctx: Context, o: Operator, prec: Int, state: ShuntingYardState): Unit = {
-    if (!state.operators.isEmpty && prec.compare(state.operators.peek.prec) == -1) {
+
+  private def handlePrefixOperator(ctx: Context, o: Operator, state: ShuntingYardState): Unit = {
+    if (!state.operators.isEmpty && o.prec.compare(state.operators.peek.prec) == -1) {
       // This is a malformed expression
-      val currentOffset = ctx.offset
-      ctx.restoreState()
-      ctx.handlers = ctx.handlers.tail
-      ctx.expectedFail(Nil, currentOffset-ctx.offset)
+      val width = restoreStateGetWidth(ctx)
+      ctx.expectedFail(Nil, width)
     } else {
       state.operators.push(o)
       gotoPreAtom(ctx, state)
       updateState(ctx)
-    }
+    } 
   }
 
-  def handlePostfixOperator(ctx: Context, o: Operator, prec: Int, state: ShuntingYardState): Unit = {
-    if (!state.operators.isEmpty && state.operators.peek.fix == PostfixTag && prec.compare(state.operators.peek.prec) == 1) {
+  private def handlePostfixOperator(ctx: Context, o: Operator, state: ShuntingYardState): Unit = {
+    if (!state.operators.isEmpty && state.operators.peek.fix == PostfixTag && o.prec.compare(state.operators.peek.prec) == 1) {
       // This was an unexpected postfix operator
       ctx.restoreState()
       produceResult(ctx)
     } else {
-      reduceWhilePrecGreaterOrEqual(state, prec)
+      reduceWhilePrecGreaterOrEqual(state, o.prec)
       state.operators.push(o)
       gotoPostInfix(ctx, state)
       updateState(ctx)
     }
   }
 
-  def handleInfixLOperator(ctx: Context, o: Operator, prec: Int, state: ShuntingYardState): Unit = {
-    reduceWhilePrecGreaterOrEqual(state, prec)
+  private def handleInfixLOperator(ctx: Context, o: Operator, state: ShuntingYardState): Unit = {
+    reduceWhilePrecGreaterOrEqual(state, o.prec)
     state.operators.push(o)
     gotoPreAtom(ctx, state)
     updateState(ctx)
   }
 
-  def handleInfixROperator(ctx: Context, o: Operator, prec: Int, state: ShuntingYardState): Unit = {
-    reduceWhilePrecGreater(state, prec)
+  private def handleInfixROperator(ctx: Context, o: Operator, state: ShuntingYardState): Unit = {
+    reduceWhilePrecGreater(state, o.prec)
     state.operators.push(o)
     gotoPreAtom(ctx, state)
     updateState(ctx)
   }
 
-  def handleInfixNOperator(ctx: Context, o: Operator, prec: Int, state: ShuntingYardState): Unit = {
-    reduceWhilePrecGreater(state, prec)
-    if (!state.operators.isEmpty && state.operators.peek.fix == InfixNTag && state.operators.peek.prec == prec) {
+  private def handleInfixNOperator(ctx: Context, o: Operator, state: ShuntingYardState): Unit = {
+    reduceWhilePrecGreater(state, o.prec)
+    if (!state.operators.isEmpty && state.operators.peek.fix == InfixNTag && state.operators.peek.prec == o.prec) {
       // This is a special case in which non-associative operators are chained
-      val currentOffset = ctx.offset
-      ctx.restoreState()
-      ctx.handlers = ctx.handlers.tail
-      ctx.expectedFailWithReason(Nil, "operator cannot be applied in sequence as it is non-associative", currentOffset-ctx.offset)
+      val width = restoreStateGetWidth(ctx)
+      ctx.expectedFailWithReason(Nil, "operator cannot be applied in sequence as it is non-associative", width)
     } else {
       state.operators.push(o)
       gotoPreAtom(ctx, state)
@@ -117,7 +113,14 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
     }
   }
 
-  def handleBadContext(ctx: Context): Unit = {
+  private def restoreStateGetWidth(ctx: Context): Int = {
+    val currentOffset = ctx.offset
+    ctx.restoreState()
+    ctx.handlers = ctx.handlers.tail
+    ctx.offset - currentOffset
+  }
+
+  private def handleBadContext(ctx: Context): Unit = {
     if (ctx.offset != ctx.handlers.check || ctx.stack.peek[ShuntingYardState].failOnNoConsumed) {
       // consumed input and/or prefix/atom choice did not match, hard failure
       ctx.handlers = ctx.handlers.tail
@@ -189,7 +192,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
   }
 
   @tailrec
-  def reduceAll(state: ShuntingYardState): Unit = {
+  private def reduceAll(state: ShuntingYardState): Unit = {
     if (state.operators.isEmpty) return
     else {
       reduce(state)
@@ -198,7 +201,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
   }
 
   @tailrec
-  def reduceWhilePrecGreater(state: ShuntingYardState, prec: Int): Unit = {
+  private def reduceWhilePrecGreater(state: ShuntingYardState, prec: Int): Unit = {
     if (state.operators.isEmpty || state.operators.peek.prec.compare(prec) != 1) return
     else {
       reduce(state)
@@ -207,7 +210,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
   }
 
   @tailrec
-  def reduceWhilePrecGreaterOrEqual(state: ShuntingYardState, prec: Int): Unit = {
+  private def reduceWhilePrecGreaterOrEqual(state: ShuntingYardState, prec: Int): Unit = {
     if (state.operators.isEmpty || state.operators.peek.prec.compare(prec) == -1) return
     else {
       reduce(state)
@@ -239,5 +242,5 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
     this
   }
 
-  override def toString(): String = s"Shunt(Pre/Atom label: $prefixAtomLabel, Post/Infix label: $postfixInfixLabel)"
+  override def toString(): String = s"Shunt(Prefix/Atom: $prefixAtomLabel, Postfix/Infix: $postfixInfixLabel)"
 }
