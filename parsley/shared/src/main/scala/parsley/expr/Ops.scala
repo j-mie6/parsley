@@ -20,8 +20,8 @@ import scala.annotation.unchecked.uncheckedVariance
   * @group Table
   */
 abstract class Ops[-A, B] {
-  private[parsley] val f: Fixity
-  private[parsley] val operators: Seq[Parsley[f.Op[A @uncheckedVariance, B]]]
+  private[parsley] val fixity: Fixity
+  private[parsley] val ops: Seq[Parsley[fixity.Op[A @uncheckedVariance, B]]]
   private[parsley] val wrap: A => B
 }
 

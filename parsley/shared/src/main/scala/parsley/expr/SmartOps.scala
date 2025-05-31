@@ -36,9 +36,11 @@ object GOps {
       */
     def apply[A, B](fixity: Fixity)(op0: Parsley[fixity.Op[A, B]], ops: Parsley[fixity.Op[A, B]]*)(implicit wrap: A => B): Ops[A, B] = {
       val w = wrap
+      val f: fixity.type = fixity
+      val os = op0 +: ops
       new Ops[A, B] {
-        val f: fixity.type = fixity
-        val operators = op0 +: ops
+        val fixity: f.type = f
+        val ops = os
         val wrap = w
       }
     }
