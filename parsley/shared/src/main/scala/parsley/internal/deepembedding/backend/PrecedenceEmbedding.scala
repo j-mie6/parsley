@@ -62,7 +62,14 @@ private [deepembedding] object Precedence {
     
     for (from <- 0 until d) {
       for (to <- from - 1 to 0 by -1) {
-        output(from)(to) = output(from)(to + 1) andThen wraps(to)
+        output(from)(to) = output(from)(to + 1) match {
+          case _: <:<[_, _] => wraps(to)
+          case prev => wraps(to) match {
+            case _: <:<[_, _] => prev
+            case next => prev andThen next
+          }
+        }
+        // output(from)(to) = output(from)(to + 1) andThen wraps(to)
       }
     }
     output
