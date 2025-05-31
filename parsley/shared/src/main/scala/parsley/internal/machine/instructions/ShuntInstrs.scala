@@ -64,6 +64,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
   private def handlePrefixOperator(ctx: Context, o: Operator, state: ShuntingYardState): Unit = {
     if (!state.operators.isEmpty && o.prec.compare(state.operators.peek.prec) == -1) {
       // This is a malformed expression
+      popHandler(ctx)
       val width = restoreStateGetWidth(ctx)
       ctx.expectedFail(Nil, width)
     } else {
@@ -76,6 +77,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
   private def handlePostfixOperator(ctx: Context, o: Operator, state: ShuntingYardState): Unit = {
     if (!state.operators.isEmpty && state.operators.peek.fix == PostfixTag && o.prec.compare(state.operators.peek.prec) == 1) {
       // This was an unexpected postfix operator
+      popHandler(ctx)
       ctx.restoreState()
       produceResult(ctx)
     } else {
@@ -104,6 +106,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
     reduceWhilePrecGreater(state, o.prec)
     if (!state.operators.isEmpty && state.operators.peek.fix == InfixNTag && state.operators.peek.prec == o.prec) {
       // This is a special case in which non-associative operators are chained
+      popHandler(ctx)
       val width = restoreStateGetWidth(ctx)
       ctx.expectedFailWithReason(Nil, "operator cannot be applied in sequence as it is non-associative", width)
     } else {
@@ -113,28 +116,19 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
     }
   }
 
-  private def restoreStateGetWidth(ctx: Context): Int = {
-    val currentOffset = ctx.offset
-    ctx.restoreState()
-    ctx.handlers = ctx.handlers.tail
-    ctx.offset - currentOffset
-  }
-
   private def handleBadContext(ctx: Context): Unit = {
     if (ctx.offset != ctx.handlers.check || ctx.stack.peek[ShuntingYardState].failOnNoConsumed) {
       // consumed input and/or prefix/atom choice did not match, hard failure
-      ctx.handlers = ctx.handlers.tail
+      popHandler(ctx)
       popState(ctx)
       ctx.fail()
     } else {
-      // In this case, there was an error in Choice
-      // It is a soft error in which nothing was consumed and we were looking for an infix/postfix
-      // we are at the end of the expression
-
-      ctx.good = true
-      produceResult(ctx)
+      // The end of the expression has been reached
+      popHandler(ctx)
       popState(ctx)
+      ctx.good = true
       ctx.addErrorToHintsAndPop()
+      produceResult(ctx)
     }
   }
 
@@ -158,37 +152,33 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
     
     val Atom(v, lvl) = state.atoms.pop[Atom]()
     ctx.stack.push(wrap(lvl, 0, v))
-    ctx.handlers = ctx.handlers.tail
     ctx.inc()
   }
 
   private def reduce(state: ShuntingYardState): Unit = {
     val op = state.operators.pop[Operator]()
-    (op.fix: @switch) match {
+    val result = (op.fix: @switch) match {
       case InfixLTag => {
         val right = state.atoms.pop[Atom]()
         val left = state.atoms.pop[Atom]()
-        val result = op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec, left.v), wrap(right.lvl, op.prec + 1, right.v))
-        state.atoms.push(Atom(result, op.prec))
+        op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec, left.v), wrap(right.lvl, op.prec + 1, right.v))
       }
       case InfixRTag => {
         val right = state.atoms.pop[Atom]()
         val left = state.atoms.pop[Atom]()
-        val result = op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec + 1, left.v), wrap(right.lvl, op.prec, right.v))
-        state.atoms.push(Atom(result, op.prec))
+        op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec + 1, left.v), wrap(right.lvl, op.prec, right.v))
       }
       case InfixNTag => {
         val right = state.atoms.pop[Atom]()
         val left = state.atoms.pop[Atom]()
-        val result = op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec + 1, left.v), wrap(right.lvl, op.prec + 1, right.v))
-        state.atoms.push(Atom(result, op.prec))
+        op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec + 1, left.v), wrap(right.lvl, op.prec + 1, right.v))
       }
       case PostfixTag | PrefixTag => {
-        val operand = state.atoms.pop[Atom]()
-        val result = op.f.asInstanceOf[Any => Any](wrap(operand.lvl, op.prec, operand.v))
-        state.atoms.push(Atom(result, op.prec))
+        val input = state.atoms.pop[Atom]()
+        op.f.asInstanceOf[Any => Any](wrap(input.lvl, op.prec, input.v))
       }
     }
+    state.atoms.push(Atom(result, op.prec))
   }
 
   @tailrec
@@ -227,14 +217,20 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
     }
   }
 
+  private def restoreStateGetWidth(ctx: Context): Int = {
+    val currentOffset = ctx.offset
+    ctx.restoreState()
+    currentOffset - ctx.offset
+  }
+
   private def updateState(ctx: Context): Unit = {
     popState(ctx)
     ctx.saveState()
   }
 
-  private def popState(ctx: Context): Unit = {
-    ctx.states = ctx.states.tail
-  }
+  private def popState(ctx: Context): Unit = ctx.states = ctx.states.tail
+
+  private def popHandler(ctx: Context): Unit = ctx.handlers = ctx.handlers.tail
 
   override def relabel(labels: Array[Int]): this.type = {
     prefixAtomLabel = labels(prefixAtomLabel)
