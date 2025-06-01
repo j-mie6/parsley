@@ -7,8 +7,6 @@ import ExprGen._
 import parsley.Success
 import parsley.Failure
 import parsley.ParsleyTest
-import parsley.VanillaError
-import parsley.SpecializedError
 
 class ExpressionSemanticPreservationSpec extends ParsleyTest {
     val originalExpr: Parsley[Int] = originalPrecedence(
@@ -90,7 +88,7 @@ class ExpressionSemanticPreservationSpec extends ParsleyTest {
     }
 
     it should "parse random expressions and not vary based on optimisations" in {
-        for (_ <- 0 until 1000) {
+        for (_ <- 0 until 5000) {
             val (originalExpr, newExpr, opsDefs) = exprPairGen.sample.get
             val inputs = inputsGen(opsDefs, 500).sample.get
             for (input <- inputs) {
@@ -99,42 +97,11 @@ class ExpressionSemanticPreservationSpec extends ParsleyTest {
 
                 originalResult match {
                     case Success(_) => originalResult shouldBe newResult
-                    case Failure(_) => newResult shouldBe a [Failure[_]]
+                    case Failure(_) => inside (newResult) {
+                        case f: Failure[_] =>
+                            f.pos shouldBe originalResult.pos
+                    }
                 }
-
-                // originalResult match {
-                //     case Success(_) => originalResult shouldBe newResult
-                //     case Failure(originalError) => newResult match {
-                //         case Failure(newError) => {
-                //             originalError.pos shouldBe newError.pos
-                //             originalError.lines match {
-                //                 case VanillaError(unexpected, expecteds, reasons, width) => newError.lines match {
-                //                     case VanillaError(newUnexpected, newExpecteds, newReasons, newWidth) => {
-                //                         if (unexpected != newUnexpected) {
-                //                             println(opsDefs)
-                //                             println(input)
-                //                             println(originalResult)
-                //                             println(newResult)
-                //                         }
-                //                         unexpected shouldBe newUnexpected
-                //                         // expecteds shouldBe newExpecteds
-                //                         reasons shouldBe newReasons
-                //                         width shouldBe newWidth
-                //                     }
-                //                     case _ => fail("Expected VanillaError but got something else")
-                //                 }
-                //                 case SpecializedError(msgs, width) => newError.lines match {
-                //                     case SpecializedError(newMsgs, newWidth) => {
-                //                         msgs shouldBe newMsgs
-                //                         width shouldBe newWidth
-                //                     }
-                //                     case _ => fail("Expected SpecializedError but got something else")
-                //                 }
-                //             }
-                //         }
-                //         case Success(_) => fail("Expected failure but got success")
-                //     }
-                // }
             }
         }
     }
