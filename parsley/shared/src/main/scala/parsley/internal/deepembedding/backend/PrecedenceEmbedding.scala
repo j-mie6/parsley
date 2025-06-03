@@ -50,7 +50,7 @@ private [deepembedding] object Precedence {
   }
 
   private def buildChoiceOptions(table: StrictPrec): (List[StrictParsley[ShuntInput]], List[StrictParsley[ShuntInput]]) = (
-    table.atoms.map(a => <*>(new Pure(r => Atom(r, table.wraps.length)), a).optimise) ++ table.ops.filter(_.fixity == Prefix).map(o => <*>(new Pure(r => Operator(r, Fixity.ordinal(o.fixity), o.prec)), o.op).optimise),
+    table.ops.filter(_.fixity == Prefix).map(o => <*>(new Pure(r => Operator(r, Fixity.ordinal(o.fixity), o.prec)), o.op).optimise) ++ table.atoms.map(a => <*>(new Pure(r => Atom(r, table.wraps.length)), a).optimise),
     table.ops.filter(_.fixity != Prefix).map(o => <*>(new Pure(r => Operator(r, Fixity.ordinal(o.fixity), o.prec)), o.op).optimise)
   )
 
