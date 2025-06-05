@@ -15,7 +15,7 @@ import parsley.internal.machine.instructions
 
 import StrictParsley.InstrBuffer
 
-private [deepembedding] final class Many[A, C](init: StrictParsley[mutable.Builder[A, C]], val p: StrictParsley[A]) extends Unary[A, C] {
+private [deepembedding] final class Many[A, C](val init: StrictParsley[mutable.Builder[A, C]], val p: StrictParsley[A]) extends Unary[A, C] {
     final override def optimise: StrictParsley[C] = p match {
         case _: Pure[_] => throw new NonProductiveIterationException("many") // scalastyle:ignore throw
         case _          => this
@@ -36,6 +36,10 @@ private [deepembedding] final class Many[A, C](init: StrictParsley[mutable.Build
     // $COVERAGE-OFF$
     final override def pretty(p: String): String = s"many($p)"
     // $COVERAGE-ON$
+}
+
+private [backend] object Many {
+    def unapply[A, C](p: Many[A, C]): Some[(StrictParsley[mutable.Builder[A, C]], StrictParsley[A])] = Some((p.init, p.p))
 }
 
 private [backend] sealed abstract class ChainLike[A](p: StrictParsley[A], op: StrictParsley[A => A]) extends StrictParsley[A] {
@@ -89,7 +93,7 @@ private [deepembedding] final class ChainPre[A](p: StrictParsley[A], op: StrictP
     // $COVERAGE-ON$
 }
 
-private [deepembedding] final class Chainl[A, B](init: StrictParsley[B], p: StrictParsley[A], op: StrictParsley[(B, A) => B]) extends StrictParsley[B] {
+private [deepembedding] final class Chainl[A, B](val init: StrictParsley[B], val p: StrictParsley[A], val op: StrictParsley[(B, A) => B]) extends StrictParsley[B] {
     def inlinable: Boolean = false
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val body = state.freshLabel()
@@ -109,7 +113,11 @@ private [deepembedding] final class Chainl[A, B](init: StrictParsley[B], p: Stri
     // $COVERAGE-ON$
 }
 
-private [deepembedding] final class Chainr[A, B](p: StrictParsley[A], op: StrictParsley[(A, B) => B], private [Chainr] val wrap: A => B)
+private [backend] object Chainl {
+    def unapply[A, B](p: Chainl[A, B]): Some[(StrictParsley[B], StrictParsley[A], StrictParsley[(B, A) => B])] = Some((p.init, p.p, p.op))
+}
+
+private [deepembedding] final class Chainr[A, B](val p: StrictParsley[A], val op: StrictParsley[(A, B) => B], private [Chainr] val wrap: A => B)
     extends StrictParsley[B] {
     def inlinable: Boolean = false
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit]= {
@@ -137,7 +145,11 @@ private [deepembedding] final class Chainr[A, B](p: StrictParsley[A], op: Strict
     // $COVERAGE-ON$
 }
 
-private [deepembedding] final class SepEndBy1[A, C](p: StrictParsley[A], sep: StrictParsley[_], factory: Factory[A, C]) extends StrictParsley[C] {
+private [backend] object Chainr {
+    def unapply[A, B](p: Chainr[A, B]): Some[(StrictParsley[A], StrictParsley[(A, B) => B])] = Some((p.p, p.op))
+}
+
+private [deepembedding] final class SepEndBy1[A, C](val p: StrictParsley[A], val sep: StrictParsley[_], val factory: Factory[A, C]) extends StrictParsley[C] {
     def inlinable: Boolean = false
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val body = state.freshLabel()
@@ -164,8 +176,12 @@ private [deepembedding] final class SepEndBy1[A, C](p: StrictParsley[A], sep: St
     // $COVERAGE-ON$
 }
 
+private [backend] object SepEndBy1 {
+    def unapply[A, C](p: SepEndBy1[A, C]): Some[(StrictParsley[A], StrictParsley[_], Factory[A, C])] = Some((p.p, p.sep, p.factory))
+}
+
 // TODO: unify :/
-private [deepembedding] final class ManyUntil[A, C](init: StrictParsley[mutable.Builder[A, C]], val p: StrictParsley[Any]) extends Unary[Any, C] {
+private [deepembedding] final class ManyUntil[A, C](val init: StrictParsley[mutable.Builder[A, C]], val p: StrictParsley[Any]) extends Unary[Any, C] {
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val start = state.freshLabel()
         suspend(init.codeGen[M, R](producesResults = true)) >> {
@@ -179,6 +195,10 @@ private [deepembedding] final class ManyUntil[A, C](init: StrictParsley[mutable.
     // $COVERAGE-OFF$
     final override def pretty(p: String): String = s"manyUntil($p)"
     // $COVERAGE-ON$
+}
+
+private [backend] object ManyUntil {
+    def unapply[A, C](p: ManyUntil[A, C]): Some[(StrictParsley[mutable.Builder[A, C]], StrictParsley[Any])] = Some((p.init, p.p))
 }
 
 private [deepembedding] final class SkipManyUntil(val p: StrictParsley[Any]) extends Unary[Any, Unit] {
