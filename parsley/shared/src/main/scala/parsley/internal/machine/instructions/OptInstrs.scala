@@ -15,6 +15,7 @@ import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.{EmptyHints, ExpectedError}
 import parsley.internal.machine.stacks.ErrorStack
+import scala.annotation.tailrec
 
 private [internal] final class Lift1(f: Any => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
@@ -84,21 +85,20 @@ private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class JumpTable(jumpTable: mutable.LongMap[(Int, Iterable[ExpectItem])],
+private [parsley] case class JumpTablePredDef(val pred: Char => Boolean, var labelErrors: (Int, Iterable[ExpectItem]))
+
+private [parsley] final class JumpTable(jumpTable: List[Either[mutable.Map[Char, (Int, Iterable[ExpectItem])], JumpTablePredDef]],
         private [this] var default: Int,
         private [this] var merge: Int,
         size: Int,
         allErrorItems: Iterable[ExpectItem]) extends Instr {
-    def this(prefixes: List[Char], labels: List[Int], default: Int, merge: Int,
-              size: Int, allErrorItems: Iterable[ExpectItem], errorItemss: List[Iterable[ExpectItem]]) = {
-        this(mutable.LongMap(prefixes.view.map(_.toLong).zip(labels.zip(errorItemss)).toSeq: _*), default, merge, size, allErrorItems)
-    }
     private [this] var defaultPreamble: Int = _
+    private [this] var jumpTableFuncs: List[PartialFunction[Char, (Int, Iterable[ExpectItem])]] = _
 
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         if (ctx.moreInput) {
-            val (dest, errorItems) = jumpTable.getOrElse(ctx.peekChar.toLong, (default, allErrorItems))
+            val (dest, errorItems) = getRoot(ctx.peekChar, jumpTableFuncs)
             ctx.pc = dest
             if (dest != default) {
                 ctx.pushHandler(defaultPreamble)
@@ -112,6 +112,13 @@ private [internal] final class JumpTable(jumpTable: mutable.LongMap[(Int, Iterab
         }
     }
 
+    // @tailrec
+    private def getRoot(char: Char, fss: List[PartialFunction[Char, (Int, Iterable[ExpectItem])]]): (Int, Iterable[ExpectItem]) = fss match {
+        // case f :: fs => if (f.isDefinedAt(char)) f(char) else getRoot(char, fs)
+        case f :: fs => f.applyOrElse(char, getRoot(_, fs))
+        case Nil     => (default, allErrorItems)
+    }
+
     private def addErrors(ctx: Context, errorItems: Iterable[ExpectItem]): Unit = {
         // FIXME: the more appropriate way of demanding input may be to pick 1 character, for same rationale with StringTok
         ctx.errs = new ErrorStack(new ExpectedError(ctx.offset, ctx.line, ctx.col, errorItems, unexpectedWidth = size), ctx.errs)
@@ -119,15 +126,27 @@ private [internal] final class JumpTable(jumpTable: mutable.LongMap[(Int, Iterab
     }
 
     override def relabel(labels: Array[Int]): this.type = {
-        jumpTable.mapValuesInPlaceCompat {
-            case (_, (i, errs)) => (labels(i), errs)
-        }
+        jumpTable.foreach(group => group match {
+            case Left(map) => map.mapValuesInPlaceCompat {
+                case (_, (i, errs)) => (labels(i), errs)
+            }
+            case Right(pred) => pred.labelErrors = (labels(pred.labelErrors._1), pred.labelErrors._2)
+        })
         default = labels(default)
         merge = labels(merge)
         defaultPreamble = default - 1
+        jumpTableFuncs = jumpTable.map(group => group match {
+            case Left(map) => map.toMap
+            case Right(predDef) => { case c if predDef.pred(c) => predDef.labelErrors }
+        })
         this
     }
+
+    private def tableToString: String = jumpTable.map(group => group match {
+        case Left(map) => s"${map.toList.sortBy{case (_, (l, _)) => l}.map{case (k, v) => s"${k.toChar} -> ${v._1}"}.mkString(", ")}"
+        case Right(predDef) => s"?(c) -> ${predDef.labelErrors._1}"
+    }).mkString(", ")
     // $COVERAGE-OFF$
-    override def toString: String = s"JumpTable(${jumpTable.map{case (k, v) => k.toChar -> v._1}.mkString(", ")}, _ -> $default, $merge)"
+    override def toString: String = s"JumpTable(${tableToString}, _ -> $default, $merge)"
     // $COVERAGE-ON$
 }

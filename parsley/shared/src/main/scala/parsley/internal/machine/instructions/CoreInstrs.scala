@@ -181,7 +181,7 @@ private [internal] final class PushHandlerAndStateAndClearHints(var label: Int) 
         ctx.inc()
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"PushHandlerAndStateAmdClearHints($label)"
+    override def toString: String = s"PushHandlerAndStateAndClearHints($label)"
     // $COVERAGE-ON$
 }
 
