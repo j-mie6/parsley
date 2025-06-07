@@ -64,7 +64,7 @@ private [deepembedding] final class Choice[A](private [backend] val alt1: Strict
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = codeGenTablified(this.tablify, producesResults)
 
     private def tablify: List[Either[StrictParsley[_], JumpTableDefinition]] =
-        tablify((alt1::alt2::alts).iterator, mutable.ListBuffer.empty, mutable.ListBuffer.empty, mutable.ListBuffer.empty, mutable.Set.empty, None, false)
+        tablify((alt1::alt2::alts).iterator, mutable.ListBuffer.empty, mutable.ListBuffer.empty, mutable.ListBuffer.empty, mutable.Set.empty, None)
 
     @tailrec private def tablify(
         it: LinkedListIterator[StrictParsley[A]],
@@ -73,23 +73,20 @@ private [deepembedding] final class Choice[A](private [backend] val alt1: Strict
         groupAcc: mutable.ListBuffer[JumpTableCharOption],
         seen: mutable.Set[Char],
         lastSeen: Option[Char],
-        backtrackingPred: Boolean
     ): List[Either[StrictParsley[_], JumpTableDefinition]] = if (it.hasNext) {
         val u = it.next()
         tablable(u, backtracks = false) match {
             // Character, if we've not seen it before that's ok
-            case Some(Left(lI@(c, _, _, _))) if !seen.contains(c) => tablify(it, acc, tableAcc, groupAcc += ((u, lI)), seen += c, Some(c), backtrackingPred)
+            case Some(Left(lI@(c, _, _, _))) if !seen.contains(c) => tablify(it, acc, tableAcc, groupAcc += ((u, lI)), seen += c, Some(c))
             // Character, if we've seen it, then only a repeat of the last character is allowed
-            case Some(Left(lI@(c, _, _, _))) if lastSeen.contains(c) => tablify(it, acc, tableAcc, groupAcc += ((u, lI)), seen, lastSeen, backtrackingPred)
+            case Some(Left(lI@(c, _, _, _))) if lastSeen.contains(c) => tablify(it, acc, tableAcc, groupAcc += ((u, lI)), seen, lastSeen)
             // Character, if it's seen and not the last character we have to stop building the table
-            case Some(Left(lI@(c, _, _, _))) => tablify(it, appendTable(acc, appendGroup(tableAcc, groupAcc)), mutable.ListBuffer.empty, mutable.ListBuffer((u, lI)), mutable.Set(c), Some(c), backtrackingPred)
+            case Some(Left(lI@(c, _, _, _))) => tablify(it, appendTable(acc, appendGroup(tableAcc, groupAcc)), mutable.ListBuffer.empty, mutable.ListBuffer((u, lI)), mutable.Set(c), Some(c))
             // Predicate, this is an option on it's own, create a new group
-            case Some(Right(lI@(_, _, _, b))) => {
-                if (backtrackingPred) tablify(it, appendTable(acc, appendGroup(tableAcc, groupAcc)), mutable.ListBuffer(Right((u, lI))), mutable.ListBuffer.empty, mutable.Set.empty, None, false)
-                else tablify(it, acc, appendGroup(tableAcc, groupAcc) += Right((u, lI)), mutable.ListBuffer.empty, seen, lastSeen, b)
-            }
+            case Some(Right(lI@(_, _, _, true))) => tablify(it, appendTable(acc, appendGroup(tableAcc, groupAcc) += Right((u, lI))), mutable.ListBuffer.empty, mutable.ListBuffer.empty, mutable.Set.empty, None)
+            case Some(Right(lI)) => tablify(it, acc, appendGroup(tableAcc, groupAcc) += Right((u, lI)), mutable.ListBuffer.empty, seen, lastSeen)
             // Non-tablable, this is a Right(...) in the list
-            case _ => tablify(it, appendTable(acc, (appendGroup(tableAcc, groupAcc))) += Left(u), mutable.ListBuffer.empty, mutable.ListBuffer.empty, mutable.Set.empty, None, backtrackingPred)
+            case _ => tablify(it, appendTable(acc, (appendGroup(tableAcc, groupAcc))) += Left(u), mutable.ListBuffer.empty, mutable.ListBuffer.empty, mutable.Set.empty, None)
         }
     } else appendTable(acc, (appendGroup(tableAcc, groupAcc))).toList
 
