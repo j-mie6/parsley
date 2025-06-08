@@ -37,21 +37,29 @@ private [deepembedding] final class Precedence[A](prefixAtomChoice: StrictParsle
 private [deepembedding] object Precedence {
   def apply[A](table: StrictPrec): Precedence[A] = {
     val (prefixAtomOptions, postfixInfixOptions) = buildChoiceOptions(table)
+    println(prefixAtomOptions)
     val prefixAtomChoice = buildChoiceNode(prefixAtomOptions)
     val postfixInfixChoice = buildChoiceNode(postfixInfixOptions)
     new Precedence(prefixAtomChoice, postfixInfixChoice, buildPrecomputedWraps(table.wraps))
   }
 
-  private def buildChoiceNode[A](options: List[StrictParsley[A]]): StrictParsley[A] = options match {
+  private def buildChoiceNode[A](options: List[StrictParsley[A]]): StrictParsley[A] = options.map(_.optimise) match {
     case Nil => new Fail(new FlexibleCaret(0))
-    case a :: Nil => a
-    case a :: b :: Nil => <|>(a, b)
-    case a :: b :: rest => new Choice(a, b, SinglyLinkedList(rest.head, rest.tail: _*))
+    case p :: Nil => p
+    case p1 :: p2 :: Nil => <|>(p1, p2)
+    case p1 :: p2 :: p3 :: tail => new Choice(p1, p2, SinglyLinkedList(p3, tail: _*))
   }
 
+  private def unwrapChoices(ps: List[StrictParsley[Any]]): List[StrictParsley[Any]] = ps.flatMap {
+    case Choice(alt1, alt2, alts) => alt1 :: alt2 ::  alts.toList
+    case p => p :: Nil
+  }
+  
+  private def buildOpChoice(o: StrictOp): StrictParsley[Operator] = <*>(new Pure(r => Operator(r, Fixity.ordinal(o.fixity), o.prec)), o.op).optimise
+
   private def buildChoiceOptions(table: StrictPrec): (List[StrictParsley[ShuntInput]], List[StrictParsley[ShuntInput]]) = (
-    table.ops.filter(_.fixity == Prefix).map(o => <*>(new Pure(r => Operator(r, Fixity.ordinal(o.fixity), o.prec)), o.op).optimise) ++ table.atoms.map(a => <*>(new Pure(r => Atom(r, table.wraps.length)), a).optimise),
-    table.ops.filter(_.fixity != Prefix).map(o => <*>(new Pure(r => Operator(r, Fixity.ordinal(o.fixity), o.prec)), o.op).optimise)
+    table.ops.filter(_.fixity == Prefix).map(buildOpChoice) ::: unwrapChoices(table.atoms).map(a => <*>(new Pure(r => Atom(r, table.wraps.length)), a).optimise),
+    table.ops.filter(_.fixity != Prefix).map(buildOpChoice)
   )
 
   private def buildPrecomputedWraps(wraps: Array[Any => Any]): Array[Array[Any => Any]] = {
