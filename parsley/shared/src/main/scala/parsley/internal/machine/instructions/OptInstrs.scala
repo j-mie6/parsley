@@ -144,7 +144,7 @@ private [parsley] final class JumpTable(jumpTable: List[Either[mutable.Map[Char,
 
     private def tableToString: String = jumpTable.map(group => group match {
         case Left(map) => s"${map.toList.sortBy{case (_, (l, _)) => l}.map{case (k, v) => s"${k.toChar} -> ${v._1}"}.mkString(", ")}"
-        case Right(predDef) => s"?(c) -> ${predDef.labelErrors._1}"
+        case Right(predDef) => s"?(_) -> ${predDef.labelErrors._1}"
     }).mkString(", ")
     // $COVERAGE-OFF$
     override def toString: String = s"JumpTable(${tableToString}, _ -> $default, $merge)"
