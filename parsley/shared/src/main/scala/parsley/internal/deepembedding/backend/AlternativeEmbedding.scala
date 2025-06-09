@@ -150,38 +150,23 @@ private [backend] object Choice {
         }
     }
 
+    private object SingleParserTable {
+        def unapply(table: Either[StrictParsley[_], List[JumpTableGroup]]): Option[StrictParsley[_]] = table match {
+            case Left(p) => Some(p)
+            case Right(TablableChars(TablableChar(p, _) :: Nil) :: Nil) => Some(p)
+            case Right(TablablePred(p, _) :: Nil) => Some(p)
+            case _ => None
+        }
+    }
+
     private def codeGenTablified[A, M[_, +_]: ContOps, R]
         (tablified: List[Either[StrictParsley[_], List[JumpTableGroup]]], producesResults: Boolean)
         (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = tablified match {
-        case alt :: Nil => alt match {
-            case Left(p) => p.codeGen(producesResults)
-            case Right(table) => {
-                if (table.size == 1) {
-                    table(0) match {
-                        case TablableChars(TablableChar(p, _) :: Nil)  => p.codeGen(producesResults)
-                        case TablableChars(_) => codeGenJumpTable(table, true, suspend(result(())), producesResults)
-                        case TablablePred(p, _) => p.codeGen(producesResults)
-                    }
-                } else {
-                    codeGenJumpTable(table, true, suspend(result(())), producesResults)
-                }
-            }
-        }
-        case alt :: alts => alt match {
-            case Left(p) => codeGenAlt(p, suspend(codeGenTablified(alts, producesResults)), producesResults)
-            case Right(table) => {
-                if (table.size == 1) {
-                    table(0) match {
-                        case TablableChars(TablableChar(p, _) :: Nil) => codeGenAlt(p, suspend(codeGenTablified(alts, producesResults)), producesResults)
-                        case TablableChars(_) => codeGenJumpTable(table, false, suspend(codeGenTablified(alts, producesResults)), producesResults)
-                        case TablablePred(p, _) => codeGenAlt(p, suspend(codeGenTablified(alts, producesResults)), producesResults)
-                    }
-                } else {
-                    codeGenJumpTable(table, false, suspend(codeGenTablified(alts, producesResults)), producesResults)
-                }
-            }
-        }
-        case Nil => result(())
+        case SingleParserTable(p) :: Nil => p.codeGen(producesResults)
+        case Right(table) :: Nil => codeGenJumpTable(table, true, suspend(result(())), producesResults)
+        case SingleParserTable(p) :: alts => codeGenAlt(p, suspend(codeGenTablified(alts, producesResults)), producesResults)
+        case Right(table) :: alts => codeGenJumpTable(table, false, suspend(codeGenTablified(alts, producesResults)), producesResults)
+        case _ => result(())
     }
 
     // Why is rest lazy? because Cont could be Id, and Id forces the argument immediately!
