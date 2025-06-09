@@ -37,7 +37,6 @@ private [deepembedding] final class Precedence[A](prefixAtomChoice: StrictParsle
 private [deepembedding] object Precedence {
   def apply[A](table: StrictPrec): Precedence[A] = {
     val (prefixAtomOptions, postfixInfixOptions) = buildChoiceOptions(table)
-    println(prefixAtomOptions)
     val prefixAtomChoice = buildChoiceNode(prefixAtomOptions)
     val postfixInfixChoice = buildChoiceNode(postfixInfixOptions)
     new Precedence(prefixAtomChoice, postfixInfixChoice, buildPrecomputedWraps(table.wraps))

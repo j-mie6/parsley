@@ -15,7 +15,6 @@ import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.{EmptyHints, ExpectedError}
 import parsley.internal.machine.stacks.ErrorStack
-import scala.annotation.tailrec
 
 private [internal] final class Lift1(f: Any => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
@@ -85,9 +84,9 @@ private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [parsley] case class JumpTablePredDef(val pred: Char => Boolean, var labelErrors: (Int, Iterable[ExpectItem]))
+private [internal] case class JumpTablePredDef(val pred: Char => Boolean, var labelErrors: (Int, Iterable[ExpectItem]))
 
-private [parsley] final class JumpTable(jumpTable: List[Either[mutable.Map[Char, (Int, Iterable[ExpectItem])], JumpTablePredDef]],
+private [internal] final class JumpTable(jumpTable: List[Either[mutable.Map[Char, (Int, Iterable[ExpectItem])], JumpTablePredDef]],
         private [this] var default: Int,
         private [this] var merge: Int,
         size: Int,
@@ -126,26 +125,26 @@ private [parsley] final class JumpTable(jumpTable: List[Either[mutable.Map[Char,
     }
 
     override def relabel(labels: Array[Int]): this.type = {
-        jumpTable.foreach(group => group match {
+        jumpTable.foreach {
             case Left(map) => map.mapValuesInPlaceCompat {
                 case (_, (i, errs)) => (labels(i), errs)
             }
             case Right(pred) => pred.labelErrors = (labels(pred.labelErrors._1), pred.labelErrors._2)
-        })
+        }
         default = labels(default)
         merge = labels(merge)
         defaultPreamble = default - 1
-        jumpTableFuncs = jumpTable.map(group => group match {
+        jumpTableFuncs = jumpTable.map {
             case Left(map) => map.toMap
             case Right(predDef) => { case c if predDef.pred(c) => predDef.labelErrors }
-        })
+        }
         this
     }
 
-    private def tableToString: String = jumpTable.map(group => group match {
+    private def tableToString: String = jumpTable.map {
         case Left(map) => s"${map.toList.sortBy{case (_, (l, _)) => l}.map{case (k, v) => s"${k.toChar} -> ${v._1}"}.mkString(", ")}"
         case Right(predDef) => s"?(_) -> ${predDef.labelErrors._1}"
-    }).mkString(", ")
+    }.mkString(", ")
     // $COVERAGE-OFF$
     override def toString: String = s"JumpTable(${tableToString}, _ -> $default, $merge)"
     // $COVERAGE-ON$

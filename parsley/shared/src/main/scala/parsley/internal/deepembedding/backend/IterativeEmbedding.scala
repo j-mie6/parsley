@@ -55,7 +55,7 @@ private [backend] sealed abstract class ChainLike[A](p: StrictParsley[A], op: St
     // $COVERAGE-ON$
 }
 
-private [deepembedding] final class ChainPost[A](p: StrictParsley[A], op: StrictParsley[A => A]) extends ChainLike[A](p, op) {
+private [deepembedding] final class ChainPost[A](val p: StrictParsley[A], val op: StrictParsley[A => A]) extends ChainLike[A](p, op) {
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val body = state.freshLabel()
         val handler = state.freshLabel()
@@ -71,6 +71,10 @@ private [deepembedding] final class ChainPost[A](p: StrictParsley[A], op: Strict
     // $COVERAGE-OFF$
     final override def pretty(p: String, op: String): String = s"chainPost($p, $op)"
     // $COVERAGE-ON$
+}
+
+private [backend] object ChainPost {
+    def unapply[A](p: ChainPost[A]): Option[(StrictParsley[A], StrictParsley[A => A])] = Some((p.p, p.op))
 }
 
 private [deepembedding] final class ChainPre[A](p: StrictParsley[A], op: StrictParsley[A => A]) extends ChainLike[A](p, op) {
