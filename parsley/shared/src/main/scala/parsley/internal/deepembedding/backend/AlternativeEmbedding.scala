@@ -109,6 +109,9 @@ private [deepembedding] final class Choice[A](private [backend] val alt1: Strict
 }
 
 private [backend] object Choice {
+    def unapply[A](self: Choice[A]): Some[(StrictParsley[A], StrictParsley[A], SinglyLinkedList[StrictParsley[A]])] =
+        Some((self.alt1, self.alt2, self.alts))
+
     sealed trait TablableDesc
     case class TablableCharDesc(char: Char, expecteds: Iterable[ExpectItem], size: Int, backtracks: Boolean) extends TablableDesc
     case class TablablePredDesc(pred: Char => Boolean, expecteds: Iterable[ExpectItem], size: Int, backtracks: Boolean) extends TablableDesc
@@ -117,9 +120,6 @@ private [backend] object Choice {
     case class TablablePred(p: StrictParsley[_], desc: TablablePredDesc) extends Tablable with JumpTableGroup
     sealed trait JumpTableGroup
     case class TablableChars(ops: List[TablableChar]) extends JumpTableGroup
-
-    def unapply[A](self: Choice[A]): Some[(StrictParsley[A], StrictParsley[A], SinglyLinkedList[StrictParsley[A]])] =
-        Some((self.alt1, self.alt2, self.alts))
 
     private def scopedState[A, M[_, +_]: ContOps, R](p: StrictParsley[A], producesResults: Boolean)(generateHandler: =>M[R, Unit])
                                                    (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
@@ -195,9 +195,10 @@ private [backend] object Choice {
                                             corrected: List[Either[mutable.Map[Char, (Int, Iterable[ExpectItem])], instructions.JumpTablePredDef]]
                                             ): List[Either[mutable.Map[Char, (Int, Iterable[ExpectItem])], instructions.JumpTablePredDef]] = tables match {
         case Left(map) :: tables_ => {
-            val newMap = map.map {
-                case (k, (label, errs, backtrack)) => (k, (label, if (backtrack) all else errs))
-            }.to(mutable.Map)
+            val newMap = mutable.Map.empty[Char, (Int, Iterable[ExpectItem])]
+            for ((k, (label, errs, backtrack)) <- map) {
+                newMap(k) = (label, if (backtrack) all else errs)
+            }
             propagateExpecteds(tables_, all, corrected :+ Left(newMap))
         }
         case Right((pred, label, expecteds, backtrack)) :: tables_ => propagateExpecteds(tables_, all, corrected :+ Right(instructions.JumpTablePredDef(pred, (label, (if (backtrack) all else expecteds)))))
@@ -222,12 +223,12 @@ private [backend] object Choice {
     }
 
     @tailrec private def foldTablableChars(tablified: List[TablableChar],
-                                                  labelGen: CodeGenState,
-                                                  roots: mutable.Map[Char, (Int, mutable.ListBuffer[StrictParsley[_]])],
-                                                  map: mutable.Map[Char, (Int, Iterable[ExpectItem], Boolean)],
-                                                  leads: List[Char],
-                                                  size: Int,
-                                                  expecteds: List[ExpectItem]):
+                                           labelGen: CodeGenState,
+                                           roots: mutable.Map[Char, (Int, mutable.ListBuffer[StrictParsley[_]])],
+                                           map: mutable.Map[Char, (Int, Iterable[ExpectItem], Boolean)],
+                                           leads: List[Char],
+                                           size: Int,
+                                           expecteds: List[ExpectItem]):
         (List[(Int, List[StrictParsley[_]])], mutable.Map[Char, (Int, Iterable[ExpectItem], Boolean)], Int, List[ExpectItem]) // Roots, map, size, expecteds
             = tablified match {
                 case TablableChar(root, TablableCharDesc(c, expected, _size, backtracks)) :: tablified_ =>
@@ -235,20 +236,15 @@ private [backend] object Choice {
                         roots(c)._2 += root
                         map(c) = (map(c)._1, map(c)._2, map(c)._3 && backtracks)
                         foldTablableChars(tablified_, labelGen, roots, map, leads,
-                                                 Math.max(size, _size), expecteds :++ expected)
+                                                 Math.max(size, _size), expecteds ++ expected)
                     } else {
                         val label = labelGen.freshLabel()
                         roots(c) = (label, mutable.ListBuffer(root))
                         map(c) = (label, expecteds, backtracks)
                         foldTablableChars(tablified_, labelGen, roots, map, leads :+ c,
-                                                 Math.max(size, _size), expecteds :++ expected)
+                                                 Math.max(size, _size), expecteds ++ expected)
                     }
-                case Nil => (
-                    leads.map(roots(_)).map({ case (l, ps) => (l, ps.toList) }),
-                    map,
-                    size,
-                    expecteds
-                )
+                case Nil => (leads.map(roots(_)).map { case (l, ps) => (l, ps.toList) }, map, size, expecteds)
             }
 
     private def foldJumpTableGroups(groups: List[JumpTableGroup], labelGen: CodeGenState):
@@ -256,19 +252,19 @@ private [backend] object Choice {
             foldJumpTableGroups(groups, labelGen, mutable.ListBuffer.empty, mutable.ListBuffer.empty, 0, List.empty)
     
     @tailrec private def foldJumpTableGroups(groups: List[JumpTableGroup],
-                                        labelGen: CodeGenState,
-                                        rootsAcc: mutable.ListBuffer[(Int, List[StrictParsley[_]])],
-                                        tableAcc: mutable.ListBuffer[Either[mutable.Map[Char, (Int, Iterable[ExpectItem], Boolean)], (Char => Boolean, Int, Iterable[ExpectItem], Boolean)]],
-                                        size: Int,
-                                        allExpecteds: List[ExpectItem]):
+                                             labelGen: CodeGenState,
+                                             rootsAcc: mutable.ListBuffer[(Int, List[StrictParsley[_]])],
+                                             tableAcc: mutable.ListBuffer[Either[mutable.Map[Char, (Int, Iterable[ExpectItem], Boolean)], (Char => Boolean, Int, Iterable[ExpectItem], Boolean)]],
+                                             size: Int,
+                                             allExpecteds: List[ExpectItem]):
         (List[(Int, List[StrictParsley[_]])], List[Either[mutable.Map[Char, (Int, Iterable[ExpectItem])], instructions.JumpTablePredDef]], Int, List[ExpectItem]) = groups match {
             case TablableChars(ops) :: def_ => {
-                val (roots, map, size_, expecteds_) = foldTablableChars(ops, labelGen, mutable.Map.empty, mutable.Map.empty, List.empty, size, allExpecteds)
-                foldJumpTableGroups(def_, labelGen, rootsAcc.addAll(roots), tableAcc += Left(map), size_, expecteds_)
+                val (roots, map, size_, allExpecteds_) = foldTablableChars(ops, labelGen, mutable.Map.empty, mutable.Map.empty, List.empty, size, allExpecteds)
+                foldJumpTableGroups(def_, labelGen, rootsAcc ++ roots, tableAcc += Left(map), size_, allExpecteds_)
             }
-            case TablablePred(p, TablablePredDesc(pred, expecteds, size_, backtracks)) :: def_ => {
+            case TablablePred(p, TablablePredDesc(pred, expecteds, size_, backtracks)) :: defs_ => {
                 val label = labelGen.freshLabel()
-                foldJumpTableGroups(def_, labelGen, rootsAcc.addOne((label, List(p))), tableAcc += Right((pred, label, expecteds, backtracks)), Math.max(size, size_), allExpecteds :++ expecteds)
+                foldJumpTableGroups(defs_, labelGen, rootsAcc += ((label, List(p))), tableAcc += Right((pred, label, expecteds, backtracks)), Math.max(size, size_), allExpecteds ++ expecteds)
             }
             case Nil => (rootsAcc.toList, propagateExpecteds(tableAcc.toList, allExpecteds, List.empty), size, allExpecteds)
         }

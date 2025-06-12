@@ -25,6 +25,7 @@ private [deepembedding] final class Precedence[A](prefixAtomChoice: StrictParsle
       suspend(postfixInfixChoice.codeGen[M, R](producesResults = true)) |> {
         instrs += new instructions.Label(shuntLabel)
         instrs += new instructions.Shunt(prefixAtomLabel, postfixInfixLabel, wraps)
+        if (!producesResults) instrs += instructions.Pop
       }
     }
   }
@@ -57,7 +58,7 @@ private [deepembedding] object Precedence {
   private def buildOpChoice(o: StrictOp): StrictParsley[Operator] = <*>(new Pure(r => Operator(r, Fixity.ordinal(o.fixity), o.prec)), o.op).optimise
 
   private def buildChoiceOptions(table: StrictPrec): (List[StrictParsley[ShuntInput]], List[StrictParsley[ShuntInput]]) = (
-    table.ops.filter(_.fixity == Prefix).map(buildOpChoice) ::: unwrapChoices(table.atoms).map(a => <*>(new Pure(r => Atom(r, table.wraps.length)), a).optimise),
+    unwrapChoices(table.atoms).map(a => <*>(new Pure(r => Atom(r, table.wraps.length)), a).optimise) ::: table.ops.filter(_.fixity == Prefix).map(buildOpChoice),
     table.ops.filter(_.fixity != Prefix).map(buildOpChoice)
   )
 

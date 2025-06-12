@@ -17,7 +17,7 @@ object LazyPrec {
     case Atoms(atom0, atoms @ _*) => LazyPrec((atom0 +: atoms).toList.map(_.internal), accOps, accWraps)
     case Level(lower, ops) => {
       val newOps = ops.ops.map(op => LazyOp(ops.fixity, op.internal, level))
-      fromPrec(lower, level + 1, newOps.toList ++ accOps, accWraps :+ ops.wrap)
+      fromPrec(lower, level + 1, newOps.toList ++ accOps, accWraps :+ ops.wrap.asInstanceOf[Any => Any])
     }
   }
 }

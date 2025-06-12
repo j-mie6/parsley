@@ -136,7 +136,10 @@ private [internal] final class JumpTable(jumpTable: List[Either[mutable.Map[Char
         defaultPreamble = default - 1
         jumpTableFuncs = jumpTable.map {
             case Left(map) => map.toMap
-            case Right(predDef) => { case c if predDef.pred(c) => predDef.labelErrors }
+            case Right(predDef) => {
+                val pf: PartialFunction[Char, (Int, Iterable[ExpectItem])] = { case c: Char if predDef.pred(c) => predDef.labelErrors }
+                pf
+            }
         }
         this
     }

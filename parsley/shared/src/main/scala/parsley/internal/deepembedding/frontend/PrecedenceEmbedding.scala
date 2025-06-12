@@ -22,6 +22,6 @@ private [parsley] final class Precedence[A](table: LazyPrec) extends LazyParsley
 
   override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T,U], context: T): U[A] = visitor.visit(this, context)(table)
 
-  override private[parsley] var debugName: String = "precedence"
+  private [parsley] var debugName: String = "precedence"
 
 }
