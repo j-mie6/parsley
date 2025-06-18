@@ -3,6 +3,7 @@ package parsley.expr
 import parsley.syntax.character.{stringLift, charLift}
 import parsley.character
 import org.scalacheck.Gen
+import org.scalacheck.Arbitrary.arbitrary
 import parsley.Parsley
 import parsley.Parsley.atomic
 import parsley.generic.ParserBridge1
@@ -127,8 +128,8 @@ object ExprGen {
             opsDefs <- loop(infixOps, prefixOps, postfixOps, Nil)
         } yield {
             val int = character.digit.foldLeft1(0)((n, d) => n * 10 + d.asDigit)
-            lazy val originalAtoms: OriginalPrec[TestExpr] = OriginalAtoms[TestExpr](Num(int), '(' ~> originalExpr <~ ')')
 
+            lazy val originalAtoms: OriginalPrec[TestExpr] = OriginalAtoms[TestExpr](Num(int), '(' ~> originalExpr <~ ')')
             lazy val originalExpr = originalPrecedence[TestExpr](
                 opsDefs.foldLeft(originalAtoms) {
                     case (acc, OpsDef(fixity, ops)) => {
@@ -140,7 +141,6 @@ object ExprGen {
             )
 
             lazy val newAtoms: Prec[TestExpr] = Atoms[TestExpr](Num(int), '(' ~> newExpr <~ ')')
-
             lazy val newExpr = precedence[TestExpr](
                 opsDefs.foldLeft(newAtoms) {
                     case (acc, OpsDef(fixity, ops)) => {
@@ -166,39 +166,39 @@ object ExprGen {
         require(failureRate >= 0 && failureRate <= 100, "Failure rate must be between 0 and 100")
         
         val ops = opsDefs.flatMap(opsDef => opsDef.ops.map(op => (op._1, opsDef.fixity)))
-        val digits = (0 to 99).map(_.toString)
 
-        def generateValidExpr(depth: Int): Gen[String] = {
+        val genIntString = arbitrary[Int].map(_.toString)
+
+        def validExprGen(depth: Int): Gen[String] = {
             if (depth > 4) {
-                Gen.oneOf(digits)
+                genIntString
             } else {
                 // Create different types of expressions based on depth
-                val terminalExpr = Gen.oneOf(digits)
                 val operatorExpr = for {
                     op <- Gen.oneOf(ops)
                     expr <- op._2 match {
                         case InfixL | InfixN | InfixR =>
                             for {
-                                left <- generateValidExpr(depth + 1)
-                                right <- generateValidExpr(depth + 1)
+                                left <- validExprGen(depth + 1)
+                                right <- validExprGen(depth + 1)
                             } yield s"$left${op._1}$right"
                         case Prefix =>
                             for {
-                                inner <- generateValidExpr(depth + 1)
+                                inner <- validExprGen(depth + 1)
                             } yield s"${op._1}$inner"
                         case Postfix =>
                             for {
-                                inner <- generateValidExpr(depth + 1)
+                                inner <- validExprGen(depth + 1)
                             } yield s"$inner${op._1}"
                     }
                 } yield expr
                 val bracketedExpr = for {
-                    inner <- generateValidExpr(depth + 1)
+                    inner <- validExprGen(depth + 1)
                 } yield s"($inner)"
               
                 Gen.frequency(
                     (3, operatorExpr),
-                    (2, terminalExpr),
+                    (2, genIntString),
                     (1, bracketedExpr)
                 )
             }
@@ -252,7 +252,7 @@ object ExprGen {
         } yield result
 
         for {
-            validExprs <- Gen.listOfN(numInputs, generateValidExpr(0))
+            validExprs <- Gen.listOfN(numInputs, validExprGen(0))
 
             result <- Gen.sequence(validExprs.map { expr =>
                 for {
