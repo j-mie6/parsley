@@ -1,3 +1,8 @@
+/*
+ * Copyright 2020 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package parsley.expr
 
 import parsley.syntax.character.{charLift, stringLift}
@@ -88,6 +93,29 @@ class ExpressionSemanticPreservationSpec extends ParsleyTest {
     }
 
     it should "parse random expressions and not vary based on optimisations" in {
+        // val opsDefsMedium = List(
+        //     OpsDef(InfixL, List(("+", Nil), ("-", Nil))),
+        //     OpsDef(InfixL, List(("*", Nil), ("/", Nil), ("%", Nil))),
+        //     OpsDef(InfixN, List(("==", Nil), ("!=", Nil))),
+        //     OpsDef(Prefix, List(("-", Nil), ("len", Nil), ("ord", Nil)))
+        // )
+
+        // val opsDefsLarge = List(
+        //     OpsDef(InfixR, List(("|", Nil))),
+        //     OpsDef(InfixR, List(("&&", Nil))),
+        //     OpsDef(InfixN, List(("==", Nil), ("!=", Nil))),
+        //     OpsDef(InfixN, List(("<", Nil), (">", Nil), ("<=", Nil), (">=", Nil))),
+        //     OpsDef(InfixL, List(("+", Nil), ("-", Nil))),
+        //     OpsDef(InfixL, List(("*", Nil), ("/", Nil), ("%", Nil))),
+        //     OpsDef(Prefix, List(("!", Nil), ("-", Nil), ("len", Nil), ("ord", Nil), ("chr", Nil)))
+        // )
+
+        // val inputsMedium = inputsGen(opsDefsMedium, 1300, failureRate = 0).sample.get
+        // println(inputsMedium)
+
+        // val inputsLarge = inputsGen(opsDefsLarge, 1400, failureRate = 0).sample.get
+        // println(inputsLarge)
+
         for (_ <- 0 until 5000) {
             val (originalExpr, newExpr, opsDefs) = exprPairGen.sample.get
             val inputs = inputsGen(opsDefs, 500).sample.get
