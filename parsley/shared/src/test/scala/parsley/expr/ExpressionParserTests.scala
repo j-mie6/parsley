@@ -11,8 +11,6 @@ import parsley._
 import parsley.token.{descriptions => desc}
 import parsley.character.digit
 import parsley.syntax.character.{charLift, stringLift}
-import parsley.expr.{chain, infix, mixed}
-import parsley.expr.{precedence, Ops, GOps, SOps, InfixL, InfixR, Prefix, Postfix, InfixN, Atoms}
 import parsley.position._
 import parsley.generic._
 
