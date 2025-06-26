@@ -105,15 +105,15 @@ object ExprGen {
                 fixityGen.flatMap {
                     case fixity@(InfixL | InfixN | InfixR) if infixPool.nonEmpty =>
                         infixOpsDefGen(fixity, infixPool).flatMap {
-                            case (opsDef, remaining) => loop(remaining, prefixPool, postfixPool.empty, acc.appended(opsDef))
+                            case (opsDef, remaining) => loop(remaining, prefixPool, postfixPool.empty, acc :+ opsDef)
                         }
                     case Prefix if prefixPool.nonEmpty =>
                         prefixOpsDefGen(prefixPool).flatMap {
-                            case (opsDef, remaining) => loop(infixPool, remaining, postfixPool, acc.appended(opsDef))
+                            case (opsDef, remaining) => loop(infixPool, remaining, postfixPool, acc :+ opsDef)
                         }
                     case Postfix if postfixPool.nonEmpty =>
                         postfixOpsDefGen(postfixPool).flatMap {
-                            case (opsDef, remaining) => loop(infixPool, prefixPool, remaining, acc.appended(opsDef))
+                            case (opsDef, remaining) => loop(infixPool, prefixPool, remaining, acc :+ opsDef)
                         }
                     case _ => loop(infixPool, prefixPool, postfixPool, acc)
                 }
