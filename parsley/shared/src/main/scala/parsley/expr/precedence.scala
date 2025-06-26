@@ -6,7 +6,7 @@
 package parsley.expr
 
 import parsley.Parsley
-import parsley.combinator.choice
+import parsley.internal.deepembedding.frontend
 
 /** This object is used to construct precedence parsers from either a `Prec` or many `Ops[A, A]`.
   *
@@ -106,10 +106,11 @@ object precedence {
       * @see         [[Prec `Prec`]] and its subtypes for a description of how the types work.
       * @since 4.0.0
       */
-    def apply[A](table: Prec[A]): Parsley[A] = crushLevels(table)
-
-    private def crushLevels[A](lvls: Prec[A]): Parsley[A] = lvls match {
-        case Atoms(atom0, atoms @ _*) => choice((atom0 +: atoms): _*)
-        case Level(lvls, ops) => ops.chain(crushLevels(lvls))
+    def apply[A](table: Prec[A]): Parsley[A] = {
+      val lazyPrec = frontend.LazyPrec(table)
+      val postfixOpPrecs = lazyPrec.ops.filter(_.fixity == Postfix).map(_.prec)
+      val infixOpPrecs = lazyPrec.ops.filter((op) => op.fixity == InfixL || op.fixity == InfixR || op.fixity == InfixN).map(_.prec)
+      require(postfixOpPrecs == Nil || infixOpPrecs == Nil || postfixOpPrecs.min > infixOpPrecs.max, "Postfix operators may not have lower precedence than an infix operator")
+      new Parsley(new frontend.Precedence(lazyPrec))
     }
 }

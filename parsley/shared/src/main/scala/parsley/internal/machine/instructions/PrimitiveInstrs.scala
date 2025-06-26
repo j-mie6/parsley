@@ -19,7 +19,7 @@ private [internal] final class Satisfies(f: Char => Boolean, expected: Iterable[
         else ctx.expectedFail(expected, unexpectedWidth = 1)
     }
     // $COVERAGE-OFF$
-    override def toString: String = "Sat(?)"
+    override def toString: String = "Sat(?(_))"
     // $COVERAGE-ON$
 }
 

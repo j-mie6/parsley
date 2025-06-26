@@ -111,5 +111,9 @@ private [deepembedding] final class MapFilter[A, B](val p: StrictParsley[A], pre
 }
 
 private [backend] object Branch {
+    def unapply[A, B, C](p: Branch[A, B, C]): Option[(StrictParsley[Either[A, B]], StrictParsley[A => C], StrictParsley[B => C])] = {
+        Some((p.b, p.p, p.q))
+    }
+    
     val FlipApp = instructions.Lift2[Any, Any => Any, Any]((x, f) => f(x))
 }

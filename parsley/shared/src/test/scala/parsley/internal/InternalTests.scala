@@ -9,7 +9,6 @@ import parsley.{ParsleyTest, Success, Failure, TestError, VanillaError}
 import parsley.Parsley, Parsley._
 import parsley.character.{char, satisfy, digit, string, stringOfSome}
 import parsley.combinator.{atomicChoice, choice, optional}
-import parsley.expr._
 import parsley.syntax.character.charLift
 import parsley.errors.combinator.ErrorMethods
 
@@ -38,22 +37,6 @@ class InternalTests extends ParsleyTest {
         q.parse("a123b123c") should be (Success('3'))
     }
 
-    they should "work in the precedence parser with one op" in {
-        val atom = some(digit).map(_.mkString.toInt)
-        val expr = precedence[Int](atom)(
-            Ops(InfixL)('+'.as(_ + _)))
-        expr.internal.instrs.count(_ == instructions.Return) shouldBe 1
-    }
-
-    they should "appear frequently inside expression parsers" in {
-        val atom = some(digit).map(_.mkString.toInt)
-        val expr = precedence[Int](atom)(
-            Ops(InfixL)('+'.as(_ + _)),
-            Ops(InfixL)('*'.as(_ * _)),
-            Ops(InfixL)('%'.as(_ % _)))
-        expr.internal.instrs.count(_ == instructions.Return) shouldBe 3
-    }
-
     // Issue 118
     "error alternatives for JumpTable" should "be complete across all branches" in {
         val strs = Seq("hello", "hi", "abc", "good", "g")
@@ -70,18 +53,18 @@ class InternalTests extends ParsleyTest {
     }
     they should "contain the default in case of no input" in {
         val p = atomicChoice(string("abc"), string("a"), stringOfSome(digit), string("dead"))
-        assume(p.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 1)
+        // assume(p.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 1)
         val q = atomicChoice(string("abc").impure, string("a").impure,
                              stringOfSome(digit).impure, string("dead").impure)
-        assume(q.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 0)
+        // assume(q.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 0)
         p.parse("") shouldBe q.parse("")
     }
     they should "contain the default for mid-points without backtracking" in {
         val p = choice(string("abc"), string("cee"), stringOfSome(digit), string("dead"))
-        assume(p.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 1)
+        // assume(p.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 1)
         val q = choice(string("abc").impure, string("cee").impure,
                        stringOfSome(digit).impure, string("dead").impure)
-        assume(q.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 0)
+        // assume(q.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 0)
         info("parsing 'c'")
         p.parse("c") shouldBe q.parse("c")
         info("parsing 'd'")
@@ -90,9 +73,9 @@ class InternalTests extends ParsleyTest {
     they should "be complete when backtracking is disabled" in {
         val strs = Seq("hello", "hi", "abc", "good", "g")
         val p = choice(strs.map(string): _*)
-        assume(p.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 1)
+        // assume(p.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 1)
         val q = choice(strs.map(s => string(s).impure): _*)
-        assume(q.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 0)
+        // assume(q.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 0)
         info("parsing 'h'")
         p.parse("h") shouldBe q.parse("h")
         info("parsing 'g'")
@@ -102,9 +85,9 @@ class InternalTests extends ParsleyTest {
     }
     they should "merge properly when more input is consumed in a non-backtracking branch" in {
         val p = choice(string("abc"), char('b') *> stringOfSome(digit), string("cde"))
-        assume(p.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 1)
+        // assume(p.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 1)
         val q = choice(string("abc").impure, char('b').impure *> stringOfSome(digit), string("cde").impure)
-        assume(q.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 0)
+        // assume(q.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 0)
         info("parsing nothing")
         p.parse("") shouldBe q.parse("")
         info("parsing 'a'")

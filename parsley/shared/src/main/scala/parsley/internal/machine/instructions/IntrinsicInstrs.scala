@@ -152,7 +152,7 @@ private [internal] final class UniSat(f: Int => Boolean, expected: Iterable[Expe
         else ctx.expectedFail(expected, unexpectedWidth = 1)
     }
     // $COVERAGE-OFF$
-    override def toString: String = "UniSat(?)"
+    override def toString: String = "UniSat(?(_))"
     // $COVERAGE-ON$
 }
 
