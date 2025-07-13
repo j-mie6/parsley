@@ -316,7 +316,7 @@
         and <code>345</code>. For <code>signed</code>, each of these may be preceded by a <code>+</code> sign, but this is not <em>required</em>; if <code>positiveSign</code> is set to <code>PlusSignPresence.Compulsory</code>, positive literals would always require a <code>+</code>; and if it is set to <code>PlusSignPrecense.Illegal</code>, the <code>+</code> prefix can never be used (but <code>-</code> is fine regardless). By default, <code>023</code> is legal, but this can be
         disabled by setting <code>leadingZerosAllowed</code> to <code>false</code>.</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">num</span><span> = </span><span class="identifier">lexer</span><span>.</span><span class="identifier">lexeme</span><span>.</span><span class="identifier">signed</span><span>.</span><span class="identifier">number</span><span>
-</span><span class="comment">// num: parsley.Parsley[BigInt] = parsley.Parsley@3e31c576
+</span><span class="comment">// num: parsley.Parsley[BigInt] = parsley.Parsley@187d39be
 </span><span class="identifier">num</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;0&quot;</span><span>)
 </span><span class="comment">// res0: parsley.Result[String, BigInt] = Success(x = 0)
 </span><span class="identifier">num</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;0xff&quot;</span><span>)
@@ -333,9 +333,9 @@
         </span><span class="identifier">numericDesc</span><span> = </span><span class="type-name">NumericDesc</span><span>.</span><span class="identifier">plain</span><span>.</span><span class="identifier">copy</span><span>(
             </span><span class="identifier">literalBreakChar</span><span> = </span><span class="type-name">BreakCharDesc</span><span>.</span><span class="type-name">Supported</span><span>(</span><span class="char-literal">&#39;_&#39;</span><span>, </span><span class="identifier">allowedAfterNonDecimalPrefix</span><span> = </span><span class="boolean-literal">true</span><span>))
     ))
-</span><span class="comment">// lexerWithBreak: Lexer = parsley.token.Lexer@49234ad0
+</span><span class="comment">// lexerWithBreak: Lexer = parsley.token.Lexer@5923175f
 </span><span class="keyword">val</span><span> </span><span class="identifier">withBreak</span><span> = </span><span class="identifier">lexerWithBreak</span><span>.</span><span class="identifier">lexeme</span><span>.</span><span class="identifier">signed</span><span>.</span><span class="identifier">number</span><span>
-</span><span class="comment">// withBreak: parsley.Parsley[BigInt] = parsley.Parsley@47c5dfce
+</span><span class="comment">// withBreak: parsley.Parsley[BigInt] = parsley.Parsley@5b4e481f
 </span><span class="identifier">withBreak</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;1_000&quot;</span><span>)
 </span><span class="comment">// res4: parsley.Result[String, BigInt] = Success(x = 1000)
 </span><span class="identifier">withBreak</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;1_&quot;</span><span>)
@@ -357,7 +357,7 @@
         or <code>2000</code>. Notice that literals do not <em>require</em> a point, so long as they do have
         an exponent.</p>
         <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">real</span><span> = </span><span class="identifier">lexer</span><span>.</span><span class="identifier">lexeme</span><span>.</span><span class="identifier">real</span><span>
-</span><span class="comment">// real: parsley.token.numeric.Real = parsley.token.numeric.LexemeReal@31005345
+</span><span class="comment">// real: parsley.token.numeric.Real = parsley.token.numeric.LexemeReal@3f9ea9ea
 </span><span class="identifier">real</span><span>.</span><span class="identifier">hexadecimalDouble</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;0x3.142&quot;</span><span>)
 </span><span class="comment">// res7: parsley.Result[String, Double] = Failure(
 // ...
@@ -448,9 +448,9 @@
     )).</span><span class="identifier">nonlexeme</span><span>.</span><span class="identifier">string</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">fullUnicode</span><span> = </span><span class="identifier">stringParsers</span><span>(</span><span class="identifier">aboveSpace</span><span>)
-</span><span class="comment">// fullUnicode: parsley.token.text.String = parsley.token.text.ConcreteString@664d1499
+</span><span class="comment">// fullUnicode: parsley.token.text.String = parsley.token.text.ConcreteString@70921f07
 </span><span class="keyword">val</span><span> </span><span class="identifier">latin1Limited</span><span> = </span><span class="identifier">stringParsers</span><span>(</span><span class="identifier">predicate</span><span>.</span><span class="type-name">Basic</span><span>(</span><span class="identifier">c</span><span> =&gt; </span><span class="identifier">c</span><span> &gt;= </span><span class="number-literal">0x20</span><span> &amp;&amp; </span><span class="identifier">c</span><span> &lt;= </span><span class="number-literal">0xcf</span><span>))
-</span><span class="comment">// latin1Limited: parsley.token.text.String = parsley.token.text.ConcreteString@63986da9
+</span><span class="comment">// latin1Limited: parsley.token.text.String = parsley.token.text.ConcreteString@47350102
 </span><span>
 </span><span class="identifier">fullUnicode</span><span>.</span><span class="identifier">latin1</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;</span><span class="escape-sequence">\&quot;</span><span class="string-literal">hello α</span><span class="escape-sequence">\&quot;</span><span class="string-literal">&quot;</span><span>)
 </span><span class="comment">// res13: parsley.Result[String, String] = Failure((line 1, column 2):
@@ -524,7 +524,7 @@
         terminated by another backslash (this can include newlines, even in otherwise
         single-line strings). As an example:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">withGaps</span><span> = </span><span class="identifier">stringParsers</span><span>(</span><span class="identifier">escapeDesc</span><span> = </span><span class="type-name">EscapeDesc</span><span>.</span><span class="identifier">plain</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">gapsSupported</span><span> = </span><span class="boolean-literal">true</span><span>))
-</span><span class="comment">// withGaps: parsley.token.text.String = parsley.token.text.ConcreteString@4ec182ba
+</span><span class="comment">// withGaps: parsley.token.text.String = parsley.token.text.ConcreteString@179a1454
 </span><span class="identifier">withGaps</span><span>.</span><span class="identifier">ascii</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;&quot;&quot;&quot;Hello \
 
       \World!&quot; &quot;&quot;&quot;</span><span>)
