@@ -458,7 +458,7 @@ object combinator {
       * @param n the minimum number of `p`s required.
       * @param p the parser to execute multiple times.
       * @return a parser that parses `p` until it fails, returning the list of all the successful results.
-      * @note `many(p) == many(0, p)` and `some(p) == many(1, p)`.
+      * @note `many(p) == manyN(0, p)` and `some(p) == manyN(1, p)`.
       * @group iter
       */
     def manyN[A](n: Int, p: Parsley[A]): Parsley[List[A]] = {
