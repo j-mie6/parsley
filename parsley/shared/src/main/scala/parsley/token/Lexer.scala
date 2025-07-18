@@ -1081,10 +1081,10 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
         private val escapeChar = new EscapableCharacter(desc.textDesc.escapeSequences, escapes, space.space, errConfig)
         private val rawChar = new RawCharacter(errConfig)
         private [Lexer] val _character: parsley.token.text.Character = new ConcreteCharacter(desc.textDesc, escapes, errConfig)
-        private [Lexer] val _string = new ConcreteString(desc.textDesc.stringEnds, escapeChar, desc.textDesc.graphicCharacter, false, errConfig)
-        private [Lexer] val _rawString = new ConcreteString(desc.textDesc.stringEnds, rawChar, desc.textDesc.graphicCharacter, false, errConfig)
-        private [Lexer] val _multiString = new ConcreteString(desc.textDesc.multiStringEnds, escapeChar, desc.textDesc.graphicCharacter, true, errConfig)
-        private [Lexer] val _rawMultiString = new ConcreteString(desc.textDesc.multiStringEnds, rawChar, desc.textDesc.graphicCharacter, true, errConfig)
+        private [Lexer] val _string = new ConcreteString(desc.textDesc.stringEnds, escapeChar, desc.textDesc.graphicCharacter, allowsAllSpace = false, errConfig)
+        private [Lexer] val _rawString = new ConcreteString(desc.textDesc.stringEnds, rawChar, desc.textDesc.graphicCharacter, allowsAllSpace = false, errConfig)
+        private [Lexer] val _multiString = new ConcreteString(desc.textDesc.multiStringEnds, escapeChar, desc.textDesc.graphicCharacter, allowsAllSpace = true, errConfig)
+        private [Lexer] val _rawMultiString = new ConcreteString(desc.textDesc.multiStringEnds, rawChar, desc.textDesc.graphicCharacter, allowsAllSpace = true, errConfig)
 
         /** $text
           *
