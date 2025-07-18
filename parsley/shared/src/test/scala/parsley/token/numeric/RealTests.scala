@@ -23,10 +23,10 @@ class RealTests extends ParsleyTest {
     val withLeadingDotDesc = plain.copy(leadingDotAllowed = true)
     val withTrailingDotDesc = plain.copy(trailingDotAllowed = true)
     val withExtremeDotDesc = plain.copy(leadingDotAllowed = true, trailingDotAllowed = true)
-    val withoutExtremeDotBreakDesc = plain.copy(literalBreakChar = BreakCharDesc.Supported('_', true))
-    val withLeadingDotBreakDesc = plain.copy(leadingDotAllowed = true, literalBreakChar = BreakCharDesc.Supported('_', true))
-    val withTrailingDotBreakDesc = plain.copy(trailingDotAllowed = true, literalBreakChar = BreakCharDesc.Supported('_', true))
-    val withExtremeDotBreakDesc = plain.copy(leadingDotAllowed = true, trailingDotAllowed = true, literalBreakChar = BreakCharDesc.Supported('_', true))
+    val withoutExtremeDotBreakDesc = plain.copy(literalBreakChar = BreakCharDesc.Supported('_', allowedAfterNonDecimalPrefix = true))
+    val withLeadingDotBreakDesc = plain.copy(leadingDotAllowed = true, literalBreakChar = BreakCharDesc.Supported('_', allowedAfterNonDecimalPrefix = true))
+    val withTrailingDotBreakDesc = plain.copy(trailingDotAllowed = true, literalBreakChar = BreakCharDesc.Supported('_', allowedAfterNonDecimalPrefix = true))
+    val withExtremeDotBreakDesc = plain.copy(leadingDotAllowed = true, trailingDotAllowed = true, literalBreakChar = BreakCharDesc.Supported('_', allowedAfterNonDecimalPrefix = true))
 
     val withoutExtremeDot = makeReal(plain)
     val withLeadingDot = makeReal(withLeadingDotDesc)
@@ -77,7 +77,7 @@ class RealTests extends ParsleyTest {
         decimalCases(withTrailingDotBreak)("0._1" -> None)
     }
     it should "allow for scientific notation when configured" in {
-        val plainExp = plain.copy(decimalExponentDesc = ExponentDesc.Supported(false, Set('e', 'E'), 10, PlusSignPresence.Optional))
+        val plainExp = plain.copy(decimalExponentDesc = ExponentDesc.Supported(compulsory = false, Set('e', 'E'), 10, PlusSignPresence.Optional))
         val withExtremeDotExpDesc = plainExp.copy(leadingDotAllowed = true, trailingDotAllowed = true)
         decimalCases(plainExp)(
             "3.0e3" -> Some(BigDecimal("3000.0")),
@@ -111,7 +111,7 @@ class RealTests extends ParsleyTest {
         )
     }
     it should "allow for scientific notation when configured" in {
-        val plainExp = plain.copy(hexadecimalExponentDesc = ExponentDesc.Supported(true, Set('p', 'P'), 2, PlusSignPresence.Optional))
+        val plainExp = plain.copy(hexadecimalExponentDesc = ExponentDesc.Supported(compulsory = true, Set('p', 'P'), 2, PlusSignPresence.Optional))
         val withExtremeDotExpDesc = plainExp.copy(leadingDotAllowed = true, trailingDotAllowed = true)
         hexadecimalCases(plainExp)(
             "0x0.f" -> None,
@@ -147,7 +147,7 @@ class RealTests extends ParsleyTest {
         )
     }
     it should "allow for scientific notation when configured" in {
-        val plainExp = plain.copy(octalExponentDesc = ExponentDesc.Supported(true, Set('e', 'E'), 10, PlusSignPresence.Required))
+        val plainExp = plain.copy(octalExponentDesc = ExponentDesc.Supported(compulsory = true, Set('e', 'E'), 10, PlusSignPresence.Required))
         val withExtremeDotExpDesc = plainExp.copy(leadingDotAllowed = true, trailingDotAllowed = true)
         octalCases(plainExp)(
             "0o0.6" -> None,
@@ -183,8 +183,8 @@ class RealTests extends ParsleyTest {
         )
     }
     it should "allow for scientific notation when configured" in {
-        val plainExp = plain.copy(binaryExponentDesc = ExponentDesc.Supported(true, Set('p', 'P'), 2, PlusSignPresence.Illegal),
-                                  literalBreakChar = BreakCharDesc.Supported('_', false))
+        val plainExp = plain.copy(binaryExponentDesc = ExponentDesc.Supported(compulsory = true, Set('p', 'P'), 2, PlusSignPresence.Illegal),
+                                  literalBreakChar = BreakCharDesc.Supported('_', allowedAfterNonDecimalPrefix = false))
         val withExtremeDotExpDesc = plainExp.copy(leadingDotAllowed = true, trailingDotAllowed = true)
         binaryCases(plainExp)(
             "0b0000.1111" -> None,
@@ -221,9 +221,9 @@ class RealTests extends ParsleyTest {
 
     // bounded things (only decimal)
     "bounded reals" should "not permit illegal numbers" in {
-        val represent = makeReal(plain.copy(decimalExponentDesc = ExponentDesc.Supported(false, Set('e', 'E'), 10, PlusSignPresence.Optional),
-                                            hexadecimalExponentDesc = ExponentDesc.Supported(true, Set('p'), 2, PlusSignPresence.Required),
-                                            binaryExponentDesc = ExponentDesc.Supported(true, Set('p'), 2, PlusSignPresence.Required)))
+        val represent = makeReal(plain.copy(decimalExponentDesc = ExponentDesc.Supported(compulsory = false, Set('e', 'E'), 10, PlusSignPresence.Optional),
+                                            hexadecimalExponentDesc = ExponentDesc.Supported(compulsory = true, Set('p'), 2, PlusSignPresence.Required),
+                                            binaryExponentDesc = ExponentDesc.Supported(compulsory = true, Set('p'), 2, PlusSignPresence.Required)))
         cases(represent.decimalDouble)(
             "0.4" -> Some(0.4),
             "0.33333333333333333333333" -> Some(0.33333333333333333333333),

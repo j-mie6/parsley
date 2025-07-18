@@ -17,8 +17,8 @@ class DescriptionRequireTests extends ParsleyTest {
     }
 
     "ExponentDesc.Supported" should "not allow for empty exponents" in {
-        an [IllegalArgumentException] should be thrownBy ExponentDesc.Supported(false, Set.empty, 10, PlusSignPresence.Illegal)
-        an [IllegalArgumentException] should be thrownBy ExponentDesc.Supported(false, Set.empty, 10, PlusSignPresence.Optional)
+        an [IllegalArgumentException] should be thrownBy ExponentDesc.Supported(compulsory = false, Set.empty, 10, PlusSignPresence.Illegal)
+        an [IllegalArgumentException] should be thrownBy ExponentDesc.Supported(compulsory = false, Set.empty, 10, PlusSignPresence.Optional)
     }
 
     "NumericDesc" should "not allow for multiple prefixless descriptions" in {

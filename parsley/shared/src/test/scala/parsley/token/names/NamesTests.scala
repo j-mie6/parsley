@@ -97,7 +97,7 @@ class NamesTests extends ParsleyTest {
         }
     }
 
-    it should "work in the presence of case insensitivity with respect to keywords" in identCases(Basic(_.isLetter), Basic(_.isLetterOrDigit), false) (
+    it should "work in the presence of case insensitivity with respect to keywords" in identCases(Basic(_.isLetter), Basic(_.isLetterOrDigit), sensitive = false) (
         "HARD" -> None,
         "hard" -> None,
         "HArd" -> None,

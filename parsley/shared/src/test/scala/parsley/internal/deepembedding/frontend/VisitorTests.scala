@@ -174,14 +174,14 @@ class VisitorTests extends ParsleyTest {
         new EscapeMapped(Trie.empty[Int], Set("quux")).testV
         new EscapeAtMost(0, 0).testV
         new EscapeOneOfExactly(0, Nil, dummySFConfig[Int]()).testV
-        new SoftKeyword("corge", Basic(_ => true), false, dummyLabelConfig, "grault").testV
+        new SoftKeyword("corge", Basic(_ => true), caseSensitive = false, dummyLabelConfig, "grault").testV
         new SoftOperator("garply", Basic(_ => true), Trie.empty[Unit], dummyLabelConfig, "waldo").testV
         new Attempt(dummyParser).testV
         new Look(dummyParser).testV
         new NotFollowedBy(dummyParser).testV
         new Put(dummyRef(), dummyParser).testV
-        new Debug(dummyParser, "fred", false, FullBreak, Seq.empty: @org.typelevel.scalaccompat.annotation.nowarn3).testV
-        new DebugError(dummyParser, "plugh", false, dummyErrorBuilder).testV
+        new Debug(dummyParser, "fred", ascii = false, FullBreak, Seq.empty: @org.typelevel.scalaccompat.annotation.nowarn3).testV
+        new DebugError(dummyParser, "plugh", ascii = false, dummyErrorBuilder).testV
         new <|>(dummyParser, dummyParser).testV
         new >>=[Nothing, Nothing](dummyParser, crash).testV
         new Many(dummyParser).testV
@@ -193,7 +193,7 @@ class VisitorTests extends ParsleyTest {
         new ErrorLabel(dummyParser, Seq("bazola")).testV
         new ErrorHide(dummyParser).testV
         new ErrorExplain(dummyParser, "ztesch").testV
-        new ErrorAmend(dummyParser, false).testV
+        new ErrorAmend(dummyParser, partial = false).testV
         new ErrorEntrench(dummyParser).testV
         new ErrorDislodge(0, dummyParser).testV
         new ErrorLexical(dummyParser).testV
