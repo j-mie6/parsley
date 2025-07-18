@@ -252,7 +252,6 @@
         are no longer self-recursive, and neither <code>term</code> nor <code>atom</code> need to be lazy (or have explicit types).
         Just to illustrate, if we provide the type argument to <code>chain.left1</code> we can continue to use
         <code>_ * _</code>, but without it, we need explicit type signatures: see <code>add</code> and <code>sub</code>.</p>
-        
         <p>To make the relationship very clear between what we had before and what we have now, observe that
         the transformation from recursive to <code>chains</code> follows these shape:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">self</span><span> &lt;**&gt; (</span><span class="identifier">op</span><span> &lt;*&gt; </span><span class="identifier">next</span><span>) | </span><span class="identifier">next</span><span>        == </span><span class="identifier">chain</span><span>.</span><span class="identifier">left1</span><span>(</span><span class="identifier">next</span><span>, </span><span class="identifier">op</span><span>)  </span><span class="comment">// flipped op
