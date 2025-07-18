@@ -388,7 +388,7 @@ lazy val expr: Parsley[Expr] = precedence {
 }
 ```
 ```scala mdoc:invisible
-lazy val _ = expr: @unused
+lazy val _ = expr: @scala.annotation.unused
 ```
 
 Not so different from the original using `SOps`, but if you can allow subtyping in your AST, you
