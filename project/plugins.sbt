@@ -19,13 +19,14 @@ libraryDependencySchemes ++= Seq(
 
 addSbtPlugin("org.typelevel" % "sbt-typelevel" % sbtTypelevelVersion)
 addSbtPlugin("org.typelevel" % "sbt-typelevel-site" % sbtTypelevelVersion)
+// adds search functionality to the wiki
+addSbtPlugin("pink.cozydev" % "protosearch-sbt" % "0.0-fd3e8b2-SNAPSHOT")
 
 // CI Stuff
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.16.0")
 addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.5.6")
 
-// This is here purely to enable the niceness settings
 addSbtPlugin("com.beautiful-scala" % "sbt-scalastyle" % "1.5.1")
-addSbtPlugin("org.jmotor.sbt" % "sbt-dependency-updates" % "1.2.7")
-addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.0.9")
+addSbtPlugin("org.jmotor.sbt" % "sbt-dependency-updates" % "1.2.9")
+addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.2.2")
 addSbtPlugin("com.timushev.sbt" % "sbt-rewarn" % "0.1.3")

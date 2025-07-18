@@ -8,89 +8,15 @@ package parsley
 import parsley.combinator.optional
 import parsley.Parsley._
 import parsley.syntax.character.{charLift, stringLift}
-import parsley.character.{item, digit}
+import parsley.character.digit
 import parsley.errors.combinator.{fail => pfail, unexpected, amend, partialAmend, entrench, dislodge, amendThenDislodge, /*partialAmendThenDislodge,*/ ErrorMethods}
 import parsley.errors.patterns._
-import parsley.errors.SpecialisedGen
 
 class ErrorTests extends ParsleyTest {
     "mzero parsers" should "always fail" in {
         (Parsley.empty ~> 'a').parse("a") shouldBe a [Failure[_]]
         (pfail("") ~> 'a').parse("a") shouldBe a [Failure[_]]
         (unexpected("x") *> 'a').parse("a") shouldBe a [Failure[_]]
-    }
-
-    "filtering parsers" should "function correctly" in {
-        val p = item.filterOut {
-            case c if c.isLower => s"'$c' should have been uppercase"
-        }
-        inside(p.parse("a")) {
-            case Failure(TestError((1, 1), VanillaError(unex, exs, rs, 1))) =>
-                unex shouldBe empty
-                exs shouldBe empty
-                rs should contain only ("'a' should have been uppercase")
-        }
-        p.parse("A") shouldBe Success('A')
-
-        val q = item.guardAgainst {
-            case c if c.isLower => Seq(s"'$c' is not uppercase")
-        }
-        inside(q.parse("a")) { case Failure(TestError((1, 1), SpecialisedError(msgs, 1))) => msgs should contain only ("'a' is not uppercase") }
-        q.parse("A") shouldBe Success('A')
-
-        val r = item.unexpectedWithReasonWhen {
-            case c if c.isLower => ("lowercase letter", s"'$c' should have been uppercase")
-        }
-        inside(r.parse("a")) { case Failure(TestError((1, 1), VanillaError(unex, exs, reasons, 1))) =>
-            unex should contain (Named("lowercase letter"))
-            exs shouldBe empty
-            reasons should contain.only("'a' should have been uppercase")
-        }
-
-        val s = item.unexpectedWhen {
-            case c if c.isLower => "lowercase letter"
-        }
-        inside(s.parse("a")) { case Failure(TestError((1, 1), VanillaError(unex, exs, reasons, 1))) =>
-            unex should contain (Named("lowercase letter"))
-            exs shouldBe empty
-            reasons shouldBe empty
-        }
-    }
-
-    "the collect/mapFilter combinators" should "act like a filter then a map" in {
-        val p = item.collectMsg("oops") {
-            case '+' => 0
-            case c if c.isUpper => c - 'A' + 1
-        }
-        p.parse("+") shouldBe Success(0)
-        p.parse("C") shouldBe Success(3)
-        inside(p.parse("a"))  { case Failure(TestError((1, 1), SpecialisedError(msgs, 1))) => msgs should contain only ("oops") }
-
-        val q = item.collectMsg(c => Seq(s"$c is not appropriate")) {
-            case '+' => 0
-            case c if c.isUpper => c - 'A' + 1
-        }
-        q.parse("+") shouldBe Success(0)
-        q.parse("C") shouldBe Success(3)
-        inside(q.parse("a")) { case Failure(TestError((1, 1), SpecialisedError(msgs, 1))) => msgs should contain only ("a is not appropriate") }
-
-        val errGen = new SpecialisedGen[Char] { def messages(c: Char): Seq[String] = Seq(s"$c is not appropriate") }
-        val r = item.mapFilterWith(errGen) {
-            case '+' => Some(0)
-            case c if c.isUpper => Some(c - 'A' + 1)
-            case _ => None
-        }
-        r.parse("+") shouldBe Success(0)
-        r.parse("C") shouldBe Success(3)
-        inside(r.parse("a")) { case Failure(TestError((1, 1), SpecialisedError(msgs, 1))) => msgs should contain only ("a is not appropriate") }
-    }
-
-    // Issue #70
-    "filterOut" should "not corrupt the stack under a handler" in {
-        val p = atomic(item.filterOut {
-            case c if c.isLower => "no lowercase!"
-        })
-        p.parse("a") shouldBe a [Failure[_]]
     }
 
     lazy val r: Parsley[List[String]] = "correct error message" <::> r
@@ -191,26 +117,14 @@ class ErrorTests extends ParsleyTest {
 
     "hide" should "not produce any visible output" in {
         inside('a'.hide.parse("")) {
-            case Failure(TestError((1, 1), VanillaError(_, exs, _, 1))) =>
+            case Failure(TestError((1, 1), VanillaError(_, exs, _, 0))) =>
                 exs shouldBe empty
         }
         inside("a".hide.parse("")) {
-            case Failure(TestError((1, 1), VanillaError(_, exs, _, 1))) =>
+            case Failure(TestError((1, 1), VanillaError(_, exs, _, 0))) =>
                 exs shouldBe empty
         }
         inside(digit.hide.parse("")) {
-            case Failure(TestError((1, 1), VanillaError(_, exs, _, 1))) =>
-                exs shouldBe empty
-        }
-        inside('a'.newHide.parse("")) {
-            case Failure(TestError((1, 1), VanillaError(_, exs, _, 0))) =>
-                exs shouldBe empty
-        }
-        inside("a".newHide.parse("")) {
-            case Failure(TestError((1, 1), VanillaError(_, exs, _, 0))) =>
-                exs shouldBe empty
-        }
-        inside(digit.newHide.parse("")) {
             case Failure(TestError((1, 1), VanillaError(_, exs, _, 0))) =>
                 exs shouldBe empty
         }
@@ -223,22 +137,10 @@ class ErrorTests extends ParsleyTest {
                 exs should contain only EndOfInput
                 rs shouldBe empty
         }
-        inside((many(digit).newHide <* eof).parse("1e")) {
-            case Failure(TestError((1, 2), VanillaError(unex, exs, rs, 1))) =>
-                unex should contain (Raw("e"))
-                exs should contain only EndOfInput
-                rs shouldBe empty
-        }
     }
 
     it should "not allow hints to be unsuppressed by another label" in {
         inside((many(digit).hide.label("hey") <* eof).parse("1e")) {
-            case Failure(TestError((1, 2), VanillaError(unex, exs, rs, 1))) =>
-                unex should contain (Raw("e"))
-                exs should contain only EndOfInput
-                rs shouldBe empty
-        }
-        inside((many(digit).newHide.label("hey") <* eof).parse("1e")) {
             case Failure(TestError((1, 2), VanillaError(unex, exs, rs, 1))) =>
                 unex should contain (Raw("e"))
                 exs should contain only EndOfInput
@@ -282,16 +184,16 @@ class ErrorTests extends ParsleyTest {
     }
 
     "fail" should "yield a raw message" in {
-        inside(pfail("hi").parse("b")) { case Failure(TestError((1, 1), SpecialisedError(msgs, 1))) => msgs should contain only ("hi") }
+        inside(pfail("hi").parse("b")) { case Failure(TestError((1, 1), SpecializedError(msgs, 1))) => msgs should contain only ("hi") }
     }
     it should "be flexible when the width is unspecified" in {
         inside(("abc" | pfail("hi")).parse("xyz")) {
-            case Failure(TestError((1, 1), SpecialisedError(msgs, 3))) => msgs should contain only ("hi")
+            case Failure(TestError((1, 1), SpecializedError(msgs, 3))) => msgs should contain only ("hi")
         }
     }
     it should "dominate otherwise" in {
         inside(("abc" | pfail(2, "hi")).parse("xyz")) {
-            case Failure(TestError((1, 1), SpecialisedError(msgs, 2))) => msgs should contain only ("hi")
+            case Failure(TestError((1, 1), SpecializedError(msgs, 2))) => msgs should contain only ("hi")
         }
     }
 
@@ -500,17 +402,17 @@ class ErrorTests extends ParsleyTest {
         val r = errorMaker(3, "first") <|> partialAmend(errorMaker(3, "second"))
         info("a regular amend should lose against even a shallower error")
         inside(p.parse("a" * 4)) {
-            case Failure(TestError((1, 3), SpecialisedError(msgs, 1))) =>
+            case Failure(TestError((1, 3), SpecializedError(msgs, 1))) =>
                 msgs should contain only "small"
         }
         info("a partial amend can win against an error at a lesser offset but greater presentation")
         inside(q.parse("a" * 4)) {
-            case Failure(TestError((1, 1), SpecialisedError(msgs, 1))) =>
+            case Failure(TestError((1, 1), SpecializedError(msgs, 1))) =>
                 msgs should contain only "big"
         }
         info("however, they do not win at equal underlying offset")
         inside(r.parse("a" * 4)) {
-            case Failure(TestError((1, 4), SpecialisedError(msgs, 1))) =>
+            case Failure(TestError((1, 4), SpecializedError(msgs, 1))) =>
                 msgs should contain only "first"
         }
     }
@@ -546,7 +448,7 @@ class ErrorTests extends ParsleyTest {
     // Verified Errors
     "verifiedFail" should "fail having consumed input on the parser success" in {
         inside(optional("abc".verifiedFail(x => Seq("no, no", s"absolutely not $x"))).parse("abc")) {
-            case Failure(TestError((1, 1), SpecialisedError(msgs, 3))) =>
+            case Failure(TestError((1, 1), SpecializedError(msgs, 3))) =>
                 msgs should contain.only("no, no", "absolutely not abc")
         }
     }
@@ -595,7 +497,7 @@ class ErrorTests extends ParsleyTest {
     // Preventative Errors
     "preventativeFail" should "fail having consumed input on the parser success" in {
         inside(optional("abc".preventativeFail(x => Seq("no, no", s"absolutely not $x"))).parse("abc")) {
-            case Failure(TestError((1, 1), SpecialisedError(msgs, 3))) =>
+            case Failure(TestError((1, 1), SpecializedError(msgs, 3))) =>
                 msgs should contain.only("no, no", "absolutely not abc")
         }
     }

@@ -12,34 +12,34 @@ import parsley.errors.combinator.{amendThenDislodge, entrench}
 import parsley.lift.lift2
 import parsley.state.Ref
 import parsley.syntax.character.charLift
-import parsley.token.descriptions.numeric.{BreakCharDesc, ExponentDesc, NumericDesc}
+import parsley.token.descriptions.{BreakCharDesc, ExponentDesc, NumericDesc}
 import parsley.token.errors.{ErrorConfig, LabelConfig}
 
-private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInteger, err: ErrorConfig, generic: Generic) extends Real(err) {
+private [token] final class UnsignedReal(desc: NumericDesc, err: ErrorConfig, generic: Generic) extends RealParsers(err) {
     override lazy val _decimal: Parsley[BigDecimal] = atomic(ofRadix(10, digit, err.labelRealDecimalEnd))
-    override lazy val _hexadecimal: Parsley[BigDecimal] = atomic('0' *> noZeroHexadecimal)
-    override lazy val _octal: Parsley[BigDecimal] = atomic('0' *> noZeroOctal)
-    override lazy val _binary: Parsley[BigDecimal] = atomic('0' *> noZeroBinary)
+    override lazy val _hexadecimal: Parsley[BigDecimal] = atomic('0' ~> noZeroHexadecimal)
+    override lazy val _octal: Parsley[BigDecimal] = atomic('0' ~> noZeroOctal)
+    override lazy val _binary: Parsley[BigDecimal] = atomic('0' ~> noZeroBinary)
     override lazy val _number: Parsley[BigDecimal] = {
         if (desc.decimalRealsOnly) decimal
         else {
             def addHex(p: Parsley[BigDecimal]) = {
-                if (desc.realNumbersCanBeHexadecimal) noZeroHexadecimal <|> p
+                if (desc.realNumbersCanBeHexadecimal) noZeroHexadecimal | p
                 else p
             }
             def addOct(p: Parsley[BigDecimal]) = {
-                if (desc.realNumbersCanBeOctal) noZeroOctal <|> p
+                if (desc.realNumbersCanBeOctal) noZeroOctal | p
                 else p
             }
             def addBin(p: Parsley[BigDecimal]) = {
-                if (desc.realNumbersCanBeBinary) noZeroBinary <|> p
+                if (desc.realNumbersCanBeBinary) noZeroBinary | p
                 else p
             }
             // this promotes sharing when the definitions would be otherwise equal
             val leadingDotAllowedDecimal = if (desc.leadingDotAllowed) decimal else ofRadix(10, digit, leadingDotAllowed = true, err.labelRealNumberEnd)
             // not even accounting for the leading and trailing dot being allowed!
-            val zeroLead = '0' *> (addHex(addOct(addBin(leadingDotAllowedDecimal <|> pure(BigDecimal(0))))))
-            atomic(zeroLead <|> decimal)
+            val zeroLead = '0' ~> (addHex(addOct(addBin(leadingDotAllowedDecimal | pure(BigDecimal(0))))))
+            atomic(zeroLead | decimal)
         }
     }
 
@@ -58,16 +58,16 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
     }
 
     private val noZeroHexadecimal =
-        when(desc.hexadecimalLeads.nonEmpty, oneOf(desc.hexadecimalLeads)) *>
-        leadingBreakChar(err.labelRealHexadecimalEnd) *>
+        when(desc.hexadecimalLeads.nonEmpty, oneOf(desc.hexadecimalLeads)) ~>
+        leadingBreakChar(err.labelRealHexadecimalEnd) ~>
         ofRadix(16, hexDigit, err.labelRealHexadecimalEnd)
     private val noZeroOctal =
-        when(desc.octalLeads.nonEmpty, oneOf(desc.octalLeads)) *>
-        leadingBreakChar(err.labelRealOctalEnd) *>
+        when(desc.octalLeads.nonEmpty, oneOf(desc.octalLeads)) ~>
+        leadingBreakChar(err.labelRealOctalEnd) ~>
         ofRadix(8, octDigit, err.labelRealOctalEnd)
     private val noZeroBinary =
-        when(desc.binaryLeads.nonEmpty, oneOf(desc.binaryLeads)) *>
-        leadingBreakChar(err.labelRealBinaryEnd) *>
+        when(desc.binaryLeads.nonEmpty, oneOf(desc.binaryLeads)) ~>
+        leadingBreakChar(err.labelRealBinaryEnd) ~>
         ofRadix(2, bit, err.labelRealBinaryEnd)
 
     // could allow integers to be parsed here according to configuration, the intOrFloat captures that case anyway
@@ -88,31 +88,33 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
         def broken(c: Char) =
             lift2(f,
                 endLabel(digit),
-                (err.labelNumericBreakChar.orElse(endLabel)(optional(c)) *>
+                (err.labelNumericBreakChar.orElse(endLabel)(optional(c)) ~>
                  endLabel(digit)).foldRight[BigDecimal](0)(f))
         val fractional = amendThenDislodge {
-            err.labelRealDot.orElse(endLabel)('.') *> {
+            err.labelRealDot.orElse(endLabel)('.') ~> {
                 desc.literalBreakChar match {
                     case BreakCharDesc.NoBreakChar if desc.trailingDotAllowed     =>
                         if (!leadingDotAllowed) entrench(digit.foldRight[BigDecimal](0)(f))
-                        else entrench(digit.foldRight1[BigDecimal](0)(f)) <|> _noDoubleDroppedZero *> pure[BigDecimal](0)
+                        else entrench(digit.foldRight1[BigDecimal](0)(f)) | _noDoubleDroppedZero ~> pure[BigDecimal](0)
                     case BreakCharDesc.NoBreakChar                                => entrench(digit.foldRight1[BigDecimal](0)(f))
                     case BreakCharDesc.Supported(c, _) if desc.trailingDotAllowed =>
-                        entrench(broken(c)) <|> when(leadingDotAllowed, _noDoubleDroppedZero) *> pure[BigDecimal](0)
+                        entrench(broken(c)) | when(leadingDotAllowed, _noDoubleDroppedZero) ~> pure[BigDecimal](0)
                     case BreakCharDesc.Supported(c, _)                            => entrench(broken(c))
                 }
             }
         }
         val (requiredExponent, exponent, base) = expDesc match {
-            case ExponentDesc.Supported(compulsory, exp, base, sign) =>
+            case ExponentDesc.Supported(compulsory, exp, base, sign, leadingZeros) =>
                 val expErr = new ErrorConfig {
                     override def labelIntegerSignedDecimal(bits: Int) = err.labelRealExponentEnd.orElse(endLabel)
                     override def labelIntegerDecimalEnd = err.labelRealExponentEnd.orElse(endLabel)
                 }
-                val integer = new SignedInteger(desc.copy(positiveSign = sign), natural, expErr)
-                val exponent = err.labelRealExponent.orElse(endLabel)(oneOf(exp)) *> integer.decimal32
+                val expIntDesc = desc.copy(positiveSign = sign, leadingZerosAllowed = leadingZeros)
+                val natural = new UnsignedInteger(expIntDesc, expErr, generic)
+                val integer = new SignedInteger(expIntDesc, natural, expErr)
+                val exponent = err.labelRealExponent.orElse(endLabel)(oneOf(exp)) ~> integer.decimal32
                 if (compulsory) (exponent, exponent, base)
-                else (exponent, exponent <|> pure(0), base)
+                else (exponent, exponent | pure(0), base)
             // this can't fail for non-required, it has to be the identity exponent
             case ExponentDesc.NoExponents => (empty, pure(0), 1)
         }
@@ -120,11 +122,11 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
                 (lift2((f: BigDecimal, e: Int) => (w: BigInt) => (BigDecimal(w) + f / radix) * BigDecimal(base).pow(e),
                        fractional,
                        exponent)
-            <|> requiredExponent.map(e => (w: BigInt) => BigDecimal(w) * BigDecimal(base).pow(e)))
+            | requiredExponent.map(e => (w: BigInt) => BigDecimal(w) * BigDecimal(base).pow(e)))
         val configuredWhole =
             if (leadingDotAllowed) (
-                    when(desc.trailingDotAllowed, leadingHappened.set(false)) *> whole
-                <|> when(desc.trailingDotAllowed, leadingHappened.set(true)) *> pure(BigInt(0))
+                    when(desc.trailingDotAllowed, leadingHappened.set(false)) ~> whole
+                | when(desc.trailingDotAllowed, leadingHappened.set(true)) ~> pure(BigInt(0))
             )
             else whole
         configuredWhole <**> fractExponent

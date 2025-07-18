@@ -16,7 +16,7 @@ private [internal] final class Many(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         if (ctx.good) {
             val x = ctx.stack.upop()
-            ctx.stack.peek[mutable.ListBuffer[Any]] += x
+            ctx.stack.peek[mutable.Builder[Any, Any]] += x
             ctx.updateCheckOffset()
             ctx.pc = label
         }
@@ -24,7 +24,7 @@ private [internal] final class Many(var label: Int) extends InstrWithLabel {
         else ctx.catchNoConsumed(ctx.handlers.check) {
             ctx.handlers = ctx.handlers.tail
             ctx.addErrorToHintsAndPop()
-            ctx.exchangeAndContinue(ctx.stack.peek[mutable.ListBuffer[Any]].toList)
+            ctx.exchangeAndContinue(ctx.stack.peek[mutable.Builder[Any, Any]].result())
         }
     }
     // $COVERAGE-OFF$
@@ -71,11 +71,18 @@ private [internal] final class ChainPost(var label: Int) extends InstrWithLabel 
     // $COVERAGE-ON$
 }
 
+private final class AndThen[-A, B, +C](f: A => B, g: B => C) extends (A => C) {
+    final def apply(x: A): C = g match {
+        case g: AndThen[_, _, _] => g(f(x))
+        case g                   => g(f(x))
+    } 
+}
+
 private [internal] final class ChainPre(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         if (ctx.good) {
             val f = ctx.stack.pop[Any => Any]()
-            ctx.stack.exchange(f.andThen(ctx.stack.peek[Any => Any]))
+            ctx.stack.exchange(new AndThen(f, ctx.stack.peek[Any => Any]))
             ctx.updateCheckOffset()
             ctx.pc = label
         }
@@ -90,6 +97,7 @@ private [internal] final class ChainPre(var label: Int) extends InstrWithLabel {
     override def toString: String = s"ChainPre($label)"
     // $COVERAGE-ON$
 }
+
 private [internal] final class Chainl(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         if (ctx.good) {
@@ -111,11 +119,12 @@ private [internal] final class Chainl(var label: Int) extends InstrWithLabel {
     // $COVERAGE-ON$
 }
 
-private [instructions] object DualHandler {
-    def popSecondHandlerAndJump(ctx: Context, label: Int): Unit = {
-        ctx.handlers = ctx.handlers.tail
-        ctx.updateCheckOffset()
-        ctx.pc = label
+private [internal] final class ROps(val op: (Any, Any) => Any, val lx: Any, val rest: ROps)
+private [internal] object ROps {
+    val empty: ROps = null
+    private [instructions] def reduce(ops: ROps, rx: Any): Any = {
+        if (ops eq empty) rx
+        else reduce(ops.rest, ops.op(ops.lx, rx))
     }
 }
 
@@ -124,10 +133,9 @@ private [internal] final class ChainrJump(var label: Int) extends InstrWithLabel
         ensureRegularInstruction(ctx)
         val f = ctx.stack.pop[(Any, Any) => Any]()
         val x = ctx.stack.upop()
-        val acc = ctx.stack.peek[Any => Any]
-        // We perform the acc after the tos function; the tos function is "closer" to the final p
-        ctx.stack.exchange((y: Any) => acc(f(x, y)))
-        DualHandler.popSecondHandlerAndJump(ctx, label)
+        ctx.stack.exchange(new ROps(f, x, ctx.stack.peek[ROps]))
+        ctx.handlers = ctx.handlers.tail
+        ctx.pc = label
     }
 
     // $COVERAGE-OFF$
@@ -138,13 +146,11 @@ private [internal] final class ChainrJump(var label: Int) extends InstrWithLabel
 private [internal] final class ChainrOpHandler(wrap: Any => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
-        val check = ctx.handlers.check
-        ctx.handlers = ctx.handlers.tail
-        ctx.catchNoConsumed(check) {
+        ctx.catchNoConsumed(ctx.handlers.check) {
             ctx.handlers = ctx.handlers.tail
             ctx.addErrorToHintsAndPop()
             val y = ctx.stack.upop()
-            ctx.exchangeAndContinue(ctx.stack.peek[Any => Any](wrap(y)))
+            ctx.exchangeAndContinue(ROps.reduce(ctx.stack.peek[ROps], wrap(y)))
         }
     }
 
@@ -160,8 +166,13 @@ private [internal] final class SepEndBy1Jump(var label: Int) extends InstrWithLa
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         val x = ctx.stack.upop()
-        ctx.stack.peek[mutable.ListBuffer[Any]] += x
-        DualHandler.popSecondHandlerAndJump(ctx, label)
+        ctx.stack.pop_() // the bool
+        ctx.stack.peek[mutable.Builder[Any, Any]] += x
+        ctx.stack.upush(true)
+        // pop second handler and jump
+        ctx.handlers = ctx.handlers.tail
+        ctx.updateCheckOffset()
+        ctx.pc = label
     }
 
     // $COVERAGE-OFF$
@@ -170,12 +181,12 @@ private [internal] final class SepEndBy1Jump(var label: Int) extends InstrWithLa
 }
 
 private [instructions] object SepEndBy1Handlers {
-    def pushAccWhenCheckValidAndContinue(ctx: Context, check: Int, acc: mutable.ListBuffer[Any]): Unit = {
-        if (ctx.offset != check || acc.isEmpty) ctx.fail()
+    def pushAccWhenCheckValidAndContinue(ctx: Context, check: Int, acc: mutable.Builder[Any, Any], readP: Boolean): Unit = {
+        if (ctx.offset != check || !readP) ctx.fail()
         else {
             ctx.addErrorToHintsAndPop()
             ctx.good = true
-            ctx.exchangeAndContinue(acc.toList)
+            ctx.exchangeAndContinue(acc.result())
         }
     }
 }
@@ -187,14 +198,15 @@ private [internal] object SepEndBy1SepHandler extends Instr {
         ctx.handlers = ctx.handlers.tail
         // p succeeded and sep didn't, so push p and fall-through to the whole handler
         val x = ctx.stack.upop()
-        val acc = ctx.stack.peek[mutable.ListBuffer[Any]]
+        ctx.stack.pop_() // the bool is no longer needed
+        val acc = ctx.stack.peek[mutable.Builder[Any, Any]]
         acc += x
         // discard the other handler and increment so that we are sat on the other handler
         assert(ctx.instrs(ctx.pc + 1) eq SepEndBy1WholeHandler, "the next instruction from the sep handler must be the whole handler")
         assert(ctx.handlers.pc == ctx.pc + 1, "the top-most handler must be the whole handler in the sep handler")
         ctx.handlers = ctx.handlers.tail
         ctx.inc()
-        SepEndBy1Handlers.pushAccWhenCheckValidAndContinue(ctx, check, acc)
+        SepEndBy1Handlers.pushAccWhenCheckValidAndContinue(ctx, check, acc, readP = true)
     }
 
     // $COVERAGE-OFF$
@@ -207,7 +219,8 @@ private [internal] object SepEndBy1WholeHandler extends Instr {
         ensureHandlerInstruction(ctx)
         val check = ctx.handlers.check
         ctx.handlers = ctx.handlers.tail
-        SepEndBy1Handlers.pushAccWhenCheckValidAndContinue(ctx, check, ctx.stack.peek[mutable.ListBuffer[Any]])
+        val readP = ctx.stack.pop[Boolean]()
+        SepEndBy1Handlers.pushAccWhenCheckValidAndContinue(ctx, check, ctx.stack.peek[mutable.Builder[Any, Any]], readP)
     }
 
     // $COVERAGE-OFF$
@@ -219,9 +232,9 @@ private [internal] final class ManyUntil(var label: Int) extends InstrWithLabel 
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         ctx.stack.upop() match {
-            case parsley.combinator.ManyUntil.Stop => ctx.exchangeAndContinue(ctx.stack.peek[mutable.ListBuffer[Any]].toList)
+            case ManyUntil.Stop => ctx.exchangeAndContinue(ctx.stack.peek[mutable.Builder[Any, Any]].result())
             case x =>
-                ctx.stack.peek[mutable.ListBuffer[Any]] += x
+                ctx.stack.peek[mutable.Builder[Any, Any]] += x
                 ctx.pc = label
         }
     }
@@ -229,12 +242,15 @@ private [internal] final class ManyUntil(var label: Int) extends InstrWithLabel 
     override def toString: String = s"ManyUntil($label)"
     // $COVERAGE-ON$
 }
+private [parsley] object ManyUntil {
+    object Stop
+}
 
 private [internal] final class SkipManyUntil(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         ctx.stack.upop() match {
-            case parsley.combinator.ManyUntil.Stop => ctx.inc()
+            case ManyUntil.Stop => ctx.inc()
             case _ => ctx.pc = label
         }
     }
