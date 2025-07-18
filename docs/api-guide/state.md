@@ -175,11 +175,11 @@ def brackets = Brackets.empty.makeRef { bs =>
     def scope[A](p: Parsley[A]): Parsley[A] = bs.updateDuring(identity[Brackets])(p)
 
     lazy val matching: Parsley[Unit] = scope {
-        many {
+        many(
               open('(') ~> matching <~ close(')')
             | open('[') ~> matching <~ close(']')
             | open('{') ~> matching <~ close('}')
-        }.void
+        ).void
     }
     matching <~ eof
 }
