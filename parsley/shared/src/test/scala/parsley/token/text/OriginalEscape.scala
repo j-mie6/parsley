@@ -47,13 +47,13 @@ private [token] class OriginalEscape(desc: EscapeDesc, err: ErrorConfig, generic
 
     private def exactly(n: Int, full: Int, radix: Int, digit: Parsley[Char], reqDigits: Seq[Int]): Parsley[BigInt] = {
         err.filterEscapeCharRequiresExactDigits(radix, reqDigits).injectSnd.collect(atMost(n, radix, digit) <~> atMostReg.gets(full - _)) {
-            case (num, n) if n == full => num
+            case (num, m) if m == full => num
         }
     }
 
     private lazy val digitsParsed = parsley.state.Ref.make[Int]
-    private def oneOfExactly(n: Int, ns: List[Int], radix: Int, digit: Parsley[Char]): Parsley[BigInt] = {
-        val reqDigits@(m :: ms) = (n :: ns).sorted: @unchecked // make this a precondition of the description?
+    private def oneOfExactly(n1: Int, ns1: List[Int], radix: Int, digit: Parsley[Char]): Parsley[BigInt] = {
+        val reqDigits@(m :: ms) = (n1 :: ns1).sorted: @unchecked // make this a precondition of the description?
         def go(digits: Int, m: Int, ns: List[Int]): Parsley[BigInt] = ns match {
             case Nil => exactly(digits, m, radix, digit, reqDigits) <* digitsParsed.set(digits)
             case n :: ns  =>

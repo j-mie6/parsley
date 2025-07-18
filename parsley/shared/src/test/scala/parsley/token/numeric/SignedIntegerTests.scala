@@ -18,7 +18,7 @@ class SignedIntegerTests extends ParsleyTest {
     val generic = new Generic(errConfig)
     private def makeInteger(desc: NumericDesc) = new LexemeInteger(new SignedInteger(desc, new UnsignedInteger(desc, errConfig, generic), errConfig), LexemeImpl.empty)
 
-    val plain = NumericDesc.plain.copy(integerNumbersCanBeBinary = true, literalBreakChar = BreakCharDesc.Supported('_', false))
+    val plain = NumericDesc.plain.copy(integerNumbersCanBeBinary = true, literalBreakChar = BreakCharDesc.Supported('_', allowedAfterNonDecimalPrefix = false))
     val optionalPlus = makeInteger(plain.copy(positiveSign = PlusSignPresence.Optional))
     val noPlus = makeInteger(plain.copy(positiveSign = PlusSignPresence.Illegal))
     val alwaysPlus = makeInteger(plain.copy(positiveSign = PlusSignPresence.Required))

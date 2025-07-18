@@ -21,13 +21,13 @@ class StringTests extends ParsleyTest {
     private def makeString(desc: TextDesc, char: StringCharacter, spaceAllowed: Boolean) =
         new LexemeString(new ConcreteString(desc.stringEnds, char, desc.graphicCharacter, spaceAllowed, errConfig), LexemeImpl.empty)
     private def makeString(desc: TextDesc): String =
-        makeString(desc, new EscapableCharacter(desc.escapeSequences, new Escape(desc.escapeSequences, errConfig, generic), space, errConfig), false)
+        makeString(desc, new EscapableCharacter(desc.escapeSequences, new Escape(desc.escapeSequences, errConfig, generic), space, errConfig), spaceAllowed = false)
     private def makeMultiString(desc: TextDesc): String =
-        makeString(desc, new EscapableCharacter(desc.escapeSequences, new Escape(desc.escapeSequences, errConfig, generic), space, errConfig), true)
+        makeString(desc, new EscapableCharacter(desc.escapeSequences, new Escape(desc.escapeSequences, errConfig, generic), space, errConfig), spaceAllowed = true)
     private def makeRawString(desc: TextDesc): String =
-        makeString(desc, new RawCharacter(errConfig), false)
+        makeString(desc, new RawCharacter(errConfig), spaceAllowed = false)
     private def makeRawMultiString(desc: TextDesc): String =
-        makeString(desc, new RawCharacter(errConfig), true)
+        makeString(desc, new RawCharacter(errConfig), spaceAllowed = true)
 
     def unicodeCases(str: String)(tests: (SString, Option[SString], Position)*): Unit = cases(str.fullUtf16)(tests: _*)
     def asciiCases(str: String)(tests: (SString, Option[SString], Position)*): Unit = cases(str.ascii)(tests: _*)

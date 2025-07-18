@@ -21,10 +21,10 @@ class UnsignedIntegerTests extends ParsleyTest {
     val plain = NumericDesc.plain
     val withLeadingZero = makeInteger(plain)
     val withoutLeadingZero = makeInteger(plain.copy(leadingZerosAllowed = false, integerNumbersCanBeBinary = true))
-    val withLeadingZeroAndBreak = makeInteger(plain.copy(literalBreakChar = BreakCharDesc.Supported('_', true)))
-    val withoutLeadingZeroAndBreak = makeInteger(plain.copy(leadingZerosAllowed = false, literalBreakChar = BreakCharDesc.Supported('_', true)))
-    val withLeadingZeroAndBreakNotAfterPrefix = makeInteger(plain.copy(literalBreakChar = BreakCharDesc.Supported('_', false)))
-    val withoutLeadingZeroAndBreakNotAfterPrefix = makeInteger(plain.copy(leadingZerosAllowed = false, literalBreakChar = BreakCharDesc.Supported('_', false)))
+    val withLeadingZeroAndBreak = makeInteger(plain.copy(literalBreakChar = BreakCharDesc.Supported('_', allowedAfterNonDecimalPrefix = true)))
+    val withoutLeadingZeroAndBreak = makeInteger(plain.copy(leadingZerosAllowed = false, literalBreakChar = BreakCharDesc.Supported('_', allowedAfterNonDecimalPrefix = true)))
+    val withLeadingZeroAndBreakNotAfterPrefix = makeInteger(plain.copy(literalBreakChar = BreakCharDesc.Supported('_', allowedAfterNonDecimalPrefix = false)))
+    val withoutLeadingZeroAndBreakNotAfterPrefix = makeInteger(plain.copy(leadingZerosAllowed = false, literalBreakChar = BreakCharDesc.Supported('_', allowedAfterNonDecimalPrefix = false)))
 
     private def decimalCases(int: Integer)(tests: (String, Option[BigInt], Position)*): Unit = cases(int.decimal)(tests: _*)
     private def hexadecimalCases(int: Integer)(tests: (String, Option[BigInt], Position)*): Unit = cases(int.hexadecimal)(tests: _*)
