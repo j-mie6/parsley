@@ -372,47 +372,6 @@ jobs:
           modules-ignore: rootjs_2.13 rootjs_2.12 rootjs_3 docs_2.13 docs_2.12 docs_3 rootjvm_2.13 rootjvm_2.12 rootjvm_3 rootnative_2.13 rootnative_2.12 rootnative_3
           configs-ignore: test scala-tool scala-doc-tool test-internal
 
-  coverage:
-    name: Run Test Coverage and Upload
-    if: github.ref == 'refs/heads/master' || (github.event_name == 'pull_request' && github.base_ref == 'master')
-    strategy:
-      matrix:
-        os: [ubuntu-22.04]
-        scala: [2.13]
-        java: [temurin@11]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - name: Checkout current branch (fast)
-        uses: actions/checkout@v4
-
-      - name: Setup sbt
-        uses: sbt/setup-sbt@v1
-
-      - name: Setup Java (temurin@11)
-        id: setup-java-temurin-11
-        if: matrix.java == 'temurin@11'
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 11
-          cache: sbt
-
-      - name: sbt update
-        if: matrix.java == 'temurin@11' && steps.setup-java-temurin-11.outputs.cache-hit == 'false'
-        run: sbt +update
-
-      - name: Generate coverage report
-        run: sbt '++ ${{ matrix.scala }}' coverage 'parsley / test' 'parsleyDebug / test' coverageReport
-
-      - name: Upload coverage to Code Climate
-        env:
-          CC_TEST_REPORTER_ID: c1f669dece75a1d69bf0dc45a682d64837badc112b8098271ccc0dca1bbc7a09
-        uses: paambaati/codeclimate-action@v3.2.0
-        with:
-          coverageLocations: |
-            ${{github.workspace}}/parsley/jvm/target/scala-2.13/coverage-report/cobertura.xml:cobertura
-            ${{github.workspace}}/parsley-debug/jvm/target/scala-2.13/coverage-report/cobertura.xml:cobertura
-
   site:
     name: Generate Site
     strategy:

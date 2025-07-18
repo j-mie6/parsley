@@ -1,8 +1,7 @@
-val sbtTypelevelVersion = "0.7.5"
+val sbtTypelevelVersion = "0.8.0"
 val circeVersion = "0.14.10"
 
-resolvers ++= Opts.resolver.sonatypeOssSnapshots
-resolvers ++= Opts.resolver.sonatypeOssReleases
+resolvers += Resolver.sonatypeCentralSnapshots
 
 scalacOptions ++= Seq("-unchecked", "-feature","-deprecation")
 
