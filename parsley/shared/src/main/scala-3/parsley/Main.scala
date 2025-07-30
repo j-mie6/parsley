@@ -14,7 +14,7 @@ object Pos {
     }
 }
 
-case class Foo[A](arg1: A, arg2: Int = 6)//(@isPosition val y: Pos)
+case class Foo[A](arg1: A, arg2: Int = 6)(@isPosition val y: Pos)
 
 def foo[B] = bridge[Foo[B]]
 

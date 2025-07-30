@@ -54,29 +54,19 @@ private class BridgeImpl(using Quotes) {
                     case (pos, _)                    => pos
                 }
                 val con = constructor[T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, existsUniquePosition.map(_.tyRepr))
-                // TODO: look for unique position
+                val body = synthesiseLift[S](existsUniquePosition, bridgePrimaryArgs.map(_._2), con, _)
                 // TODO: ensure validation if Err is encountered (report separately, but then abort if failed (Option))
                 bridgePrimaryArgs.map(_._2.asType) match {
-                    case List('[t1]) =>
-                        '{new Bridge1[t1, S] {
-                            def apply(p1: Parsley[t1]): Parsley[S] = ${
-                                existsUniquePosition match {
-                                    case Some(impl@PosImpl(_, given Type[posTy])) =>
-                                        '{lift.lift2(${con.asExprOf[(posTy, t1) => T]}, ${impl.parser}, p1)}
-                                    case None => '{p1.map(${con.asExprOf[t1 => T]})}
-                                }
-                            }
-                        }}
-                    case List('[t1], '[t2]) =>
-                        '{new Bridge2[t1, t2, S] {
-                            def apply(p1: Parsley[t1], p2: Parsley[t2]): Parsley[S] = ${
-                                existsUniquePosition match {
-                                    case Some(impl@PosImpl(_, given Type[posTy])) =>
-                                        '{lift.lift3(${con.asExprOf[(posTy, t1, t2) => T]}, ${impl.parser}, p1, p2)}
-                                    case None => '{lift.lift2(${con.asExprOf[(t1, t2) => T]}, p1, p2)}
-                                }
-                            }
-                        }}
+                    case List('[t1]) => '{
+                        new Bridge1[t1, S] {
+                            def apply(p1: Parsley[t1]): Parsley[S] = ${body(List('p1.asTerm))}
+                        }
+                    }
+                    case List('[t1], '[t2]) => '{
+                        new Bridge2[t1, t2, S] {
+                            def apply(p1: Parsley[t1], p2: Parsley[t2]): Parsley[S] = ${body(List('p1.asTerm, 'p2.asTerm))}
+                        }
+                    }
                     // TODO: 19 more of these
                     case _ => '{???}
                 }
@@ -146,7 +136,6 @@ private class BridgeImpl(using Quotes) {
         val tys: List[TypeTree] = clsTyArgs.map(tyRep => TypeTree.of(using tyRep.asType))
         val objTy = New(Applied(TypeTree.ref(cls), tys))
         val con = objTy.select(cls.primaryConstructor).appliedToTypes(clsTyArgs)
-        //val conBridged = con.appliedToArgs(params) // TODO: this doesn't work when positions can be in the first set
         val kaboom: Term = '{???}.asTerm
         // at this point, we have applied the constructor to the bridge args (except for positions)
         // we now need to apply the other default arguments
@@ -179,6 +168,25 @@ private class BridgeImpl(using Quotes) {
             con.appliedToArgss(defaults)
         }
         saturated
+    }
+
+    private def synthesiseLift[R: Type](existsUniquePosition: Option[PosImpl[?]], argTys: List[TypeRepr], con: Term, args: List[Term]): Expr[Parsley[R]] = {
+        val tys = argTys :+ TypeRepr.of[R]
+        val arity = argTys.size + existsUniquePosition.size
+        TypeRepr.of[parsley.lift$].typeSymbol.methodMember(s"lift$arity").headOption.map('{parsley.lift}.asTerm.select(_)) match {
+            case Some(lift) => existsUniquePosition match {
+                case Some(impl@PosImpl(_, given Type[posTy])) =>
+                    val posTyRepr = TypeRepr.of[posTy]
+                    lift.appliedToTypes(posTyRepr :: tys)
+                        .appliedToArgs(con :: impl.parser.asTerm :: args)
+                        .asExprOf[Parsley[R]]
+                case None =>
+                    lift.appliedToTypes(tys)
+                        .appliedToArgs(con :: args)
+                        .asExprOf[Parsley[R]]
+            }
+            case None => report.errorAndAbort(s"No `lift` available for arity $arity")
+        }
     }
 
     private object Bridgeable {
