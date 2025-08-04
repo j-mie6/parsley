@@ -173,7 +173,7 @@ private class BridgeImpl(using Quotes) {
     private def synthesiseLift[R: Type](existsUniquePosition: Option[PosImpl[?]], argTys: List[TypeRepr], con: Term, args: List[Term]): Expr[Parsley[R]] = {
         val tys = argTys :+ TypeRepr.of[R]
         val arity = argTys.size + existsUniquePosition.size
-        TypeRepr.of[parsley.lift$].typeSymbol.methodMember(s"lift$arity").headOption.map('{parsley.lift}.asTerm.select(_)) match {
+        TypeRepr.of[parsley.lift.type].typeSymbol.methodMember(s"lift$arity").headOption.map('{parsley.lift}.asTerm.select(_)) match {
             case Some(lift) => existsUniquePosition match {
                 case Some(impl@PosImpl(_, given Type[posTy])) =>
                     val posTyRepr = TypeRepr.of[posTy]
