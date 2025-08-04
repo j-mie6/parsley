@@ -6,6 +6,8 @@
 package parsley
 import parsley.experimental.generic.*
 
+import scala.annotation.experimental
+
 case class Pos(line: Int, col: Int, offset: Int)
 object Pos {
     import parsley.position.{line, col, offset}
@@ -16,16 +18,20 @@ object Pos {
 
 case class Foo[A](arg1: A, arg2: Int = 6)(@isPosition val y: Pos)
 case class Bar(arg1: Int, arg2: Int)
+case class Baz[A](arg1: Char, arg2: Int, arg3: String, arg4: A)(@isPosition val pos: Pos)
 
-def foo[B] = bridge[Foo[B]]
-def bar = bridge[Bar]
+@experimental def foo[B] = bridge[Foo[B]]
+@experimental def bar = bridge[Bar]
+@experimental def baz = bridge[Baz[Int]]
 
-@main
+@main @experimental
 def bridgeTest() = {
     val b = foo[Int]
     println((character.char('a') ~> b(Parsley.pure(7), Parsley.pure(4))).parse("a").map(_.arg2))
 
     println(bar(character.digit.map(_.asDigit), Parsley.pure(2)).parse("4"))
+
+    println((character.string("a ") ~> baz(character.item, character.digit.map(_.asDigit), character.string("d2"), Parsley.pure(0))).parse("a r2d2").map(b => s"$b @ ${b.pos}"))
 }
 
 /*abstract class Bar {

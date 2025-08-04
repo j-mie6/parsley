@@ -6,26 +6,14 @@
 package parsley
 package experimental.generic
 
-import scala.annotation.tailrec
+import scala.annotation.{experimental, tailrec}
 import scala.collection.mutable
 import scala.quoted.*
-import generic.*
+import generic.ErrorBridge
 
-/*
-Problem space:
-    * How are error bridges incorporated in (annotation?)
-*/
-
-abstract class Bridge1[T, R] extends ErrorBridge {
-    def apply(p1: Parsley[T]): Parsley[R]
-}
-abstract class Bridge2[T1, T2, R] extends ErrorBridge {
-    def apply(p1: Parsley[T1], p2: Parsley[T2]): Parsley[R]
-}
-
-inline transparent def bridge[T]: ErrorBridge = bridge[T, T]
-inline transparent def bridge[T, S >: T]: ErrorBridge = ${bridgeImpl[T, S]}
-private def bridgeImpl[T: Type, S >: T: Type](using Quotes): Expr[ErrorBridge] = BridgeImpl().synthesise[T, S]
+@experimental inline transparent def bridge[T]: ErrorBridge = bridge[T, T]
+@experimental inline transparent def bridge[T, S >: T]: ErrorBridge = ${bridgeImpl[T, S]}
+@experimental private def bridgeImpl[T: Type, S >: T: Type](using Quotes): Expr[ErrorBridge] = BridgeImpl().synthesise[T, S]
 // having a class here simplifies the importing of quotes.reflect.* for the enum
 // (FIXME: it is considered bad practice, so I will probably just make a parametric enum later)
 private class BridgeImpl(using Quotes) {
@@ -37,6 +25,7 @@ private class BridgeImpl(using Quotes) {
         case Err(name: String, pos: Option[Position])
     }
 
+    @experimental
     def synthesise[T: Type, S >: T: Type] = {
         val tyRepr = TypeRepr.of[T]
         val tyArgs = tyRepr.typeArgs
@@ -55,21 +44,26 @@ private class BridgeImpl(using Quotes) {
                 }
                 val con = constructor[T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, existsUniquePosition.map(_.tyRepr))
                 val body = synthesiseLift[S](existsUniquePosition, bridgePrimaryArgs.map(_._2), con, _)
+                val bridge = synthesiseBridge[S](bridgePrimaryArgs.map(_._2), body)
+
                 // TODO: ensure validation if Err is encountered (report separately, but then abort if failed (Option))
-                bridgePrimaryArgs.map(_._2.asType) match {
-                    case List('[t1]) => '{
-                        new Bridge1[t1, S] {
-                            def apply(p1: Parsley[t1]): Parsley[S] = ${body(List('p1.asTerm))}
-                        }
-                    }
-                    case List('[t1], '[t2]) => '{
-                        new Bridge2[t1, t2, S] {
-                            def apply(p1: Parsley[t1], p2: Parsley[t2]): Parsley[S] = ${body(List('p1.asTerm, 'p2.asTerm))}
-                        }
-                    }
-                    // TODO: 19 more of these
-                    case _ => '{???}
-                }
+                // bridgePrimaryArgs.map(_._2.asType) match {
+                //     case List('[t1]) => '{
+                //         new bridges.Bridge1[t1, S] {
+                //             def apply(p1: Parsley[t1]): Parsley[S] = ${body(List('p1.asTerm))}
+                //         }
+                //     }
+                //     case List('[t1], '[t2]) => '{
+                //         new bridges.Bridge2[t1, t2, S] {
+
+                //             def apply(p1: Parsley[t1], p2: Parsley[t2]): Parsley[S] = ${body(List('p1.asTerm, 'p2.asTerm))}
+                //         }
+                //     }
+                //     // TODO: 19 more of these
+                //     case _ => '{???}
+                // }
+
+                bridge
             case _ => report.errorAndAbort("can only make bridges for constructible classes or objects")
         }
     }
@@ -187,6 +181,44 @@ private class BridgeImpl(using Quotes) {
             }
             case None => report.errorAndAbort(s"No `lift` available for arity $arity")
         }
+    }
+
+    @experimental
+    private def synthesiseBridge[R: Type](argTys: List[TypeRepr], body: List[Term] => Expr[Parsley[R]]): Expr[ErrorBridge] = {
+        val arity = argTys.size
+        // TODO: is there a better way to retrieve the bridge with desired arity?
+        val bridgeTy = TypeTree.ref(TypeRepr.of[bridges.type].typeSymbol.typeMember(s"Bridge$arity"))
+
+        // BridgeN[T1, ..., TN, R]       
+        val parents = List(Applied(bridgeTy, argTys.map(Inferred(_)) :+ TypeTree.of[R]))
+
+        // def apply(p1: Parsley[T1], ..., pN: parsley[TN]): Parsley[R]
+        def decls(cls: Symbol): List[Symbol] =
+            List(Symbol.newMethod(cls, "apply", MethodType(
+                paramNames = (1 to arity).map(i => s"p$i").toList
+            )(
+                paramInfosExp = _ => argTys.map(TypeRepr.of[Parsley].appliedTo(_)),
+                resultTypeExp = _ => TypeRepr.of[Parsley].appliedTo(TypeRepr.of[R])
+            )))
+
+        val bridgeCls = Symbol.newClass(Symbol.spliceOwner, "$anon", parents.map(_.tpe), decls, selfType = None)
+
+        // def apply(...) = ${ body(List('p1.asTerm, ..., 'pN.asTerm)) }
+        val applySym = bridgeCls.declaredMethod("apply").head
+        val applyDef = DefDef(applySym, argss => {
+            val args = argss.head.map {
+                case t: Term => t
+                case tree    => report.errorAndAbort(s"Expected term while synthesising arguments for the apply method, got ${tree.show} instead")
+            }
+            Some(body(args).asTerm.changeOwner(applySym))
+        })
+
+        // class $anon extends BridgeN[T1, ..., TN, R] { def apply(...) = ... }
+        val bridgeClsDef = ClassDef(bridgeCls, parents, body = List(applyDef))
+        // new $anon(): BridgeN[T1, ..., TN, R]
+        val newBridgeCls = Typed(Apply(Select(New(TypeIdent(bridgeCls)), bridgeCls.primaryConstructor), Nil), parents.head)
+
+        Block(List(bridgeClsDef), newBridgeCls).asExprOf[ErrorBridge]
     }
 
     private object Bridgeable {
