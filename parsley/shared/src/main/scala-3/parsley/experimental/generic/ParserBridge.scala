@@ -134,7 +134,7 @@ private class BridgeImpl(using Quotes) {
 
     private def appliedCon(cls: Symbol, owner: Symbol, lamParams: IndexedSeq[Term], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]], posParam: Option[Term]): Term = {
         val tys: List[TypeTree] = clsTyArgs.map(tyRep => TypeTree.of(using tyRep.asType))
-        val objTy = New(Applied(TypeTree.ref(cls), tys))
+        val objTy = if (tys.isEmpty) New(TypeTree.ref(cls)) else New(Applied(TypeTree.ref(cls), tys))
         val con = objTy.select(cls.primaryConstructor).appliedToTypes(clsTyArgs)
         val kaboom: Term = '{???}.asTerm
         // at this point, we have applied the constructor to the bridge args (except for positions)
