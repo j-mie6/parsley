@@ -3,7 +3,7 @@ import _root_.parsley.build.mima
 val projectName = "parsley"
 val Scala213 = "2.13.16"
 val Scala212 = "2.12.18"
-val Scala3 = "3.3.3"
+val Scala3 = "3.3.5"
 val Java11 = JavaSpec.temurin("11")
 val Java17 = JavaSpec.temurin("17")
 val Java21 = JavaSpec.temurin("21")
@@ -23,7 +23,7 @@ inThisBuild(List(
   licenses := List("BSD-3-Clause" -> url("https://opensource.org/licenses/BSD-3-Clause")),
   versionScheme := Some("early-semver"),
   crossScalaVersions := Seq(Scala213, Scala212, Scala3),
-  scalaVersion := Scala213,
+  scalaVersion := Scala3,
   mimaBinaryIssueFilters ++= mima.issueFilters,
   // CI Configuration
   tlCiReleaseBranches := Seq(mainBranch),
@@ -56,7 +56,7 @@ lazy val commonSettings = Seq(
   },
 )
 
-lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
+lazy val parsley = crossProject(/*JSPlatform,*/ JVMPlatform/*, NativePlatform*/)
   .withoutSuffixFor(JVMPlatform)
   .crossType(CrossType.Full)
   .in(file("parsley"))
@@ -72,12 +72,12 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
 
     Compile / doc / scalacOptions ++= Seq("-groups", "-doc-root-content", s"${baseDirectory.value.getParentFile.getPath}/rootdoc.md"),
   )
-  .jsSettings(
+  /*.jsSettings(
     // JS lacks the IO module, so has its own rootdoc
     Compile / doc / scalacOptions ++= Seq("-doc-root-content", s"${baseDirectory.value.getPath}/rootdoc.md"),
-  )
+  )*/
 
-lazy val parsleyDebug = crossProject(JSPlatform, JVMPlatform, NativePlatform)
+lazy val parsleyDebug = crossProject(/*JSPlatform,*/ JVMPlatform/*, NativePlatform*/)
   .withoutSuffixFor(JVMPlatform)
   .crossType(CrossType.Full)
   .in(file("parsley-debug"))

@@ -16,7 +16,13 @@ object Pos {
 
 case class Foo[A](arg1: A, arg2: Int = 6)(@isPosition val y: Pos)
 
+enum Baz[A] {
+    case Add(x: Baz[A], y: Baz[A])
+}
+
 def foo[B] = bridge[Foo[B]]
+
+val baz = bridge[Baz.Add[Int]]
 
 @main
 def bridgeTest() = {

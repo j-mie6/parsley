@@ -46,7 +46,7 @@ private class BridgeImpl(using Quotes) {
                 // Used for the types of the lambda passed to combinator
                 println(categorisedArgs)
                 val bridgePrimaryArgs = bridgeParams.collect {
-                    case sym if isPos(sym).isEmpty => (sym.name, sym.termRef.typeSymbol.typeRef.substituteTypes(tyParams, tyArgs))
+                    case sym if isPos(sym).isEmpty => (sym.name, tyRepr.memberType(sym).substituteTypes(tyParams, tyArgs))
                 }
                 val existsUniquePosition = categorisedArgs.flatten.foldLeft(Option.empty[PosImpl[?]]) {
                     case (None, BridgeArg.Pos(impl)) => Some(impl)
@@ -134,7 +134,7 @@ private class BridgeImpl(using Quotes) {
 
     private def appliedCon(cls: Symbol, owner: Symbol, lamParams: IndexedSeq[Term], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]], posParam: Option[Term]): Term = {
         val tys: List[TypeTree] = clsTyArgs.map(tyRep => TypeTree.of(using tyRep.asType))
-        val objTy = New(Applied(TypeTree.ref(cls), tys))
+        val objTy = if tys.nonEmpty then New(Applied(TypeTree.ref(cls), tys)) else New(TypeTree.ref(cls))
         val con = objTy.select(cls.primaryConstructor).appliedToTypes(clsTyArgs)
         val kaboom: Term = '{???}.asTerm
         // at this point, we have applied the constructor to the bridge args (except for positions)
