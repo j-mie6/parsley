@@ -6,22 +6,10 @@
 package parsley
 package experimental.generic
 
-import scala.annotation.tailrec
+import scala.annotation.{switch, tailrec}
 import scala.collection.mutable
 import scala.quoted.*
-import generic.*
-
-/*
-Problem space:
-    * How are error bridges incorporated in (annotation?)
-*/
-
-abstract class Bridge1[T, R] extends ErrorBridge {
-    def apply(p1: Parsley[T]): Parsley[R]
-}
-abstract class Bridge2[T1, T2, R] extends ErrorBridge {
-    def apply(p1: Parsley[T1], p2: Parsley[T2]): Parsley[R]
-}
+import generic.ErrorBridge
 
 inline transparent def bridge[T]: ErrorBridge = bridge[T, T]
 inline transparent def bridge[T, S >: T]: ErrorBridge = ${bridgeImpl[T, S]}
@@ -55,21 +43,9 @@ private class BridgeImpl(using Quotes) {
                 }
                 val con = constructor[T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, existsUniquePosition.map(_.tyRepr))
                 val body = synthesiseLift[S](existsUniquePosition, bridgePrimaryArgs.map(_._2), con, _)
+
                 // TODO: ensure validation if Err is encountered (report separately, but then abort if failed (Option))
-                bridgePrimaryArgs.map(_._2.asType) match {
-                    case List('[t1]) => '{
-                        new Bridge1[t1, S] {
-                            def apply(p1: Parsley[t1]): Parsley[S] = ${body(List('p1.asTerm))}
-                        }
-                    }
-                    case List('[t1], '[t2]) => '{
-                        new Bridge2[t1, t2, S] {
-                            def apply(p1: Parsley[t1], p2: Parsley[t2]): Parsley[S] = ${body(List('p1.asTerm, 'p2.asTerm))}
-                        }
-                    }
-                    // TODO: 19 more of these
-                    case _ => '{???}
-                }
+                synthesiseBridge[S](bridgePrimaryArgs.map(_._2.asType), body)
             case _ => report.errorAndAbort("can only make bridges for constructible classes or objects")
         }
     }
@@ -173,7 +149,7 @@ private class BridgeImpl(using Quotes) {
     private def synthesiseLift[R: Type](existsUniquePosition: Option[PosImpl[?]], argTys: List[TypeRepr], con: Term, args: List[Term]): Expr[Parsley[R]] = {
         val tys = argTys :+ TypeRepr.of[R]
         val arity = argTys.size + existsUniquePosition.size
-        TypeRepr.of[parsley.lift$].typeSymbol.methodMember(s"lift$arity").headOption.map('{parsley.lift}.asTerm.select(_)) match {
+        TypeRepr.of[parsley.lift.type].typeSymbol.methodMember(s"lift$arity").headOption.map('{parsley.lift}.asTerm.select(_)) match {
             case Some(lift) => existsUniquePosition match {
                 case Some(impl@PosImpl(_, given Type[posTy])) =>
                     val posTyRepr = TypeRepr.of[posTy]
@@ -188,6 +164,301 @@ private class BridgeImpl(using Quotes) {
             case None => report.errorAndAbort(s"No `lift` available for arity $arity")
         }
     }
+
+    private def synthesiseBridge[R: Type](argTys: List[Type[?]], body: List[Term] => Expr[Parsley[R]]): Expr[ErrorBridge] = (argTys.size: @switch) match {
+        case 1 => (argTys: @unchecked) match {
+            case List('[t1]) => '{
+                new bridges.Bridge1[t1, R] {
+                    def apply(p1: Parsley[t1]): Parsley[R] = ${ body(List('p1.asTerm)) }
+                }
+            }
+        }
+        case 2 => (argTys: @unchecked) match {
+            case List('[t1], '[t2]) => '{
+                new bridges.Bridge2[t1, t2, R] {
+                    def apply(p1: Parsley[t1], p2: Parsley[t2]): Parsley[R] = ${ body(List('p1.asTerm, 'p2.asTerm)) }
+                }
+            }
+        }
+        case 3 => (argTys: @unchecked) match {
+            case List('[t1], '[t2], '[t3]) => '{
+                new bridges.Bridge3[t1, t2, t3, R] {
+                    def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3]): Parsley[R] =
+                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm)) }
+                }
+            }
+        }
+        case 4 => (argTys: @unchecked) match {
+            case List('[t1], '[t2], '[t3], '[t4]) => '{
+                new bridges.Bridge4[t1, t2, t3, t4, R] {
+                    def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4]): Parsley[R] =
+                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm)) }
+                }
+            }
+        }
+        case 5 => (argTys: @unchecked) match {
+            case List('[t1], '[t2], '[t3], '[t4], '[t5]) => '{
+                new bridges.Bridge5[t1, t2, t3, t4, t5, R] {
+                    def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5]): Parsley[R] =
+                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm)) }
+                }
+            }
+        }
+        case 6 => (argTys: @unchecked) match {
+            case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6]) => '{
+                new bridges.Bridge6[t1, t2, t3, t4, t5, t6, R] {
+                    def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
+                              p6: Parsley[t6]): Parsley[R] =
+                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                     'p6.asTerm)) }
+                }
+            }
+        }
+        case 7 => (argTys: @unchecked) match {
+            case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7]) => '{
+                new bridges.Bridge7[t1, t2, t3, t4, t5, t6, t7, R] {
+                    def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
+                              p6: Parsley[t6], p7: Parsley[t7]): Parsley[R] =
+                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                     'p6.asTerm, 'p7.asTerm)) }
+                }
+            }
+        }
+        case 8 => (argTys: @unchecked) match {
+            case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8]) => '{
+                new bridges.Bridge8[t1, t2, t3, t4, t5, t6, t7, t8, R] {
+                    def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
+                              p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8]): Parsley[R] =
+                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm)) }
+                }
+            }
+        }
+        case 9 => (argTys: @unchecked) match {
+            case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9]) => '{
+                new bridges.Bridge9[t1, t2, t3, t4, t5, t6, t7, t8, t9, R] {
+                    def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
+                              p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9]): Parsley[R] =
+                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm)) }
+                }
+            }
+        }
+        case 10 => (argTys: @unchecked) match {
+            case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10]) => '{
+                new bridges.Bridge10[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, R] {
+                    def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
+                              p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10]): Parsley[R] =
+                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm)) }
+                }
+            }
+        }
+        case 11 => (argTys: @unchecked) match {
+            case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11]) => '{
+                new bridges.Bridge11[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, R] {
+                    def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
+                              p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
+                              p11: Parsley[t11]): Parsley[R] =
+                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
+                                     'p11.asTerm)) }
+                }
+            }
+        }
+        case 12 => (argTys: @unchecked) match {
+            case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12]) => '{
+                new bridges.Bridge12[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, R] {
+                    def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
+                              p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
+                              p11: Parsley[t11], p12: Parsley[t12]): Parsley[R] =
+                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
+                                     'p11.asTerm, 'p12.asTerm)) }
+                }
+            }
+        }
+        case 13 => (argTys: @unchecked) match {
+            case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13]) => '{
+                new bridges.Bridge13[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, R] {
+                    def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
+                              p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
+                              p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13]): Parsley[R] =
+                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
+                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm)) }
+                }
+            }
+        }
+        case 14 => (argTys: @unchecked) match {
+            case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13], '[t14]) => '{
+                new bridges.Bridge14[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, R] {
+                    def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
+                              p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
+                              p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14]): Parsley[R] =
+                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
+                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm)) }
+                }
+            }
+        }
+        case 15 => (argTys: @unchecked) match {
+            case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13], '[t14], '[t15]) => '{
+                new bridges.Bridge15[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, R] {
+                    def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
+                              p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
+                              p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15]): Parsley[R] =
+                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
+                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm)) }
+                }
+            }
+        }
+        case 16 => (argTys: @unchecked) match {
+            case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13], '[t14], '[t15], '[t16]) => '{
+                new bridges.Bridge16[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, R] {
+                    def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
+                              p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
+                              p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
+                              p16: Parsley[t16]): Parsley[R] =
+                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
+                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
+                                     'p16.asTerm)) }
+                }
+            }
+        }
+        case 17 => (argTys: @unchecked) match {
+            case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13], '[t14], '[t15], '[t16], '[t17]) => '{
+                new bridges.Bridge17[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, R] {
+                    def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
+                              p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
+                              p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
+                              p16: Parsley[t16], p17: Parsley[t17]): Parsley[R] =
+                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
+                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
+                                     'p16.asTerm, 'p17.asTerm)) }
+                }
+            }
+        }
+        case 18 => (argTys: @unchecked) match {
+            case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13], '[t14], '[t15], '[t16], '[t17], '[t18]) => '{
+                new bridges.Bridge18[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, R] {
+                    def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
+                              p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
+                              p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
+                              p16: Parsley[t16], p17: Parsley[t17], p18: Parsley[t18]): Parsley[R] =
+                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
+                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
+                                     'p16.asTerm, 'p17.asTerm, 'p18.asTerm)) }
+                }
+            }
+        }
+        case 19 => (argTys: @unchecked) match {
+            case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13], '[t14], '[t15], '[t16], '[t17], '[t18], '[t19]) => '{
+                new bridges.Bridge19[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, R] {
+                    def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
+                              p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
+                              p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
+                              p16: Parsley[t16], p17: Parsley[t17], p18: Parsley[t18], p19: Parsley[t19]): Parsley[R] =
+                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
+                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
+                                     'p16.asTerm, 'p17.asTerm, 'p18.asTerm, 'p19.asTerm)) }
+                }
+            }
+        }
+        case 20 => (argTys: @unchecked) match {
+            case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13], '[t14], '[t15], '[t16], '[t17], '[t18], '[t19], '[t20]) => '{
+                new bridges.Bridge20[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, R] {
+                    def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
+                              p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
+                              p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
+                              p16: Parsley[t16], p17: Parsley[t17], p18: Parsley[t18], p19: Parsley[t19], p20: Parsley[t20]): Parsley[R] =
+                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
+                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
+                                     'p16.asTerm, 'p17.asTerm, 'p18.asTerm, 'p19.asTerm, 'p20.asTerm)) }
+                }
+            }
+        }
+        case 21 => (argTys: @unchecked) match {
+            case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13], '[t14], '[t15], '[t16], '[t17], '[t18], '[t19], '[t20], '[t21]) => '{
+                new bridges.Bridge21[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, R] {
+                    def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
+                              p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
+                              p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
+                              p16: Parsley[t16], p17: Parsley[t17], p18: Parsley[t18], p19: Parsley[t19], p20: Parsley[t20],
+                              p21: Parsley[t21]): Parsley[R] =
+                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
+                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
+                                     'p16.asTerm, 'p17.asTerm, 'p18.asTerm, 'p19.asTerm, 'p20.asTerm,
+                                     'p21.asTerm)) }
+                }
+            }
+        }
+        case 22 => (argTys: @unchecked) match {
+            case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13], '[t14], '[t15], '[t16], '[t17], '[t18], '[t19], '[t20], '[t21], '[t22]) => '{
+                new bridges.Bridge22[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, R] {
+                    def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
+                              p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
+                              p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
+                              p16: Parsley[t16], p17: Parsley[t17], p18: Parsley[t18], p19: Parsley[t19], p20: Parsley[t20],
+                              p21: Parsley[t21], p22: Parsley[t22]): Parsley[R] =
+                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
+                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
+                                     'p16.asTerm, 'p17.asTerm, 'p18.asTerm, 'p19.asTerm, 'p20.asTerm,
+                                     'p21.asTerm, 'p22.asTerm)) }
+                }
+            }
+        }
+        case _ => report.errorAndAbort("Bridges cannot have more than 22 arguments")
+    }
+
+    // TODO: use this generalised synthesis method once Symbol.newClass and ClassDef are no longer marked experimental
+    /*
+    @experimental
+    private def synthesiseBridge[R: Type](argTys: List[TypeRepr], body: List[Term] => Expr[Parsley[R]]): Expr[ErrorBridge] = {
+        val arity = argTys.size
+        // TODO: is there a better way to retrieve the bridge with desired arity?
+        val bridgeTy = TypeTree.ref(TypeRepr.of[bridges.type].typeSymbol.typeMember(s"Bridge$arity"))
+
+        // BridgeN[T1, ..., TN, R]       
+        val parents = List(Applied(bridgeTy, argTys.map(Inferred(_)) :+ TypeTree.of[R]))
+
+        // def apply(p1: Parsley[T1], ..., pN: parsley[TN]): Parsley[R]
+        def decls(cls: Symbol): List[Symbol] =
+            List(Symbol.newMethod(cls, "apply", MethodType(
+                paramNames = (1 to arity).map(i => s"p$i").toList
+            )(
+                paramInfosExp = _ => argTys.map(TypeRepr.of[Parsley].appliedTo(_)),
+                resultTypeExp = _ => TypeRepr.of[Parsley].appliedTo(TypeRepr.of[R])
+            )))
+
+        val bridgeCls = Symbol.newClass(Symbol.spliceOwner, "$anon", parents.map(_.tpe), decls, selfType = None)
+
+        // def apply(...) = ${ body(List('p1.asTerm, ..., 'pN.asTerm)) }
+        val applySym = bridgeCls.declaredMethod("apply").head
+        val applyDef = DefDef(applySym, argss => {
+            val args = argss.head.map {
+                case t: Term => t
+                case tree    => report.errorAndAbort(s"Expected term while synthesising arguments for the apply method, got ${tree.show} instead")
+            }
+            Some(body(args).asTerm.changeOwner(applySym))
+        })
+
+        // class $anon extends BridgeN[T1, ..., TN, R] { def apply(...) = ... }
+        val bridgeClsDef = ClassDef(bridgeCls, parents, body = List(applyDef))
+        // new $anon(): BridgeN[T1, ..., TN, R]
+        val newBridgeCls = Typed(Apply(Select(New(TypeIdent(bridgeCls)), bridgeCls.primaryConstructor), Nil), parents.head)
+
+        Block(List(bridgeClsDef), newBridgeCls).asExprOf[ErrorBridge]
+    }
+    */
 
     private object Bridgeable {
         def unapply(ty: TypeRepr): Option[(Symbol, List[Symbol], List[Symbol], List[List[Symbol]])] = {
