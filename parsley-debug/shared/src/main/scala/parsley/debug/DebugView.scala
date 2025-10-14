@@ -31,6 +31,9 @@ sealed trait DebugView {
       * @param tree  Debug tree to render.
       */
     private [debug] def render(input: =>String, tree: =>DebugTree): Unit
+
+    /** Determines whether `render` should be called */
+    private [debug] def shouldRender: Boolean = true
 }
 /** @group debugview */
 object DebugView {
