@@ -31,9 +31,6 @@ sealed trait DebugView {
       * @param tree  Debug tree to render.
       */
     private [debug] def render(input: =>String, tree: =>DebugTree): Unit
-
-    /** Determines whether `render` should be called */
-    private [debug] def shouldRender: Boolean = true
 }
 /** @group debugview */
 object DebugView {
@@ -59,6 +56,13 @@ object DebugView {
         *           n >= 1 to step through the next n breakpoints.
         */
         private [debug] def renderWait(input: => String, tree: => DebugTree): Int
+    }
+
+    /** Signifies that the debug view inheriting from this can conditionally make the call to `render`.
+      * 
+      */
+    trait ConditionalRender extends DebugView {
+        private [debug] var shouldRender: Boolean = true;
     }
 
     /** Signifies that the debug view inheriting from this can wait on a certain render call, updating the state of Refs.
