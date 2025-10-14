@@ -41,13 +41,20 @@ object DebugView {
       */
     trait Reusable extends DebugView
 
+    /** Signifies that the debug view inheriting from this can conditionally make the call to `render`.
+      * 
+      */
+    trait ConditionalRender extends DebugView {
+        private [debug] var shouldRender: Boolean = true;
+    }
+
     /** Signifies that the debug view inheriting from this can wait on a certain render call.
       * 
       * This can be extended to make remote breakpoint stepping possible.
       *
       * @see [[DebugView]]
       */
-    trait Pauseable extends DebugView {
+    trait Pauseable extends DebugView with ConditionalRender {
       /** Render a given debug tree and wait for a response from the remote viewer.
         *
         * @see [[DebugView]]
@@ -56,13 +63,6 @@ object DebugView {
         *           n >= 1 to step through the next n breakpoints.
         */
         private [debug] def renderWait(input: => String, tree: => DebugTree): Int
-    }
-
-    /** Signifies that the debug view inheriting from this can conditionally make the call to `render`.
-      * 
-      */
-    trait ConditionalRender extends DebugView {
-        private [debug] var shouldRender: Boolean = true;
     }
 
     /** Signifies that the debug view inheriting from this can wait on a certain render call, updating the state of Refs.
