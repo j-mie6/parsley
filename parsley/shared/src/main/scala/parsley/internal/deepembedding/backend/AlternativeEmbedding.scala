@@ -227,6 +227,7 @@ private [backend] object Choice {
                      expecteds, expectedss.zip(leads.toList.reverseIterator.map(backtracking(_)).toList))
     }
 
+    // TODO: `line.zip(col)` will not be caught!!!!
     private def tablable(p: StrictParsley[_], backtracks: Boolean): Option[(Char, Iterable[ExpectItem], Int, Boolean)] = p match {
         // CODO: Numeric parsers by leading digit (This one would require changing the foldTablified function a bit)
         case ct@CharTok(c, _)                    => Some((c, ct.expected.asExpectItems(c), 1, backtracks))
@@ -237,7 +238,7 @@ private [backend] object Choice {
         // TODO: This can be done for case insensitive things too, but with duplicated branching
         case t@token.SoftKeyword(s) if t.caseSensitive => Some((s.head, t.expected.asExpectDescs(s), s.codePointCount(0, s.length), backtracks))
         case t@token.SoftOperator(s)             => Some((s.head, t.expected.asExpectDescs(s), s.codePointCount(0, s.length), backtracks))
-        case Atomic(t)                          => tablable(t, backtracks = true)
+        case Atomic(t)                           => tablable(t, backtracks = true)
         case ErrorLabel(t, label, labels)        => tablable(t, backtracks).map {
             case (c, _, width, backtracks) => (c, (label +: labels).map(new ExpectDesc(_)), width, backtracks)
         }
@@ -246,7 +247,9 @@ private [backend] object Choice {
         }
         case Profile(t)                          => tablable(t, backtracks)
         case TablableErrors(t)                   => tablable(t, backtracks)
-        case (_: Pure[_]) <*> t                  => tablable(t, backtracks)
+        case (_: Pure[_] | _: Get[_]) <*> t      => tablable(t, backtracks)
+        case Lift2(_, Line | Col | Offset | _: Get[_], t)    => tablable(t, backtracks)
+        case Lift3(_, Line | Col | Offset | _: Get[_], t, _) => tablable(t, backtracks)
         case Lift2(_, t, _)                      => tablable(t, backtracks)
         case Lift3(_, t, _, _)                   => tablable(t, backtracks)
         case t <*> _                             => tablable(t, backtracks)

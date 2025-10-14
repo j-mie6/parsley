@@ -24,15 +24,14 @@ import scala.quoted.*
         import quotes.reflect.*
         tree match {
             case cls@ClassDef(clsName, constr, parents, selfOpt, body) =>
-                val parsleyTy = TypeRepr.of[Parsley[?]].typeSymbol
                 val fields = cls.symbol.fieldMembers.view.map(_.termRef)
-                val parsers = fields.filter(_.typeSymbol == parsleyTy).toList
+                val parsers = fields.filter(isParsley).toList
                 // the idea is we inject a call to Collector.registerNames with a constructed
                 // map from these identifiers to their compile-time names
                 val listOfParsers = Expr.ofList {
                     parsers.map(tr => Expr.ofTuple((Ident(tr).asExprOf[parsley.Parsley[?]], Expr(tr.name))))
                 }
-                
+
                 val filePath = Expr(cls.pos.sourceFile.path)
                 val positionInfo = Expr.ofList(
                     for termRef <- parsers
@@ -51,5 +50,11 @@ import scala.quoted.*
                 report.error("only classes/objects containing parsers can be annotated for debugging")
                 List(tree)
         }
+    }
+
+    // this can see through type aliases
+    private def isParsley(using Quotes)(tyRepr: quotes.reflect.TypeRepr) = tyRepr.asType match {
+        case '[Parsley[_]] => true
+        case _             => false
     }
 }

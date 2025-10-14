@@ -150,4 +150,16 @@ class CharTests extends ParsleyTest {
         cases(character.noneOf('a'))       ("a" -> None, "\n" -> Some('\n'), "b" -> Some('b'))
         cases(character.noneOf('a' to 'a'))("a" -> None, "\n" -> Some('\n'), "b" -> Some('b'))
     }
+
+    "stringOfMany" should "not cache the builder" in {
+        val p = stringOfMany(char('a'))
+        p.parse("aaaa") shouldBe Success("aaaa")
+        p.parse("aa") shouldBe Success("aa")
+    }
+
+    "stringOfSome" should "not cache the builder" in {
+        val p = stringOfSome(char('a'))
+        p.parse("aaaa") shouldBe Success("aaaa")
+        p.parse("aa") shouldBe Success("aa")
+    }
 }

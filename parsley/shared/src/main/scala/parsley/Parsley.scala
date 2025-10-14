@@ -1400,7 +1400,8 @@ private [parsley] abstract class ParsleyImpl {
       */
     final def some[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = secretSome(p, p, factory, "some")
     private [parsley] final def secretSome[A, C](init: Parsley[A], p: Parsley[A], factory: Factory[A, C], debugName: String): Parsley[C] = {
-        secretSome(init.map(factory.newBuilder += _).ut(), p, debugName)
+        // impure prevents bad fusion, particularly for characters
+        secretSome(init.impure.map(factory.newBuilder += _).ut(), p, debugName)
     }
     private [parsley] final def secretSome[A, C](init: Parsley[mutable.Builder[A, C]], p: Parsley[A], debugName: String): Parsley[C] = {
         new Parsley(new frontend.Many(init.internal, p.internal, debugName))

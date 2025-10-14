@@ -140,9 +140,9 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
     // TODO: can this be optimised to reduce repeated matching?
     override def optimise: StrictParsley[A] = this match {
         // Assume that this is eliminated first, so not other before or afters
-        case (_: Pure[_]) **> u => u
+        case (_: Pure[_] | _: Get[_] | Line | Col | Offset) **> u => u
         case (p: MZero) **> _ => p
-        case u <** (_: Pure[_]) => u
+        case u <** (_: Pure[_] | _: Get[_] | Line | Col | Offset) => u
         case (p: MZero) <** _ => p
         case u@Seq(bs1, br, bs2) **> r =>
             bs2.lastOption match {

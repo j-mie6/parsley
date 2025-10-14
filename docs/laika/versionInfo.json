@@ -2,7 +2,7 @@
   "versions": [
     { "displayValue": "5.0.x", "pathSegment": "5.0", "fallbackLink": "/api-guide", "label": "dev", "canonical": false },
     { "displayValue": "4.6.x", "pathSegment": "4.6", "fallbackLink": "/api-guide", "label": "stable", "canonical": true },
-    { "displayValue": "4.5.x", "pathSegment": "4.5", "fallbackLink": "/api-guide", "label": "stable", "canonical": false },
+    { "displayValue": "4.5.x", "pathSegment": "4.5", "fallbackLink": "/api-guide", "label": "EOL", "canonical": false },
     { "displayValue": "4.4.x", "pathSegment": "4.4", "fallbackLink": "/api-guide", "label": "EOL", "canonical": false }
   ],
   "linkTargets": [

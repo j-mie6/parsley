@@ -176,16 +176,10 @@ class RemoteBreakSpec extends ParsleyTest {
       */
 
     // The test runner handling mocking functionality given a parser set with breakpoints, the input, and the return values ofencoded string 
-    private def testExpectingRefs[B](expectations: Seq[String]*)(leftTagInner: Parsley[B], refCodec: Codec[B], mkParser: B => Parsley[B])(input: String, shouldSucceed: Boolean): Unit = {        
+    private def testExpectingRefs[B: Codec](expectations: Seq[String]*)(leftTagInner: Parsley[B], mkParser: B => Parsley[B])(input: String, shouldSucceed: Boolean): Unit = {
         val leftTag: Parsley[B] = (atomic('<' <~ notFollowedBy('/'))) ~> leftTagInner <~ '>'
         val p = leftTag.fillRef { r => {
-            object TestRefCodec extends RefCodec {
-                type A = B
-
-                val ref: Ref[A] = r
-                val codec: Codec[A] = refCodec
-            }
-            char(' ').break(ExitBreak, TestRefCodec) <~ (string("</") ~> r.get.flatMap(mkParser) <~ ">")
+            char(' ').break(ExitBreak, r) <~ (string("</") ~> r.get.flatMap(mkParser) <~ ">")
         }}
 
         val mock = new MockedManageableView(expectations.iterator)
@@ -230,55 +224,49 @@ class RemoteBreakSpec extends ParsleyTest {
     }
     
     it should "preserve references that are passed in and not returned" in {
-        testExpectingRefs(Seq.empty)(stringOfSome(letter), stringCodec, string)("<hello> </hi>", false)
+        testExpectingRefs(Seq.empty)(stringOfSome(letter), string)("<hello> </hi>", false)
     }
 
     it should "modify Ref[String]" in {
-        testExpectingRefs(Seq("hi"))(stringOfSome(letter), stringCodec, string)("<hello> </hi>", true)
+        testExpectingRefs(Seq("hi"))(stringOfSome(letter), string)("<hello> </hi>", true)
     }
 
     it should "modify Ref[Char]" in {
-        testExpectingRefs(Seq("z"))(letter, charCodec, char)("<a> </z>", true)
+        testExpectingRefs(Seq("z"))(letter, char)("<a> </z>", true)
     }
 
     it should "modify Ref[Boolean]" in {
-        testExpectingRefs(Seq("true"))(choice(trueParser, falseParser), booleanCodec, myBool)("<false> </true>", true)
+        testExpectingRefs(Seq("true"))(choice(trueParser, falseParser), myBool)("<false> </true>", true)
     }
 
     it should "modify Ref[Byte]" in {
-        testExpectingRefs(Seq("1"))(byteParser, byteCodec, myByte)("<0> </1>", true)
+        testExpectingRefs(Seq("1"))(byteParser, myByte)("<0> </1>", true)
     }
 
     it should "modify Ref[Short]" in {
-        testExpectingRefs(Seq("127"))(shortParser, shortCodec, myShort)("<0> </127>", true)
+        testExpectingRefs(Seq("127"))(shortParser, myShort)("<0> </127>", true)
     }
     
     it should "modify Ref[Int]" in {
-        testExpectingRefs(Seq("256"))(intParser, intCodec, myInt)("<255> </256>", true)
+        testExpectingRefs(Seq("256"))(intParser, myInt)("<255> </256>", true)
     }
 
     it should "modify Ref[Long]" in {
-        testExpectingRefs(Seq("2147483648"))(longParser, longCodec, myLong)("<2147483647> </2147483648>", true)
+        testExpectingRefs(Seq("2147483648"))(longParser, myLong)("<2147483647> </2147483648>", true)
     }
 
     it should "modify Ref[Float]" in {
-        testExpectingRefs(Seq("0.03125"))(floatParser, floatCodec, myFloat)("<0.0> </0.03125>", true)
+        testExpectingRefs(Seq("0.03125"))(floatParser, myFloat)("<0.0> </0.03125>", true)
     }
 
     it should "modify Ref[Double]" in {
-        testExpectingRefs(Seq("0.00390625"))(doubleParser, doubleCodec, myDouble)("<0.0> </0.00390625>", true)
+        testExpectingRefs(Seq("0.00390625"))(doubleParser, myDouble)("<0.0> </0.00390625>", true)
     }
 
     it should "modify the same reference many times" in {
         val leftTag = (atomic('<' <~ notFollowedBy('/'))) ~> "hello"
-        val p = leftTag.fillRef { r => 
-            object TestRefCodec extends RefCodec {
-                type A = String
-
-                val ref: Ref[A] = r
-                val codec: Codec[A] = stringCodec
-            }
-            (char('>').break(ExitBreak, TestRefCodec) ~> r.get.flatMap(string).break(ExitBreak, TestRefCodec)) <~ (string("</").break(ExitBreak, TestRefCodec) ~> r.get.flatMap(string) <~ ">")
+        val p = leftTag.fillRef { r =>
+            (char('>').break(ExitBreak, r) ~> r.get.flatMap(string).break(ExitBreak, r)) <~ (string("</").break(ExitBreak, r) ~> r.get.flatMap(string) <~ ">")
         }
         val mock = new MockedManageableView(Iterator(Seq("hey"), Seq("bye"), Seq("hi")))
         runManageableTest(p, mock, "<hello>hey</hi>", true)
@@ -291,18 +279,8 @@ class RemoteBreakSpec extends ParsleyTest {
         val bTagLeft = openTag ~> 'b' <~ '>'
 
         val p = aTagLeft.fillRef { r1 => 
-            object Ref1Codec extends RefCodec {
-                type A = String
-                val ref: Ref[A] = r1
-                val codec: Codec[A] = stringCodec
-            }
             bTagLeft.fillRef { r2 => 
-                object Ref2Codec extends RefCodec {
-                    type A = Char
-                    val ref: Ref[A] = r2
-                    val codec: Codec[A] = charCodec
-                }
-                char(' ').break(ExitBreak, Ref1Codec, Ref2Codec) ~> ("</" ~> r2.get.flatMap(char) <~ '>')
+                char(' ').break(ExitBreak, r1, r2) ~> ("</" ~> r2.get.flatMap(char) <~ '>')
             } <~> "</" ~> r1.get.flatMap(string) <~ '>'
         }
         val mock = new MockedManageableView(Iterator(Seq("A", "B")))
@@ -312,13 +290,7 @@ class RemoteBreakSpec extends ParsleyTest {
     it should "modify correctly with EntryBreak" in {
         val leftTag = (atomic('<' <~ notFollowedBy('/'))) ~> "hello" <~ '>'
         val p = leftTag.fillRef { r => 
-            object TestRefCodec extends RefCodec {
-                type A = String
-
-                val ref: Ref[A] = r
-                val codec: Codec[A] = stringCodec
-            }
-            (string("</") ~> r.get.flatMap(string).break(EntryBreak, TestRefCodec) <~ ">")}
+            (string("</") ~> r.get.flatMap(string).break(EntryBreak, r) <~ ">")}
         val mock = new MockedManageableView(Iterator(Seq("world")))
         runManageableTest(p, mock, "<hello></world>", true)
     }
