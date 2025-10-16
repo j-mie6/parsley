@@ -1,7 +1,7 @@
 import _root_.parsley.build.mima
 
 val projectName = "parsley"
-val Scala213 = "2.13.14"
+val Scala213 = "2.13.16"
 val Scala212 = "2.12.18"
 val Scala3 = "3.3.3"
 val Java11 = JavaSpec.temurin("11")
@@ -30,6 +30,7 @@ inThisBuild(List(
   tlCiScalafmtCheck := false,
   tlCiHeaderCheck := true,
   githubWorkflowJavaVersions := Seq(Java11, Java17, Java21),
+  // FIXME: codeclimate has been changed
   //githubWorkflowAddedJobs += testCoverageJob(githubWorkflowGeneratedCacheSteps.value.toList),
   githubWorkflowConcurrency := None, // this allows us to not fail the pipeline on double commit
   // Website Configuration
@@ -43,7 +44,7 @@ lazy val commonSettings = Seq(
   headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax,
   headerEmptyLine := false,
 
-  resolvers ++= Opts.resolver.sonatypeOssReleases, // Will speed up MiMA during fast back-to-back releases
+  //resolvers ++= Opts.resolver.sonatypeOssReleases, // Will speed up MiMA during fast back-to-back releases
   libraryDependencies ++= Seq(
     "org.scalatest" %%% "scalatest" % "3.2.19" % Test,
     "org.scalatestplus" %%% "scalacheck-1-18" % "3.2.19.0" % Test,

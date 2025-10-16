@@ -141,7 +141,7 @@ class VisitorTests extends ParsleyTest {
         new ChainPre(dummyParser, dummyParser).testV
         new Span(dummyParser).testV
         new Profile(dummyParser, "", null).testV
-        new ManyTill(dummyParser, dummyParser, null).testV
+        new ManyTill[Any, Any](dummyParser, dummyParser, null).testV
         new SkipManyUntil(dummyParser).testV
         new ErrorLabel(dummyParser, "test", Seq("bazola")).testV
         new ErrorHide(dummyParser).testV
