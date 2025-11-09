@@ -112,10 +112,10 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
 
         val newRefs: Option[Seq[CodedRef]] = view match {
             case view: DebugView.Pauseable => {
-                if (breakpointSkips > 0) { // Skip to next breakpoint
+                val newRefs: Option[Seq[CodedRef]] = if (breakpointSkips > 0) { // Skip to next breakpoint
                     breakpointSkips -= 1
                     None
-                } else if (breakpointSkips != -1) { // Breakpoint exit
+                } else if (breakpointSkips != DebugContext.TerminateDebugging && breakpointSkips != DebugContext.SkipAllBreakpoints) { // Breakpoint exit
                     view match {
                         case view: DebugView.Manageable => {
                             
@@ -134,6 +134,8 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
                         }
                     }
                 } else None
+                if (breakpointSkips == DebugContext.TerminateDebugging) view.shouldRender = false
+                newRefs
             }
             
             case _ => None
@@ -165,4 +167,9 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
         // Remove first parser off stack, as if returning from that parser.
         builderStack.remove(0).applyInputAugments()
     }
+}
+
+object DebugContext {
+    val TerminateDebugging: Int = -1
+    val SkipAllBreakpoints: Int = -2
 }
