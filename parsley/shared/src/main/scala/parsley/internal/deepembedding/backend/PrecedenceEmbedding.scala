@@ -68,11 +68,11 @@ private [deepembedding] object Precedence {
 
     private def buildOpChoice(op: StrictOp): StrictParsley[Operator] = {
         val opFn = op.fixity match {
-            case InfixL => (x: Any) => new instructions.InfixLOp(x.asInstanceOf[(Any, Any) => Any], op.fixity.ordinal, op.prec)
-            case InfixR => (x: Any) => new instructions.InfixROp(x.asInstanceOf[(Any, Any) => Any], op.fixity.ordinal, op.prec)
-            case Prefix => (x: Any) => new instructions.PrefixOp(x.asInstanceOf[Any => Any], op.fixity.ordinal, op.prec)
-            case Postfix => (x: Any) => new instructions.PostfixOp(x.asInstanceOf[Any => Any], op.fixity.ordinal, op.prec)
-            case InfixN => (x: Any) => new instructions.InfixNOp(x.asInstanceOf[(Any, Any) => Any], op.fixity.ordinal, op.prec)
+            case InfixL => (x: Any) => new instructions.InfixLOp(x.asInstanceOf[(Any, Any) => Any], op.prec)
+            case InfixR => (x: Any) => new instructions.InfixROp(x.asInstanceOf[(Any, Any) => Any], op.prec)
+            case Prefix => (x: Any) => new instructions.PrefixOp(x.asInstanceOf[Any => Any], op.prec)
+            case Postfix => (x: Any) => new instructions.PostfixOp(x.asInstanceOf[Any => Any], op.prec)
+            case InfixN => (x: Any) => new instructions.InfixNOp(x.asInstanceOf[(Any, Any) => Any], op.prec)
         }
         <*>(new Pure(opFn), op.op).optimise
     }
