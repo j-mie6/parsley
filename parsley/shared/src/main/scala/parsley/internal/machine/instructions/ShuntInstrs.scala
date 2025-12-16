@@ -45,7 +45,6 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
         if (ctx.good) {
             val input = ctx.stack.pop[ShuntInput]()
             val state = ctx.stack.peek[ShuntingYardState]
-            // println("State: " + state)
             ctx.updateCheckOffset()
 
             if (input.tag == ShuntInput.AtomTag) handleAtom(ctx, input.asInstanceOf[Atom], state)
@@ -66,7 +65,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
     private def handleAtom(ctx: Context, atom: Atom, state: ShuntingYardState): Unit = {
         state.atoms.push(atom)
         gotoPostInfix(ctx, state)
-        updateState(ctx)
+        ctx.refreshState()
     }
 
     private def handlePrefixOperator(ctx: Context, op: Operator, state: ShuntingYardState): Unit = {
@@ -78,7 +77,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
         } else {
             state.operators.push(op)
             gotoPreAtom(ctx, state)
-            updateState(ctx)
+            ctx.refreshState()
         }
     }
 
@@ -92,7 +91,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
             reduceWhilePrecGreaterOrEqual(state, op.prec)
             state.operators.push(op)
             gotoPostInfix(ctx, state)
-            updateState(ctx)
+            ctx.refreshState()
         }
     }
 
@@ -100,14 +99,14 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
         reduceWhilePrecGreaterOrEqual(state, o.prec)
         state.operators.push(o)
         gotoPreAtom(ctx, state)
-        updateState(ctx)
+        ctx.refreshState()
     }
 
     private def handleInfixROperator(ctx: Context, o: Operator, state: ShuntingYardState): Unit = {
         reduceWhilePrecGreater(state, o.prec)
         state.operators.push(o)
         gotoPreAtom(ctx, state)
-        updateState(ctx)
+        ctx.refreshState()
     }
 
     private def handleInfixNOperator(ctx: Context, o: Operator, state: ShuntingYardState): Unit = {
@@ -120,20 +119,19 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
         } else {
             state.operators.push(o)
             gotoPreAtom(ctx, state)
-            updateState(ctx)
+            ctx.refreshState()
         }
     }
 
     private def handleBadContext(ctx: Context): Unit = {
-        if (ctx.offset != ctx.handlers.check || ctx.stack.peek[ShuntingYardState].failOnNoConsumed) {
+        val handler = ctx.handlers
+        popHandler(ctx)
+        popState(ctx)
+        if (ctx.offset != handler.check || ctx.stack.peek[ShuntingYardState].failOnNoConsumed) {
             // consumed input and/or prefix/atom choice did not match, hard failure
-            popHandler(ctx)
-            popState(ctx)
             ctx.fail()
         } else {
             // The end of the expression has been reached
-            popHandler(ctx)
-            popState(ctx)
             ctx.good = true
             ctx.addErrorToHintsAndPop()
             produceResult(ctx)
@@ -151,15 +149,14 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
     }
 
     private def produceResult(ctx: Context): Unit = {
-        val state = ctx.stack.pop[ShuntingYardState]()
-        // println("State: " + state)
+        val state = ctx.stack.peek[ShuntingYardState]
 
         reduceAll(state)
 
         assume(state.atoms.size == 1, "Expected exactly one atom at the end of reduction")
 
-        val atom = state.atoms.pop[Atom]()
-        ctx.stack.push(wrap(atom.lvl, 0, atom.v))
+        val atom = state.atoms.peek[Atom]
+        ctx.stack.exchange(wrap(atom.lvl, 0, atom.v))
         ctx.inc()
     }
 
@@ -174,17 +171,15 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
                 val right = state.atoms.pop[Atom]()
                 val left = state.atoms.pop[Atom]()
                 op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec + 1, left.v), wrap(right.lvl, op.prec, right.v))
-
             case InfixNTag =>
                 val right = state.atoms.pop[Atom]()
                 val left = state.atoms.pop[Atom]()
                 op.f.asInstanceOf[(Any, Any) => Any](wrap(left.lvl, op.prec + 1, left.v), wrap(right.lvl, op.prec + 1, right.v))
-
             case PostfixTag | PrefixTag =>
                 val input = state.atoms.pop[Atom]()
                 op.f.asInstanceOf[Any => Any](wrap(input.lvl, op.prec, input.v))
         }
-        state.atoms.push(new Atom(result, op.prec))
+        state.atoms.upush(new Atom(result, op.prec))
     }
 
     @tailrec
@@ -195,8 +190,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
 
     @tailrec
     private def reduceWhilePrecGreater(state: ShuntingYardState, prec: Int): Unit = {
-        if (state.operators.isEmpty || state.operators.peek.prec.compare(prec) <= 0) return
-        else {
+        if (state.operators.nonEmpty && state.operators.peek.prec.compare(prec) > 0) {
             reduce(state)
             reduceWhilePrecGreater(state, prec)
         }
@@ -204,18 +198,17 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
 
     @tailrec
     private def reduceWhilePrecGreaterOrEqual(state: ShuntingYardState, prec: Int): Unit = {
-        if (state.operators.isEmpty || state.operators.peek.prec.compare(prec) < 0) return
-        else {
+        if (state.operators.nonEmpty && state.operators.peek.prec.compare(prec) >= 0) {
             reduce(state)
             reduceWhilePrecGreaterOrEqual(state, prec)
         }
-     }
+    }
 
     private def wrap(from: Int, to: Int, input: Any): Any = {
         assume(to <= from, "Target level must be less than or equal to current level")
         wraps(from)(to) match {
             // case _: =:=[_, _] => input // Would be faster for 2.12 (which would wrap currently). Slower for other versions.
-            case _: <:<[_, _] => input
+            case _: <:<[_, _] => input // TODO: not tested?
             case wrap => wrap(input)
         }
     }
@@ -224,11 +217,6 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
         val currentOffset = ctx.offset
         ctx.restoreState()
         currentOffset - ctx.offset
-    }
-
-    private def updateState(ctx: Context): Unit = {
-        popState(ctx)
-        ctx.saveState()
     }
 
     private def popState(ctx: Context): Unit = ctx.states = ctx.states.tail

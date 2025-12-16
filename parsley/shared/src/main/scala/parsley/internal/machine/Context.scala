@@ -261,6 +261,12 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     private [machine] def pushHandler(label: Int): Unit = {
         handlers = new HandlerStack(calls, instrs, label, stack.usize, offset, hints, hintsValidOffset, handlers)
     }
+    private [machine] def refreshState(): Unit = {
+        val state = states
+        state.offset = offset
+        state.line = line
+        state.col = col
+    }
     private [machine] def saveState(): Unit = states = new StateStack(offset, line, col, states)
     private [machine] def restoreState(): Unit = {
         val state = states
