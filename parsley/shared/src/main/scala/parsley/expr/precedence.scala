@@ -81,6 +81,7 @@ object precedence {
         apply(atom0, atoms: _*)(lvlTightest, lvls_ : _*)
     }
 
+    // TODO: special casing for 1 level
     /** This combinator builds an expression parser given a heterogeneous precedence table.
       *
       * An expression parser will be formed by collapsing the given precedence table
@@ -106,11 +107,5 @@ object precedence {
       * @see         [[Prec `Prec`]] and its subtypes for a description of how the types work.
       * @since 4.0.0
       */
-    def apply[A](table: Prec[A]): Parsley[A] = {
-      val lazyPrec = frontend.LazyPrec(table)
-      val postfixOpPrecs = lazyPrec.ops.filter(_.fixity == Postfix).map(_.prec)
-      val infixOpPrecs = lazyPrec.ops.filter((op) => op.fixity == InfixL || op.fixity == InfixR || op.fixity == InfixN).map(_.prec)
-      require(postfixOpPrecs == Nil || infixOpPrecs == Nil || postfixOpPrecs.min > infixOpPrecs.max, "Postfix operators may not have lower precedence than an infix operator")
-      new Parsley(new frontend.Precedence(lazyPrec))
-    }
+    def apply[A](table: Prec[A]): Parsley[A] = new Parsley(new frontend.Precedence(frontend.LazyPrec(table)))
 }
