@@ -16,6 +16,7 @@ import parsley.Parsley
 sealed trait Fixity {
     type Op[A, B]
     private [expr] def chain[A, B](p: Parsley[A], op: Parsley[Op[A, B]])(implicit wrap: A => B): Parsley[B]
+    private [parsley] def ordinal: Int
 }
 
 /**
@@ -26,6 +27,7 @@ sealed trait Fixity {
 case object InfixL extends Fixity {
     override type Op[-A, B] = (B, A) => B
     private [expr] def chain[A, B](p: Parsley[A], op: Parsley[Op[A, B]])(implicit wrap: A => B): Parsley[B] = infix.left1(p)(op)
+    private [parsley] def ordinal: Int = Fixity.InfixLTag
 }
 
 /**
@@ -36,6 +38,7 @@ case object InfixL extends Fixity {
 case object InfixR extends Fixity {
     override type Op[-A, B] = (A, B) => B
     private [expr] def chain[A, B](p: Parsley[A], op: Parsley[Op[A, B]])(implicit wrap: A => B): Parsley[B] = infix.right1(p)(op)
+    private [parsley] def ordinal: Int = Fixity.InfixRTag
 }
 
 /**
@@ -46,6 +49,7 @@ case object InfixR extends Fixity {
 case object Prefix extends Fixity {
     override type Op[A, B] = B => B
     private [expr] def chain[A, B](p: Parsley[A], op: Parsley[Op[A, B]])(implicit wrap: A => B): Parsley[B] = infix.prefix(p)(op)
+    private [parsley] def ordinal: Int = Fixity.PrefixTag
 }
 
 /**
@@ -56,6 +60,7 @@ case object Prefix extends Fixity {
 case object Postfix extends Fixity {
     override type Op[A, B] = B => B
     private [expr] def chain[A, B](p: Parsley[A], op: Parsley[Op[A, B]])(implicit wrap: A => B): Parsley[B] = infix.postfix(p)(op)
+    private [parsley] def ordinal: Int = Fixity.PostfixTag
 }
 
 /**
@@ -66,20 +71,15 @@ case object Postfix extends Fixity {
 case object InfixN extends Fixity {
     override type Op[-A, +B] = (A, A) => B
     private [expr] def chain[A, B](p: Parsley[A], op: Parsley[Op[A, B]])(implicit wrap: A => B): Parsley[B] = infix.nonassoc(p)(op)
+    private [parsley] def ordinal: Int = Fixity.InfixNTag
 }
 
+// $COVERAGE-OFF$
 private [parsley] object Fixity {
   final val PrefixTag = 0
   final val PostfixTag = 1
   final val InfixLTag = 2
   final val InfixRTag = 3
   final val InfixNTag = 4
-
-  def ordinal(f: Fixity): Int = f match {
-    case InfixL => InfixLTag
-    case InfixR => InfixRTag
-    case Prefix  => PrefixTag
-    case Postfix => PostfixTag
-    case InfixN  => InfixNTag
-  }
 }
+// $COVERAGE-ON$

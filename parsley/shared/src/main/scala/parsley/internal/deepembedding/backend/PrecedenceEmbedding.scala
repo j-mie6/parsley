@@ -14,7 +14,6 @@ import parsley.internal.machine.instructions.{ShuntInput, Atom, Operator}
 import parsley.expr.Prefix
 import parsley.internal.deepembedding.singletons.Fail
 import parsley.internal.errors.FlexibleCaret
-import parsley.expr.Fixity
 
 private [deepembedding] final class Precedence[A](prefixAtomChoice: StrictParsley[ShuntInput], postfixInfixChoice: StrictParsley[ShuntInput], wraps: Array[Array[Any => Any]]) extends StrictParsley[A] {
   override protected[backend] def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: StrictParsley.InstrBuffer, state: CodeGenState): M[R,Unit] = {
@@ -59,8 +58,8 @@ private [deepembedding] object Precedence {
     case Choice(alt1, alt2, alts) => alt1 :: alt2 ::  alts.toList
     case p => p :: Nil
   }
-  
-  private def buildOpChoice(o: StrictOp): StrictParsley[Operator] = <*>(new Pure(r => Operator(r, Fixity.ordinal(o.fixity), o.prec)), o.op).optimise
+
+  private def buildOpChoice(o: StrictOp): StrictParsley[Operator] = <*>(new Pure(r => Operator(r, o.fixity.ordinal, o.prec)), o.op).optimise
 
   private def buildChoiceOptions(table: StrictPrec): (List[StrictParsley[ShuntInput]], List[StrictParsley[ShuntInput]]) = (
     unwrapChoices(table.atoms).map(a => <*>(new Pure(r => Atom(r, table.wraps.length)), a).optimise) ::: table.ops.filter(_.fixity == Prefix).map(buildOpChoice),
@@ -72,7 +71,7 @@ private [deepembedding] object Precedence {
     val output = Array.ofDim[Any => Any](d, d)
 
     for (i <- 0 until d) output(i)(i) = identity
-    
+
     for (from <- 0 until d) {
       for (to <- from - 1 to 0 by -1) {
         output(from)(to) = output(from)(to + 1) match {
