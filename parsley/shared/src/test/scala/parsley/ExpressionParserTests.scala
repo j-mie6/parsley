@@ -286,7 +286,6 @@ class ExpressionParserTests extends ParsleyTest {
 
         sealed trait Expr
         case class Binary(l: Expr, r: Expr) extends Expr
-        case class Unary(c: Expr) extends Expr
         case class Constant(x: String) extends Expr
 
         object Binary extends ParserBridge2[Expr, Expr, Expr]

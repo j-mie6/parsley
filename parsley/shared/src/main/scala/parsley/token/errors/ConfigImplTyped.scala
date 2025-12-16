@@ -44,7 +44,6 @@ sealed trait VanillaFilterConfig[A] extends FilterConfig[A]
   * @group filters
   */
 abstract class SpecializedMessage[A] extends SpecializedFilterConfig[A] { self =>
-    private def this(@unused fullAmend: Boolean) = this()
     /** This method produces the messages for the given value.
       * @since 4.1.0
       * @group badchar
@@ -83,7 +82,6 @@ abstract class SpecializedMessage[A] extends SpecializedFilterConfig[A] { self =
   * @group filters
   */
 abstract class Unexpected[A] extends VanillaFilterConfig[A] { self =>
-    private def this(@unused fullAmend: Boolean) = this()
     /** This method produces the unexpected label for the given value.
       * @since 4.1.0
       * @group badchar
@@ -121,7 +119,6 @@ abstract class Unexpected[A] extends VanillaFilterConfig[A] { self =>
   * @group filters
   */
 abstract class Because[A] extends VanillaFilterConfig[A] { self =>
-    private def this(@unused fullAmend: Boolean) = this()
     /** This method produces the reason for the given value.
       * @since 4.1.0
       * @group badchar
@@ -159,7 +156,6 @@ abstract class Because[A] extends VanillaFilterConfig[A] { self =>
   * @group filters
   */
 abstract class UnexpectedBecause[A] extends VanillaFilterConfig[A] { self =>
-    private def this(@unused fullAmend: Boolean) = this()
     /** This method produces the unexpected label for the given value.
       * @since 4.1.0
       * @group badchar

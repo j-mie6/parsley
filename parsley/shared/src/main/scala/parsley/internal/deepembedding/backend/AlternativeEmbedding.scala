@@ -33,8 +33,8 @@ private [deepembedding] final class Choice[A](private [backend] val alt1: Strict
         case (u: Pure[_]) <|> _ => u
         case Empty.Zero <|> q => q
         case p <|> Empty.Zero => p
-        case Choice(ret@Choice(_, _, lalts: SinglyLinkedList[StrictParsley[A]]),
-                    Choice(ralt1, ralt2, ralts: SinglyLinkedList[StrictParsley[A]]),
+        case Choice(ret@Choice(_, _, lalts: SinglyLinkedList[StrictParsley[A]] @unchecked),
+                    Choice(ralt1, ralt2, ralts: SinglyLinkedList[StrictParsley[A]] @unchecked),
                     alts) =>
             assume(!alts.exists(_.isInstanceOf[Choice[_]]), "alts can never contain a choice")
             assume(!lalts.exists(_.isInstanceOf[Choice[_]]), "ralts can never contain a choice")
@@ -44,13 +44,13 @@ private [deepembedding] final class Choice[A](private [backend] val alt1: Strict
             lalts.stealAll(ralts)
             lalts.stealAll(alts)
             ret
-        case Choice(ret@Choice(_, _, alts: SinglyLinkedList[StrictParsley[A]]), p, alts_) =>
+        case Choice(ret@Choice(_, _, alts: SinglyLinkedList[StrictParsley[A]] @unchecked), p, alts_) =>
             assume(!alts.exists(_.isInstanceOf[Choice[_]]), "alts can never contain a choice")
             assume(!alts_.exists(_.isInstanceOf[Choice[_]]), "alts_ can never contain a choice")
             alts.addOne(p)
             alts.stealAll(alts_)
             ret
-        case Choice(_, Choice(alt1_, alt2_, alts: SinglyLinkedList[StrictParsley[A]]), alts_) =>
+        case Choice(_, Choice(alt1_, alt2_, alts: SinglyLinkedList[StrictParsley[A]] @unchecked), alts_) =>
             assume(!alts.exists(_.isInstanceOf[Choice[_]]), "alts can never contain a choice")
             assume(!alts_.exists(_.isInstanceOf[Choice[_]]), "alts_ can never contain a choice")
             this.alt2 = alt1_

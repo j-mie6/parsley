@@ -1,4 +1,4 @@
-val sbtTypelevelVersion = "0.8.0"
+val sbtTypelevelVersion = "0.8.3"
 val circeVersion = "0.14.10"
 
 resolvers += Resolver.sonatypeCentralSnapshots
@@ -25,7 +25,7 @@ addSbtPlugin("org.typelevel" % "sbt-typelevel-site" % sbtTypelevelVersion)
 
 // CI Stuff
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.16.0")
-addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.5.6")
+addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.5.9")
 
 addSbtPlugin("com.beautiful-scala" % "sbt-scalastyle" % "1.5.1")
 addSbtPlugin("org.jmotor.sbt" % "sbt-dependency-updates" % "1.2.9")

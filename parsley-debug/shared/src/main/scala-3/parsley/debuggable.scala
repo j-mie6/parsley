@@ -5,7 +5,7 @@
  */
 package parsley
 
-import scala.annotation.{experimental, MacroAnnotation}
+import scala.annotation.{experimental, unused, MacroAnnotation}
 import scala.quoted.*
 
 /** This annotation can be applied to an object or class to record their
@@ -19,7 +19,7 @@ import scala.quoted.*
   */
 @experimental class debuggable extends MacroAnnotation {
     // this is required for Scala 3.5+
-    def transform(using Quotes)(tree: quotes.reflect.Definition, companion: Option[quotes.reflect.Definition]): List[quotes.reflect.Definition] = transform(tree)
+    def transform(using Quotes)(tree: quotes.reflect.Definition, @unused companion: Option[quotes.reflect.Definition]): List[quotes.reflect.Definition] = transform(tree)
     def transform(using Quotes)(tree: quotes.reflect.Definition): List[quotes.reflect.Definition] = {
         import quotes.reflect.*
         tree match {
