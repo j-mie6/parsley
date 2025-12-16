@@ -232,17 +232,17 @@
 </span><span class="comment">// res1: parsley.Result[String, expressions.Expr] = Success(Add(Var(x),Var(y)))
 </span><span>
 </span><span class="identifier">expressions</span><span>.</span><span class="identifier">parser</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;negate + z&quot;</span><span>)
-</span><span class="comment">// res2: parsley.Result[String, expressions.Expr] = Failure((line 1, column 8):
-//   unexpected &quot;+&quot;
-//   expected &quot;(&quot;, &quot;negate&quot;, digit, or letter
-//   &gt;negate + z
-//           ^)
+</span><span class="comment">// res2: parsley.Result[String, expressions.Expr] = Success(Add(Var(negate),Var(z)))
 </span><span>
 </span><span class="identifier">expressions</span><span>.</span><span class="identifier">parser</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;negate x + z&quot;</span><span>)
-</span><span class="comment">// res3: parsley.Result[String, expressions.Expr] = Success(Add(Neg(Var(x)),Var(z)))
+</span><span class="comment">// res3: parsley.Result[String, expressions.Expr] = Failure((line 1, column 8):
+//   unexpected &quot;x&quot;
+//   expected &quot;*&quot;, &quot;+&quot;, &quot;-&quot;, or end of input
+//   &gt;negate x + z
+//           ^)
 </span><span>
 </span><span class="identifier">expressions</span><span>.</span><span class="identifier">parser</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;negatex + z&quot;</span><span>)
-</span><span class="comment">// res4: parsley.Result[String, expressions.Expr] = Success(Add(Neg(Var(x)),Var(z)))</span></code></pre>
+</span><span class="comment">// res4: parsley.Result[String, expressions.Expr] = Success(Add(Var(negatex),Var(z)))</span></code></pre>
         <p>So, looking at these examples, the first one seems to work fine. The second one also works
         fine, but given that we&#39;ve said that identifiers are just alpha-numeric characters, you might
         assume it was legal (indeed, it really <em>shouldn&#39;t</em> be legal in most languages that don&#39;t have
