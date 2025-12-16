@@ -18,6 +18,7 @@ import parsley.internal.deepembedding.ContOps.{perform, result, suspend, zipWith
 import parsley.internal.deepembedding.backend.StrictParsley
 import parsley.internal.deepembedding.backend.debug.TagFactory
 import parsley.internal.deepembedding.frontend._ // scalastyle:ignore underscore.import
+import parsley.internal.deepembedding.Traverse.traverse
 
 // Wrapper class signifying debugged classes
 // TODO: the origin is needed to figure out the name later on... but couldn't we resolve the name here and avoid forwarding on to the backend (send string instead)?
@@ -251,6 +252,33 @@ private [parsley] object TaggedWith {
             handle2Ary(self, context)(p, op) { (p, op) =>
                 Lazy(new ChainPre(p.get, op.get))
             }
+        }
+
+        override def visit[A](self: Precedence[A], context: ParserTracker)(table: LazyPrec): DL[A] = {
+            handlePossiblySeen(self, context) {
+                visitLazyPrec(table, context).map { taggedTable => TaggingResult(
+                    parser = Lazy(new Precedence(taggedTable.table)),
+                    bubblesIterative = taggedTable.bubblesIterative
+                )}
+            }
+        }
+
+        private case class TaggedLazyPrec(table: LazyPrec, bubblesIterative: Boolean)
+
+        private def visitLazyPrec(table: LazyPrec, context: ParserTracker): M[R, TaggedLazyPrec] = for {
+            taggedAtoms <- traverse(table.atoms)(visit(_, context))
+            taggedOperators <- traverse(table.ops)(op => for {
+                p <- visit(op.op, context)
+            } yield (op.fixity, p, op.prec))
+        } yield {
+            new TaggedLazyPrec(
+                new LazyPrec(
+                    taggedAtoms.map(_.parser.get),
+                    taggedOperators.map(op => LazyOp(op._1, op._2.parser.get, op._3)),
+                    table.wraps
+                ),
+                taggedAtoms.exists(_.bubblesIterative) || taggedOperators.exists(_._2.bubblesIterative)
+            )
         }
 
         // the generic unary/binary overrides above cannot handle this properly, as they lose the UsesReg trait

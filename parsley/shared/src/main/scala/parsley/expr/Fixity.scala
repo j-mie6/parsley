@@ -67,3 +67,19 @@ case object InfixN extends Fixity {
     override type Op[-A, +B] = (A, A) => B
     private [expr] def chain[A, B](p: Parsley[A], op: Parsley[Op[A, B]])(implicit wrap: A => B): Parsley[B] = infix.nonassoc(p)(op)
 }
+
+private [parsley] object Fixity {
+  final val PrefixTag = 0
+  final val PostfixTag = 1
+  final val InfixLTag = 2
+  final val InfixRTag = 3
+  final val InfixNTag = 4
+
+  def ordinal(f: Fixity): Int = f match {
+    case InfixL => InfixLTag
+    case InfixR => InfixRTag
+    case Prefix  => PrefixTag
+    case Postfix => PostfixTag
+    case InfixN  => InfixNTag
+  }
+}

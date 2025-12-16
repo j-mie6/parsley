@@ -96,6 +96,19 @@ class TotalAttachmentSpec extends ParsleyTest {
                 visitUnknown(op, parentIsTag = false): @unused
                 CUnit
             } else failure()
+        
+        override def visit[A](self: Precedence[A], parentIsTag: Boolean)(table: LazyPrec): ConstUnit[A] = {
+            if (parentIsTag == self.isOpaque) {
+                visitLazyPrec(table, parentIsTag = false): @unused
+                CUnit
+            } else failure()
+        }
+
+        private def visitLazyPrec[A](table: LazyPrec, parentIsTag: Boolean): ConstUnit[A] = {
+            table.atoms.foreach(visitUnknown(_, parentIsTag))
+            table.ops.foreach(op => visitUnknown(op.op, parentIsTag))
+            CUnit
+        }
 
         // Somehow IntelliJ Scala thinks this is tail-recursive... but ScalaC does not?
         //noinspection NoTailRecursionAnnotation
@@ -107,6 +120,7 @@ class TotalAttachmentSpec extends ParsleyTest {
                 case g: GenericLazyParsley[_]         => visitGeneric(g.asInstanceOf[GenericLazyParsley[A]], parentIsTag)
                 case alt: <|>[_]                      => alt.visit(this, parentIsTag)
                 case cpre: ChainPre[_]                => cpre.visit(this, parentIsTag)
+                case prec: Precedence[_]              => prec.visit(this, parentIsTag)
                 case _                                => if (parentIsTag) CUnit else failure()
             }
 
