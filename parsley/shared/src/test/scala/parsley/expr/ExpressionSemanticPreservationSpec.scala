@@ -94,15 +94,14 @@ class ExpressionSemanticPreservationSpec extends ParsleyTest with ScalaCheckProp
     }
 
     it should "parse random expressions and not vary based on optimisations" in {
-        forAll(exprPairGen) { case (originalExpr, newExpr, opsDefs) =>
+        forAll(exprPairGen) { case (origExpr, newExpr, opsDefs) =>
             forAll(inputsGen(opsDefs)) { input =>
-                val originalResult = originalExpr.parse(input)
+                val origResult = origExpr.parse(input)
                 val newResult = newExpr.parse(input)
-                originalResult match {
-                    case Success(_) => originalResult shouldBe newResult
-                    case Failure(_) => inside (newResult) {
-                        case f: Failure[_] =>
-                            f.pos shouldBe originalResult.pos
+                origResult match {
+                    case Success(_) => newResult shouldBe origResult
+                    case Failure(origErr) => inside (newResult) {
+                        case Failure(newErr) => newErr.pos shouldBe origErr.pos
                     }
                 }
             }

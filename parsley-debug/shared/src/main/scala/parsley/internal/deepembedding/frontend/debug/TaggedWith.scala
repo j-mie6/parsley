@@ -17,7 +17,7 @@ import parsley.internal.deepembedding.{singletons, Cont, ContOps, Id}
 import parsley.internal.deepembedding.ContOps.{perform, result, suspend, zipWith, zipWith3, ContAdapter}
 import parsley.internal.deepembedding.backend.StrictParsley
 import parsley.internal.deepembedding.backend.debug.TagFactory
-import parsley.internal.deepembedding.frontend._ // scalastyle:ignore underscore.import
+import parsley.internal.deepembedding.frontend.* // scalastyle:ignore underscore.import
 import parsley.internal.deepembedding.Traverse.traverse
 
 // Wrapper class signifying debugged classes
@@ -274,7 +274,7 @@ private [parsley] object TaggedWith {
             new TaggedLazyPrec(
                 new LazyPrec(
                     taggedAtoms.map(_.parser.get),
-                    taggedOperators.map(op => LazyOp(op._1, op._2.parser.get, op._3)),
+                    taggedOperators.map(op => new LazyOp(op._1, op._2.parser.get, op._3)),
                     table.wraps
                 ),
                 taggedAtoms.exists(_.bubblesIterative) || taggedOperators.exists(_._2.bubblesIterative)

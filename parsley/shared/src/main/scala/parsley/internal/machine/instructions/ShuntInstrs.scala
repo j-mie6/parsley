@@ -24,7 +24,7 @@ private [internal] abstract class Operator extends ShuntToken {
     private [instructions] val prec: Int
     private [instructions] def isPostfix: Boolean
     private [instructions] def isInfixNonAssoc: Boolean
-    private [instructions] def reduce(state: ShuntingYardState, shunt: Shunt)
+    private [instructions] def reduce(state: ShuntingYardState, shunt: Shunt): Unit
 
     @tailrec
     private [instructions] final def reduceWhilePrecGreater(state: ShuntingYardState, shunt: Shunt): Unit = {
