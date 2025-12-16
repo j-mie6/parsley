@@ -16,19 +16,19 @@ import parsley.internal.deepembedding.ContOps.{suspend, ContAdapter}
 import parsley.internal.deepembedding.Traverse.{traverse_, traverse}
 
 private [parsley] final class Precedence[A](table: LazyPrec) extends LazyParsley[A] {
-  override protected def findLetsAux[M[_, +_]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R,Unit] =
-    traverse_(table.atoms)(a => suspend[M, R, Unit](a.findLets(seen))) >>
-    traverse_(table.ops)(op => suspend[M, R, Unit](op.op.findLets(seen)))
+    override protected def findLetsAux[M[_, +_]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R,Unit] =
+        traverse_(table.atoms)(a => suspend[M, R, Unit](a.findLets(seen))) >>
+        traverse_(table.ops)(op => suspend[M, R, Unit](op.op.findLets(seen)))
 
-  override protected def preprocess[M[_, +_]: ContOps, R, A_ >: A](implicit lets: LetMap): M[R,StrictParsley[A_]] = for {
-    atoms <- traverse(table.atoms)(_.optimised[M, R, Any])
-    ops <- traverse(table.ops)(op => for {
-      strictOp <- suspend(op.op.optimised[M, R, Any])
-    } yield backend.StrictOp(op.fixity, strictOp, op.prec))
-  } yield {
-    val strictPrec = backend.StrictPrec(atoms, ops, table.wraps.toArray)
-    backend.Precedence(strictPrec)
-  }
+    override protected def preprocess[M[_, +_]: ContOps, R, A_ >: A](implicit lets: LetMap): M[R,StrictParsley[A_]] = for {
+        atoms <- traverse(table.atoms)(_.optimised[M, R, Any])
+        ops <- traverse(table.ops) { op =>
+            for (strictOp <- suspend(op.op.optimised[M, R, Any])) yield new backend.StrictOp(op.fixity, strictOp, op.prec)
+        }
+    } yield {
+        val strictPrec = new backend.StrictPrec(atoms, ops, table.wraps.toArray)
+        backend.Precedence(strictPrec)
+    }
 
   override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T,U], context: T): U[A] = visitor.visit(this, context)(table)
 
@@ -36,10 +36,11 @@ private [parsley] final class Precedence[A](table: LazyPrec) extends LazyParsley
 
 }
 
-private [parsley] case class LazyOp(fixity: Fixity, op: LazyParsley[Any], prec: Int)
-private [parsley] case class LazyPrec(atoms: List[LazyParsley[Any]], ops: List[LazyOp], wraps: List[Any => Any])
+// FIXME: could be merged with strict, with generic parameter, could be removed entirely?
+private [deepembedding] final class LazyOp(val fixity: Fixity, val op: LazyParsley[Any], val prec: Int)
+private [deepembedding] final class LazyPrec(val atoms: List[LazyParsley[Any]], val ops: List[LazyOp], val wraps: List[Any => Any])
 
-object LazyPrec {
+private [parsley] object LazyPrec {
     def apply(table: Prec[?]): LazyPrec = {
         val prec = fromPrec(table, level = 0, accOps = Nil, accWraps = mutable.ListBuffer.empty)
         val postfixOpPrecs = prec.ops.collect {
@@ -58,9 +59,9 @@ object LazyPrec {
 
     @tailrec
     private def fromPrec(table: Prec[?], level: Int, accOps: List[LazyOp], accWraps: mutable.ListBuffer[Any => Any]): LazyPrec = table match {
-        case Atoms(atom0, atoms*) => LazyPrec((atom0 +: atoms).toList.map(_.internal), accOps, accWraps.toList)
+        case Atoms(atom0, atoms*) => new LazyPrec((atom0 +: atoms).toList.map(_.internal), accOps, accWraps.toList)
         case Level(lower, ops) =>
-            val newOps = ops.ops.map(op => LazyOp(ops.fixity, op.internal, level))
+            val newOps = ops.ops.map(op => new LazyOp(ops.fixity, op.internal, level))
             fromPrec(lower, level + 1, newOps ++: accOps, accWraps += ops.wrap.asInstanceOf[Any => Any])
     }
 }
