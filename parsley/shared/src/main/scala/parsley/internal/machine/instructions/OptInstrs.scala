@@ -155,11 +155,16 @@ private [internal] final class JumpTable
         }
     }
 
-    // @tailrec // FIXME: make this tail-recursive
+    // This is using the same trick that the standard library uses, under the assumption that `applyOrElse` has been optimised to
+    // prevent double evaluation (which should be the case).
+    // While we could use the same kind of dummy value, we do have the luxury of knowing that the result is non-null, so null
+    // can serve as an appropriate marker. After we've confirmed non-null, then we can do the recursion
+    @tailrec
     private def getRoot(char: Char, fss: List[PartialFunction[Char, (Int, Iterable[ExpectItem])]]): (Int, Iterable[ExpectItem]) = fss match {
-        // case f :: fs => if (f.isDefinedAt(char)) f(char) else getRoot(char, fs)
-        case f :: fs => f.applyOrElse(char, getRoot(_, fs))
-        case Nil     => (default, allErrorItems)
+        case Nil => (default, allErrorItems)
+        case f :: fs =>
+            val res = f.applyOrElse(char, JumpTable.checkDefined)
+            if (JumpTable.wasUndefined(res)) getRoot(char, fs) else res
     }
 
     private def addErrors(ctx: Context, errorItems: Iterable[ExpectItem]): Unit = {
@@ -180,4 +185,8 @@ private [internal] final class JumpTable
     // $COVERAGE-OFF$
     override def toString: String = s"JumpTable($jumpTable, _ -> $default, $merge)"
     // $COVERAGE-ON$
+}
+private [instructions] object JumpTable {
+    private val checkDefined = (_: Any) => null
+    private def wasUndefined[B <: AnyRef](x: B) = null eq x
 }
