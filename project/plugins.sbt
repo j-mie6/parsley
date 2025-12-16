@@ -1,4 +1,4 @@
-val sbtTypelevelVersion = "0.8.3"
+val sbtTypelevelVersion = "0.8.2"
 val circeVersion = "0.14.10"
 
 resolvers += Resolver.sonatypeCentralSnapshots
