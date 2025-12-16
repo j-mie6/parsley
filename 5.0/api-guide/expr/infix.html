@@ -206,7 +206,10 @@
 //  found   : parsley.Parsley[(Expr, Num) =&gt; Add]
 //  required: parsley.Parsley[(Num, C) =&gt; B]
 // lazy val badExpr = infix.right1(num)(&quot;+&quot;.as(Add(_, _)))
-//                                      ^^^^^^^^^^^^^^^^^</span></code></pre>
+//                                      ^^^^^^^^^^^^^^^^^
+// warning: local val badExpr in value &lt;local MdocApp&gt; is never used
+// lazy val badExpr = infix.right1(num)(&quot;+&quot;.as(Add(_, _)))
+//          ^^^^^^^</span></code></pre>
         <p>Notice that the error message here refers to the type <code>(A, C) =&gt; B</code>. In practice, to help reduce type ascriptions, the explicit <code>C &gt;: B</code> is used as well -- in the working example, <code>C</code> is <code>Expr</code>, <code>A</code> is <code>Num</code>, and <code>B</code> is <code>Add</code>. The wrap is actually <code>A =&gt; C</code>, which in this case is provided by <code>Num &lt;:&lt; Expr</code>.</p>
 
         
