@@ -20,13 +20,7 @@ object ExprGen {
 
     case class OpsDef(fixity: Fixity, ops: List[(String, Any)])
 
-    private val fixityGen: Gen[Fixity] = Gen.oneOf(
-        InfixL,
-        InfixN,
-        InfixR,
-        Prefix,
-        Postfix
-    )
+    private val fixityGen: Gen[Fixity] = Gen.oneOf(InfixL, InfixN, InfixR, Prefix, Postfix)
 
     sealed trait TestExpr
 
@@ -76,62 +70,31 @@ object ExprGen {
         ("$", PostfixIncrement(_))
     )
 
-    private def prefixOpsDefGen(availableOps: Set[UnaryOp]): Gen[(OpsDef, Set[UnaryOp])] = for {
-        numOps <- Gen.choose(1, availableOps.size)
-        ops <- Gen.pick(numOps, availableOps)
-    } yield {
-        (OpsDef(Prefix, ops.toList), availableOps -- ops)
-    }
-
-    private def postfixOpsDefGen(availableOps: Set[UnaryOp]): Gen[(OpsDef, Set[UnaryOp])] = for {
-        numOps <- Gen.choose(1, availableOps.size)
-        ops <- Gen.pick(numOps, availableOps)
-    } yield {
-        (OpsDef(Postfix, ops.toList), availableOps -- ops)
-    }
-
-    private def infixOpsDefGen(fixity: Fixity, availableOps: Set[BinaryOp]): Gen[(OpsDef, Set[BinaryOp])] = for {
-        numOps <- Gen.choose(1, availableOps.size)
-        ops <- Gen.pick(numOps, availableOps)
-    } yield {
-        (OpsDef(fixity, ops.toList), availableOps -- ops)
-    }
+    private def opsDefGen[Op](fixity: Fixity, availableOps: Set[(String, Op)]): Gen[(OpsDef, Set[(String, Op)])] =
+        for (ops <- Gen.atLeastOne(availableOps)) yield (OpsDef(fixity, ops.toList), availableOps -- ops)
 
     val exprPairGen: Gen[(Parsley[TestExpr], Parsley[TestExpr], List[OpsDef])] = {
+        // NOTE: do not use a mutable buffer inside a generator, it will be reused.
         def loop(infixPool: Set[BinaryOp], prefixPool: Set[UnaryOp], postfixPool: Set[UnaryOp], acc: List[OpsDef]): Gen[List[OpsDef]] = {
-            def continue(): Gen[List[OpsDef]] = if (infixPool.isEmpty && prefixPool.isEmpty && postfixPool.isEmpty) {
-                Gen.const(acc)
-            } else {
-                fixityGen.flatMap {
-                    case fixity@(InfixL | InfixN | InfixR) if infixPool.nonEmpty =>
-                        infixOpsDefGen(fixity, infixPool).flatMap {
-                            case (opsDef, remaining) => loop(remaining, prefixPool, postfixPool.empty, acc :+ opsDef)
-                        }
-                    case Prefix if prefixPool.nonEmpty =>
-                        prefixOpsDefGen(prefixPool).flatMap {
-                            case (opsDef, remaining) => loop(infixPool, remaining, postfixPool, acc :+ opsDef)
-                        }
-                    case Postfix if postfixPool.nonEmpty =>
-                        postfixOpsDefGen(postfixPool).flatMap {
-                            case (opsDef, remaining) => loop(infixPool, prefixPool, remaining, acc :+ opsDef)
-                        }
+            def continue: Gen[List[OpsDef]] =
+                if (infixPool.isEmpty && prefixPool.isEmpty && postfixPool.isEmpty) Gen.const(acc.reverse)
+                else fixityGen.flatMap {
+                    case fixity@(InfixL | InfixN | InfixR) if infixPool.nonEmpty => opsDefGen(fixity, infixPool).flatMap { case (opsDef, remaining) =>
+                        loop(remaining, prefixPool, Set.empty, opsDef :: acc)
+                    }
+                    case Prefix if prefixPool.nonEmpty => opsDefGen(Prefix, prefixPool).flatMap { case (opsDef, remaining) =>
+                        loop(infixPool, remaining, postfixPool, opsDef :: acc)
+                    }
+                    case Postfix if postfixPool.nonEmpty => opsDefGen(Postfix, postfixPool).flatMap { case (opsDef, remaining) =>
+                        loop(infixPool, prefixPool, remaining, opsDef :: acc)
+                    }
                     case _ => loop(infixPool, prefixPool, postfixPool, acc)
                 }
-            }
-            
-            if (acc.nonEmpty) {
-                Gen.frequency(
-                    2 -> Gen.const(acc),
-                    3 -> continue()
-                )
-            } else {
-                continue()
-            }
+
+            if (acc.nonEmpty) Gen.frequency(2 -> Gen.const(acc.reverse), 3 -> continue) else continue
         }
 
-        for {
-            opsDefs <- loop(infixOps, prefixOps, postfixOps, Nil)
-        } yield {
+        for (opsDefs <- loop(infixOps, prefixOps, postfixOps, Nil)) yield {
             val int = character.digit.foldLeft1(0)((n, d) => n * 10 + d.asDigit)
 
             lazy val originalAtoms: OriginalPrec[TestExpr] = OriginalAtoms[TestExpr](Num(int), '(' ~> originalExpr <~ ')')
@@ -139,7 +102,7 @@ object ExprGen {
                 opsDefs.foldLeft(originalAtoms) {
                     case (acc, OpsDef(fixity, ops)) => {
                         val opsWithFixity = ops.map { case (s, f) => atomic(s) as f.asInstanceOf[fixity.Op[TestExpr, TestExpr]] }
-                        val originalOps = OriginalOps(fixity)(opsWithFixity(0), opsWithFixity.tail: _*)
+                        val originalOps = OriginalOps(fixity)(opsWithFixity(0), opsWithFixity.tail*)
                         acc :+ originalOps
                     }
                 }
@@ -150,7 +113,7 @@ object ExprGen {
                 opsDefs.foldLeft(newAtoms) {
                     case (acc, OpsDef(fixity, ops)) => {
                         val opsWithFixity = ops.map { case (s, f) => atomic(s) as f.asInstanceOf[fixity.Op[TestExpr, TestExpr]] }
-                        val newOps = Ops(fixity)(opsWithFixity(0), opsWithFixity.tail: _*)
+                        val newOps = Ops(fixity)(opsWithFixity(0), opsWithFixity.tail*)
                         acc :+ newOps
                     }
                 }
@@ -162,112 +125,72 @@ object ExprGen {
 
     def inputsGen(
         opsDefs: List[OpsDef],
-        numInputs: Int,
-        failureRate: Int = 20,
-        invalidCharacters: List[String] = List("@", "#", "$", "%", "^", "~", "`", "\\", "|", ",", "<", ">", "?")
-    ): Gen[List[String]] = {
+        mutationRate: Double = 0.2,
+        invalidCharacters: Set[String] = Set("@", "#", "$", "%", "^", "~", "`", "\\", "|", ",", "<", ">", "?")
+    ): Gen[String] = {
         require(opsDefs.nonEmpty, "OpsDefs cannot be empty")
-        require(numInputs > 0, "Number of inputs must be positive")
-        require(failureRate >= 0 && failureRate <= 100, "Failure rate must be between 0 and 100")
-        
+        require(mutationRate >= 0 && mutationRate <= 1, "Failure rate must be between 0 and 1")
+
         val ops = opsDefs.flatMap(opsDef => opsDef.ops.map(op => (op._1, opsDef.fixity)))
 
         val genIntString = arbitrary[Int].map(_.toString)
 
+        // FIXME: this should use resize and do it properly, without arbitrary cut off
         def validExprGen(depth: Int): Gen[String] = {
-            if (depth > 4) {
-                genIntString
-            } else {
+            if (depth > 4) genIntString
+            else {
                 // Create different types of expressions based on depth
                 val operatorExpr = for {
-                    op <- Gen.oneOf(ops)
-                    expr <- op._2 match {
-                        case InfixL | InfixN | InfixR =>
-                            for {
-                                left <- validExprGen(depth + 1)
-                                right <- validExprGen(depth + 1)
-                            } yield s"$left${op._1}$right"
-                        case Prefix =>
-                            for {
-                                inner <- validExprGen(depth + 1)
-                            } yield s"${op._1}$inner"
-                        case Postfix =>
-                            for {
-                                inner <- validExprGen(depth + 1)
-                            } yield s"$inner${op._1}"
+                    (op, fixity) <- Gen.oneOf(ops)
+                    expr <- fixity match {
+                        case InfixL | InfixN | InfixR => for (left <- validExprGen(depth + 1); right <- validExprGen(depth + 1)) yield s"$left$op$right"
+                        case Prefix => for (inner <- validExprGen(depth + 1)) yield s"$op$inner"
+                        case Postfix => for (inner <- validExprGen(depth + 1)) yield s"$inner$op"
                     }
                 } yield expr
-                val bracketedExpr = for {
-                    inner <- validExprGen(depth + 1)
-                } yield s"($inner)"
-              
-                Gen.frequency(
-                    (3, operatorExpr),
-                    (2, genIntString),
-                    (1, bracketedExpr)
-                )
+                val bracketedExpr = for (inner <- validExprGen(depth + 1)) yield s"($inner)"
+
+                Gen.frequency(3 -> operatorExpr, 2 -> genIntString, 1 -> bracketedExpr)
             }
         }
 
-        val mutations: List[String => Gen[String]] = List(
+        val mutators: List[String => Gen[String]] = List(
             // Remove a sequence of characters
-            (s: String) => if (s.isEmpty) Gen.const("") else for {
-                startIdx <- Gen.choose(0, s.length - 1)
-                len <- Gen.choose(1, Math.min(3, s.length - startIdx))
-            } yield s.substring(0, startIdx) + s.substring(startIdx + len),
+            (s: String) => for ((start, end) <- splitGen(s); len <- Gen.choose(1, 3)) yield s"$start${end.drop(len)}",
 
             // Add invalid characters
-            (s: String) => for {
-                idx <- Gen.choose(0, s.length)
-                numChars <- Gen.choose(1, 3)
-                chars <- Gen.listOfN(numChars, Gen.oneOf(invalidCharacters))
-            } yield s.substring(0, idx) + chars.mkString + s.substring(idx),
+            (s: String) => for ((start, end) <- splitGen(s); chars <- Gen.nonEmptyListOf(Gen.oneOf(invalidCharacters))) yield s"$start${chars.mkString}$end",
 
             // Replace characters with invalid ones
-            (s: String) => if (s.isEmpty()) Gen.oneOf(invalidCharacters) else for {
+            (s: String) => if (s.isEmpty) Gen.oneOf(invalidCharacters) else for {
                 idx <- Gen.choose(0, s.length - 1)
+                (start, end) = s.splitAt(idx)
                 replacementChar <- Gen.oneOf(invalidCharacters)
-            } yield s.substring(0, idx) + replacementChar + s.substring(idx + 1),
+            } yield s"$start$replacementChar${end.tail}",
 
             // Add unbalanced parentheses
-            (s: String) => for {
-                idx <- Gen.choose(0, s.length)
-                paren <- Gen.oneOf("(", ")")
-            } yield s.substring(0, idx) + paren + s.substring(idx)
+            (s: String) => for ((start, end) <- splitGen(s); paren <- Gen.oneOf("(", ")")) yield s"$start$paren$end",
         )
 
-        def applyRandomMutation(s: String): Gen[String] = Gen.oneOf(mutations).flatMap(mutation => mutation(s))
-
-        def applyMutations(s: String, count: Int): Gen[String] = {
-            if (count <= 0) Gen.const(s)
-            else for {
-                mutated <- applyRandomMutation(s)
-                result <- applyMutations(mutated, count - 1)
-            } yield result
-        }
-
-        def corruptExpression(expr: String): Gen[String] = for {
-            numMutations <- Gen.frequency(
-                (50, Gen.const(1)),
-                (30, Gen.const(2)),
-                (15, Gen.const(3)),
-                (5, Gen.const(4))
-            )
-            result <- applyMutations(expr, numMutations)
-        } yield result
-
         for {
-            validExprs <- Gen.listOfN(numInputs, validExprGen(0))
-
-            result <- Gen.sequence(validExprs.map { expr =>
-                for {
-                    shouldCorrupt <- Gen.frequency(
-                        (100 - failureRate, Gen.const(false)),
-                        (failureRate, Gen.const(true))
-                    )
-                    finalExpr <- if (shouldCorrupt) corruptExpression(expr) else Gen.const(expr)
-                } yield finalExpr
-            })
-        } yield result.toArray.toList.asInstanceOf[List[String]]
+            expr <- validExprGen(0)
+            shouldMutate <- Gen.prob(mutationRate)
+            finalExpr <- if (shouldMutate) mutateExpr(expr, mutators) else Gen.const(expr)
+        } yield finalExpr
     }
+
+    def mutateExpr(expr: String, mutators: List[String => Gen[String]]): Gen[String] = for {
+        numMutations <- Gen.choose(1, 4)
+        result <- mutate(expr, numMutations, mutators)
+    } yield result
+    def mutate(s: String, mutators: List[String => Gen[String]]): Gen[String] = Gen.oneOf(mutators).flatMap(_.apply(s))
+    def mutate(s: String, count: Int, mutators: List[String => Gen[String]]): Gen[String] = {
+        if (count <= 0) Gen.const(s)
+        else for {
+            mutated <- mutate(s, mutators)
+            result <- mutate(mutated, count - 1, mutators)
+        } yield result
+    }
+
+    def splitGen(s: String): Gen[(String, String)] = for (idx <- Gen.choose(0, s.length)) yield s.splitAt(idx)
 }

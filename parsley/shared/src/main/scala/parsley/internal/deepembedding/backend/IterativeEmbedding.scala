@@ -73,6 +73,7 @@ private [deepembedding] final class ChainPost[A](val p: StrictParsley[A], val op
     // $COVERAGE-ON$
 }
 
+// FIXME: untested
 private [backend] object ChainPost {
     def unapply[A](p: ChainPost[A]): Option[(StrictParsley[A], StrictParsley[A => A])] = Some((p.p, p.op))
 }
@@ -117,6 +118,7 @@ private [deepembedding] final class Chainl[A, B](val init: StrictParsley[B], val
     // $COVERAGE-ON$
 }
 
+// FIXME: untested
 private [backend] object Chainl {
     def unapply[A, B](p: Chainl[A, B]): Some[(StrictParsley[B], StrictParsley[A], StrictParsley[(B, A) => B])] = Some((p.init, p.p, p.op))
 }
@@ -180,6 +182,7 @@ private [deepembedding] final class SepEndBy1[A, C](val p: StrictParsley[A], val
     // $COVERAGE-ON$
 }
 
+// FIXME: untested
 private [backend] object SepEndBy1 {
     def unapply[A, C](p: SepEndBy1[A, C]): Some[(StrictParsley[A], StrictParsley[_], Factory[A, C])] = Some((p.p, p.sep, p.factory))
 }

@@ -12,8 +12,9 @@ import ExprGen._
 import parsley.Success
 import parsley.Failure
 import parsley.ParsleyTest
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
-class ExpressionSemanticPreservationSpec extends ParsleyTest {
+class ExpressionSemanticPreservationSpec extends ParsleyTest with ScalaCheckPropertyChecks {
     val originalExpr: Parsley[Int] = originalPrecedence(
         OriginalOps[Int](InfixN)("==" #> ((a, b) => if (a == b) 1 else 0)) +:
         OriginalOps[Int](InfixL)('+' #> (_ + _), '-' #> (_ - _)) +:
@@ -93,36 +94,10 @@ class ExpressionSemanticPreservationSpec extends ParsleyTest {
     }
 
     it should "parse random expressions and not vary based on optimisations" in {
-        // val opsDefsMedium = List(
-        //     OpsDef(InfixL, List(("+", Nil), ("-", Nil))),
-        //     OpsDef(InfixL, List(("*", Nil), ("/", Nil), ("%", Nil))),
-        //     OpsDef(InfixN, List(("==", Nil), ("!=", Nil))),
-        //     OpsDef(Prefix, List(("-", Nil), ("len", Nil), ("ord", Nil)))
-        // )
-
-        // val opsDefsLarge = List(
-        //     OpsDef(InfixR, List(("|", Nil))),
-        //     OpsDef(InfixR, List(("&&", Nil))),
-        //     OpsDef(InfixN, List(("==", Nil), ("!=", Nil))),
-        //     OpsDef(InfixN, List(("<", Nil), (">", Nil), ("<=", Nil), (">=", Nil))),
-        //     OpsDef(InfixL, List(("+", Nil), ("-", Nil))),
-        //     OpsDef(InfixL, List(("*", Nil), ("/", Nil), ("%", Nil))),
-        //     OpsDef(Prefix, List(("!", Nil), ("-", Nil), ("len", Nil), ("ord", Nil), ("chr", Nil)))
-        // )
-
-        // val inputsMedium = inputsGen(opsDefsMedium, 1300, failureRate = 0).sample.get
-        // println(inputsMedium)
-
-        // val inputsLarge = inputsGen(opsDefsLarge, 1400, failureRate = 0).sample.get
-        // println(inputsLarge)
-
-        for (_ <- 0 until 5000) {
-            val (originalExpr, newExpr, opsDefs) = exprPairGen.sample.get
-            val inputs = inputsGen(opsDefs, 500).sample.get
-            for (input <- inputs) {
+        forAll(exprPairGen) { case (originalExpr, newExpr, opsDefs) =>
+            forAll(inputsGen(opsDefs)) { input =>
                 val originalResult = originalExpr.parse(input)
                 val newResult = newExpr.parse(input)
-
                 originalResult match {
                     case Success(_) => originalResult shouldBe newResult
                     case Failure(_) => inside (newResult) {
