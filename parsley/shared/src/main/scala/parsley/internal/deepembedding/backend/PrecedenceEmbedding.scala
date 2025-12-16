@@ -62,10 +62,10 @@ private [deepembedding] object Precedence {
         case p => p :: Nil
     }
 
-    private def buildOpChoice(o: StrictOp): StrictParsley[Operator] = <*>(new Pure(r => Operator(r, o.fixity.ordinal, o.prec)), o.op).optimise
+    private def buildOpChoice(op: StrictOp): StrictParsley[Operator] = <*>(new Pure(r => new Operator(r, op.fixity.ordinal, op.prec)), op.op).optimise
 
     private def buildChoiceOptions(table: StrictPrec): (List[StrictParsley[ShuntInput]], List[StrictParsley[ShuntInput]]) = (
-        unwrapChoices(table.atoms).map(a => <*>(new Pure(r => Atom(r, table.wraps.length)), a).optimise) ::: table.ops.collect { case op if op.fixity == Prefix => buildOpChoice(op) },
+        unwrapChoices(table.atoms).map(a => <*>(new Pure(r => new Atom(r, table.wraps.length)), a).optimise) ::: table.ops.collect { case op if op.fixity == Prefix => buildOpChoice(op) },
         table.ops.collect { case op if op.fixity != Prefix => buildOpChoice(op) }
     )
 
