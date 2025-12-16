@@ -38,7 +38,8 @@ private [parsley] final class Precedence[A](table: LazyPrec) extends LazyParsley
 
 // FIXME: could be merged with strict, with generic parameter, could be removed entirely?
 private [deepembedding] final class LazyOp(val fixity: Fixity, val op: LazyParsley[Any], val prec: Int)
-private [deepembedding] final class LazyPrec(val atoms: List[LazyParsley[Any]], val ops: List[LazyOp], val wraps: List[Any => Any])
+// for visitor, this needs parsley scope...?
+private [parsley] final class LazyPrec(val atoms: List[LazyParsley[Any]], val ops: List[LazyOp], val wraps: List[Any => Any])
 
 private [parsley] object LazyPrec {
     def apply(table: Prec[?]): LazyPrec = {
