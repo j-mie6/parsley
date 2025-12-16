@@ -12,24 +12,96 @@ import scala.annotation.switch
 import parsley.internal.machine.stacks.ArrayStack
 import scala.annotation.tailrec
 
-private [internal] sealed abstract class ShuntInput {
+private [internal] sealed abstract class ShuntToken {
     def handle(ctx: Context, state: ShuntingYardState, shunt: Shunt): Unit
 }
 
-private [internal] final class Atom(val v: Any, val lvl: Int) extends ShuntInput {
+private [internal] final class Atom(val v: Any, val lvl: Int) extends ShuntToken {
     def handle(ctx: Context, state: ShuntingYardState, shunt: Shunt): Unit = {
         state.atoms.push(this)
         shunt.gotoPostInfix(ctx, state)
         ctx.refreshState()
     }
 }
-private [internal] final class Operator(val f: Any, val fix: Int, val prec: Int) extends ShuntInput {
-    def handle(ctx: Context, state: ShuntingYardState, shunt: Shunt): Unit = (fix: @switch) match {
-        case PrefixTag => shunt.handlePrefixOperator(ctx, this, state)
-        case PostfixTag => shunt.handlePostfixOperator(ctx, this, state)
-        case InfixLTag => shunt.handleInfixLOperator(ctx, this, state)
-        case InfixRTag => shunt.handleInfixROperator(ctx, this, state)
-        case InfixNTag => shunt.handleInfixNOperator(ctx, this, state)
+private [internal] abstract class Operator extends ShuntToken {
+    val f: Any
+    val fix: Int
+    val prec: Int
+    def isPostfix: Boolean
+    def isInfixNonAssoc: Boolean
+}
+private [internal] final class PrefixOp(val f: Any => Any, val fix: Int, val prec: Int) extends Operator {
+    def isPostfix: Boolean = false
+    def isInfixNonAssoc: Boolean = false
+    def handle(ctx: Context, state: ShuntingYardState, shunt: Shunt): Unit =  {
+        if (state.operators.nonEmpty && prec.compare(state.operators.peek.prec) < 0) {
+            // This is a malformed expression
+            ctx.handlers = ctx.handlers.tail
+            val width = shunt.restoreStateGetWidth(ctx)
+            ctx.expectedFail(Nil, width)
+        } else {
+            state.operators.push(this)
+            shunt.gotoPreAtom(ctx, state)
+            ctx.refreshState()
+        }
+    }
+}
+
+private [internal] final class PostfixOp(val f: Any => Any, val fix: Int, val prec: Int) extends Operator {
+    def isPostfix: Boolean = true
+    def isInfixNonAssoc: Boolean = false
+    def handle(ctx: Context, state: ShuntingYardState, shunt: Shunt): Unit = {
+        if (state.operators.nonEmpty && state.operators.peek.isPostfix && prec.compare(state.operators.peek.prec) > 0) {
+            // This was an unexpected postfix operator
+            ctx.handlers = ctx.handlers.tail
+            ctx.restoreState()
+            shunt.produceResult(ctx)
+        } else {
+            shunt.reduceWhilePrecGreaterOrEqual(state, prec)
+            state.operators.push(this)
+            shunt.gotoPostInfix(ctx, state)
+            ctx.refreshState()
+        }
+    }
+}
+
+private [internal] final class InfixLOp(val f: (Any, Any) => Any, val fix: Int, val prec: Int) extends Operator {
+    def isPostfix: Boolean = false
+    def isInfixNonAssoc: Boolean = false
+    def handle(ctx: Context, state: ShuntingYardState, shunt: Shunt): Unit = {
+        shunt.reduceWhilePrecGreaterOrEqual(state, prec)
+        state.operators.push(this)
+        shunt.gotoPreAtom(ctx, state)
+        ctx.refreshState()
+    }
+}
+
+private [internal] final class InfixROp(val f: (Any, Any) => Any, val fix: Int, val prec: Int) extends Operator {
+    def isPostfix: Boolean = false
+    def isInfixNonAssoc: Boolean = false
+    def handle(ctx: Context, state: ShuntingYardState, shunt: Shunt): Unit = {
+        shunt.reduceWhilePrecGreater(state, prec)
+        state.operators.push(this)
+        shunt.gotoPreAtom(ctx, state)
+        ctx.refreshState()
+    }
+}
+
+private [internal] final class InfixNOp(val f: (Any, Any) => Any, val fix: Int, val prec: Int) extends Operator {
+    def isPostfix: Boolean = false
+    def isInfixNonAssoc: Boolean = true
+    def handle(ctx: Context, state: ShuntingYardState, shunt: Shunt): Unit = {
+        shunt.reduceWhilePrecGreater(state, prec)
+        if (state.operators.nonEmpty && state.operators.peek.isInfixNonAssoc && state.operators.peek.prec == prec) {
+            // This is a special case in which non-associative operators are chained
+            ctx.handlers = ctx.handlers.tail
+            val width = shunt.restoreStateGetWidth(ctx)
+            ctx.expectedFailWithReason(Nil, "operator cannot be applied in sequence as it is non-associative", width)
+        } else {
+            state.operators.push(this)
+            shunt.gotoPreAtom(ctx, state)
+            ctx.refreshState()
+        }
     }
 }
 
@@ -46,68 +118,13 @@ private [internal] object ShuntingYardState {
 private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixLabel: Int, wraps: Array[Array[Any => Any]]) extends Instr {
     override def apply(ctx: Context): Unit = {
         if (ctx.good) {
-            val input = ctx.stack.pop[ShuntInput]()
+            val token = ctx.stack.pop[ShuntToken]()
             val state = ctx.stack.peek[ShuntingYardState]
             ctx.updateCheckOffset()
 
-            input.handle(ctx, state, this)
+            token.handle(ctx, state, this)
         }
         else handleBadContext(ctx)
-    }
-
-    final def handlePrefixOperator(ctx: Context, op: Operator, state: ShuntingYardState): Unit = {
-        if (state.operators.nonEmpty && op.prec.compare(state.operators.peek.prec) < 0) {
-            // This is a malformed expression
-            ctx.handlers = ctx.handlers.tail
-            val width = restoreStateGetWidth(ctx)
-            ctx.expectedFail(Nil, width)
-        } else {
-            state.operators.push(op)
-            gotoPreAtom(ctx, state)
-            ctx.refreshState()
-        }
-    }
-
-   final def handlePostfixOperator(ctx: Context, op: Operator, state: ShuntingYardState): Unit = {
-        if (state.operators.nonEmpty && state.operators.peek.fix == PostfixTag && op.prec.compare(state.operators.peek.prec) > 0) {
-            // This was an unexpected postfix operator
-            ctx.handlers = ctx.handlers.tail
-            ctx.restoreState()
-            produceResult(ctx)
-        } else {
-            reduceWhilePrecGreaterOrEqual(state, op.prec)
-            state.operators.push(op)
-            gotoPostInfix(ctx, state)
-            ctx.refreshState()
-        }
-    }
-
-    final def handleInfixLOperator(ctx: Context, o: Operator, state: ShuntingYardState): Unit = {
-        reduceWhilePrecGreaterOrEqual(state, o.prec)
-        state.operators.push(o)
-        gotoPreAtom(ctx, state)
-        ctx.refreshState()
-    }
-
-    final def handleInfixROperator(ctx: Context, o: Operator, state: ShuntingYardState): Unit = {
-        reduceWhilePrecGreater(state, o.prec)
-        state.operators.push(o)
-        gotoPreAtom(ctx, state)
-        ctx.refreshState()
-    }
-
-    final def handleInfixNOperator(ctx: Context, o: Operator, state: ShuntingYardState): Unit = {
-        reduceWhilePrecGreater(state, o.prec)
-        if (state.operators.nonEmpty && state.operators.peek.fix == InfixNTag && state.operators.peek.prec == o.prec) {
-            // This is a special case in which non-associative operators are chained
-            ctx.handlers = ctx.handlers.tail
-            val width = restoreStateGetWidth(ctx)
-            ctx.expectedFailWithReason(Nil, "operator cannot be applied in sequence as it is non-associative", width)
-        } else {
-            state.operators.push(o)
-            gotoPreAtom(ctx, state)
-            ctx.refreshState()
-        }
     }
 
     private final def handleBadContext(ctx: Context): Unit = {
@@ -135,7 +152,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
         ctx.pc = postfixInfixLabel
     }
 
-    private final def produceResult(ctx: Context): Unit = {
+    final def produceResult(ctx: Context): Unit = {
         val state = ctx.stack.peek[ShuntingYardState]
 
         reduceAll(state)
@@ -147,7 +164,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
         ctx.inc()
     }
 
-    private final def reduce(state: ShuntingYardState): Unit = {
+    final def reduce(state: ShuntingYardState): Unit = {
         val op = state.operators.pop[Operator]()
         val result = (op.fix: @switch) match {
             case InfixLTag =>
@@ -170,13 +187,13 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
     }
 
     @tailrec
-    private final def reduceAll(state: ShuntingYardState): Unit = if (state.operators.nonEmpty) {
+    final def reduceAll(state: ShuntingYardState): Unit = if (state.operators.nonEmpty) {
         reduce(state)
         reduceAll(state)
     }
 
     @tailrec
-    private final def reduceWhilePrecGreater(state: ShuntingYardState, prec: Int): Unit = {
+    final def reduceWhilePrecGreater(state: ShuntingYardState, prec: Int): Unit = {
         if (state.operators.nonEmpty && state.operators.peek.prec.compare(prec) > 0) {
             reduce(state)
             reduceWhilePrecGreater(state, prec)
@@ -184,14 +201,14 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
     }
 
     @tailrec
-    private final def reduceWhilePrecGreaterOrEqual(state: ShuntingYardState, prec: Int): Unit = {
+    final def reduceWhilePrecGreaterOrEqual(state: ShuntingYardState, prec: Int): Unit = {
         if (state.operators.nonEmpty && state.operators.peek.prec.compare(prec) >= 0) {
             reduce(state)
             reduceWhilePrecGreaterOrEqual(state, prec)
         }
     }
 
-    private final def wrap(from: Int, to: Int, input: Any): Any = {
+    final def wrap(from: Int, to: Int, input: Any): Any = {
         assume(to <= from, "Target level must be less than or equal to current level")
         wraps(from)(to) match {
             // case _: =:=[_, _] => input // Would be faster for 2.12 (which would wrap currently). Slower for other versions.
@@ -200,7 +217,7 @@ private [internal] final class Shunt(var prefixAtomLabel: Int, var postfixInfixL
         }
     }
 
-    private final def restoreStateGetWidth(ctx: Context): Int = {
+    final def restoreStateGetWidth(ctx: Context): Int = {
         val currentOffset = ctx.offset
         ctx.restoreState()
         currentOffset - ctx.offset

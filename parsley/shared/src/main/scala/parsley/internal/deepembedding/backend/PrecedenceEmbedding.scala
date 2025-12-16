@@ -10,12 +10,16 @@ import parsley.internal.deepembedding.ContOps.{suspend, ContAdapter}
 import parsley.internal.deepembedding.singletons.Pure
 import parsley.internal.collection.mutable.SinglyLinkedList
 import parsley.internal.machine.instructions
-import parsley.internal.machine.instructions.{ShuntInput, Atom, Operator}
+import parsley.internal.machine.instructions.{ShuntToken, Atom, Operator}
 import parsley.expr.{Fixity, Prefix}
 import parsley.internal.deepembedding.singletons.Fail
 import parsley.internal.errors.FlexibleCaret
+import parsley.expr.InfixL
+import parsley.expr.InfixR
+import parsley.expr.Postfix
+import parsley.expr.InfixN
 
-private [deepembedding] final class Precedence[A](prefixAtomChoice: StrictParsley[ShuntInput], postfixInfixChoice: StrictParsley[ShuntInput], wraps: Array[Array[Any => Any]]) extends StrictParsley[A] {
+private [deepembedding] final class Precedence[A](prefixAtomChoice: StrictParsley[ShuntToken], postfixInfixChoice: StrictParsley[ShuntToken], wraps: Array[Array[Any => Any]]) extends StrictParsley[A] {
     override protected[backend] def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: StrictParsley.InstrBuffer, state: CodeGenState): M[R,Unit] = {
         val prefixAtomLabel = state.freshLabel()
         val postfixInfixLabel = state.freshLabel()
@@ -62,9 +66,18 @@ private [deepembedding] object Precedence {
         case p => p :: Nil
     }
 
-    private def buildOpChoice(op: StrictOp): StrictParsley[Operator] = <*>(new Pure(r => new Operator(r, op.fixity.ordinal, op.prec)), op.op).optimise
+    private def buildOpChoice(op: StrictOp): StrictParsley[Operator] = {
+        val opFn = op.fixity match {
+            case InfixL => (x: Any) => new instructions.InfixLOp(x.asInstanceOf[(Any, Any) => Any], op.fixity.ordinal, op.prec)
+            case InfixR => (x: Any) => new instructions.InfixROp(x.asInstanceOf[(Any, Any) => Any], op.fixity.ordinal, op.prec)
+            case Prefix => (x: Any) => new instructions.PrefixOp(x.asInstanceOf[Any => Any], op.fixity.ordinal, op.prec)
+            case Postfix => (x: Any) => new instructions.PostfixOp(x.asInstanceOf[Any => Any], op.fixity.ordinal, op.prec)
+            case InfixN => (x: Any) => new instructions.InfixNOp(x.asInstanceOf[(Any, Any) => Any], op.fixity.ordinal, op.prec)
+        }
+        <*>(new Pure(opFn), op.op).optimise
+    }
 
-    private def buildChoiceOptions(table: StrictPrec): (List[StrictParsley[ShuntInput]], List[StrictParsley[ShuntInput]]) = (
+    private def buildChoiceOptions(table: StrictPrec): (List[StrictParsley[ShuntToken]], List[StrictParsley[ShuntToken]]) = (
         unwrapChoices(table.atoms).map(a => <*>(new Pure(r => new Atom(r, table.wraps.length)), a).optimise) ::: table.ops.collect { case op if op.fixity == Prefix => buildOpChoice(op) },
         table.ops.collect { case op if op.fixity != Prefix => buildOpChoice(op) }
     )
