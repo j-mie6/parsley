@@ -5,14 +5,15 @@
  */
 package parsley.internal.machine.instructions
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 
-import parsley.XCompat._
+import parsley.XCompat.*
 import parsley.token.errors.LabelConfig
 
 import parsley.internal.errors.ExpectItem
 import parsley.internal.machine.Context
-import parsley.internal.machine.XAssert._
+import parsley.internal.machine.XAssert.*
 import parsley.internal.machine.errors.{EmptyHints, ExpectedError}
 import parsley.internal.machine.stacks.ErrorStack
 
@@ -84,13 +85,56 @@ private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] case class JumpTablePredDef(val pred: Char => Boolean, var labelErrors: (Int, Iterable[ExpectItem]))
+private [internal] sealed abstract class JumpTablePreds {
+    val next: JumpTablePreds
+    def relabelThis(labels: Array[Int]): Unit
+    def toPartialFunction: PartialFunction[Char, (Int, Iterable[ExpectItem])]
 
-private [internal] final class JumpTable(jumpTable: List[Either[mutable.Map[Char, (Int, Iterable[ExpectItem])], JumpTablePredDef]],
-        private [this] var default: Int,
-        private [this] var merge: Int,
-        size: Int,
-        allErrorItems: Iterable[ExpectItem]) extends Instr {
+    @tailrec
+    final def relabel(labels: Array[Int]): Unit = {
+        this.relabelThis(labels)
+        if (next ne null) next.relabel(labels)
+    }
+    final def toPartialFunctions: List[PartialFunction[Char, (Int, Iterable[ExpectItem])]] = toPartialFunctions(mutable.ListBuffer.empty)
+    @tailrec
+    private def toPartialFunctions(fns: mutable.ListBuffer[PartialFunction[Char, (Int, Iterable[ExpectItem])]]): List[PartialFunction[Char, (Int, Iterable[ExpectItem])]] = {
+        fns += this.toPartialFunction
+        if (next ne null) next.toPartialFunctions(fns)
+        else fns.toList
+    }
+}
+private [internal] object JumpTablePreds {
+    def fromList(preds: List[Either[mutable.Map[Char, (Int, Iterable[ExpectItem])], (Char => Boolean, Int, Iterable[ExpectItem])]]): JumpTablePreds =
+        preds.foldRight[JumpTablePreds](null) {
+            case (Left(map), preds) => new JumpTableCharMapPred(map, preds)
+            case (Right((pred, label, errs)), preds) => new JumpTableCharFunPred(pred, label, errs, preds)
+        }
+}
+private [internal] final class JumpTableCharMapPred(val map: mutable.Map[Char, (Int, Iterable[ExpectItem])], val next: JumpTablePreds) extends JumpTablePreds {
+    def relabelThis(labels: Array[Int]): Unit = {
+        val _ = map.mapValuesInPlaceCompat { case (_, (i, errs)) => (labels(i), errs) }
+    }
+    def toPartialFunction: PartialFunction[Char, (Int, Iterable[ExpectItem])] = map.toMap
+
+    // $COVERAGE-OFF$
+    override def toString: String = s"${map.toList.sortBy{case (_, (l, _)) => l}.map{case (k, v) => s"${k.toChar} -> ${v._1}"}.mkString(", ")}${if (next ne null) s", $next" else ""}"
+    // $COVERAGE-ON$
+}
+private [internal] final class JumpTableCharFunPred(val pred: Char => Boolean, var label: Int, val errors: Iterable[ExpectItem], val next: JumpTablePreds) extends JumpTablePreds{
+    def relabelThis(labels: Array[Int]): Unit = this.label = labels(this.label)
+    def toPartialFunction: PartialFunction[Char, (Int, Iterable[ExpectItem])] = {
+        val labelErrs = (label, errors)
+
+        { case (c: Char) if pred(c) => labelErrs }
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String =  s"?(_) -> $label${if (next ne null) s", $next" else ""}"
+    // $COVERAGE-ON$
+}
+
+private [internal] final class JumpTable
+    (jumpTable: JumpTablePreds, private [this] var default: Int, private [this] var merge: Int, size: Int, allErrorItems: Iterable[ExpectItem]) extends Instr {
     private [this] var defaultPreamble: Int = _
     private [this] var jumpTableFuncs: List[PartialFunction[Char, (Int, Iterable[ExpectItem])]] = _
 
@@ -111,7 +155,7 @@ private [internal] final class JumpTable(jumpTable: List[Either[mutable.Map[Char
         }
     }
 
-    // @tailrec
+    // @tailrec // FIXME: make this tail-recursive
     private def getRoot(char: Char, fss: List[PartialFunction[Char, (Int, Iterable[ExpectItem])]]): (Int, Iterable[ExpectItem]) = fss match {
         // case f :: fs => if (f.isDefinedAt(char)) f(char) else getRoot(char, fs)
         case f :: fs => f.applyOrElse(char, getRoot(_, fs))
@@ -125,30 +169,15 @@ private [internal] final class JumpTable(jumpTable: List[Either[mutable.Map[Char
     }
 
     override def relabel(labels: Array[Int]): this.type = {
-        jumpTable.foreach {
-            case Left(map) => map.mapValuesInPlaceCompat {
-                case (_, (i, errs)) => (labels(i), errs)
-            }
-            case Right(pred) => pred.labelErrors = (labels(pred.labelErrors._1), pred.labelErrors._2)
-        }
+        jumpTable.relabel(labels)
         default = labels(default)
         merge = labels(merge)
         defaultPreamble = default - 1
-        jumpTableFuncs = jumpTable.map {
-            case Left(map) => map.toMap
-            case Right(predDef) => {
-                val pf: PartialFunction[Char, (Int, Iterable[ExpectItem])] = { case c: Char if predDef.pred(c) => predDef.labelErrors }
-                pf
-            }
-        }
+        jumpTableFuncs = jumpTable.toPartialFunctions
         this
     }
 
-    private def tableToString: String = jumpTable.map {
-        case Left(map) => s"${map.toList.sortBy{case (_, (l, _)) => l}.map{case (k, v) => s"${k.toChar} -> ${v._1}"}.mkString(", ")}"
-        case Right(predDef) => s"?(_) -> ${predDef.labelErrors._1}"
-    }.mkString(", ")
     // $COVERAGE-OFF$
-    override def toString: String = s"JumpTable(${tableToString}, _ -> $default, $merge)"
+    override def toString: String = s"JumpTable($jumpTable, _ -> $default, $merge)"
     // $COVERAGE-ON$
 }
