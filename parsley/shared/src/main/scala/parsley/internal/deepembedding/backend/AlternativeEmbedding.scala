@@ -192,12 +192,12 @@ private [backend] object Choice {
 
     @tailrec private def propagateExpecteds(tables: List[Either[mutable.Map[Char, (Int, Iterable[ExpectItem], Boolean)], (Char => Boolean, Int, Iterable[ExpectItem], Boolean)]],
                                             all: Iterable[ExpectItem],
-                                            corrected: List[Either[mutable.Map[Char, (Int, Iterable[ExpectItem])], (Char => Boolean, Int, Iterable[ExpectItem])]]
+                                            corrected: mutable.ListBuffer[Either[mutable.Map[Char, (Int, Iterable[ExpectItem])], (Char => Boolean, Int, Iterable[ExpectItem])]]
                                             ): instructions.JumpTablePreds = tables match {
         case Left(map) :: tables_ =>
-            propagateExpecteds(tables_, all, corrected :+ Left(map.map { case (k, (label, errs, backtrack)) => (k, (label, if (backtrack) all else errs)) }))
-        case Right((pred, label, expecteds, backtrack)) :: tables_ => propagateExpecteds(tables_, all, corrected :+ Right((pred, label, if (backtrack) all else expecteds)))
-        case Nil => instructions.JumpTablePreds.fromList(corrected)
+            propagateExpecteds(tables_, all, corrected += Left(map.map { case (k, (label, errs, backtrack)) => (k, (label, if (backtrack) all else errs)) }))
+        case Right((pred, label, expecteds, backtrack)) :: tables_ => propagateExpecteds(tables_, all, corrected += Right((pred, label, if (backtrack) all else expecteds)))
+        case Nil => instructions.JumpTablePreds.fromList(corrected.toList)
     }
 
     private def codeGenRoots[M[_, +_]: ContOps, R](roots: List[(Int, List[StrictParsley[_]])], end: Int, producesResults: Boolean)
@@ -217,11 +217,12 @@ private [backend] object Choice {
         case alt::alts_ => codeGenAlt(alt, suspend(codeGenAlternatives[M, R](alts_, producesResults)), producesResults)
     }
 
+    //FIXME: type aliases to aid readability
     @tailrec private def foldTablableChars(tablified: List[TablableChar],
                                            labelGen: CodeGenState,
                                            roots: mutable.Map[Char, (Int, mutable.ListBuffer[StrictParsley[_]])],
                                            map: mutable.Map[Char, (Int, Iterable[ExpectItem], Boolean)],
-                                           leads: List[Char],
+                                           leads: mutable.ListBuffer[Char],
                                            size: Int,
                                            expecteds: List[ExpectItem]):
         (List[(Int, List[StrictParsley[_]])], mutable.Map[Char, (Int, Iterable[ExpectItem], Boolean)], Int, List[ExpectItem]) // Roots, map, size, expecteds
@@ -229,17 +230,18 @@ private [backend] object Choice {
                 case TablableChar(root, TablableCharDesc(c, expected, _size, backtracks)) :: tablified_ =>
                     if (roots.contains(c)) {
                         roots(c)._2 += root
-                        map(c) = (map(c)._1, map(c)._2, map(c)._3 && backtracks)
-                        foldTablableChars(tablified_, labelGen, roots, map, leads,
-                                                 Math.max(size, _size), expecteds ++ expected)
+                        val (l, errs, b) = map(c)
+                        map(c) = (l, errs, b && backtracks)
+                        foldTablableChars(tablified_, labelGen, roots, map, leads, size.max(_size), expecteds ++ expected)
                     } else {
                         val label = labelGen.freshLabel()
                         roots(c) = (label, mutable.ListBuffer(root))
+                        // the ++ is nasty, but we need to make sure it's not mutated to take the snapshot here
+                        // this is plausibly less frequent, so perhaps a trick with copy-on-write could be played?
                         map(c) = (label, expecteds, backtracks)
-                        foldTablableChars(tablified_, labelGen, roots, map, leads :+ c,
-                                                 Math.max(size, _size), expecteds ++ expected)
+                        foldTablableChars(tablified_, labelGen, roots, map, leads += c, size.max(_size), expecteds ++ expected)
                     }
-                case Nil => (leads.map(roots(_)).map { case (l, ps) => (l, ps.toList) }, map, size, expecteds)
+                case Nil => (leads.toList.map { ls => val (l, ps) = roots(ls); (l, ps.toList) }, map, size, expecteds)
             }
 
     private def foldJumpTableGroups(groups: List[JumpTableGroup], labelGen: CodeGenState):
@@ -254,12 +256,12 @@ private [backend] object Choice {
                                              allExpecteds: List[ExpectItem]):
         (List[(Int, List[StrictParsley[_]])], instructions.JumpTablePreds, Int, List[ExpectItem]) = groups match {
             case TablableChars(ops) :: def_ =>
-                val (roots, map, size_, allExpecteds_) = foldTablableChars(ops, labelGen, mutable.Map.empty, mutable.Map.empty, List.empty, size, allExpecteds)
-                foldJumpTableGroups(def_, labelGen, rootsAcc ++ roots, tableAcc += Left(map), size_, allExpecteds_)
+                val (roots, map, size_, allExpecteds_) = foldTablableChars(ops, labelGen, mutable.Map.empty, mutable.Map.empty, mutable.ListBuffer.empty, size, allExpecteds)
+                foldJumpTableGroups(def_, labelGen, rootsAcc ++= roots, tableAcc += Left(map), size_, allExpecteds_)
             case TablablePred(p, TablablePredDesc(pred, expecteds, size_, backtracks)) :: defs_ =>
                 val label = labelGen.freshLabel()
                 foldJumpTableGroups(defs_, labelGen, rootsAcc += ((label, List(p))), tableAcc += Right((pred, label, expecteds, backtracks)), Math.max(size, size_), allExpecteds ++ expecteds)
-            case Nil => (rootsAcc.toList, propagateExpecteds(tableAcc.toList, allExpecteds, List.empty), size, allExpecteds)
+            case Nil => (rootsAcc.toList, propagateExpecteds(tableAcc.toList, allExpecteds, mutable.ListBuffer.empty), size, allExpecteds)
         }
 
     // TODO: `line.zip(col)` will not be caught!!!!
