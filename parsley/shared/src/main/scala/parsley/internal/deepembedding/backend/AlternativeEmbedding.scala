@@ -195,11 +195,7 @@ private [backend] object Choice {
                                             corrected: List[Either[mutable.Map[Char, (Int, Iterable[ExpectItem])], (Char => Boolean, Int, Iterable[ExpectItem])]]
                                             ): instructions.JumpTablePreds = tables match {
         case Left(map) :: tables_ =>
-            val newMap = mutable.Map.empty[Char, (Int, Iterable[ExpectItem])]
-            for ((k, (label, errs, backtrack)) <- map) {
-                newMap(k) = (label, if (backtrack) all else errs)
-            }
-            propagateExpecteds(tables_, all, corrected :+ Left(newMap))
+            propagateExpecteds(tables_, all, corrected :+ Left(map.map { case (k, (label, errs, backtrack)) => (label, if (backtrack) all else errs) }))
         case Right((pred, label, expecteds, backtrack)) :: tables_ => propagateExpecteds(tables_, all, corrected :+ Right((pred, label, if (backtrack) all else expecteds)))
         case Nil => instructions.JumpTablePreds.fromList(corrected)
     }
