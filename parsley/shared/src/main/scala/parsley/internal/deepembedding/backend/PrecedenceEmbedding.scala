@@ -11,7 +11,7 @@ import parsley.internal.deepembedding.singletons.Pure
 import parsley.internal.collection.mutable.SinglyLinkedList
 import parsley.internal.machine.instructions
 import parsley.internal.machine.instructions.{ShuntInput, Atom, Operator}
-import parsley.expr.Prefix
+import parsley.expr.{Fixity, Prefix}
 import parsley.internal.deepembedding.singletons.Fail
 import parsley.internal.errors.FlexibleCaret
 
@@ -87,3 +87,6 @@ private [deepembedding] object Precedence {
     output
   }
 }
+
+private [parsley] case class StrictPrec(atoms: List[StrictParsley[Any]], ops: List[StrictOp], wraps: Array[Any => Any])
+private [parsley] case class StrictOp(fixity: Fixity, op: StrictParsley[Any], prec: Int)
