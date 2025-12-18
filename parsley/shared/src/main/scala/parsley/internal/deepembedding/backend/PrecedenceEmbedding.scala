@@ -58,11 +58,11 @@ private [deepembedding] object Precedence {
         case Nil => new Fail(new FlexibleCaret(0))
         case p :: Nil => p
         case p1 :: p2 :: Nil => <|>(p1, p2)
-        case p1 :: p2 :: p3 :: tail => new Choice(p1, p2, SinglyLinkedList(p3, tail: _*))
+        case p1 :: p2 :: p3 :: tail => Choice.unsafe(p1, p2, SinglyLinkedList(p3, tail: _*))
     }
 
     private def unwrapChoices(ps: List[StrictParsley[Any]]): List[StrictParsley[Any]] = ps.flatMap {
-        case Choice(alt1, alt2, alts) => alt1 :: alt2 ::  alts.toList
+        case Choice(alt1, alt2, alts) => alt1 :: alt2 :: alts.toList
         case p => p :: Nil
     }
 

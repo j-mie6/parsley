@@ -23,42 +23,43 @@ import StrictParsley.InstrBuffer
 
 // TODO: can we tabilify across a Let?
 // FIXME: It's annoying this doesn't work if the first thing is not tablable: let's make it more fine-grained to create groupings?
-private [deepembedding] final class Choice[A](private [backend] val alt1: StrictParsley[A],
-                                              private [backend] var alt2: StrictParsley[A],
-                                              private [backend] var alts: SinglyLinkedList[StrictParsley[A]]) extends StrictParsley[A] {
+private [deepembedding] final class Choice[A] private (private [backend] val alt1: StrictParsley[A],
+                                                       private [backend] var alt2: StrictParsley[A],
+                                                       private [backend] var alts: SinglyLinkedList[StrictParsley[A]]) extends StrictParsley[A] {
+    def this(lalt: StrictParsley[A], ralt: StrictParsley[A]) = this(lalt, ralt, SinglyLinkedList.empty)
     def inlinable: Boolean = false
 
-    override def optimise: StrictParsley[A] = this match {
-        // Assume that this is eliminated first, so not other alts
-        case (u: Pure[_]) <|> _ => u
-        case Empty.Zero <|> q => q
-        case p <|> Empty.Zero => p
-        case Choice(ret@Choice(_, _, lalts: SinglyLinkedList[StrictParsley[A]] @unchecked),
-                    Choice(ralt1, ralt2, ralts: SinglyLinkedList[StrictParsley[A]] @unchecked),
-                    alts) =>
-            assume(!alts.exists(_.isInstanceOf[Choice[_]]), "alts can never contain a choice")
-            assume(!lalts.exists(_.isInstanceOf[Choice[_]]), "ralts can never contain a choice")
-            assume(!ralts.exists(_.isInstanceOf[Choice[_]]), "lalts can never contain a choice")
-            lalts.addOne(ralt1)
-            lalts.addOne(ralt2)
-            lalts.stealAll(ralts)
-            lalts.stealAll(alts)
-            ret
-        case Choice(ret@Choice(_, _, alts: SinglyLinkedList[StrictParsley[A]] @unchecked), p, alts_) =>
-            assume(!alts.exists(_.isInstanceOf[Choice[_]]), "alts can never contain a choice")
-            assume(!alts_.exists(_.isInstanceOf[Choice[_]]), "alts_ can never contain a choice")
-            alts.addOne(p)
-            alts.stealAll(alts_)
-            ret
-        case Choice(_, Choice(alt1_, alt2_, alts: SinglyLinkedList[StrictParsley[A]] @unchecked), alts_) =>
-            assume(!alts.exists(_.isInstanceOf[Choice[_]]), "alts can never contain a choice")
-            assume(!alts_.exists(_.isInstanceOf[Choice[_]]), "alts_ can never contain a choice")
-            this.alt2 = alt1_
-            this.alts = alts
-            alts.prependOne(alt2_)
-            alts.stealAll(alts_)
-            this
-        case _ => this
+    override def optimise: StrictParsley[A] = {
+        // We make the assumption that nodes here are not reoptimised: as such, we can safely
+        // assume that it is always in <|> form, with no alts on a choice (as this is the only public constructor)
+        if (alts.nonEmpty) throw new IllegalStateException("<|> assumed, but full Choice given") // scalastyle:ignore throw
+        if (alt2 eq Empty.Zero) alt1
+        else alt1 match {
+            case (u: Pure[_]) => u
+            case Empty.Zero => alt2
+            case ret@Choice(_, _, lalts: SinglyLinkedList[StrictParsley[A]] @unchecked) => alt2 match {
+                case Choice(ralt1, ralt2, ralts: SinglyLinkedList[StrictParsley[A]] @unchecked) =>
+                    assume(!lalts.exists(_.isInstanceOf[Choice[_]]), "ralts can never contain a choice")
+                    assume(!ralts.exists(_.isInstanceOf[Choice[_]]), "lalts can never contain a choice")
+                    lalts.addOne(ralt1)
+                    lalts.addOne(ralt2)
+                    lalts.stealAll(ralts)
+                    ret
+                case p =>
+                    assume(!lalts.exists(_.isInstanceOf[Choice[_]]), "lalts can never contain a choice")
+                    lalts.addOne(p)
+                    ret
+            }
+            case _ => alt2 match {
+                case Choice(ralt1, ralt2, ralts: SinglyLinkedList[StrictParsley[A]] @unchecked) =>
+                    assume(!ralts.exists(_.isInstanceOf[Choice[_]]), "ralts can never contain a choice")
+                    this.alt2 = ralt1
+                    this.alts = ralts
+                    ralts.prependOne(ralt2)
+                    this
+                case _ => this
+            }
+        }
     }
 
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = codeGenTablified(this.tablify, producesResults)
@@ -109,8 +110,14 @@ private [deepembedding] final class Choice[A](private [backend] val alt1: Strict
 }
 
 private [backend] object Choice {
-    def unapply[A](self: Choice[A]): Some[(StrictParsley[A], StrictParsley[A], SinglyLinkedList[StrictParsley[A]])] =
-        Some((self.alt1, self.alt2, self.alts))
+    def unapply[A](self: Choice[A]): Some[(StrictParsley[A], StrictParsley[A], SinglyLinkedList[StrictParsley[A]])] = Some((self.alt1, self.alt2, self.alts))
+    /** Creates a new Choice node. It is the caller's burden to ensure that this node does not have .optimise
+      * called on it with non-empty alts, which would break the invariance of Choice.
+      */
+    def unsafe[A](alt1: StrictParsley[A], alt2: StrictParsley[A], alts: SinglyLinkedList[StrictParsley[A]]) = {
+        assume(!alt1.isInstanceOf[Choice[_]] && !alt2.isInstanceOf[Choice[_]], "unsafe Choices should not contain nested Choices")
+        new Choice(alt1, alt2, alts)
+    }
 
     sealed trait TablableDesc
     case class TablableCharDesc(char: Char, expecteds: Iterable[ExpectItem], size: Int, backtracks: Boolean) extends TablableDesc
@@ -333,9 +340,5 @@ private [backend] object Choice {
 
 
 private [deepembedding] object <|> {
-    def apply[A](left: StrictParsley[A], right: StrictParsley[A]): Choice[A] = new Choice(left, right, SinglyLinkedList.empty)
-    private [backend] def unapply[A](self: Choice[A]): Some[(StrictParsley[A], StrictParsley[A])] = {
-        if (self.alts.nonEmpty) throw new IllegalStateException("<|> assumed, but full Choice given") // scalastyle:ignore throw
-        Some((self.alt1, self.alt2))
-    }
+    def apply[A](left: StrictParsley[A], right: StrictParsley[A]): Choice[A] = new Choice(left, right)
 }
