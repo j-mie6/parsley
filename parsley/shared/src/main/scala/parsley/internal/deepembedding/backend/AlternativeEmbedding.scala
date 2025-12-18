@@ -8,16 +8,16 @@ package parsley.internal.deepembedding.backend
 import scala.annotation.tailrec
 import scala.collection.mutable
 
-import parsley.XAssert._
+import parsley.XAssert.*
 
 import parsley.internal.collection.mutable.SinglyLinkedList, SinglyLinkedList.LinkedListIterator
 import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
-import parsley.internal.deepembedding.singletons._
+import parsley.internal.deepembedding.singletons.*
 import parsley.internal.errors.{ExpectDesc, ExpectItem}
 import parsley.internal.machine.instructions
 
 // scalastyle:off underscore.import
-import Choice._
+import Choice.*
 import StrictParsley.InstrBuffer
 // scalastyle:on underscore.import
 

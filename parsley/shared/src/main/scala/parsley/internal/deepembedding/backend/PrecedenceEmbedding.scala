@@ -60,7 +60,7 @@ private [deepembedding] object Precedence {
         case Nil => new Fail(new FlexibleCaret(0))
         case p :: Nil => p
         case p1 :: p2 :: Nil => <|>(p1, p2)
-        case p1 :: p2 :: p3 :: tail => Choice.unsafe(p1, p2, SinglyLinkedList(p3, tail: _*))
+        case p1 :: p2 :: p3 :: tail => Choice.unsafe(p1, p2, SinglyLinkedList(p3, tail*))
     }
 
     private def unwrapChoices(ps: List[StrictParsley[Any]]): List[StrictParsley[Any]] = ps.flatMap {
@@ -86,9 +86,9 @@ private [deepembedding] object Precedence {
         for (i <- 0 until d) output(i)(i) = identity
         for (from <- 0 until d; to <- from - 1 to 0 by -1) {
             output(from)(to) = output(from)(to + 1) match {
-                case _: <:<[_, _] => wraps(to) // FIXME: untested
+                case _: <:<[?, ?] => wraps(to) // FIXME: untested
                 case prev => wraps(to) match {
-                    case _: <:<[_, _] => prev
+                    case _: <:<[?, ?] => prev
                     case next => prev andThen next
                 }
             }
