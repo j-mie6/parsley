@@ -254,32 +254,28 @@ private [parsley] object TaggedWith {
             }
         }
 
-        override def visit[A](self: Precedence[A], context: ParserTracker)(table: LazyPrec): DL[A] = {
+        override def visit[A](self: Precedence[A], context: ParserTracker)(atoms: List[LazyParsley[Any]], ops: List[LazyOp], wraps: List[Any => Any]): DL[A] = {
             handlePossiblySeen(self, context) {
-                visitLazyPrec(table, context).map { taggedTable => TaggingResult(
-                    parser = Lazy(new Precedence(taggedTable.table)),
+                visitLazyPrec(atoms, ops, wraps, context).map { taggedTable => TaggingResult(
+                    parser = Lazy(new Precedence(taggedTable.atoms, taggedTable.ops, taggedTable.wraps)),
                     bubblesIterative = taggedTable.bubblesIterative
                 )}
             }
         }
 
-        private case class TaggedLazyPrec(table: LazyPrec, bubblesIterative: Boolean)
+        private case class TaggedLazyPrec(atoms: List[LazyParsley[Any]], ops: List[LazyOp], wraps: List[Any => Any], bubblesIterative: Boolean)
 
-        private def visitLazyPrec(table: LazyPrec, context: ParserTracker): M[R, TaggedLazyPrec] = for {
-            taggedAtoms <- traverse(table.atoms)(visit(_, context))
-            taggedOperators <- traverse(table.ops)(op => for {
+        private def visitLazyPrec(atoms: List[LazyParsley[Any]], ops: List[LazyOp], wraps: List[Any => Any], context: ParserTracker): M[R, TaggedLazyPrec] = for {
+            taggedAtoms <- traverse(atoms)(visit(_, context))
+            taggedOperators <- traverse(ops)(op => for {
                 p <- visit(op.op, context)
             } yield (op.fixity, p, op.prec))
-        } yield {
-            new TaggedLazyPrec(
-                new LazyPrec(
-                    taggedAtoms.map(_.parser.get),
-                    taggedOperators.map(op => new LazyOp(op._1, op._2.parser.get, op._3)),
-                    table.wraps
-                ),
-                taggedAtoms.exists(_.bubblesIterative) || taggedOperators.exists(_._2.bubblesIterative)
-            )
-        }
+        } yield new TaggedLazyPrec(
+            taggedAtoms.map(_.parser.get),
+            taggedOperators.map(op => new LazyOp(op._1, op._2.parser.get, op._3)),
+            wraps,
+            taggedAtoms.exists(_.bubblesIterative) || taggedOperators.exists(_._2.bubblesIterative)
+        )
 
         // the generic unary/binary overrides above cannot handle this properly, as they lose the UsesReg trait
         override def visit[S](self: Put[S], context: ParserTracker)(ref: Ref[S], p: LazyParsley[S]): DL[Unit] = {

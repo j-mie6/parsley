@@ -96,17 +96,17 @@ class TotalAttachmentSpec extends ParsleyTest {
                 visitUnknown(op, parentIsTag = false): @unused
                 CUnit
             } else failure()
-        
-        override def visit[A](self: Precedence[A], parentIsTag: Boolean)(table: LazyPrec): ConstUnit[A] = {
+
+        override def visit[A](self: Precedence[A], parentIsTag: Boolean)(atoms: List[LazyParsley[Any]], ops: List[LazyOp], wraps: List[Any => Any]): ConstUnit[A] = {
             if (parentIsTag == self.isOpaque) {
-                visitLazyPrec(table, parentIsTag = false): @unused
+                visitLazyPrec(atoms, ops, parentIsTag = false): @unused
                 CUnit
             } else failure()
         }
 
-        private def visitLazyPrec[A](table: LazyPrec, parentIsTag: Boolean): ConstUnit[A] = {
-            table.atoms.foreach(visitUnknown(_, parentIsTag))
-            table.ops.foreach(op => visitUnknown(op.op, parentIsTag))
+        private def visitLazyPrec[A](atoms: List[LazyParsley[Any]], ops: List[LazyOp], parentIsTag: Boolean): ConstUnit[A] = {
+            atoms.foreach(visitUnknown(_, parentIsTag))
+            ops.foreach(op => visitUnknown(op.op, parentIsTag))
             CUnit
         }
 

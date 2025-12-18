@@ -110,6 +110,6 @@ object precedence {
     def apply[A](table: Prec[A]): Parsley[A] = table match {
         // for single-level tables, it is more efficient to defer to single chain
         case Level(Atoms(atom0, atoms*), ops) => ops.fixity.chain(choice((atom0 +: atoms)*), choice(ops.ops*))(ops.wrap)
-        case _ => new Parsley(new frontend.Precedence(frontend.LazyPrec(table)))
+        case _ => new Parsley(frontend.Precedence(table))
     }
 }

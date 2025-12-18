@@ -19,7 +19,7 @@ import parsley.expr.InfixR
 import parsley.expr.Postfix
 import parsley.expr.InfixN
 
-private [deepembedding] final class Precedence[A](prefixAtomChoice: StrictParsley[ShuntToken], postfixInfixChoice: StrictParsley[ShuntToken], wraps: Array[Array[Any => Any]]) extends StrictParsley[A] {
+private [deepembedding] final class Precedence[A] private (prefixAtomChoice: StrictParsley[ShuntToken], postfixInfixChoice: StrictParsley[ShuntToken], wraps: Array[Array[Any => Any]]) extends StrictParsley[A] {
     override protected[backend] def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: StrictParsley.InstrBuffer, state: CodeGenState): M[R,Unit] = {
         val prefixAtomLabel = state.freshLabel()
         val postfixInfixLabel = state.freshLabel()
@@ -45,13 +45,15 @@ private [deepembedding] final class Precedence[A](prefixAtomChoice: StrictParsle
     // $COVERAGE-ON$
 }
 
-// TODO: refactor/remove need for StrictPrec
+private [deepembedding] final class StrictOp(val fixity: Fixity, val op: StrictParsley[Any], val prec: Int)
 private [deepembedding] object Precedence {
-    def apply[A](table: StrictPrec): Precedence[A] = {
-        val (prefixAtomOptions, postfixInfixOptions) = buildChoiceOptions(table)
-        val prefixAtomChoice = buildChoiceNode(prefixAtomOptions)
-        val postfixInfixChoice = buildChoiceNode(postfixInfixOptions)
-        new Precedence(prefixAtomChoice, postfixInfixChoice, buildPrecomputedWraps(table.wraps))
+    def apply[A](vatoms: List[StrictParsley[Any]], vops: List[StrictOp], wraps: Array[Any => Any]): Precedence[A] = {
+        val maxLevel = wraps.length
+        val atoms = unwrapChoices(vatoms).map(a => <*>(new Pure(r => new Atom(r, maxLevel)), a).optimise)
+        val (prefixes, postfixInfixes) = vops.partition(_.fixity == Prefix)
+        val prefixAtomChoice = buildChoiceNode(atoms ::: prefixes.map(buildOpChoice))
+        val postfixInfixChoice = buildChoiceNode(postfixInfixes.map(buildOpChoice))
+        new Precedence(prefixAtomChoice, postfixInfixChoice, buildPrecomputedWraps(wraps))
     }
 
     private def buildChoiceNode[A](options: List[StrictParsley[A]]): StrictParsley[A] = options.map(_.optimise) match {
@@ -77,11 +79,6 @@ private [deepembedding] object Precedence {
         <*>(new Pure(opFn), op.op).optimise
     }
 
-    private def buildChoiceOptions(table: StrictPrec): (List[StrictParsley[ShuntToken]], List[StrictParsley[ShuntToken]]) = (
-        unwrapChoices(table.atoms).map(a => <*>(new Pure(r => new Atom(r, table.wraps.length)), a).optimise) ::: table.ops.collect { case op if op.fixity == Prefix => buildOpChoice(op) },
-        table.ops.collect { case op if op.fixity != Prefix => buildOpChoice(op) }
-    )
-
     private def buildPrecomputedWraps(wraps: Array[Any => Any]): Array[Array[Any => Any]] = {
         val d = wraps.length + 1
         val output = Array.ofDim[Any => Any](d, d)
@@ -99,6 +96,3 @@ private [deepembedding] object Precedence {
         output
     }
 }
-
-private [deepembedding] final class StrictPrec(val atoms: List[StrictParsley[Any]], val ops: List[StrictOp], val wraps: Array[Any => Any])
-private [deepembedding] final class StrictOp(val fixity: Fixity, val op: StrictParsley[Any], val prec: Int)

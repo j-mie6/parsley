@@ -124,7 +124,7 @@ private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle
     def visit(self: SkipManyUntil, context: T)(body: LazyParsley[Any]): U[Unit]
 
     // Precedence parser visitor.
-    def visit[A](self: Precedence[A], context: T)(table: LazyPrec): U[A]
+    def visit[A](self: Precedence[A], context: T)(atoms: List[LazyParsley[Any]], ops: List[LazyOp], wraps: List[Any => Any]): U[A]
 
     // Error parser visitors.
     def visit[A](self: ErrorLabel[A], context: T)(p: LazyParsley[A], label: String, labels: Seq[String]): U[A]
@@ -283,7 +283,7 @@ private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
     override def visit[A, B](self: Chainr[A, B], context: T)(p: LazyParsley[A], op: =>LazyParsley[(A, B) => B], wrap: A => B): U[B] = visitBinary(self, context)(p, op)
     override def visit[A, C](self: SepEndBy1[A, C], context: T)(p: LazyParsley[A], sep: =>LazyParsley[_], factory: Factory[A, C]): U[C] = visitBinary[A, Any, C](self, context)(p, sep)
     override def visit[A, C](self: ManyTill[A, C], context: T)(init: LazyParsley[mutable.Builder[A, C]], body: LazyParsley[Any]): U[C] = visitBinary[mutable.Builder[A, C], Any, C](self, context)(init, body)
-    override def visit(self: SkipManyUntil, context: T)(body: LazyParsley[Any]): U[Unit] = visitUnary[Any, Unit](self, context)(body) 
+    override def visit(self: SkipManyUntil, context: T)(body: LazyParsley[Any]): U[Unit] = visitUnary[Any, Unit](self, context)(body)
 
     // Error overrides.
     override def visit[A](self: ErrorLabel[A], context: T)(p: LazyParsley[A], label: String, labels: Seq[String]): U[A] = visitUnary(self, context)(p)
