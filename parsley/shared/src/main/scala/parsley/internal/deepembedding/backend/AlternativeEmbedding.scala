@@ -167,7 +167,7 @@ private [backend] object Choice {
     }
 
     private def codeGenTablified[A, M[_, +_]: ContOps, R]
-        (tablified: List[Either[StrictParsley[_], List[JumpTableGroup]]], producesResults: Boolean)
+        (tablified: List[Either[StrictParsley[?], List[JumpTableGroup]]], producesResults: Boolean)
         (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = tablified match {
         case SingleParserTable(p) :: Nil => p.codeGen(producesResults)
         case Right(table) :: Nil => codeGenJumpTable(table, true, suspend(result(())), producesResults)
@@ -218,7 +218,7 @@ private [backend] object Choice {
             }
         case Nil => result(())
     }
-    private def codeGenAlternatives[M[_, +_]: ContOps, R](alts: List[StrictParsley[_]], producesResults: Boolean)
+    private def codeGenAlternatives[M[_, +_]: ContOps, R](alts: List[StrictParsley[?]], producesResults: Boolean)
                                                          (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = (alts: @unchecked) match {
         case alt::Nil => alt.codeGen(producesResults)
         case alt::alts_ => codeGenAlt(alt, suspend(codeGenAlternatives[M, R](alts_, producesResults)), producesResults)
