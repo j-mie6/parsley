@@ -35,24 +35,24 @@ private [deepembedding] final class Choice[A] private (private [backend] val alt
         if (alts.nonEmpty) throw new IllegalStateException("<|> assumed, but full Choice given") // scalastyle:ignore throw
         if (alt2 eq Empty.Zero) alt1
         else alt1 match {
-            case (u: Pure[_]) => u
+            case (u: Pure[?]) => u
             case Empty.Zero => alt2
             case ret@Choice(_, _, lalts: SinglyLinkedList[StrictParsley[A]] @unchecked) => alt2 match {
                 case Choice(ralt1, ralt2, ralts: SinglyLinkedList[StrictParsley[A]] @unchecked) =>
-                    assume(!lalts.exists(_.isInstanceOf[Choice[_]]), "ralts can never contain a choice")
-                    assume(!ralts.exists(_.isInstanceOf[Choice[_]]), "lalts can never contain a choice")
+                    assume(!lalts.exists(_.isInstanceOf[Choice[?]]), "ralts can never contain a choice")
+                    assume(!ralts.exists(_.isInstanceOf[Choice[?]]), "lalts can never contain a choice")
                     lalts.addOne(ralt1)
                     lalts.addOne(ralt2)
                     lalts.stealAll(ralts)
                     ret
                 case p =>
-                    assume(!lalts.exists(_.isInstanceOf[Choice[_]]), "lalts can never contain a choice")
+                    assume(!lalts.exists(_.isInstanceOf[Choice[?]]), "lalts can never contain a choice")
                     lalts.addOne(p)
                     ret
             }
             case _ => alt2 match {
                 case Choice(ralt1, ralt2, ralts: SinglyLinkedList[StrictParsley[A]] @unchecked) =>
-                    assume(!ralts.exists(_.isInstanceOf[Choice[_]]), "ralts can never contain a choice")
+                    assume(!ralts.exists(_.isInstanceOf[Choice[?]]), "ralts can never contain a choice")
                     this.alt2 = ralt1
                     this.alts = ralts
                     ralts.prependOne(ralt2)
@@ -64,17 +64,17 @@ private [deepembedding] final class Choice[A] private (private [backend] val alt
 
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = codeGenTablified(this.tablify, producesResults)
 
-    private def tablify: List[Either[StrictParsley[_], List[JumpTableGroup]]] =
+    private def tablify: List[Either[StrictParsley[?], List[JumpTableGroup]]] =
         tablify((alt1::alt2::alts).iterator, mutable.ListBuffer.empty, mutable.ListBuffer.empty, mutable.ListBuffer.empty, mutable.Set.empty, None)
 
     @tailrec private def tablify(
         it: LinkedListIterator[StrictParsley[A]],
-        acc: mutable.ListBuffer[Either[StrictParsley[_], List[JumpTableGroup]]],
+        acc: mutable.ListBuffer[Either[StrictParsley[?], List[JumpTableGroup]]],
         tableAcc: mutable.ListBuffer[JumpTableGroup],
         groupAcc: mutable.ListBuffer[TablableChar],
         seen: mutable.Set[Char],
         lastSeen: Option[Char],
-    ): List[Either[StrictParsley[_], List[JumpTableGroup]]] = if (it.hasNext) {
+    ): List[Either[StrictParsley[?], List[JumpTableGroup]]] = if (it.hasNext) {
         val u = it.next()
         tablable(u, backtracks = false) match {
             // Character, if we've not seen it before that's ok
@@ -100,9 +100,9 @@ private [deepembedding] final class Choice[A] private (private [backend] val alt
     ): mutable.ListBuffer[JumpTableGroup] = if (groupAcc.isEmpty) acc else acc += TablableChars(groupAcc.toList)
 
     private def appendTable(
-        acc: mutable.ListBuffer[Either[StrictParsley[_], List[JumpTableGroup]]],
+        acc: mutable.ListBuffer[Either[StrictParsley[?], List[JumpTableGroup]]],
         tableAcc: mutable.ListBuffer[JumpTableGroup]
-    ): mutable.ListBuffer[Either[StrictParsley[_], List[JumpTableGroup]]] = if (tableAcc.isEmpty) acc else acc += Right(tableAcc.toList)
+    ): mutable.ListBuffer[Either[StrictParsley[?], List[JumpTableGroup]]] = if (tableAcc.isEmpty) acc else acc += Right(tableAcc.toList)
 
     // $COVERAGE-OFF$
     final override def pretty: String = (alt1.pretty::alt2.pretty::alts.map(_.pretty).toList).mkString("choice(", ", ", ")")
@@ -115,21 +115,21 @@ private [backend] object Choice {
       * called on it with non-empty alts, which would break the invariance of Choice.
       */
     def unsafe[A](alt1: StrictParsley[A], alt2: StrictParsley[A], alts: SinglyLinkedList[StrictParsley[A]]) = {
-        assume(!alt1.isInstanceOf[Choice[_]] && !alt2.isInstanceOf[Choice[_]], "unsafe Choices should not contain nested Choices")
+        assume(!alt1.isInstanceOf[Choice[?]] && !alt2.isInstanceOf[Choice[?]], "unsafe Choices should not contain nested Choices")
         new Choice(alt1, alt2, alts)
     }
 
     sealed trait TablableDesc
-    case class TablableCharDesc(char: Char, expecteds: Iterable[ExpectItem], size: Int, backtracks: Boolean) extends TablableDesc
-    case class TablablePredDesc(pred: Char => Boolean, expecteds: Iterable[ExpectItem], size: Int, backtracks: Boolean) extends TablableDesc
+    final case class TablableCharDesc(char: Char, expecteds: Iterable[ExpectItem], size: Int, backtracks: Boolean) extends TablableDesc
+    final case class TablablePredDesc(pred: Char => Boolean, expecteds: Iterable[ExpectItem], size: Int, backtracks: Boolean) extends TablableDesc
     sealed trait Tablable
-    case class TablableChar(p: StrictParsley[_], desc: TablableCharDesc) extends Tablable
-    case class TablablePred(p: StrictParsley[_], desc: TablablePredDesc) extends Tablable with JumpTableGroup
     sealed trait JumpTableGroup
-    case class TablableChars(ops: List[TablableChar]) extends JumpTableGroup
+    final case class TablableChar(p: StrictParsley[?], desc: TablableCharDesc) extends Tablable
+    final case class TablablePred(p: StrictParsley[?], desc: TablablePredDesc) extends Tablable with JumpTableGroup
+    final case class TablableChars(ops: List[TablableChar]) extends JumpTableGroup
 
     private def scopedState[A, M[_, +_]: ContOps, R](p: StrictParsley[A], producesResults: Boolean)(generateHandler: =>M[R, Unit])
-                                                   (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
+                                                    (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler = state.freshLabel()
         val skip = state.freshLabel()
         // FIXME: check this, this is the only one that uses this instruction, and I think it was a mistake
@@ -144,7 +144,7 @@ private [backend] object Choice {
     }
 
     private def scopedCheck[A, M[_, +_]: ContOps, R](p: StrictParsley[A], producesResults: Boolean)(generateHandler: =>M[R, Unit])
-                                                   (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
+                                                    (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler = state.freshLabel()
         val skip = state.freshLabel()
         instrs += new instructions.PushHandlerAndClearHints(handler)
@@ -158,7 +158,7 @@ private [backend] object Choice {
     }
 
     private object SingleParserTable {
-        def unapply(table: Either[StrictParsley[_], List[JumpTableGroup]]): Option[StrictParsley[_]] = table match {
+        def unapply(table: Either[StrictParsley[?], List[JumpTableGroup]]): Option[StrictParsley[?]] = table match {
             case Left(p) => Some(p)
             case Right(TablableChars(TablableChar(p, _) :: Nil) :: Nil) => Some(p)
             case Right(TablablePred(p, _) :: Nil) => Some(p)
@@ -178,7 +178,7 @@ private [backend] object Choice {
 
     // Why is rest lazy? because Cont could be Id, and Id forces the argument immediately!
     private def codeGenAlt[A, M[_, +_]: ContOps, R](p: StrictParsley[A], rest: =>M[R, Unit], producesResults: Boolean)
-                                                      (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
+                                                   (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val merge = state.getLabel(instructions.MergeErrorsAndFail)
         p match {
             case Atomic(u) => scopedState(u, producesResults) {
@@ -208,7 +208,7 @@ private [backend] object Choice {
     }
 
     private def codeGenRoots[M[_, +_]: ContOps, R](roots: List[(Int, List[StrictParsley[_]])], end: Int, producesResults: Boolean)
-                                                 (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = roots match {
+                                                  (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = roots match {
         case (l, root)::roots_ =>
             instrs += new instructions.Label(l)
             codeGenAlternatives(root, producesResults) >> {
@@ -227,12 +227,12 @@ private [backend] object Choice {
     //FIXME: type aliases to aid readability
     @tailrec private def foldTablableChars(tablified: List[TablableChar],
                                            labelGen: CodeGenState,
-                                           roots: mutable.Map[Char, (Int, mutable.ListBuffer[StrictParsley[_]])],
+                                           roots: mutable.Map[Char, (Int, mutable.ListBuffer[StrictParsley[?]])],
                                            map: mutable.Map[Char, (Int, Iterable[ExpectItem], Boolean)],
                                            leads: mutable.ListBuffer[Char],
                                            size: Int,
                                            expecteds: List[ExpectItem]):
-        (List[(Int, List[StrictParsley[_]])], mutable.Map[Char, (Int, Iterable[ExpectItem], Boolean)], Int, List[ExpectItem]) // Roots, map, size, expecteds
+        (List[(Int, List[StrictParsley[?]])], mutable.Map[Char, (Int, Iterable[ExpectItem], Boolean)], Int, List[ExpectItem]) // Roots, map, size, expecteds
             = tablified match {
                 case TablableChar(root, TablableCharDesc(c, expected, _size, backtracks)) :: tablified_ =>
                     if (roots.contains(c)) {
@@ -252,16 +252,16 @@ private [backend] object Choice {
             }
 
     private def foldJumpTableGroups(groups: List[JumpTableGroup], labelGen: CodeGenState):
-        (List[(Int, List[StrictParsley[_]])], instructions.JumpTablePreds, Int, List[ExpectItem]) =
+        (List[(Int, List[StrictParsley[?]])], instructions.JumpTablePreds, Int, List[ExpectItem]) =
             foldJumpTableGroups(groups, labelGen, mutable.ListBuffer.empty, mutable.ListBuffer.empty, 0, List.empty)
 
     @tailrec private def foldJumpTableGroups(groups: List[JumpTableGroup],
                                              labelGen: CodeGenState,
-                                             rootsAcc: mutable.ListBuffer[(Int, List[StrictParsley[_]])],
+                                             rootsAcc: mutable.ListBuffer[(Int, List[StrictParsley[?]])],
                                              tableAcc: mutable.ListBuffer[Either[mutable.Map[Char, (Int, Iterable[ExpectItem], Boolean)], (Char => Boolean, Int, Iterable[ExpectItem], Boolean)]],
                                              size: Int,
                                              allExpecteds: List[ExpectItem]):
-        (List[(Int, List[StrictParsley[_]])], instructions.JumpTablePreds, Int, List[ExpectItem]) = groups match {
+        (List[(Int, List[StrictParsley[?]])], instructions.JumpTablePreds, Int, List[ExpectItem]) = groups match {
             case TablableChars(ops) :: def_ =>
                 val (roots, map, size_, allExpecteds_) = foldTablableChars(ops, labelGen, mutable.Map.empty, mutable.Map.empty, mutable.ListBuffer.empty, size, allExpecteds)
                 foldJumpTableGroups(def_, labelGen, rootsAcc ++= roots, tableAcc += Left(map), size_, allExpecteds_)
@@ -272,7 +272,7 @@ private [backend] object Choice {
         }
 
     // TODO: `line.zip(col)` will not be caught!!!!
-    private def tablable(p: StrictParsley[_], backtracks: Boolean): Option[TablableDesc] = p match {
+    private def tablable(p: StrictParsley[?], backtracks: Boolean): Option[TablableDesc] = p match {
         // CODO: Numeric parsers by leading digit (This one would require changing the foldTablified function a bit)
         case ct@CharTok(c, _)                    => Some(TablableCharDesc(c, ct.expected.asExpectItems(c), 1, backtracks))
         case ct@SupplementaryCharTok(c, _)       => Some(TablableCharDesc(Character.highSurrogate(c), ct.expected.asExpectItems(Character.toChars(c).mkString), 1, backtracks))
@@ -294,9 +294,9 @@ private [backend] object Choice {
         }
         case Profile(t)                          => tablable(t, backtracks)
         case TablableErrors(t)                   => tablable(t, backtracks)
-        case (_: Pure[_] | _: Get[_]) <*> t      => tablable(t, backtracks)
-        case Lift2(_, Line | Col | Offset | _: Get[_], t)    => tablable(t, backtracks)
-        case Lift3(_, Line | Col | Offset | _: Get[_], t, _) => tablable(t, backtracks)
+        case (_: Pure[?] | _: Get[?]) <*> t      => tablable(t, backtracks)
+        case Lift2(_, Line | Col | Offset | _: Get[?], t)    => tablable(t, backtracks)
+        case Lift3(_, Line | Col | Offset | _: Get[?], t, _) => tablable(t, backtracks)
         case Lift2(_, t, _)                      => tablable(t, backtracks)
         case Lift3(_, t, _, _)                   => tablable(t, backtracks)
         case t <*> _                             => tablable(t, backtracks)
