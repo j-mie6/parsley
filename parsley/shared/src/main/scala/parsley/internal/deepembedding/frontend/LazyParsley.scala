@@ -77,7 +77,7 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
       * @param lets the known shared parsers mapped to their corresponding join-point nodes
       * @return the strict, finite, version of this tree, with all shared parsers factored out into join-points
       */
-    protected def preprocess[M[_, +_]: ContOps, R, A_ >: A](implicit lets: LetMap): M[R, StrictParsley[A_]]
+    private [deepembedding] def preprocess[M[_, +_]: ContOps, R, A_ >: A](implicit lets: LetMap): M[R, StrictParsley[A_]]
 
     /** should the `Id` instance be skipped? */
     final private var cps = false
