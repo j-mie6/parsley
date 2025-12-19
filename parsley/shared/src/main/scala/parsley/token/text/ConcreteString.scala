@@ -25,7 +25,7 @@ private [token] final class ConcreteString(ends: Set[(String, String)], stringCh
 
     private def stringLiteral(valid: Parsley[StringBuilder] => Parsley[StringBuilder],
                               openLabel: (Boolean, Boolean) => LabelWithExplainConfig, closeLabel: (Boolean, Boolean) => LabelConfig) = {
-        ends.view.map(makeStringParser(sbRef, valid, openLabel, closeLabel)).toList match {
+        ends.view.map(makeStringParser(sbRef, valid, closeLabel)).toList match {
             case Nil => empty
             case str0 :: strs => strings(stringStart(openLabel, _), str0, strs*) ~> finalStr
         }
@@ -37,8 +37,7 @@ private [token] final class ConcreteString(ends: Set[(String, String)], stringCh
     private def stringStart(openLabel: (Boolean, Boolean) => LabelWithExplainConfig, end: String) =
         openLabel(allowsAllSpace, stringChar.isRaw)(string(end)).ut()
 
-    private def makeStringParser(sbRef: Ref[StringBuilder], valid: Parsley[StringBuilder] => Parsley[StringBuilder],
-                                 openLabel: (Boolean, Boolean) => LabelWithExplainConfig, closeLabel: (Boolean, Boolean) => LabelConfig)
+    private def makeStringParser(sbRef: Ref[StringBuilder], valid: Parsley[StringBuilder] => Parsley[StringBuilder], closeLabel: (Boolean, Boolean) => LabelConfig)
                                 (terminalStr: (String, String)) = {
         // NOTE: begin is consumed by the caller of this function
         val (begin, end) = terminalStr
