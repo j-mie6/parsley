@@ -91,7 +91,7 @@ class RealTests extends ParsleyTest {
             ".125e1" -> Some(BigDecimal("1.25")),
         )
     }
-    it should "not allow for blank exponents via leading dot" ignore {
+    it should "not allow for blank exponents via leading dot" in {
         val plainExp = plain.copy(decimalExponentDesc = ExponentDesc.Supported(false, Set('e', 'E'), 10, PlusSignPresence.Optional, true))
         val withLeadingDotExpDesc = plainExp.copy(leadingDotAllowed = true)
         val withExtremeDotExpDesc = withLeadingDotExpDesc.copy(trailingDotAllowed = true)

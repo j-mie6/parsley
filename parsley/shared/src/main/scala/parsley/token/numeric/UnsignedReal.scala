@@ -49,7 +49,7 @@ private [token] final class UnsignedReal(desc: NumericDesc, err: ErrorConfig, ge
     override def binary: Parsley[BigDecimal] = err.labelRealBinary(_binary)
     override def number: Parsley[BigDecimal] = err.labelRealNumber(_number)
 
-    private def when(b: Boolean, p: Parsley[_]): Parsley[_] = if (b) p else unit
+    private def when(b: Boolean, p: =>Parsley[_]): Parsley[_] = if (b) p else unit
 
     def leadingBreakChar(label: LabelConfig): Parsley[_] = desc.literalBreakChar match {
         case BreakCharDesc.NoBreakChar => unit
@@ -75,6 +75,7 @@ private [token] final class UnsignedReal(desc: NumericDesc, err: ErrorConfig, ge
         ofRadix(radix, digit, desc.leadingDotAllowed, endLabel)
     }
     private def ofRadix(radix: Int, digit: Parsley[Char], leadingDotAllowed: Boolean, endLabel: LabelConfig): Parsley[BigDecimal] = {
+        val trailingDotAllowed = desc.trailingDotAllowed
         lazy val leadingHappened = Ref.make[Boolean]
         lazy val _noDoubleDroppedZero = err.preventRealDoubleDroppedZero(leadingHappened.get)
         val expDesc = desc.exponentDescForRadix(radix)
@@ -90,13 +91,13 @@ private [token] final class UnsignedReal(desc: NumericDesc, err: ErrorConfig, ge
         val fractional = amendThenDislodge {
             err.labelRealDot.orElse(endLabel)('.') ~> {
                 desc.literalBreakChar match {
-                    case BreakCharDesc.NoBreakChar if desc.trailingDotAllowed && leadingDotAllowed =>
+                    case BreakCharDesc.NoBreakChar if trailingDotAllowed && leadingDotAllowed =>
                         entrench(digit.foldRight1[BigDecimal](0)(f)) | _noDoubleDroppedZero ~> pure[BigDecimal](0)
-                    case BreakCharDesc.NoBreakChar if desc.trailingDotAllowed =>
+                    case BreakCharDesc.NoBreakChar if trailingDotAllowed =>
                         entrench(digit.foldRight[BigDecimal](0)(f))
                     case BreakCharDesc.NoBreakChar =>
                         entrench(digit.foldRight1[BigDecimal](0)(f))
-                    case BreakCharDesc.Supported(c, _) if desc.trailingDotAllowed =>
+                    case BreakCharDesc.Supported(c, _) if trailingDotAllowed =>
                         entrench(broken(c)) | when(leadingDotAllowed, _noDoubleDroppedZero) ~> pure[BigDecimal](0)
                     case BreakCharDesc.Supported(c, _) =>
                         entrench(broken(c))
@@ -118,14 +119,13 @@ private [token] final class UnsignedReal(desc: NumericDesc, err: ErrorConfig, ge
             // this can't fail for non-required, it has to be the identity exponent
             case ExponentDesc.NoExponents => (empty, pure(0), 1)
         }
-        val fractExponent = (fractional, exponent).zipped(combine(_, radix, _, base) _) | requiredExponent.map(combine(_, base) _)
-        val configuredWhole =
-            if (leadingDotAllowed) (
-                  whole <~ leadingHappened.set(false)
-                | leadingHappened.set(true).as(BigInt(0))
-            )
-            else whole
-        configuredWhole <**> fractExponent
+        val fractExponent = (fractional, exponent).zipped(combine(_, radix, _, base) _)
+        val noFractExponent = requiredExponent.map(combine(_, base) _)
+        if (leadingDotAllowed) (
+              (whole <~ when(trailingDotAllowed, leadingHappened.set(false)) <**> (fractExponent | noFractExponent))
+            | when(trailingDotAllowed, leadingHappened.set(true)).as(BigInt(0)) <**> fractExponent
+        )
+        else whole <**> (fractExponent | noFractExponent)
     }
 
     private def raise(float: BigDecimal, exp: Int, base: Int) = float * BigDecimal(base).pow(exp)
