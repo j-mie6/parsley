@@ -13,43 +13,56 @@ import parsley.state.Ref
 import parsley.syntax.zipped.*
 import parsley.token.errors.{ErrorConfig, LabelConfig, LabelWithExplainConfig}
 import parsley.token.CharPred
+import parsley.token.text.ConcreteStringImpl.{addCodepoint, endParsers}
 
-private [token] final class ConcreteString(ends: Set[(String, String)], stringChar: StringCharacter, isGraphic: CharPred,
-                                           allowsAllSpace: Boolean, err: ErrorConfig) extends StringParsers {
-    private lazy val sbRef = Ref.make[StringBuilder]
+private [text] sealed abstract class ConcreteStringImpl(stringChar: StringCharacter, err: ErrorConfig) extends StringParsers {
+    override final lazy val fullUtf16: Parsley[String] = stringLiteral(identity, err.labelStringUtf16, err.labelStringUtf16End)
+    override final lazy val ascii: Parsley[String] = stringLiteral(StringParsers.ensureAscii(err), err.labelStringAscii, err.labelStringAsciiEnd)
+    override final lazy val latin1: Parsley[String] = stringLiteral(StringParsers.ensureExtendedAscii(err), err.labelStringLatin1, err.labelStringLatin1End)
+
+    protected def stringLiteral(valid: Parsley[StringBuilder] => Parsley[StringBuilder],
+                                openLabel: (Boolean, Boolean) => LabelWithExplainConfig, closeLabel: (Boolean, Boolean) => LabelConfig): Parsley[String]
+
+    protected final lazy val sbRef = Ref.make[StringBuilder]
+    protected final def literals(parsers: List[(String, Parsley[Unit])], openLabel: (Boolean, Boolean) => LabelWithExplainConfig, allowsAllSpace: Boolean) = parsers match {
+        case Nil => empty
+        case str0 :: strs => strings(stringStart(openLabel, allowsAllSpace, _), str0, strs*) ~> finalStr
+    }
+
     private final def finalStr = sbRef.gets { sb =>
         val s = sb.toString
         sb.clear()
         s
     }
-
-    private def stringLiteral(valid: Parsley[StringBuilder] => Parsley[StringBuilder],
-                              openLabel: (Boolean, Boolean) => LabelWithExplainConfig, closeLabel: (Boolean, Boolean) => LabelConfig) = {
-        ends.view.map(makeStringParser(sbRef, valid, closeLabel)).toList match {
-            case Nil => empty
-            case str0 :: strs => strings(stringStart(openLabel, _), str0, strs*) ~> finalStr
-        }
-    }
-    override lazy val fullUtf16: Parsley[String] = stringLiteral(identity, err.labelStringUtf16, err.labelStringUtf16End)
-    override lazy val ascii: Parsley[String] = stringLiteral(StringParsers.ensureAscii(err), err.labelStringAscii, err.labelStringAsciiEnd)
-    override lazy val latin1: Parsley[String] = stringLiteral(StringParsers.ensureExtendedAscii(err), err.labelStringLatin1, err.labelStringLatin1End)
-
-    private def stringStart(openLabel: (Boolean, Boolean) => LabelWithExplainConfig, end: String) =
+    private final def stringStart(openLabel: (Boolean, Boolean) => LabelWithExplainConfig, allowsAllSpace: Boolean, end: String) =
         openLabel(allowsAllSpace, stringChar.isRaw)(string(end)).ut()
+}
+private [text] object ConcreteStringImpl {
+    def endParsers(ends: Set[(String, String)], impl: ConcreteString, sbRef: Ref[StringBuilder], valid: Parsley[StringBuilder] => Parsley[StringBuilder], closeLabel: (Boolean, Boolean) => LabelConfig) = {
+        ends.view.map(impl.makeStringParser(sbRef, valid, closeLabel)).toList
+    }
+    val addCodepoint = (sb: StringBuilder, cpo: Option[Int]) => {
+        for (cp <- cpo) parsley.unicode.addCodepoint(sb, cp)
+        sb
+    }
+}
 
-    private def makeStringParser(sbRef: Ref[StringBuilder], valid: Parsley[StringBuilder] => Parsley[StringBuilder], closeLabel: (Boolean, Boolean) => LabelConfig)
-                                (terminalStr: (String, String)) = {
+private [token] final class ConcreteString(ends: Set[(String, String)], stringChar: StringCharacter, isGraphic: CharPred, allowsAllSpace: Boolean, err: ErrorConfig)
+    extends ConcreteStringImpl(stringChar, err) {
+    protected def stringLiteral(valid: Parsley[StringBuilder] => Parsley[StringBuilder],
+                                openLabel: (Boolean, Boolean) => LabelWithExplainConfig, closeLabel: (Boolean, Boolean) => LabelConfig) = {
+        literals(endParsers(ends, this, sbRef, valid, closeLabel), openLabel, allowsAllSpace)
+    }
+
+    private [text] def makeStringParser(sbRef: Ref[StringBuilder], valid: Parsley[StringBuilder] => Parsley[StringBuilder], closeLabel: (Boolean, Boolean) => LabelConfig)
+                                       (terminalStr: (String, String)) = {
         // NOTE: begin is consumed by the caller of this function
         val (begin, end) = terminalStr
         val terminalInit = end.charAt(0)
         val strChar = stringChar(CharacterParsers.letter(terminalInit, allowsAllSpace, isGraphic))
-        val pf = (sb: StringBuilder, cpo: Option[Int]) => {
-            for (cp <- cpo) parsley.unicode.addCodepoint(sb, cp)
-            sb
-        }
-        // `content` is in a dropped position, so needs the unsafe to avoid the mutation
-        // TODO: this could be fixed better with registers and skipMany?
-        val content = valid(parsley.expr.infix.secretLeft1((sbRef.get, strChar).zipped(pf), strChar, pure(pf), name = null).impure)
+        // `content` is in a dropped position, so needs the impure to avoid losing the mutation
+        // TODO: this could be fixed better with references and skipMany?
+        val content = valid(parsley.expr.infix.secretLeft1((sbRef.get, strChar).zipped(addCodepoint), strChar, pure(addCodepoint), name = null).impure)
         val p =
             // only one string builder needs allocation
             sbRef.set(fresh(new StringBuilder)) ~>
@@ -57,5 +70,15 @@ private [token] final class ConcreteString(ends: Set[(String, String)], stringCh
             skipManyUntil(sbRef.update(char(terminalInit).hide.as((sb: StringBuilder) => sb += terminalInit)) | content,
                           closeLabel(allowsAllSpace, stringChar.isRaw)(atomic(string(end)))) // atomic needed because ambiguity with init
         (begin, p)
+    }
+}
+
+private [token] final class CombinedStrings(singleEnds: Set[(String, String)], multiEnds: Set[(String, String)],
+                                            single: ConcreteString, multi: ConcreteString,
+                                            stringChar: StringCharacter, err: ErrorConfig) extends ConcreteStringImpl(stringChar, err) {
+    protected def stringLiteral(valid: Parsley[StringBuilder] => Parsley[StringBuilder],
+                                openLabel: (Boolean, Boolean) => LabelWithExplainConfig, closeLabel: (Boolean, Boolean) => LabelConfig) = {
+        val parsers = endParsers(singleEnds, single, sbRef, valid, closeLabel) ::: endParsers(multiEnds, multi, sbRef, valid, closeLabel)
+        literals(parsers, openLabel, allowsAllSpace = false)
     }
 }
