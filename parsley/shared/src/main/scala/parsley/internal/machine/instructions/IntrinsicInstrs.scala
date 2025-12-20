@@ -7,13 +7,13 @@ package parsley.internal.machine.instructions
 
 import scala.annotation.tailrec
 
-import parsley.XAssert._
-import parsley.errors.VanillaGen
+import parsley.XAssert.*
+import parsley.errors
 import parsley.token.errors.LabelConfig
 
 import parsley.internal.errors.{EndOfInput, ExpectDesc, ExpectItem}
 import parsley.internal.machine.Context
-import parsley.internal.machine.XAssert._
+import parsley.internal.machine.XAssert.*
 
 private [internal] final class Lift2(f: (Any, Any) => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
@@ -310,8 +310,8 @@ private [internal] final class MapFilter[A, B](_pred: A => Option[B], var good: 
     // $COVERAGE-ON$
 }
 
-private [internal] final class FilterPartialVanilla[A](f: PartialFunction[A, (VanillaGen.UnexpectedItem, Option[String])]) extends Instr {
-    private [this] val pred = f.asInstanceOf[PartialFunction[Any, (VanillaGen.UnexpectedItem, Option[String])]]
+private [internal] final class FilterPartialVanilla[A](f: PartialFunction[A, (errors.VanillaGen.UnexpectedItem, Option[String])]) extends Instr {
+    private [this] val pred = f.asInstanceOf[PartialFunction[Any, (errors.VanillaGen.UnexpectedItem, Option[String])]]
 
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
