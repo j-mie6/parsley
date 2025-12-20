@@ -5,15 +5,15 @@
  */
 package parsley
 
-import Predef.{ArrowAssoc => _, _}
+import Predef.{ArrowAssoc => _, *}
 
-import parsley.Parsley.{empty => pempty, _}
+import parsley.Parsley.{empty => pempty, not => notFollowedBy, *}
 import parsley.combinator.ifS
-import parsley.lift._
+import parsley.lift.*
 import parsley.character.{char, satisfy, digit, item, string}
 import parsley.syntax.character.{charLift, stringLift}
-import parsley.syntax.all._
-import parsley.state._
+import parsley.syntax.all.*
+import parsley.state.*
 import parsley.errors.combinator.{fail => pfail}
 
 class CoreTests extends ParsleyTest {
