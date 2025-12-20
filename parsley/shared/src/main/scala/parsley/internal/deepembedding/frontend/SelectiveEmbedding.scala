@@ -5,7 +5,7 @@
  */
 package parsley.internal.deepembedding.frontend
 
-import parsley.errors.VanillaGen
+import parsley.errors
 
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 
@@ -52,7 +52,7 @@ private [parsley] final class MapFilter[A, B](p: LazyParsley[A], pred: A => Opti
     // $COVERAGE-ON$
 }
 
-private [parsley] final class FilterPartialVanilla[A](p: LazyParsley[A], f: PartialFunction[A, (VanillaGen.UnexpectedItem, Option[String])])
+private [parsley] final class FilterPartialVanilla[A](p: LazyParsley[A], f: PartialFunction[A, (errors.VanillaGen.UnexpectedItem, Option[String])])
     extends Unary[A, A](p) {
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.FilterPartialVanilla(p, f)
 
