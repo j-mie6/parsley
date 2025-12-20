@@ -11,6 +11,7 @@ import parsley.internal.machine.instructions
 
 import Branch.FlipApp
 import StrictParsley.InstrBuffer
+import parsley.errors
 
 private [backend] sealed abstract class BranchLike[A, B, C, D](finaliser: Option[instructions.Instr]) extends StrictParsley[D] {
     val b: StrictParsley[A]
@@ -110,10 +111,36 @@ private [deepembedding] final class MapFilter[A, B](val p: StrictParsley[A], pre
     final override def pretty(p: String, err: String): String = s"mapFilterWith($p, ???, $err)"
 }
 
+private [parsley] final class FilterPartialVanilla[A](p: StrictParsley[A], f: PartialFunction[A, (errors.VanillaGen.UnexpectedItem, Option[String])])
+    extends StrictParsley[A] {
+    override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R,Unit] = {
+        val handler = state.getLabel(instructions.PopStateAndFail)
+        instrs += new instructions.PushHandlerAndState(handler)
+        suspend(p.codeGen[M, R](producesResults = true)) |> {
+            instrs += new instructions.FilterPartialVanilla(f)
+            if (!producesResults) instrs += instructions.Pop
+        }
+    }
+    override def inlinable: Boolean = false
+    override def pretty: String = s"filterVanilaPartial(${p.pretty}, ?)"
+}
+private [parsley] final class FilterPartialSpecialized[A, B](p: StrictParsley[A], f: A => Either[scala.Seq[String], B]) extends StrictParsley[B] {
+    override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R,Unit] = {
+        val handler = state.getLabel(instructions.PopStateAndFail)
+        instrs += new instructions.PushHandlerAndState(handler)
+        suspend(p.codeGen[M, R](producesResults = true)) |> {
+            instrs += new instructions.FilterPartialSpecialized(f)
+            if (!producesResults) instrs += instructions.Pop
+        }
+    }
+    override def inlinable: Boolean = false
+    override def pretty: String = s"filterMapMsg(${p.pretty}, ?)"
+}
+
 private [backend] object Branch {
     def unapply[A, B, C](p: Branch[A, B, C]): Option[(StrictParsley[Either[A, B]], StrictParsley[A => C], StrictParsley[B => C])] = {
         Some((p.b, p.p, p.q))
     }
-    
+
     val FlipApp = instructions.Lift2[Any, Any => Any, Any]((x, f) => f(x))
 }

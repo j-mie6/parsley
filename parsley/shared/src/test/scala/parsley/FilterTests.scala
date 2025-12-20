@@ -85,7 +85,7 @@ class FilterTests extends ParsleyTest {
     }
 
     // Issue #271
-    "partial functions within filters" should "not be evaluated twice" ignore {
+    "partial functions within filters" should "not be evaluated twice" in {
         def tripwire[B](r: =>B): () => B = {
             var called = false
             () => {
@@ -119,14 +119,12 @@ class FilterTests extends ParsleyTest {
                 case _ if t() => ("hello", "hi")
             }
         }
-        //collectMsg
         def p5(fail: Boolean) = {
             val t = tripwire(!fail)
             item.collectMsg(_ => Seq("hello")) {
                 case _ if t() => 4
             }
         }
-        //mapFilterMsg
         def p6(fail: Boolean) = {
             val t = tripwire(!fail)
             item.mapFilterMsg { x =>
@@ -138,9 +136,6 @@ class FilterTests extends ParsleyTest {
         info("filterOut")
         p1(true).parse("a") shouldBe a [Failure[_]]
         p1(false).parse("a") shouldBe a [Success[_]]
-        info("guardAgainst")
-        p2(true).parse("a") shouldBe a [Failure[_]]
-        p2(false).parse("a") shouldBe a [Success[_]]
         info("unexpectedWhen")
         p3(true).parse("a") shouldBe a [Failure[_]]
         p3(false).parse("a") shouldBe a [Success[_]]
@@ -151,6 +146,9 @@ class FilterTests extends ParsleyTest {
         p5(true).parse("a") shouldBe a [Failure[_]]
         p5(false).parse("a") shouldBe a [Success[_]]
         info("guardAgainst")
+        p2(true).parse("a") shouldBe a [Failure[_]]
+        p2(false).parse("a") shouldBe a [Success[_]]
+        info("mapFilterMsg")
         p6(true).parse("a") shouldBe a [Failure[_]]
         p6(false).parse("a") shouldBe a [Success[_]]
     }

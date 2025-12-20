@@ -5,6 +5,8 @@
  */
 package parsley.internal.deepembedding.frontend
 
+import parsley.errors
+
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 
 private [parsley] final class Branch[A, B, C](b: LazyParsley[Either[A, B]], p: =>LazyParsley[A => C], q: =>LazyParsley[B => C])
@@ -47,5 +49,22 @@ private [parsley] final class MapFilter[A, B](p: LazyParsley[A], pred: A => Opti
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[B] = visitor.visit(this, context)(p, pred, err)
 
     private [parsley] var debugName: String = "mapFilter"
+    // $COVERAGE-ON$
+}
+
+private [parsley] final class FilterPartialVanilla[A](p: LazyParsley[A], f: PartialFunction[A, (errors.VanillaGen.UnexpectedItem, Option[String])], var debugName: String)
+    extends Unary[A, A](p) {
+    override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.FilterPartialVanilla(p, f)
+
+    // $COVERAGE-OFF$
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p, f)
+    // $COVERAGE-ON$
+}
+
+private [parsley] final class FilterPartialSpecialized[A, B](p: LazyParsley[A], f: A => Either[Seq[String], B], var debugName: String) extends Unary[A, B](p) {
+    override def make(p: StrictParsley[A]): StrictParsley[B] = new backend.FilterPartialSpecialized(p, f)
+
+    // $COVERAGE-OFF$
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[B] = visitor.visit(this, context)(p, f)
     // $COVERAGE-ON$
 }
