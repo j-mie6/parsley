@@ -5,7 +5,7 @@
  */
 package parsley.syntax
 
-import parsley.Parsley, Parsley.{many, notFollowedBy, some}
+import parsley.Parsley, Parsley.{many, not, some}
 import parsley.combinator.{ifS, option}
 
 /**
@@ -82,12 +82,12 @@ final class OperatorSugar[+A] private [syntax] (private val p: Parsley[A]) {
     def + : Parsley[List[A]] = some(p)
     /** This combinator, pronounced "not", will succeed when this parser fails, and vice-versa, never consuming input.
       *
-      * Equivalent to `notFollowedBy`, but as a prefix operator: `notFollowedBy(p)` is the same as `!p`.
+      * Equivalent to `not`, but as a prefix operator: `not(p)` is the same as `!p`.
       *
-      * @note an alias for `notFollowedBy`.
-      * @see [[Parsley.notFollowedBy `notFollowedBy`]] for more details.
+      * @note an alias for `not`.
+      * @see [[Parsley.not `not`]] for more details.
       */
-    def unary_! : Parsley[Unit] = notFollowedBy(p)
+    def unary_! : Parsley[Unit] = not(p)
     /** This combinator, pronounced "and not", first parses its argument `q`, and if it fails, it will parse this parser, returning its result.
       *
       * First `q` is parsed, which will never consume input regardless of failure or success. If it failed, then this parser is executed and its result
@@ -103,7 +103,7 @@ final class OperatorSugar[+A] private [syntax] (private val p: Parsley[A]) {
       * @param q the parser to quotient this parser by.
       * @return a parser that only parses this parser if `q` cannot parse.
       */
-    def -(q: Parsley[_]): Parsley[A] = !new OperatorSugar(q) ~> p
+    def -(q: Parsley[?]): Parsley[A] = !new OperatorSugar(q) ~> p
     /** This combinator, pronounced "option", will try parsing this parser wrapping its result in `Some`, and return `None` if it fails.
       *
       * Equivalent to `option`, but as a postfix operator: `option(p)` is the same as `p.?`.
