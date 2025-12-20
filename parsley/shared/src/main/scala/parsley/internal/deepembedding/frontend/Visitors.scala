@@ -8,7 +8,7 @@ package parsley.internal.deepembedding.frontend
 import scala.collection.{mutable, Factory}
 
 import parsley.debug.{Breakpoint, Profiler}
-import parsley.errors.ErrorBuilder
+import parsley.errors, errors.ErrorBuilder
 import parsley.state.Ref
 import parsley.token.descriptions.SpaceDesc
 import parsley.token.descriptions.PlusSignPresence
@@ -66,8 +66,8 @@ private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle
     def visit(self: Empty, context: T)(width: Int): U[Nothing]
     def visit(self: Fail, context: T)(width: CaretWidth, msgs: Seq[String]): U[Nothing]
     def visit(self: Unexpected, context: T)(msg: String, width: CaretWidth): U[Nothing]
-    def visit[A](self: VanillaGen[A], context: T)(gen: parsley.errors.VanillaGen[A]): U[((A, Int)) => Nothing]
-    def visit[A](self: SpecializedGen[A], context: T)(gen: parsley.errors.SpecializedGen[A]): U[((A, Int)) => Nothing]
+    def visit[A](self: VanillaGen[A], context: T)(gen: errors.VanillaGen[A]): U[((A, Int)) => Nothing]
+    def visit[A](self: SpecializedGen[A], context: T)(gen: errors.SpecializedGen[A]): U[((A, Int)) => Nothing]
     def visit(self: EscapeMapped, context: T)(escTrie: Trie[Int], escs: Set[String]): U[Int]
     def visit(self: EscapeAtMost, context: T)(n: Int, radix: Int): U[BigInt]
     def visit(self: EscapeOneOfExactly, context: T)(radix: Int, ns: List[Int], ie: SpecializedFilterConfig[Int]): U[BigInt]
@@ -98,6 +98,7 @@ private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle
     def visit[A](self: If[A], context: T)(b: LazyParsley[Boolean], p: =>LazyParsley[A], q: =>LazyParsley[A]): U[A]
     def visit[A](self: Filter[A], context: T)(p: LazyParsley[A], pred: A => Boolean, err: =>LazyParsley[((A, Int)) => Nothing]): U[A]
     def visit[A, B](self: MapFilter[A, B], context: T)(p: LazyParsley[A], pred: A => Option[B], err: =>LazyParsley[((A, Int)) => Nothing]): U[B]
+    def visit[A](self: FilterPartialVanilla[A], context: T)(p: LazyParsley[A], f: PartialFunction[A, (errors.VanillaGen.UnexpectedItem, Option[String])]): U[A]
 
     // Alternative parser visitors.
     def visit[A](self: <|>[A], context: T)(p: LazyParsley[A], q: LazyParsley[A]): U[A]
@@ -208,8 +209,8 @@ private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
     override def visit(self: Empty, context: T)(width: Int): U[Nothing] = visitSingleton(self, context)
     override def visit(self: Fail, context: T)(width: CaretWidth, msgs: Seq[String]): U[Nothing] = visitSingleton(self, context)
     override def visit(self: Unexpected, context: T)(msg: String, width: CaretWidth): U[Nothing] = visitSingleton(self, context)
-    override def visit[A](self: VanillaGen[A], context: T)(gen: parsley.errors.VanillaGen[A]): U[((A, Int)) => Nothing] = visitSingleton(self, context)
-    override def visit[A](self: SpecializedGen[A], context: T)(gen: parsley.errors.SpecializedGen[A]): U[((A, Int)) => Nothing] = {
+    override def visit[A](self: VanillaGen[A], context: T)(gen: errors.VanillaGen[A]): U[((A, Int)) => Nothing] = visitSingleton(self, context)
+    override def visit[A](self: SpecializedGen[A], context: T)(gen: errors.SpecializedGen[A]): U[((A, Int)) => Nothing] = {
         visitSingleton(self, context)
     }
     override def visit(self: EscapeMapped, context: T)(escTrie: Trie[Int], escs: Set[String]): U[Int] = visitSingleton(self, context)
@@ -258,6 +259,9 @@ private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
     }
     override def visit[A, B](self: MapFilter[A, B], context: T)(p: LazyParsley[A], pred: A => Option[B], err: =>LazyParsley[((A, Int)) => Nothing]): U[B] = {
         visitBinary(self, context)(p, err)
+    }
+    override def visit[A](self: FilterPartialVanilla[A], context: T)(p: LazyParsley[A], f: PartialFunction[A, (errors.VanillaGen.UnexpectedItem, Option[String])]): U[A] = {
+        visitUnary(self, context)(p)
     }
 
     // Intrinsic overrides.

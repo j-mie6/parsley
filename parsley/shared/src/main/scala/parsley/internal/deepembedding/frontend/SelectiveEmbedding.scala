@@ -57,7 +57,7 @@ private [parsley] final class FilterPartialVanilla[A](p: LazyParsley[A], f: Part
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.FilterPartialVanilla(p, f)
 
     // $COVERAGE-OFF$
-    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = ???//visitor.visit(this, context)(p, pred, err)
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p, f)
 
     private [parsley] var debugName = "filter"
     // $COVERAGE-ON$
