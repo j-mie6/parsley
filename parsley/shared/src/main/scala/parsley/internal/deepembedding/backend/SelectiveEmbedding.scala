@@ -121,12 +121,20 @@ private [parsley] final class FilterPartialVanilla[A](p: StrictParsley[A], f: Pa
             if (!producesResults) instrs += instructions.Pop
         }
     }
-
     override def inlinable: Boolean = false
-
     override def pretty: String = s"filterVanilaPartial(${p.pretty}, ?)"
-
-
+}
+private [parsley] final class FilterPartialSpecialized[A, B](p: StrictParsley[A], f: A => Either[scala.Seq[String], B]) extends StrictParsley[B] {
+    override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R,Unit] = {
+        val handler = state.getLabel(instructions.PopStateAndFail)
+        instrs += new instructions.PushHandlerAndState(handler)
+        suspend(p.codeGen[M, R](producesResults = true)) |> {
+            instrs += new instructions.FilterPartialSpecialized(f)
+            if (!producesResults) instrs += instructions.Pop
+        }
+    }
+    override def inlinable: Boolean = false
+    override def pretty: String = s"filterMapMsg(${p.pretty}, ?)"
 }
 
 private [backend] object Branch {

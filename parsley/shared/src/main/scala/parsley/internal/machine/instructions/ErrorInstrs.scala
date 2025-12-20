@@ -213,7 +213,7 @@ private [internal] final class SpecializedGen[A](gen: parsley.errors.Specialized
         ensureRegularInstruction(ctx)
         // stack will have an (A, Int) pair on it
         val (x, caretWidth) = ctx.stack.pop[(A, Int)]()
-        ctx.failWithMessage(new RigidCaret(gen.adjustWidth(x, caretWidth)), gen.messages(x): _*)
+        ctx.failWithMessage(new RigidCaret(gen.adjustWidth(x, caretWidth)), gen.messages(x)*)
     }
 
     // $COVERAGE-OFF$

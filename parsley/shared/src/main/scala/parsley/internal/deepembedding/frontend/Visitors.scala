@@ -99,6 +99,7 @@ private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle
     def visit[A](self: Filter[A], context: T)(p: LazyParsley[A], pred: A => Boolean, err: =>LazyParsley[((A, Int)) => Nothing]): U[A]
     def visit[A, B](self: MapFilter[A, B], context: T)(p: LazyParsley[A], pred: A => Option[B], err: =>LazyParsley[((A, Int)) => Nothing]): U[B]
     def visit[A](self: FilterPartialVanilla[A], context: T)(p: LazyParsley[A], f: PartialFunction[A, (errors.VanillaGen.UnexpectedItem, Option[String])]): U[A]
+    def visit[A, B](self: FilterPartialSpecialized[A, B], context: T)(p: LazyParsley[A], f: A => Either[Seq[String], B]): U[B]
 
     // Alternative parser visitors.
     def visit[A](self: <|>[A], context: T)(p: LazyParsley[A], q: LazyParsley[A]): U[A]
@@ -261,6 +262,9 @@ private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
         visitBinary(self, context)(p, err)
     }
     override def visit[A](self: FilterPartialVanilla[A], context: T)(p: LazyParsley[A], f: PartialFunction[A, (errors.VanillaGen.UnexpectedItem, Option[String])]): U[A] = {
+        visitUnary(self, context)(p)
+    }
+    override def visit[A, B](self: FilterPartialSpecialized[A, B], context: T)(p: LazyParsley[A], f: A => Either[Seq[String], B]): U[B] = {
         visitUnary(self, context)(p)
     }
 

@@ -14,6 +14,8 @@ import parsley.token.errors.LabelConfig
 import parsley.internal.errors.{EndOfInput, ExpectDesc, ExpectItem}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert.*
+import parsley.internal.errors.RigidCaret
+import parsley.internal.machine.errors.ClassicFancyError
 
 private [internal] final class Lift2(f: (Any, Any) => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
@@ -330,6 +332,28 @@ private [internal] final class FilterPartialVanilla[A](f: PartialFunction[A, (er
 
     // $COVERAGE-OFF$
     override def toString: String = s"FilterPartialVanilla(?)"
+    // $COVERAGE-ON$
+}
+
+private [internal] final class FilterPartialSpecialized[A, B](f: A => Either[Seq[String], B]) extends Instr {
+    private [this] val pred = f.asInstanceOf[Any => Either[Seq[String], Any]]
+
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        val x = ctx.stack.upeek
+        val state = ctx.states
+        ctx.states = state.tail
+        ctx.handlers = ctx.handlers.tail
+        pred(x) match {
+            case Right(y) => ctx.exchangeAndContinue(y)
+            case Left(msgs) =>
+                val caretWidth = ctx.offset - state.offset
+                ctx.fail(new ClassicFancyError(state.offset, state.line, state.col, new RigidCaret(caretWidth), msgs*))
+        }
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = s"FilterPartialSpecialized(?)"
     // $COVERAGE-ON$
 }
 

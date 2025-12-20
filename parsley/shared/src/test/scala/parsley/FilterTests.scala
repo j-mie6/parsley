@@ -85,7 +85,7 @@ class FilterTests extends ParsleyTest {
     }
 
     // Issue #271
-    "partial functions within filters" should "not be evaluated twice" ignore {
+    "partial functions within filters" should "not be evaluated twice" in {
         def tripwire[B](r: =>B): () => B = {
             var called = false
             () => {

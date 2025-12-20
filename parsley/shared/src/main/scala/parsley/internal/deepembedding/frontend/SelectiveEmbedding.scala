@@ -52,13 +52,19 @@ private [parsley] final class MapFilter[A, B](p: LazyParsley[A], pred: A => Opti
     // $COVERAGE-ON$
 }
 
-private [parsley] final class FilterPartialVanilla[A](p: LazyParsley[A], f: PartialFunction[A, (errors.VanillaGen.UnexpectedItem, Option[String])])
+private [parsley] final class FilterPartialVanilla[A](p: LazyParsley[A], f: PartialFunction[A, (errors.VanillaGen.UnexpectedItem, Option[String])], var debugName: String)
     extends Unary[A, A](p) {
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.FilterPartialVanilla(p, f)
 
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p, f)
+    // $COVERAGE-ON$
+}
 
-    private [parsley] var debugName = "filter"
+private [parsley] final class FilterPartialSpecialized[A, B](p: LazyParsley[A], f: A => Either[Seq[String], B], var debugName: String) extends Unary[A, B](p) {
+    override def make(p: StrictParsley[A]): StrictParsley[B] = new backend.FilterPartialSpecialized(p, f)
+
+    // $COVERAGE-OFF$
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[B] = visitor.visit(this, context)(p, f)
     // $COVERAGE-ON$
 }

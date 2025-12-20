@@ -11,7 +11,7 @@ import scala.annotation.tailrec
 import parsley.Failure
 import parsley.Result
 import parsley.Success
-import parsley.XAssert._
+import parsley.XAssert.*
 import parsley.errors.ErrorBuilder
 
 import parsley.internal.errors.{CaretWidth, ExpectItem, LineBuilder, UnexpectDesc}
@@ -186,7 +186,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     }
 
     private [machine] def failWithMessage(caretWidth: CaretWidth, msgs: String*): Unit = {
-        this.fail(new ClassicFancyError(offset, line, col, caretWidth, msgs: _*))
+        this.fail(new ClassicFancyError(offset, line, col, caretWidth, msgs*))
     }
     private [machine] def unexpectedFail(expected: Iterable[ExpectItem], unexpected: UnexpectDesc): Unit = {
         this.fail(new UnexpectedError(offset, line, col, expected, unexpected))

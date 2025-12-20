@@ -436,10 +436,9 @@ object combinator {
           * @group filter
           */
         def guardAgainst(pred: PartialFunction[A, Seq[String]]): Parsley[A] = {
-            this.filterWith(new SpecializedGen[A] { // TODO: direct call would remove the uo
-                override def messages(x: A) = pred(x)
-                override private [errors] def transparent: Boolean = true
-            })(!pred.isDefinedAt(_)).uo("gaurdAgainst")
+            // Sad, but it means I don't have to duplicate
+            val f = (x: A) => pred.andThen(left).applyOrElse[A, Either[Seq[String], A]](x, right)
+            this.mapFilterMsg(f).uo("guardAgainst")
         }
 
         /** This combinator applies a partial function `pf` to the result of this parser if its result is defined for `pf`, failing if it is not.
@@ -533,14 +532,8 @@ object combinator {
           * @note implemented in terms of [[mapFilterWith `mapFilterWith`]].
           * @group filter
           */
-        def mapFilterMsg[B](f: A => Either[Seq[String], B]): Parsley[B] = { //FIXME: this evaluates function twice.
-            this.mapFilterWith(new SpecializedGen[A] { // TODO: direct call would remove the uo
-                override def messages(x: A) = {
-                    val Left(errs) = f(x): @unchecked
-                    errs
-                }
-                override private [errors] def transparent: Boolean = true
-            })(x => f(x).toOption).uo("mapFilterMsg")
+        def mapFilterMsg[B](f: A => Either[Seq[String], B]): Parsley[B] = {
+            new Parsley((new frontend.FilterPartialSpecialized(p.internal, f, "mapFilterMsg")))
         }
 
         /** This combinator filters the result of this parser using the given partial-predicate, succeeding only when the predicate is undefined.
@@ -739,6 +732,9 @@ object combinator {
     // These avoid the double evaluation of the partial function, at the cost of additional maintenance
     @inline private [parsley] def filterVanillaPartial[A, B](p: Parsley[A], debugName: String)
                                                             (f: PartialFunction[A, (VanillaGen.UnexpectedItem, Option[String])]): Parsley[A] = {
-        new Parsley(new frontend.FilterPartialVanilla(p.internal, f)).uo(debugName) // FIXME: move in
+        new Parsley(new frontend.FilterPartialVanilla(p.internal, f, debugName))
     }
+    private val left = Left[Seq[String], Nothing](_)
+    private val _right = Right[Nothing, Any](_)
+    private def right[A] = _right.asInstanceOf[A => Right[Nothing, A]]
 }
