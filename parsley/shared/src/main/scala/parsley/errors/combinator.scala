@@ -500,10 +500,8 @@ object combinator {
           * @group filter
           */
         def collectMsg[B](msggen: A => Seq[String])(pf: PartialFunction[A, B]): Parsley[B] = {
-            combinator.collectWith(con(p), "collectMsg")(pf, new SpecializedGen[A] {
-                override def messages(x: A) = msggen(x)
-                override private [errors] def transparent: Boolean = true
-            })
+            val f = (x: A) => pf.andThen(right).applyOrElse(x, msggen.andThen(left))
+            this.mapFilterMsg(f).uo("collectMsg")
         }
 
         /** This combinator conditionally transforms the result of this parser with a given function, if a `Left` is
