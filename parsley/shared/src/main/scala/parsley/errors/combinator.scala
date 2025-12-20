@@ -533,7 +533,7 @@ object combinator {
           * @group filter
           */
         def mapFilterMsg[B](f: A => Either[Seq[String], B]): Parsley[B] = {
-            new Parsley((new frontend.FilterPartialSpecialized(p.internal, f, "mapFilterMsg")))
+            new Parsley((new frontend.FilterPartialSpecialized(con(p).internal, f, "mapFilterMsg")))
         }
 
         /** This combinator filters the result of this parser using the given partial-predicate, succeeding only when the predicate is undefined.
