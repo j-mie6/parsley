@@ -74,6 +74,11 @@ private [parsley] sealed abstract class DefuncError {
       */
     private [parsley] def withReason(reason: String, offset: Int): DefuncError
     private [parsley] def withReason(reason: String): DefuncError = withReason(reason, presentationOffset)
+    private [machine] def withReason(reason: Option[String]): DefuncError = {
+        // sorry, it's faster :(
+        if (reason.isDefined) this.withReason(reason.get)
+        else this
+    }
     /** This operation replaces the expected labels in this error message
       * by the given label. This can only happen when the offset of
       * this error message matches the given offset: this should be the

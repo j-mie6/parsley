@@ -8,6 +8,7 @@ package parsley.internal.machine.instructions
 import scala.annotation.tailrec
 
 import parsley.XAssert._
+import parsley.errors.VanillaGen
 import parsley.token.errors.LabelConfig
 
 import parsley.internal.errors.{EndOfInput, ExpectDesc, ExpectItem}
@@ -307,6 +308,33 @@ private [internal] final class MapFilter[A, B](_pred: A => Option[B], var good: 
     // $COVERAGE-OFF$
     override def toString: String = s"MapFilter(???, good = $good)"
     // $COVERAGE-ON$
+}
+
+private [internal] final class FilterPartialVanilla[A](f: PartialFunction[A, (VanillaGen.UnexpectedItem, Option[String])]) extends Instr {
+    private [this] val pred = f.asInstanceOf[PartialFunction[Any, (VanillaGen.UnexpectedItem, Option[String])]]
+
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        val x = ctx.stack.upeek
+        val state = ctx.states
+        ctx.states = state.tail
+        ctx.handlers = ctx.handlers.tail
+        pred.applyOrElse(x, FilterPartial.orNull) match {
+            case null => ctx.inc()
+            case (unex, reason) =>
+                val caretWidth = ctx.offset - state.offset
+                val err = unex.makeError(state.offset, state.line, state.col, caretWidth)
+                ctx.fail(err.withReason(reason))
+        }
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = s"FilterPartialVanilla(?)"
+    // $COVERAGE-ON$
+}
+
+private [instructions] object FilterPartial {
+    val orNull = (_: Any) => null
 }
 
 // Companion Objects
