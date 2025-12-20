@@ -20,7 +20,7 @@ import parsley.token.numeric.{CombinedParsers, IntegerParsers,
 import parsley.token.symbol.{ConcreteSymbol, LexemeSymbol}
 import parsley.token.text.{CharacterParsers, ConcreteCharacter, ConcreteString,
                            EscapableCharacter, Escape, LexemeCharacter, LexemeString,
-                           RawCharacter, StringParsers}
+                           RawCharacter, StringParsers, CombinedStrings}
 import parsley.unicode.satisfy
 
 import parsley.internal.deepembedding.singletons
@@ -197,8 +197,7 @@ private [token] abstract class Lexeme {
   *
   *     String literals are described generally as follows:
   *       - '''`desc.textDesc.stringEnds`''':  the sequence of characters that can begin or
-  *         end a string literal. Regardless of which of these is used for a specific literal,
-  *         the end of the literal ''must'' use the same sequence
+  *         end a string literal.
   *       - '''`desc.textDesc.graphicCharacter`''': describes the legal characters that may appear
   *         in the literal directly. Usually, this excludes control characters and newlines,
   *         but permits most other things. Escape sequences can represent non-graphic
@@ -210,8 +209,19 @@ private [token] abstract class Lexeme {
   *
   *     String literals are described generally as follows:
   *       - '''`desc.textDesc.multiStringEnds`''':  the sequence of characters that can begin or
-  *         end a multi-line string literal. Regardless of which of these is used for a specific literal,
-  *         the end of the literal ''must'' use the same sequence
+  *         end a multi-line string literal.
+  *       - '''`desc.textDesc.graphicCharacter`''': describes the legal characters that may appear
+  *         in the literal directly. Usually, this excludes control characters and newlines,
+  *         but permits most other things. Escape sequences can represent non-graphic
+  *         characters for non-raw strings
+  *       - '''`desc.textDesc.escapeSequences`''': describes the legal escape sequences that
+  *         that can appear in a string literal (for example `\n` or `\u000a`)
+  * @define combinedString
+  *    This is a collection of parsers concerned with handling both single-line and multi-line string literals.
+  *
+  *     String literals are described generally as follows:
+  *       - '''`desc.textDesc.stringEnds`'''/'''`desc.textDesc.multiStringEnds`''':  the sequence of characters that can begin or
+  *         end a string literal.
   *       - '''`desc.textDesc.graphicCharacter`''': describes the legal characters that may appear
   *         in the literal directly. Usually, this excludes control characters and newlines,
   *         but permits most other things. Escape sequences can represent non-graphic
@@ -374,33 +384,46 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
           * @since 4.5.0
           * @group textg
           */
-        def character: CharacterParsers = new LexemeCharacter(nonlexeme.character, this)
+        val character: CharacterParsers = new LexemeCharacter(nonlexeme.character, this)
         /** $string
           *
           * @since 4.5.0
           * @group textg
           */
-        def string: StringParsers = new LexemeString(nonlexeme.string, this)
+        val string: StringParsers = new LexemeString(nonlexeme.string, this)
         /** $string
           *
           * @note $raw
           * @since 4.5.0
           * @group textg
           */
-        def rawString: StringParsers = new LexemeString(nonlexeme.rawString, this)
+        val rawString: StringParsers = new LexemeString(nonlexeme.rawString, this)
         /** $multiString
           *
           * @since 4.5.0
           * @group textg
           */
-        def multiString: StringParsers = new LexemeString(nonlexeme.multiString, this)
+        val multiString: StringParsers = new LexemeString(nonlexeme.multiString, this)
         /** $multiString
           *
           * @note $raw
           * @since 4.5.0
           * @group textg
           */
-        def rawMultiString: StringParsers = new LexemeString(nonlexeme.rawMultiString, this)
+        val rawMultiString: StringParsers = new LexemeString(nonlexeme.rawMultiString, this)
+        /** $combinedString
+          *
+          * @since 5.0.0
+          * @group textg
+          */
+        val combinedString: StringParsers =  new LexemeString(nonlexeme.combinedString, this)
+        /** $combinedString
+          *
+          * @note $raw
+          * @since 5.0.0
+          * @group textg
+          */
+        val rawCombinedString: StringParsers = new LexemeString(nonlexeme.rawCombinedString, this)
 
         /** $symbol
           *
@@ -810,39 +833,59 @@ final class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig)
         private val escapes = new Escape(desc.textDesc.escapeSequences, errConfig, generic)
         private val escapeChar = new EscapableCharacter(desc.textDesc.escapeSequences, escapes, space.space, errConfig)
         private val rawChar = new RawCharacter(errConfig)
+        private val _character = new ConcreteCharacter(desc.textDesc, escapes, errConfig)
+        private val _string = new ConcreteString(desc.textDesc.stringEnds, escapeChar, desc.textDesc.graphicCharacter, false, errConfig)
+        private val _rawString = new ConcreteString(desc.textDesc.stringEnds, rawChar, desc.textDesc.graphicCharacter, false, errConfig)
+        private val _multiString = new ConcreteString(desc.textDesc.multiStringEnds, escapeChar, desc.textDesc.graphicCharacter, true, errConfig)
+        private val _rawMultiString = new ConcreteString(desc.textDesc.multiStringEnds, rawChar, desc.textDesc.graphicCharacter, true, errConfig)
+        private val _combinedString = new CombinedStrings(desc.textDesc.stringEnds, desc.textDesc.multiStringEnds, _string, _multiString, escapeChar, errConfig)
+        private val _rawCombinedString = new CombinedStrings(desc.textDesc.stringEnds, desc.textDesc.multiStringEnds, _rawString, _rawMultiString, rawChar, errConfig)
 
         /** $character
           *
           * @since 4.5.0
           * @group textg
           */
-        val character: CharacterParsers = new ConcreteCharacter(desc.textDesc, escapes, errConfig)
+        def character: CharacterParsers = _character
         /** $string
           *
           * @since 4.5.0
           * @group textg
           */
-        val string: StringParsers = new ConcreteString(desc.textDesc.stringEnds, escapeChar, desc.textDesc.graphicCharacter, false, errConfig)
+        def string: StringParsers = _string
         /** $string
           *
           * @note $raw
           * @since 4.5.0
           * @group textg
           */
-        val rawString: StringParsers = new ConcreteString(desc.textDesc.stringEnds, rawChar, desc.textDesc.graphicCharacter, false, errConfig)
+        val rawString: StringParsers = _rawString
         /** $multiString
           *
           * @since 4.5.0
           * @group textg
           */
-        val multiString: StringParsers = new ConcreteString(desc.textDesc.multiStringEnds, escapeChar, desc.textDesc.graphicCharacter, true, errConfig)
+        val multiString: StringParsers = _multiString
         /** $multiString
           *
           * @note $raw
           * @since 4.5.0
           * @group textg
           */
-        val rawMultiString: StringParsers = new ConcreteString(desc.textDesc.multiStringEnds, rawChar, desc.textDesc.graphicCharacter, true, errConfig)
+        val rawMultiString: StringParsers = _rawMultiString
+        /** $combinedString
+          *
+          * @since 5.0.0
+          * @group textg
+          */
+        val combinedString: StringParsers = _combinedString
+        /** $combinedString
+          *
+          * @note $raw
+          * @since 5.0.0
+          * @group textg
+          */
+        val rawCombinedString: StringParsers = _rawCombinedString
 
         /** $symbol
           *

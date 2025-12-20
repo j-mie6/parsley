@@ -28,6 +28,12 @@ class StringTests extends ParsleyTest {
         makeString(desc, new RawCharacter(errConfig), false)
     private def makeRawMultiString(desc: TextDesc): StringParsers =
         makeString(desc, new RawCharacter(errConfig), true)
+    private def makeCombinedString(desc: TextDesc): StringParsers = {
+        val char = new EscapableCharacter(desc.escapeSequences, new Escape(desc.escapeSequences, errConfig, generic), space, errConfig)
+        val single = new ConcreteString(desc.stringEnds, char, desc.graphicCharacter, allowsAllSpace = false, errConfig)
+        val multi = new ConcreteString(desc.multiStringEnds, char, desc.graphicCharacter, allowsAllSpace = true, errConfig)
+        new CombinedStrings(desc.stringEnds, desc.multiStringEnds, single, multi, char, errConfig)
+    }
 
     def unicodeCases(str: StringParsers)(tests: (String, Option[String], Position)*): Unit = cases(str.fullUtf16)(tests: _*)
     def asciiCases(str: StringParsers)(tests: (String, Option[String], Position)*): Unit = cases(str.ascii)(tests: _*)
@@ -160,4 +166,11 @@ class StringTests extends ParsleyTest {
         "\"abc\nc\"" -> Some("abc\nc"),
         "\"d\"" -> None,
     )
+
+    "combined strings" should "allow for for either string with no ambiguity" in {
+        asciiCases(makeCombinedString(plain.copy(stringEnds = Set(("\"", "\"")), multiStringEnds = Set(("\"\"\"", "\"\"\"")))))(
+            "\"abc\"" -> Some("abc"),
+            "\"\"\"abc\n\"\"\"" -> Some("abc\n"),
+        )
+    }
 }
