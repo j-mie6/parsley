@@ -21,7 +21,7 @@ import parsley.expr.{precedence, Ops, InfixL}
 import parsley.errors.combinator.ErrorMethods
 
 object lexer {
-    private def symbol(str: String): Parsley[String] = atomic(string(str))
+    private def symbol(str: String): Parsley[Unit] = atomic(string(str)).void
 
     private val lineComment = symbol("//") ~> manyTill(item, endOfLine).void
     private val multiComment = symbol("/*") ~> manyTill(item, symbol("*/")).void
@@ -35,12 +35,12 @@ object lexer {
     val number = token(digit.foldLeft1[BigInt](0)((n, d) => n * 10 + d.asDigit))
 
     object implicits {
-        implicit def implicitSymbol(s: String): Parsley[String] = lexeme(symbol(s))
+        given Conversion[String, Parsley[Unit]] = s => lexeme(symbol(s))
     }
 }
 
 object expressions {
-    import lexer.implicits.implicitSymbol
+    import lexer.implicits.given
     import lexer.{number, fully}
 
     private lazy val atom: Parsley[BigInt] = "(" ~> expr <~ ")" | number
@@ -63,7 +63,7 @@ abstract syntax tree.
 ```scala mdoc:nest:invisible
 import parsley.character.{stringOfSome, letter}
 object lexer {
-    def symbol(str: String): Parsley[String] = atomic(string(str))
+    def symbol(str: String): Parsley[Unit] = atomic(string(str)).void
 
     private val lineComment = symbol("//") ~> manyTill(item, endOfLine).void
     private val multiComment = symbol("/*") ~> manyTill(item, symbol("*/")).void
@@ -78,7 +78,7 @@ object lexer {
     val identifier = token(stringOfSome(letter))
 
     object implicits {
-        implicit def implicitSymbol(s: String): Parsley[Unit] = lexeme(symbol(s)).void
+        given Conversion[String, Parsley[Unit]] = s => lexeme(symbol(s))
     }
 }
 ```
@@ -86,31 +86,34 @@ object lexer {
 ```scala mdoc
 import parsley.expr.{precedence, Ops, InfixL, Prefix}
 object expressions {
-    import lexer.implicits.implicitSymbol
+    import lexer.implicits.given
     import lexer.{number, fully, identifier}
+    import Expr.*
     // for now, assume that `identifier` is just 1 or more alphabetical characters
 
-    sealed trait Expr
-    case class Add(x: Expr, y: Expr) extends Expr
-    case class Mul(x: Expr, y: Expr) extends Expr
-    case class Sub(x: Expr, y: Expr) extends Expr
-    case class Neg(x: Expr) extends Expr
-    case class Num(x: BigInt) extends Expr
-    case class Var(x: String) extends Expr
+    enum Expr {
+        case Add(x: Expr, y: Expr)
+        case Mul(x: Expr, y: Expr)
+        case Sub(x: Expr, y: Expr)
+        case Neg(x: Expr)
+        case Num(x: BigInt)
+        case Var(x: String)
+    }
 
-    private lazy val atom: Parsley[Expr] =
-        "(" ~> expr <~ ")" | number.map(Num) | identifier.map(Var)
+    private lazy val atom: Parsley[Expr] = "(" ~> expr <~ ")"
+                                         | number.map(Num.apply)
+                                         | identifier.map(Var.apply)
     private lazy val expr = precedence[Expr](atom)(
-        Ops(Prefix)("negate" as Neg),
-        Ops(InfixL)("*" as Mul),
-        Ops(InfixL)("+" as Add, "-" as Sub))
+        Ops(Prefix)("negate" as Neg.apply),
+        Ops(InfixL)("*" as Mul.apply),
+        Ops(InfixL)("+" as Add.apply, "-" as Sub.apply))
 
     val parser = fully(expr)
 }
 ```
 ```scala mdoc:invisible
 import parsley.Success
-import expressions.{Add, Num, Mul, Var}
+import expressions.Expr, Expr.*
 assert(expressions.parser.parse("5 + 6 * x") == Success(Add(Num(5), Mul(Num(6), Var("x")))))
 ```
 
@@ -158,7 +161,7 @@ provides an error message that explains why the parser has failed. Here is our n
 identifier:
 
 ```scala mdoc:invisible
-import lexer._
+import lexer.*
 ```
 ```scala mdoc:silent:nest
 import parsley.errors.combinator.ErrorMethods //for filterOut
@@ -206,7 +209,7 @@ def operator(op: String): Parsley[Unit] = {
         case Nil => lexeme(symbol(op)).void
         // strings requires one non-varargs argument
         case biggerOp :: biggerOps =>
-            token(string(op) ~> notFollowedBy(strings(biggerOp, biggerOps: _*)))
+            token(string(op) ~> notFollowedBy(strings(biggerOp, biggerOps*)))
     }
 }
 ```
@@ -226,11 +229,11 @@ So, the question is, what do we do with our new found combinators? We could just
 the rest of the parser as they are, but that leaves room for error if we forget, or miss out,
 any of the replacements. And, in addition, we lose the nice string literal syntax we've made
 good use of until this point. So, a better solution would be to change our definition of
-`implicitSymbol`:
+the `Conversion[String, Parsley[Unit]]`:
 
 ```scala mdoc
 object implicits {
-    implicit def implicitSymbol(s: String): Parsley[Unit] = {
+    given Conversion[String, Parsley[Unit]] = { s =>
         if (keywords(s))       keyword(s)
         else if (operators(s)) operator(s)
         else                   lexeme(symbol(s)).void
@@ -239,7 +242,8 @@ object implicits {
 ```
 ```scala mdoc:invisible
 import parsley.Failure
-assert(implicits.implicitSymbol("negate").parse("negatex").isInstanceOf[Failure[_]])
+import implicits.given
+assert("negate".parse("negatex").isInstanceOf[Failure[?]])
 ```
 
 Now, when we use a string literal in our original parser, it will first check to see if that is
@@ -283,7 +287,7 @@ object lexer {
             case Nil => lexeme(symbol(op)).void
             // strings requires one non-varargs argument
             case biggerOp :: biggerOps =>
-                token(string(op) ~> notFollowedBy(strings(biggerOp, biggerOps: _*)))
+                token(string(op) ~> notFollowedBy(strings(biggerOp, biggerOps*)))
         }
     }
 
@@ -292,7 +296,7 @@ object lexer {
 
 
     object implicits {
-        implicit def implicitSymbol(s: String): Parsley[Unit] = {
+        given Conversion[String, Parsley[Unit]] = { s =>
             if (keywords(s))       keyword(s)
             else if (operators(s)) operator(s)
             else                   lexeme(symbol(s)).void
@@ -302,24 +306,27 @@ object lexer {
 ```
 ```scala mdoc:invisible
 object expressions {
-    import lexer.implicits.implicitSymbol
+    import lexer.implicits.given
     import lexer.{number, fully, identifier}
+    import Expr.*
     // for now, assume that `identifier` is just 1 or more alphabetical characters
 
-    sealed trait Expr
-    case class Add(x: Expr, y: Expr) extends Expr
-    case class Mul(x: Expr, y: Expr) extends Expr
-    case class Sub(x: Expr, y: Expr) extends Expr
-    case class Neg(x: Expr) extends Expr
-    case class Num(x: BigInt) extends Expr
-    case class Var(x: String) extends Expr
+    enum Expr {
+        case Add(x: Expr, y: Expr)
+        case Mul(x: Expr, y: Expr)
+        case Sub(x: Expr, y: Expr)
+        case Neg(x: Expr)
+        case Num(x: BigInt)
+        case Var(x: String)
+    }
 
-    private lazy val atom: Parsley[Expr] =
-        "(" ~> expr <~ ")" | number.map(Num) | identifier.map(Var)
+    private lazy val atom: Parsley[Expr] = "(" ~> expr <~ ")"
+                                         | number.map(Num.apply)
+                                         | identifier.map(Var.apply)
     private lazy val expr = precedence[Expr](atom)(
-        Ops(Prefix)("negate" as Neg),
-        Ops(InfixL)("*" as Mul),
-        Ops(InfixL)("+" as Add, "-" as Sub))
+        Ops(Prefix)("negate" as Neg.apply),
+        Ops(InfixL)("*" as Mul.apply),
+        Ops(InfixL)("+" as Add.apply, "-" as Sub.apply))
 
     val parser = fully(expr)
 }
@@ -369,10 +376,11 @@ object lexer {
 ```
 ```scala mdoc:invisible
 import parsley.Failure
-assert(lexer.implicits.implicitSymbol("negate").parse("negatex").isInstanceOf[Failure[_]])
+import lexer.implicits.given
+assert("negate".parse("negatex").isInstanceOf[Failure[?]])
 ```
 
-The `implicitSymbol` function we developed before, along with `operator` and
+The `Conversion[String, Parsley[Unit]]` we developed before, along with `operator` and
 `keyword` are all implemented by `lexer.lexeme.symbol`. The `names.identifier` parser
 accounts for the keyword problem for us. The basic `natural.decimal` parser
 meets our needs without any additional configuration: it also returns `BigInt`, which

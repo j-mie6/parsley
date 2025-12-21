@@ -84,7 +84,6 @@ involves `Ref`:
 ```scala mdoc
 import parsley.quick.*
 //import parsley.debuggable
-import parsley.debug.combinator.detectDivergence
 import parsley.state.*
 
 @debuggable
@@ -106,6 +105,8 @@ it will reset it and execute `q` one time. `q` flips the `toggle`, but then does
 you might be able to identify the cycle that will happen here:
 
 ```scala mdoc:crash
+
+import parsley.debug.combinator.detectDivergence
 detectDivergence(stateful.top).parse("")
 ```
 
@@ -155,7 +156,7 @@ class Nested(r: Ref[Boolean]) {
 
 @debuggable
 object nameful {
-    val top = false.makeRef(r => new Nested(r).p)
+    val top = false.makeRef(r => Nested(r).p)
 }
 ```
 

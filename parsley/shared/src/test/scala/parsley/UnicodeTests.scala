@@ -5,15 +5,15 @@
  */
 package parsley
 
-import Predef.{ArrowAssoc => _, _}
+import Predef.{ArrowAssoc => _, *}
 
-import parsley.unicode._
+import parsley.unicode.*
 
 class UnicodeTests extends ParsleyTest {
     // TODO: property-based testing for this!
     "item" should "accept any character" in {
         for (i <- (0x00000 to 0x0000a) ++ (0x00040 to 0x000ef) ++ (0x0ff00 to 0x0ff0a) ++ (0x1ff00 to 0x1ffff)) {
-            item.parse(Character.toChars(i).mkString) should not be a [Failure[_]]
+            item.parse(Character.toChars(i).mkString) should not be a [Failure[?]]
         }
     }
     it should "fail if the input has run out, expecting any character" in {
@@ -40,7 +40,7 @@ class UnicodeTests extends ParsleyTest {
 
     // FIXME: this needs to be improved
     "whitespace" should "consume any whitespace chars" in {
-        (whitespaces *> char('a')).parse(" \t\n\r\f\u000b" * 2 + 'a') should not be a [Failure[_]]
+        (whitespaces *> char('a')).parse(" \t\n\r\f\u000b" * 2 + 'a') should not be a [Failure[?]]
     }
 
     "endOfLine" should "consume windows or unix line endings" in cases(endOfLine)(
@@ -48,10 +48,10 @@ class UnicodeTests extends ParsleyTest {
         "\r\n" -> Some('\n'),
     )
     it should "fail otherwise" in {
-        endOfLine.parse("a") shouldBe a [Failure[_]]
-        endOfLine.parse("\r") shouldBe a [Failure[_]]
-        endOfLine.parse("\r ") shouldBe a [Failure[_]]
-        endOfLine.parse("  ") shouldBe a [Failure[_]]
+        endOfLine.parse("a") shouldBe a [Failure[?]]
+        endOfLine.parse("\r") shouldBe a [Failure[?]]
+        endOfLine.parse("\r ") shouldBe a [Failure[?]]
+        endOfLine.parse("  ") shouldBe a [Failure[?]]
     }
 
     "letter" should "accept non-latin characters" in cases(letter)(
@@ -73,11 +73,11 @@ class UnicodeTests extends ParsleyTest {
         upper.parse("Å") shouldBe Success('Å')
     }
     it should "fail otherwise" in {
-        for (c <- 'a' to 'z') upper.parse(c.toString) shouldBe a [Failure[_]]
-        upper.parse("ß") shouldBe a [Failure[_]]
-        upper.parse("ð") shouldBe a [Failure[_]]
-        upper.parse("é") shouldBe a [Failure[_]]
-        upper.parse("λ") shouldBe a [Failure[_]]
+        for (c <- 'a' to 'z') upper.parse(c.toString) shouldBe a [Failure[?]]
+        upper.parse("ß") shouldBe a [Failure[?]]
+        upper.parse("ð") shouldBe a [Failure[?]]
+        upper.parse("é") shouldBe a [Failure[?]]
+        upper.parse("λ") shouldBe a [Failure[?]]
     }
 
     "lower" should "only accept lowercase characters" in {
@@ -88,9 +88,9 @@ class UnicodeTests extends ParsleyTest {
         lower.parse("λ") shouldBe Success('λ')
     }
     it should "fail otherwise" in {
-        for (c <- 'A' to 'Z') lower.parse(c.toString) shouldBe a [Failure[_]]
-        lower.parse("Ω") shouldBe a [Failure[_]]
-        lower.parse("Å") shouldBe a [Failure[_]]
+        for (c <- 'A' to 'Z') lower.parse(c.toString) shouldBe a [Failure[?]]
+        lower.parse("Ω") shouldBe a [Failure[?]]
+        lower.parse("Å") shouldBe a [Failure[?]]
     }
 
     "digit parsers" should "accept the appropriate characters" in {
@@ -106,13 +106,13 @@ class UnicodeTests extends ParsleyTest {
     }
     they should "fail otherwise" in {
         for (c <- ('a' to 'f') ++ ('A' to 'F')) {
-            bit.parse(c.toString) shouldBe a [Failure[_]]
-            digit.parse(c.toString) shouldBe a [Failure[_]]
-            octDigit.parse(c.toString) shouldBe a [Failure[_]]
+            bit.parse(c.toString) shouldBe a [Failure[?]]
+            digit.parse(c.toString) shouldBe a [Failure[?]]
+            octDigit.parse(c.toString) shouldBe a [Failure[?]]
         }
-        bit.parse("2") shouldBe a [Failure[_]]
-        octDigit.parse("8") shouldBe a [Failure[_]]
-        octDigit.parse("9") shouldBe a [Failure[_]]
+        bit.parse("2") shouldBe a [Failure[?]]
+        octDigit.parse("8") shouldBe a [Failure[?]]
+        octDigit.parse("9") shouldBe a [Failure[?]]
     }
 
     "oneOf" should "match any of the characters provided" in {

@@ -6,7 +6,7 @@ laika.site.metadata.description = "This page describes how Parsley's lexer works
 %}
 
 ```scala mdoc:invisible
-import parsley.token.{Lexer, descriptions, CharPred, Basic, Unicode}, descriptions._
+import parsley.token.{Lexer, descriptions, CharPred, Basic, Unicode}, descriptions.*
 ```
 
 # Lexer (`parsley.token.Lexer`)
@@ -367,7 +367,7 @@ character, it would try and render character `0x207`.
 
 ## `Lexer.lexeme.{enclosing, separators}`
 These two objects just contain various shortcuts for doing things such as semi-colon separated
-things, or braces enclosed things, etc. There is nothing special about them: with `lexer.lexeme.symbol.implicits.implicitSymbol` imported, `"(" ~> p <~ ")"` is the same as `lexer.lexeme.enclosing.parens(p)`. The choice of one style over the other is purely up to taste.
+things, or braces enclosed things, etc. There is nothing special about them: with `lexer.lexeme.symbol.implicits.given` imported, `"(" ~> p <~ ")"` is the same as `lexer.lexeme.enclosing.parens(p)`. The choice of one style over the other is purely up to taste.
 
 ## Whitespace-Sensitive Languages and `Lexer.space`
 Normally, the whitespace definitions used by `lexeme` are fixed as described by the

@@ -6,17 +6,16 @@
 package parsley.token.text
 
 import org.scalatest.propspec.AnyPropSpec
-import org.scalatest.matchers._
+import org.scalatest.matchers.*
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 import parsley.Parsley.eof
-import parsley.token.descriptions._
+import parsley.token.descriptions.*
 import parsley.token.errors.ErrorConfig
 import org.scalacheck.Gen
 
-import parsley.token.descriptions.{DescGen, DescShrink}
-import DescGen._
-import DescShrink._
+import DescGen.*
+import DescShrink.*
 
 class EscapeSemanticPreservationSpec extends AnyPropSpec with ScalaCheckPropertyChecks with should.Matchers {
     implicit val config: PropertyCheckConfiguration = new PropertyCheckConfiguration(minSuccessful = 50)

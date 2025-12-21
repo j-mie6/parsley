@@ -519,7 +519,7 @@ class ErrorConfig {
 
     /** How a ASCII-only string literal should be referred to or explained in error messages.
       * @since 4.1.0
-      * @param multi whether this is for multi-line strings
+      * @param multi whether this is for multi-line strings (false could indicate both, if combined)
       * @param raw whether this is for raw strings
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
@@ -527,7 +527,7 @@ class ErrorConfig {
     def labelStringAscii(@unused multi: Boolean, @unused raw: Boolean): LabelWithExplainConfig = NotConfigured
     /** How a Latin1-only string literal should be referred to or explained in error messages.
       * @since 4.1.0
-      * @param multi whether this is for multi-line strings
+      * @param multi whether this is for multi-line strings (false could indicate both, if combined)
       * @param raw whether this is for raw strings
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
@@ -535,7 +535,7 @@ class ErrorConfig {
     def labelStringLatin1(@unused multi: Boolean, @unused raw: Boolean): LabelWithExplainConfig = NotConfigured
     /** How a UTF-16-only string should literal be referred to or explained in error messages.
       * @since 4.1.0
-      * @param multi whether this is for multi-line strings
+      * @param multi whether this is for multi-line strings (false could indicate both, if combined)
       * @param raw whether this is for raw strings
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text

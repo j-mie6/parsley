@@ -7,6 +7,7 @@ package parsley.expr
 
 import parsley.Parsley
 import parsley.combinator.choice
+import parsley.internal.deepembedding.frontend
 
 /** This object is used to construct precedence parsers from either a `Prec` or many `Ops[A, A]`.
   *
@@ -44,7 +45,7 @@ object precedence {
       * @since 3.0.0
       */
     def apply[A](atom0: Parsley[A], atoms: Parsley[A]*)(lvlTightest: Ops[A, A], lvls: Ops[A, A]*): Parsley[A] = {
-        apply(lvls.foldLeft[Prec[A]](new Level(Atoms(atom0, atoms: _*), lvlTightest))(new Level(_, _)))
+        apply(lvls.foldLeft[Prec[A]](new Level(Atoms(atom0, atoms*), lvlTightest))(new Level(_, _)))
     }
 
     /** This combinator builds an expression parser given a collection of homogeneous atoms and operators.
@@ -78,7 +79,7 @@ object precedence {
       */
     def apply[A](lvlWeakest: Ops[A, A], lvls: Ops[A, A]*)(atom0: Parsley[A], atoms: Parsley[A]*): Parsley[A] = {
         val (lvlTightest +: lvls_) = (lvlWeakest +: lvls).reverse: @unchecked
-        apply(atom0, atoms: _*)(lvlTightest, lvls_ : _*)
+        apply(atom0, atoms*)(lvlTightest, lvls_ *)
     }
 
     /** This combinator builds an expression parser given a heterogeneous precedence table.
@@ -106,10 +107,9 @@ object precedence {
       * @see         [[Prec `Prec`]] and its subtypes for a description of how the types work.
       * @since 4.0.0
       */
-    def apply[A](table: Prec[A]): Parsley[A] = crushLevels(table)
-
-    private def crushLevels[A](lvls: Prec[A]): Parsley[A] = lvls match {
-        case Atoms(atom0, atoms @ _*) => choice((atom0 +: atoms): _*)
-        case Level(lvls, ops) => ops.chain(crushLevels(lvls))
+    def apply[A](table: Prec[A]): Parsley[A] = table match {
+        // for single-level tables, it is more efficient to defer to single chain
+        case Level(Atoms(atom0, atoms*), ops) => ops.fixity.chain(choice((atom0 +: atoms)*), choice(ops.ops*))(ops.wrap)
+        case _ => new Parsley(frontend.Precedence(table))
     }
 }

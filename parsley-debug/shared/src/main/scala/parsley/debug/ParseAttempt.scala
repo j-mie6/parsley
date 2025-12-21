@@ -5,7 +5,7 @@
  */
 package parsley.debug
 
-import ParseAttempt._ // scalastyle:ignore underscore.import
+import ParseAttempt.* // scalastyle:ignore underscore.import
 
 /** A representation of the attempts a parser has made during parse-time.
   *
@@ -59,7 +59,7 @@ private [parsley] object ParseAttempt {
 
     // This gives you everything you need for inspecting a parse attempt made by a parser.
     // Anything extra are most likely internal fields only.
-    // To stop warnings about refutable / non-exhaustive matches, the return type must be Some[_].
+    // To stop warnings about refutable / non-exhaustive matches, the return type must be Some[?].
     // You'd think that'd be in <https://docs.scala-lang.org/tour/extractor-objects.html>, but no.
     // $COVERAGE-OFF$
     def unapply(att: ParseAttempt): Some[(Input, Offset, Offset, Pos, Pos, Success, Result)] = {

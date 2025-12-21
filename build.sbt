@@ -2,8 +2,13 @@ import _root_.parsley.build.mima
 
 val projectName = "parsley"
 val Scala213 = "2.13.16"
+<<<<<<< HEAD
 val Scala212 = "2.12.18"
 val Scala3 = "3.3.3"
+=======
+val Scala212 = "2.12.20"
+val Scala3 = "3.3.7"
+>>>>>>> staging/5.0
 val Java11 = JavaSpec.temurin("11")
 val Java17 = JavaSpec.temurin("17")
 val Java21 = JavaSpec.temurin("21")
@@ -23,14 +28,15 @@ inThisBuild(List(
   licenses := List("BSD-3-Clause" -> url("https://opensource.org/licenses/BSD-3-Clause")),
   versionScheme := Some("early-semver"),
   crossScalaVersions := Seq(Scala213, Scala212, Scala3),
-  scalaVersion := Scala213,
+  scalaVersion := Scala3,
   mimaBinaryIssueFilters ++= mima.issueFilters,
   // CI Configuration
   tlCiReleaseBranches := Seq(mainBranch),
   tlCiScalafmtCheck := false,
   tlCiHeaderCheck := true,
   githubWorkflowJavaVersions := Seq(Java11, Java17, Java21),
-  githubWorkflowAddedJobs += testCoverageJob(githubWorkflowGeneratedCacheSteps.value.toList),
+  // FIXME: codeclimate has been changed
+  //githubWorkflowAddedJobs += testCoverageJob(githubWorkflowGeneratedCacheSteps.value.toList),
   githubWorkflowConcurrency := None, // this allows us to not fail the pipeline on double commit
   // Website Configuration
   tlSitePublishBranch := Some(mainBranch),
@@ -43,7 +49,7 @@ lazy val commonSettings = Seq(
   headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax,
   headerEmptyLine := false,
 
-  resolvers ++= Opts.resolver.sonatypeOssReleases, // Will speed up MiMA during fast back-to-back releases
+  //resolvers ++= Opts.resolver.sonatypeOssReleases, // Will speed up MiMA during fast back-to-back releases
   libraryDependencies ++= Seq(
     "org.scalatest" %%% "scalatest" % "3.2.19" % Test,
     "org.scalatestplus" %%% "scalacheck-1-18" % "3.2.19.0" % Test,
@@ -104,10 +110,11 @@ lazy val parsleyDebug = crossProject(JSPlatform, JVMPlatform, NativePlatform)
       }
     },
 
+    // 4.6 bumped 0.5 native, so old versions are no longer findable
     tlVersionIntroduced := Map(
-      "2.13" -> "4.5.0",
-      "2.12" -> "4.5.0",
-      "3"    -> "4.5.0",
+      "2.13" -> "4.6.0",
+      "2.12" -> "4.6.0",
+      "3"    -> "4.6.0",
     ),
   )
 
@@ -136,6 +143,9 @@ lazy val docs = project
         "org.typelevel" %% "cats-core" % "2.13.0",
         "com.github.j-mie6" %% "parsley-cats" % "1.5.0"
     ),
+    // TODO: enable this when we switch to 3.8
+    //Compile / scalacOptions += "-experimental",
+    Compile / scalacOptions --= Seq("-unchecked", "-deprecation", "-Wunused:imports", "-Wunused:locals"),
   )
 
 def testCoverageJob(cacheSteps: List[WorkflowStep]) = WorkflowJob(

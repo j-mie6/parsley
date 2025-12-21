@@ -50,6 +50,7 @@ private [machine] final class ArrayStack[A](initialSize: Int = ArrayStack.Defaul
     // $COVERAGE-OFF$
     def size: Int = usize + 1
     def isEmpty: Boolean = sp == -1
+    def nonEmpty: Boolean = sp != -1
     def mkString(sep: String): String = array.take(sp + 1).reverse.mkString(sep)
     // $COVERAGE-ON$
 }

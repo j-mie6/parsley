@@ -55,7 +55,7 @@ object combinator {
       * @since 3.0.0
       * @group fail
       */
-    def fail(msg0: String, msgs: String*): Parsley[Nothing] = fail(new FlexibleCaret(1), msg0, msgs: _*)
+    def fail(msg0: String, msgs: String*): Parsley[Nothing] = fail(new FlexibleCaret(1), msg0, msgs*)
 
     /** This combinator consumes no input and fails immediately with the given error messages.
       *
@@ -73,8 +73,8 @@ object combinator {
       * @since 4.0.0
       * @group fail
       */
-    def fail(caretWidth: Int, msg0: String, msgs: String*): Parsley[Nothing] = fail(new RigidCaret(caretWidth), msg0, msgs: _*)
-    private def fail(caretWidth: CaretWidth, msg0: String, msgs: String*): Parsley[Nothing] = new Parsley(new singletons.Fail(caretWidth, (msg0 +: msgs): _*))
+    def fail(caretWidth: Int, msg0: String, msgs: String*): Parsley[Nothing] = fail(new RigidCaret(caretWidth), msg0, msgs*)
+    private def fail(caretWidth: CaretWidth, msg0: String, msgs: String*): Parsley[Nothing] = new Parsley(new singletons.Fail(caretWidth, (msg0 +: msgs)*))
 
     /** This combinator consumes no input and fails immediately, setting the unexpected component
       * to the given item.
@@ -387,10 +387,9 @@ object combinator {
           * @group filter
           */
         def filterOut(pred: PartialFunction[A, String]): Parsley[A] = {
-            this.filterWith(new VanillaGen[A] { // TODO: direct call would remove the uo
-                override def reason(x: A) = Some(pred(x))
-                override private [errors] def transparent: Boolean = true
-            })(!pred.isDefinedAt(_)).uo("filterOut")
+            combinator.filterVanillaPartial(con(p), "filterOut")(pred.andThen { reason =>
+                (VanillaGen.EmptyItem, Some(reason))
+            })
         }
 
         /** This combinator filters the result of this parser using the given partial-predicate, succeeding only when the predicate is undefined.
@@ -437,10 +436,9 @@ object combinator {
           * @group filter
           */
         def guardAgainst(pred: PartialFunction[A, Seq[String]]): Parsley[A] = {
-            this.filterWith(new SpecializedGen[A] { // TODO: direct call would remove the uo
-                override def messages(x: A) = pred(x)
-                override private [errors] def transparent: Boolean = true
-            })(!pred.isDefinedAt(_)).uo("gaurdAgainst")
+            // Sad, but it means I don't have to duplicate
+            val bad = pred.andThen(left)
+            this.mapFilterMsg(bad.applyOrElse(_, right[A])).uo("guardAgainst")
         }
 
         /** This combinator applies a partial function `pf` to the result of this parser if its result is defined for `pf`, failing if it is not.
@@ -502,10 +500,9 @@ object combinator {
           * @group filter
           */
         def collectMsg[B](msggen: A => Seq[String])(pf: PartialFunction[A, B]): Parsley[B] = {
-            this.collectWith(new SpecializedGen[A] { // TODO: direct call would remove the uo
-                override def messages(x: A) = msggen(x)
-                override private [errors] def transparent: Boolean = true
-            })(pf).uo("collectMsg")
+            val good = pf.andThen(right)
+            val bad = msggen.andThen(left)
+            this.mapFilterMsg(good.applyOrElse(_, bad)).uo("collectMsg")
         }
 
         /** This combinator conditionally transforms the result of this parser with a given function, if a `Left` is
@@ -535,13 +532,7 @@ object combinator {
           * @group filter
           */
         def mapFilterMsg[B](f: A => Either[Seq[String], B]): Parsley[B] = {
-            this.mapFilterWith(new SpecializedGen[A] { // TODO: direct call would remove the uo
-                override def messages(x: A) = {
-                    val Left(errs) = f(x): @unchecked
-                    errs
-                }
-                override private [errors] def transparent: Boolean = true
-            })(x => f(x).toOption).uo("mapFilterMsg")
+            new Parsley((new frontend.FilterPartialSpecialized(con(p).internal, f, "mapFilterMsg")))
         }
 
         /** This combinator filters the result of this parser using the given partial-predicate, succeeding only when the predicate is undefined.
@@ -578,10 +569,9 @@ object combinator {
           * @group filter
           */
         def unexpectedWhen(pred: PartialFunction[A, String]): Parsley[A] = {
-            this.filterWith(new VanillaGen[A] { // TODO: direct call would remove the uo
-                override def unexpected(x: A) = VanillaGen.NamedItem(pred(x))
-                override private [errors] def transparent: Boolean = true
-            })(!pred.isDefinedAt(_)).uo("unexpectedWhen")
+            combinator.filterVanillaPartial(con(p), "unexpectedWhen")(pred.andThen { name =>
+                (VanillaGen.NamedItem(name), None)
+            })
         }
 
         /** This combinator filters the result of this parser using the given partial-predicate, succeeding only when the predicate is undefined.
@@ -617,11 +607,9 @@ object combinator {
           * @group filter
           */
         def unexpectedWithReasonWhen(pred: PartialFunction[A, (String, String)]): Parsley[A] = {
-            this.filterWith(new VanillaGen[A] { // TODO: direct call would remove the uo
-                override def unexpected(x: A) = VanillaGen.NamedItem(pred(x)._1)
-                override def reason(x: A) = Some(pred(x)._2)
-                override private [errors] def transparent: Boolean = true
-            })(!pred.isDefinedAt(_)).uo("unexpectedWithReasonWhen")
+            combinator.filterVanillaPartial(con(p), "unexpectedWithReasonWhen")(pred.andThen { case (name, reason) =>
+                (VanillaGen.NamedItem(name), Some(reason))
+            })
         }
 
         /** This combinator changes the expected component of any errors generated by this parser.
@@ -739,4 +727,13 @@ object combinator {
     @inline private [parsley] def mapFilterWith[A, B](p: Parsley[A], debugName: String)(f: A => Option[B], err: ErrorGen[A]): Parsley[B] = {
         new Parsley(new frontend.MapFilter(p.internal, f, err.internal)).uo(debugName) // FIXME: move in
     }
+
+    // These avoid the double evaluation of the partial function, at the cost of additional maintenance
+    @inline private [parsley] def filterVanillaPartial[A, B](p: Parsley[A], debugName: String)
+                                                            (f: PartialFunction[A, (VanillaGen.UnexpectedItem, Option[String])]): Parsley[A] = {
+        new Parsley(new frontend.FilterPartialVanilla(p.internal, f, debugName))
+    }
+    private val left = Left[Seq[String], Nothing](_)
+    private val _right = Right[Nothing, Any](_)
+    private def right[A] = _right.asInstanceOf[A => Right[Nothing, A]]
 }

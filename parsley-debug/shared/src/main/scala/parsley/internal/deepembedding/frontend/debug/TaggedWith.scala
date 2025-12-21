@@ -17,18 +17,19 @@ import parsley.internal.deepembedding.{singletons, Cont, ContOps, Id}
 import parsley.internal.deepembedding.ContOps.{perform, result, suspend, zipWith, zipWith3, ContAdapter}
 import parsley.internal.deepembedding.backend.StrictParsley
 import parsley.internal.deepembedding.backend.debug.TagFactory
-import parsley.internal.deepembedding.frontend._ // scalastyle:ignore underscore.import
+import parsley.internal.deepembedding.frontend.* // scalastyle:ignore underscore.import
+import parsley.internal.deepembedding.Traverse.traverse
 
 // Wrapper class signifying debugged classes
 // TODO: the origin is needed to figure out the name later on... but couldn't we resolve the name here and avoid forwarding on to the backend (send string instead)?
 // FIXME: this clobbers the register allocator, apparently?
 private [parsley] final class TaggedWith[A](factory: TagFactory)(val origin: LazyParsley[A], val subParser: LazyParsley[A], isIterative: Boolean, userAssignedName: Option[String])
     extends LazyParsley[A] {
-    XAssert.assert(!origin.isInstanceOf[TaggedWith[_]], "Tagged parsers should not be nested within each other directly.")
+    XAssert.assert(!origin.isInstanceOf[TaggedWith[?]], "Tagged parsers should not be nested within each other directly.")
 
     def make(p: StrictParsley[A]): StrictParsley[A] = factory.create(origin, p, isIterative, userAssignedName)
 
-    override def findLetsAux[M[_, +_] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] = suspend(subParser.findLets(seen))
+    override def findLetsAux[M[_, +_] : ContOps, R](seen: Set[LazyParsley[?]])(implicit state: LetFinderState): M[R, Unit] = suspend(subParser.findLets(seen))
     override def preprocess[M[_, +_] : ContOps, R, A_ >: A](implicit lets: LetMap): M[R, StrictParsley[A_]] = {
         for (p <- suspend[M, R, StrictParsley[A]](subParser.optimised[M, R, A])) yield make(p)
     }
@@ -61,14 +62,14 @@ private [parsley] object TaggedWith {
     // This map tracks seen parsers to prevent infinitely recursive parsers from overflowing the stack (and ties
     // the knot for these recursive parsers).
     // Use maps with weak keys or don't pass this into a >>= parser.
-    private final class ParserTracker(val map: mutable.Map[LazyParsley[_], TaggingResultPromise[_]]) {
+    private final class ParserTracker(val map: mutable.Map[LazyParsley[?], TaggingResultPromise[?]]) {
         def put[A](par: LazyParsley[A], bubblesIterative: Boolean): TaggingResultPromise[A] = {
             val prom = new TaggingResultPromise[A](bubblesIterative)
             map(par) = prom
             prom
         }
         def get[A](par: LazyParsley[A]): TaggingResult[A] = map(par).get.asInstanceOf[TaggingResult[A]]
-        def hasSeen(par: LazyParsley[_]): Boolean = map.contains(par)
+        def hasSeen(par: LazyParsley[?]): Boolean = map.contains(par)
     }
 
     // these two classes are used to allow for parsers to be added into the ParserTracker map without
@@ -242,26 +243,47 @@ private [parsley] object TaggedWith {
         }
 
         override def visit[A](self: <|>[A], context: ParserTracker)(p: LazyParsley[A], q: LazyParsley[A]): DL[A] = {
-            handle2Ary(self, context)(p, q) { (p, q) => {
-                    Lazy(new <|>(p.get, q.get, self.debugName))
-                }
+            handle2Ary(self, context)(p, q) { (p, q) =>
+                Lazy(new <|>(p.get, q.get, self.debugName))
             }
         }
 
         override def visit[A](self: ChainPre[A], context: ParserTracker)(p: LazyParsley[A], op: =>LazyParsley[A => A]): DL[A] = {
-            handle2Ary(self, context)(p, op) { (p, op) => {
-                    Lazy(new ChainPre(p.get, op.get))
-                }
+            handle2Ary(self, context)(p, op) { (p, op) =>
+                Lazy(new ChainPre(p.get, op.get))
             }
         }
+
+        override def visit[A](self: Precedence[A], context: ParserTracker)(atoms: List[LazyParsley[Any]], ops: List[LazyOp], wraps: List[Any => Any]): DL[A] = {
+            handlePossiblySeen(self, context) {
+                visitLazyPrec(atoms, ops, wraps, context).map { taggedTable => TaggingResult(
+                    parser = Lazy(new Precedence(taggedTable.atoms, taggedTable.ops, taggedTable.wraps)),
+                    bubblesIterative = taggedTable.bubblesIterative
+                )}
+            }
+        }
+
+        private case class TaggedLazyPrec(atoms: List[LazyParsley[Any]], ops: List[LazyOp], wraps: List[Any => Any], bubblesIterative: Boolean)
+
+        private def visitLazyPrec(atoms: List[LazyParsley[Any]], ops: List[LazyOp], wraps: List[Any => Any], context: ParserTracker): M[R, TaggedLazyPrec] = for {
+            taggedAtoms <- traverse(atoms)(visit(_, context))
+            taggedOperators <- traverse(ops)(op => for {
+                p <- visit(op.op, context)
+            } yield (op.fixity, p, op.prec))
+        } yield new TaggedLazyPrec(
+            taggedAtoms.map(_.parser.get),
+            taggedOperators.map(op => new LazyOp(op._1, op._2.parser.get, op._3)),
+            wraps,
+            taggedAtoms.exists(_.bubblesIterative) || taggedOperators.exists(_._2.bubblesIterative)
+        )
 
         // the generic unary/binary overrides above cannot handle this properly, as they lose the UsesReg trait
         override def visit[S](self: Put[S], context: ParserTracker)(ref: Ref[S], p: LazyParsley[S]): DL[Unit] = {
             handlePossiblySeen(self, context) {
-                visit(p, context).map(p => { TaggingResult(
+                visit(p, context).map { p => TaggingResult(
                     parser = Lazy( new Put(ref, p.parser.get)),
                     bubblesIterative = p.bubblesIterative
-                )})
+                )}
             }
         }
         override def visit[S, A](self: NewReg[S, A], context: ParserTracker)(ref: Ref[S], init: LazyParsley[S], body: =>LazyParsley[A]): DL[A] = {

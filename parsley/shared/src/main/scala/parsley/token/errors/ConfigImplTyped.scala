@@ -44,7 +44,6 @@ sealed trait VanillaFilterConfig[A] extends FilterConfig[A]
   * @group filters
   */
 abstract class SpecializedMessage[A] extends SpecializedFilterConfig[A] { self =>
-    private def this(@unused fullAmend: Boolean) = this()
     /** This method produces the messages for the given value.
       * @since 4.1.0
       * @group badchar
@@ -56,7 +55,7 @@ abstract class SpecializedMessage[A] extends SpecializedFilterConfig[A] { self =
     }
     private [parsley] final override def collect[B](p: Parsley[A])(f: PartialFunction[A, B]) = p.collectMsg(message(_))(f)
     private [parsley] final override def mkError(offset: Int, line: Int, col: Int, caretWidth: Int, x: A): DefuncError = {
-        new ClassicFancyError(offset, line, col, new RigidCaret(caretWidth), message(x): _*)
+        new ClassicFancyError(offset, line, col, new RigidCaret(caretWidth), message(x)*)
     }
 
     // $COVERAGE-OFF$
@@ -83,7 +82,6 @@ abstract class SpecializedMessage[A] extends SpecializedFilterConfig[A] { self =
   * @group filters
   */
 abstract class Unexpected[A] extends VanillaFilterConfig[A] { self =>
-    private def this(@unused fullAmend: Boolean) = this()
     /** This method produces the unexpected label for the given value.
       * @since 4.1.0
       * @group badchar
@@ -121,7 +119,6 @@ abstract class Unexpected[A] extends VanillaFilterConfig[A] { self =>
   * @group filters
   */
 abstract class Because[A] extends VanillaFilterConfig[A] { self =>
-    private def this(@unused fullAmend: Boolean) = this()
     /** This method produces the reason for the given value.
       * @since 4.1.0
       * @group badchar
@@ -159,7 +156,6 @@ abstract class Because[A] extends VanillaFilterConfig[A] { self =>
   * @group filters
   */
 abstract class UnexpectedBecause[A] extends VanillaFilterConfig[A] { self =>
-    private def this(@unused fullAmend: Boolean) = this()
     /** This method produces the unexpected label for the given value.
       * @since 4.1.0
       * @group badchar

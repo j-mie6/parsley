@@ -21,7 +21,7 @@ allow for Scala character and string literals to work directly as parsers for
 those specific literals. For example:
 
 ```scala mdoc:to-string
-import parsley.syntax.character._
+import parsley.syntax.character.given
 
 val p = 'a' ~> "bc"
 p.parse("abc")
@@ -39,8 +39,8 @@ import parsley.token.descriptions.LexicalDesc
 import scala.annotation.unused
 val lexer = new Lexer(LexicalDesc.plain)
 
-import lexer.lexeme.symbol.implicits._
-val _ = implicitSymbol("a"): @unused
+import lexer.lexeme.symbol.implicits.given
+import parsley.syntax.character.given
 ```
 
 ```scala mdoc:fail
@@ -67,7 +67,7 @@ more natural, where the function to apply appears to the left of the arguments:
 
 ```scala mdoc:to-string
 import parsley.character.char
-import parsley.syntax.lift._
+import parsley.syntax.lift.*
 
 val add = (x: Int, y: Int) => x + y
 add.lift(char('a').as(5), char('b').as(6)).parse("ab")
@@ -85,7 +85,7 @@ arguments, it can infer the type of the function based on the arguments. This
 may appear slightly less natural, however:
 
 ```scala mdoc:to-string
-import parsley.syntax.zipped._
+import parsley.syntax.zipped.*
 (char('a').as(5), char('b').as(6)).zipped(_ + _).parse("ab")
 ```
 

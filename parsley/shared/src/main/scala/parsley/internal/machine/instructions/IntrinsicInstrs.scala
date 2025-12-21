@@ -7,12 +7,15 @@ package parsley.internal.machine.instructions
 
 import scala.annotation.tailrec
 
-import parsley.XAssert._
+import parsley.XAssert.*
+import parsley.errors
 import parsley.token.errors.LabelConfig
 
 import parsley.internal.errors.{EndOfInput, ExpectDesc, ExpectItem}
 import parsley.internal.machine.Context
-import parsley.internal.machine.XAssert._
+import parsley.internal.machine.XAssert.*
+import parsley.internal.errors.RigidCaret
+import parsley.internal.machine.errors.ClassicFancyError
 
 private [internal] final class Lift2(f: (Any, Any) => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
@@ -152,7 +155,7 @@ private [internal] final class UniSat(f: Int => Boolean, expected: Iterable[Expe
         else ctx.expectedFail(expected, unexpectedWidth = 1)
     }
     // $COVERAGE-OFF$
-    override def toString: String = "UniSat(?)"
+    override def toString: String = "UniSat(?(_))"
     // $COVERAGE-ON$
 }
 
@@ -307,6 +310,55 @@ private [internal] final class MapFilter[A, B](_pred: A => Option[B], var good: 
     // $COVERAGE-OFF$
     override def toString: String = s"MapFilter(???, good = $good)"
     // $COVERAGE-ON$
+}
+
+private [internal] final class FilterPartialVanilla[A](f: PartialFunction[A, (errors.VanillaGen.UnexpectedItem, Option[String])]) extends Instr {
+    private [this] val pred = f.asInstanceOf[PartialFunction[Any, (errors.VanillaGen.UnexpectedItem, Option[String])]]
+
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        val x = ctx.stack.upeek
+        val state = ctx.states
+        ctx.states = state.tail
+        ctx.handlers = ctx.handlers.tail
+        pred.applyOrElse(x, FilterPartial.orNull) match {
+            case null => ctx.inc()
+            case (unex, reason) =>
+                val caretWidth = ctx.offset - state.offset
+                val err = unex.makeError(state.offset, state.line, state.col, caretWidth)
+                ctx.fail(err.withReason(reason))
+        }
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = s"FilterPartialVanilla(?)"
+    // $COVERAGE-ON$
+}
+
+private [internal] final class FilterPartialSpecialized[A, B](f: A => Either[Seq[String], B]) extends Instr {
+    private [this] val pred = f.asInstanceOf[Any => Either[Seq[String], Any]]
+
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        val x = ctx.stack.upeek
+        val state = ctx.states
+        ctx.states = state.tail
+        ctx.handlers = ctx.handlers.tail
+        pred(x) match {
+            case Right(y) => ctx.exchangeAndContinue(y)
+            case Left(msgs) =>
+                val caretWidth = ctx.offset - state.offset
+                ctx.fail(new ClassicFancyError(state.offset, state.line, state.col, new RigidCaret(caretWidth), msgs*))
+        }
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = s"FilterPartialSpecialized(?)"
+    // $COVERAGE-ON$
+}
+
+private [instructions] object FilterPartial {
+    val orNull = (_: Any) => null
 }
 
 // Companion Objects

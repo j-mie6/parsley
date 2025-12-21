@@ -5,7 +5,7 @@
  */
 package parsley.token
 
-import Predef.{ArrowAssoc => _, _}
+import Predef.{ArrowAssoc => _, *}
 
 import parsley.{Success, ParsleyTest}
 import parsley.Parsley.atomic
@@ -223,9 +223,9 @@ class SpaceTests extends ParsleyTest {
         val lexer1 = makeSpace(basicCommentsOnly.copy(multiLineCommentStart = "", multiLineCommentEnd = ""))
         val lexer2 = makeSpace(basicCommentsOnly.copy(lineCommentStart = ""))
         val lexer3 = makeSpace(unicodeCommentsOnly)
-        (lexer1.skipComments *> char('a')).parse("a") shouldBe a [Success[_]]
-        (lexer2.skipComments *> char('a')).parse("a") shouldBe a [Success[_]]
-        (lexer3.skipComments *> char('a')).parse("a") shouldBe a [Success[_]]
+        (lexer1.skipComments *> char('a')).parse("a") shouldBe a [Success[?]]
+        (lexer2.skipComments *> char('a')).parse("a") shouldBe a [Success[?]]
+        (lexer3.skipComments *> char('a')).parse("a") shouldBe a [Success[?]]
     }
 
     val basicDependent = basicMixed.copy(whitespaceIsContextDependent = true)

@@ -6,6 +6,7 @@
 package parsley.expr
 
 import parsley.Parsley
+import scala.annotation.unchecked.uncheckedVariance
 
 /** This class allows for the description of a single layer of operators in the precedence tree.
   *
@@ -18,8 +19,10 @@ import parsley.Parsley
   * @since 2.2.0
   * @group Table
   */
-sealed abstract class Ops[-A, B] {
-    private [expr] def chain(p: Parsley[A]): Parsley[B]
+abstract class Ops[-A, B] {
+  private[parsley] val fixity: Fixity
+  private[parsley] val ops: Seq[Parsley[fixity.Op[A @uncheckedVariance, B]]]
+  private[parsley] val wrap: A => B
 }
 
 /** This helper object is used to build values of `Ops[A, A]`, for homogeneous precedence parsing.
@@ -44,9 +47,5 @@ object Ops {
       * @note currently a bug in scaladoc incorrect displays this functions type, it should be: `fixity.Op[A, A]`, NOT `Op[A, A]`.
       * @since 2.2.0
       */
-    def apply[A](fixity: Fixity)(op0: Parsley[fixity.Op[A, A]], ops: Parsley[fixity.Op[A, A]]*): Ops[A, A] = GOps[A, A](fixity)(op0, ops: _*)
-
-    private [expr] def apply[A, B](fixity: Fixity)(op: Parsley[fixity.Op[A, B]])(implicit wrap: A => B): Ops[A, B] = new Ops[A, B] {
-        private [expr] def chain(p: Parsley[A]): Parsley[B] = fixity.chain(p, op)
-    }
+    def apply[A](fixity: Fixity)(op0: Parsley[fixity.Op[A, A]], ops: Parsley[fixity.Op[A, A]]*): Ops[A, A] = GOps[A, A](fixity)(op0, ops*)
 }

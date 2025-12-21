@@ -16,7 +16,7 @@ import parsley.internal.deepembedding.{frontend, singletons}
 import parsley.internal.machine.Context
 
 import Parsley.{emptyErr, transPure => pure, some}
-import XCompat._ // substituteCo
+import XCompat.* // substituteCo
 
 /**
   * This is the class that encapsulates the act of parsing and running an object of this class with `parse` will
@@ -601,7 +601,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * scala> import parsley.character.letter
       * scala> val keywords = Set("if", "then", "else")
       * scala> val identifier = some(letter).map(_.mkString)
-      *                                     .filterNot(keywords.contains(_))
+      *                                     .filterNot(keywords.contains)
       * scala> identifier.parse("hello")
       * val res0 = Success("hello")
       * scala> identifier.parse("if")
@@ -1150,7 +1150,7 @@ private [parsley] abstract class ParsleyImpl {
       * @return a parser that will parse `p` then possibly parse `q` to transform `p`'s result into a `B`.
       * @group cond
       */
-    final def select[A, B](p: Parsley[Either[A, B]], q: =>Parsley[A => B]): Parsley[B] = branch(p, q, transPure(identity[B](_))).uo("select")
+    final def select[A, B](p: Parsley[Either[A, B]], q: =>Parsley[A => B]): Parsley[B] = branch(p, q, transPure(identity[B] _)).uo("select")
     /** This combinator parses its argument `p`, but rolls back any consumed input on failure.
       *
       * If the parser `p` succeeds, then `atomic(p)` has no effect. However, if `p` failed,
@@ -1217,7 +1217,31 @@ private [parsley] abstract class ParsleyImpl {
       * @return a parser which fails when `p` succeeds and succeeds otherwise, never consuming input.
       * @group prim
       */
-    final def notFollowedBy(p: Parsley[_]): Parsley[Unit] = new Parsley(new frontend.NotFollowedBy(p.internal))
+    final def notFollowedBy(p: Parsley[?]): Parsley[Unit] = new Parsley(new frontend.NotFollowedBy(p.internal))
+    /** This combinator parses its argument `p`, and succeeds when `p` fails and vice-versa, never consuming input.
+      *
+      * If the parser `p` succeeds, then `not(p)` will fail, consuming no input.
+      * Otherwise, should `p` fail, then `not(p)` will succeed, consuming no input
+      * and returning `()`.
+      *
+      * @example one use for this combinator is to allow for "longest-match" behaviour.
+      * For instance, keywords are normally only considered keywords if they are not
+      * part of some larger valid identifier (i.e. the keyword "if" should not parse
+      * successfully given "ifp"). This can be accomplished as follows:
+      * {{{
+      * import parsley.character.{string, letterOrDigit}
+      * import parsley.Parsley.not
+      * def keyword(kw: String): Parsley[Unit] = atomic {
+      *     string(kw) ~> not(letterOrDigit)
+      * }
+      * }}}
+      *
+      * @param p the parser to execute, it should fail in order for this combinator to succeed.
+      * @return a parser which fails when `p` succeeds and succeeds otherwise, never consuming input.
+      * @group prim
+      * @note alias for `notFollowedBy`
+      */
+    final def not(p: Parsley[?]): Parsley[Unit] = notFollowedBy(p)
     /** This combinator fails immediately, with a caret of the given width and no other information.
       *
       * By producing basically no information, this combinator is principally for adjusting the
@@ -1339,7 +1363,7 @@ private [parsley] abstract class ParsleyImpl {
     final def many[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = secretSome(transFresh(factory.newBuilder), p, "many")
     // this is needed for Scala 2 to avoid manual ascription (and ascribes cleaner), but isn't really needed for Scala 3 and increases doc/API footprint
     // we can add them later if we really wanted to. Alternatively, p.many(factory) would remove this problem entirely and provide better intellisense.
-    //final private [parsley] def many[A, CC[_]](p: Parsley[A], factory: IterableFactory[CC]): Parsley[CC[A]] = many[A, CC[A]](p, factory)
+    //final private [parsley] def many[A, CC[_?](p: Parsley[A], factory: IterableFactory[CC]): Parsley[CC[A]] = many[A, CC[A]](p, factory)
     // this is needed for Scala 2 (or manual ascription on A+C) for ArraySeq, but isn't really needed for Scala 3, and saves 2.12 work
     //final def many[Ev[_], A: Ev, CC[_]](p: Parsley[A], factory: EvidenceIterableFactory[CC, Ev]): Parsley[CC[A]] = many[A, CC[A]](p, factory)
 
@@ -1400,7 +1424,8 @@ private [parsley] abstract class ParsleyImpl {
       */
     final def some[A, C](p: Parsley[A], factory: Factory[A, C]): Parsley[C] = secretSome(p, p, factory, "some")
     private [parsley] final def secretSome[A, C](init: Parsley[A], p: Parsley[A], factory: Factory[A, C], debugName: String): Parsley[C] = {
-        secretSome(init.map(factory.newBuilder += _).ut(), p, debugName)
+        // impure prevents bad fusion, particularly for characters
+        secretSome(init.impure.map(factory.newBuilder += _).ut(), p, debugName)
     }
     private [parsley] final def secretSome[A, C](init: Parsley[mutable.Builder[A, C]], p: Parsley[A], debugName: String): Parsley[C] = {
         new Parsley(new frontend.Many(init.internal, p.internal, debugName))

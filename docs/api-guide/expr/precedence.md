@@ -52,7 +52,7 @@ are assumed:
 ```scala mdoc:silent
 import parsley.Parsley
 import parsley.character.{letter, digit, stringOfSome}
-import parsley.syntax.character.stringLift
+import parsley.syntax.character.given
 
 val int: Parsley[Int] = digit.foldLeft1(0)((n, d) => n * 10 + d.asDigit)
 val ident: Parsley[String] = stringOfSome(letter)
@@ -66,18 +66,20 @@ structure. As an example:
 
 ```scala mdoc:to-string:nest
 import parsley.expr.{precedence, Ops, InfixL}
+import Expr.*
 
-sealed trait Expr
-case class Add(x: Expr, y: Expr) extends Expr
-case class Sub(x: Expr, y: Expr) extends Expr
-case class Mul(x: Expr, y: Expr) extends Expr
-case class Num(n: Int) extends Expr
-case class Var(v: String) extends Expr
+enum Expr {
+    case Add(x: Expr, y: Expr)
+    case Sub(x: Expr, y: Expr)
+    case Mul(x: Expr, y: Expr)
+    case Num(n: Int)
+    case Var(v: String)
+}
 
 val expr: Parsley[Expr] =
-    precedence(ident.map(Var), int.map(Num))(
-        Ops(InfixL)("*" as Mul),
-        Ops(InfixL)("+" as Add, "-" as Sub)
+    precedence(ident.map(Var.apply), int.map(Num.apply))(
+        Ops(InfixL)("*" as Mul.apply),
+        Ops(InfixL)("+" as Add.apply, "-" as Sub.apply)
     )
 
 expr.parse("x+5*y")
@@ -138,7 +140,7 @@ object SOps {
 
 object GOps {
     def apply[A, B](fixity: Fixity)(ops: Parsley[fixity.Op[A, B]]*)
-                   (implicit wrap: A => B): Ops[A, B]
+                   (using wrap: A => B): Ops[A, B]
 }
 ```
 
@@ -175,9 +177,9 @@ case class Var(v: String) extends Atom
 
 val expr: Parsley[Expr] =
     precedence {
-        Atoms(ident.map(Var), int.map(Num)) :+
-        SOps(InfixL)("*" as Mul) :+
-        SOps(InfixL)("+"as Add, "-" as Sub)
+        Atoms(ident.map(Var.apply), int.map(Num.apply)) :+
+        SOps(InfixL)("*" as Mul.apply) :+
+        SOps(InfixL)("+"as Add.apply, "-" as Sub.apply)
     }
 
 expr.parse("x+5*y")
@@ -196,16 +198,16 @@ import parsley.expr.InfixR
 
 val expr: Parsley[Expr] =
     precedence {
-        Atoms(ident.map(Var), int.map(Num)) :+
-        SOps(InfixR)("*" as Mul) :+
-        SOps(InfixL)("+" as Add, "-" as Sub)
+        Atoms(ident.map(Var.apply), int.map(Num.apply)) :+
+        SOps(InfixR)("*" as Mul.apply) :+
+        SOps(InfixL)("+" as Add.apply, "-" as Sub.apply)
     }
 ```
 ```scala mdoc:fail:nest
 val expr: Parsley[Expr] =
     precedence {
-        Atoms(ident.map(Var), int.map(Num)) :+
-        SOps(InfixL)("+" as Add, "-" as Sub) :+
-        SOps(InfixL)("*" as Mul)
+        Atoms(ident.map(Var.apply), int.map(Num.apply)) :+
+        SOps(InfixL)("+" as Add.apply, "-" as Sub.apply) :+
+        SOps(InfixL)("*" as Mul.apply)
     }
 ```

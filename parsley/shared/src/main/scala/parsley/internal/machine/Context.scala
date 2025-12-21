@@ -11,7 +11,7 @@ import scala.annotation.tailrec
 import parsley.Failure
 import parsley.Result
 import parsley.Success
-import parsley.XAssert._
+import parsley.XAssert.*
 import parsley.errors.ErrorBuilder
 
 import parsley.internal.errors.{CaretWidth, ExpectItem, LineBuilder, UnexpectDesc}
@@ -35,7 +35,6 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     private var calls: CallStack = Stack.empty
     /** State stack consisting of offsets and positions that can be rolled back */
     private [machine] var states: StateStack = Stack.empty
-    /** Stack consisting of offsets at previous checkpoints, which may query to test for consumed input */
     /** Current operational status of the machine */
     private [machine] var good: Boolean = true
     private [machine] var running: Boolean = true
@@ -126,7 +125,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
 
     private [parsley] def run[Err: ErrorBuilder, A](): Result[Err, A] = go[Err, A]()
     @tailrec private def go[Err: ErrorBuilder, A](): Result[Err, A] = {
-        //println(pretty)
+        // println(pretty)
         if (running) { // this is the likeliest branch, so should be executed with fewest comparisons
             instrs(pc)(this)
             go[Err, A]()
@@ -187,7 +186,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     }
 
     private [machine] def failWithMessage(caretWidth: CaretWidth, msgs: String*): Unit = {
-        this.fail(new ClassicFancyError(offset, line, col, caretWidth, msgs: _*))
+        this.fail(new ClassicFancyError(offset, line, col, caretWidth, msgs*))
     }
     private [machine] def unexpectedFail(expected: Iterable[ExpectItem], unexpected: UnexpectDesc): Unit = {
         this.fail(new UnexpectedError(offset, line, col, expected, unexpected))
@@ -261,6 +260,12 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     }
     private [machine] def pushHandler(label: Int): Unit = {
         handlers = new HandlerStack(calls, instrs, label, stack.usize, offset, hints, hintsValidOffset, handlers)
+    }
+    private [machine] def refreshState(): Unit = {
+        val state = states
+        state.offset = offset
+        state.line = line
+        state.col = col
     }
     private [machine] def saveState(): Unit = states = new StateStack(offset, line, col, states)
     private [machine] def restoreState(): Unit = {

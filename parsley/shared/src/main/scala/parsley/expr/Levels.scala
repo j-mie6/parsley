@@ -45,7 +45,7 @@ sealed abstract class Prec[+A] private [expr] {
       */
     final def +:[Aʹ >: A, B](ops: Ops[Aʹ, B]): Prec[B] = new Level(this, ops)
 }
-private [expr] case class Level[A, B](lvls: Prec[A], ops: Ops[A, B]) extends Prec[B]
+private [parsley] case class Level[A, B](lvls: Prec[A], ops: Ops[A, B]) extends Prec[B]
 
 /** This class is the base of a precedence table.
   *

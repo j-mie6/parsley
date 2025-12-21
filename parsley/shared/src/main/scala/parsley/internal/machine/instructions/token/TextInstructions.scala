@@ -13,7 +13,7 @@ import parsley.token.errors.SpecializedFilterConfig
 import parsley.internal.collection.immutable.Trie
 import parsley.internal.errors.{ExpectDesc, ExpectItem, ExpectRaw}
 import parsley.internal.machine.Context
-import parsley.internal.machine.XAssert._
+import parsley.internal.machine.XAssert.*
 import parsley.internal.machine.errors.{EmptyError, ExpectedError}
 import parsley.internal.machine.instructions.Instr
 

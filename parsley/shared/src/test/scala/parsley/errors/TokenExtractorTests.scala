@@ -8,7 +8,7 @@ package parsley.errors
 import parsley.{ParsleyTest, TestErrorBuilder}
 import parsley.Parsley.{many, some}
 import parsley.character.{string, digit, letter, char, whitespace}
-import parsley.errors.tokenextractors._
+import parsley.errors.tokenextractors.*
 
 class TokenExtractorTests extends ParsleyTest {
     val singleChar = new TestErrorBuilder with SingleChar

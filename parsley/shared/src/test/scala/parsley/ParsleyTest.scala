@@ -78,8 +78,8 @@ abstract class ParsleyTest extends AnyFlatSpec with Matchers with Assertions wit
         for ((input, res, _pos) <- tests) {
             implicit val pos: Position = _pos
             res match {
-                case None if noEof => p.parse(input) shouldBe a [Failure[_]]
-                case None => p.parseAll(input) shouldBe a [Failure[_]]
+                case None if noEof => p.parse(input) shouldBe a [Failure[?]]
+                case None => p.parseAll(input) shouldBe a [Failure[?]]
                 case Some(x) if noEof => p.parse(input) shouldBe Success(x)
                 case Some(x)=> p.parseAll(input) shouldBe Success(x)
             }

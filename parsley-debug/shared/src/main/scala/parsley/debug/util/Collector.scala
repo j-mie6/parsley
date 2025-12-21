@@ -36,16 +36,16 @@ object Collector {
     }*/
 
     /**
-      * This is an internal method used by the `parsley.debuggable` annotation. 
-      * 
-      * This function registers the names collected by the annotation to the 
+      * This is an internal method used by the `parsley.debuggable` annotation.
+      *
+      * This function registers the names collected by the annotation to the
       * `Renamer` object, and also adds parser information the annotation has
       * found inside of the the `ParserInfoCollector` object.
       *
       * @param names List of parsers mapped to their string representations.
       * @param parserInfo Parser info collected from the annotation.
       */
-    def registerNames(names: Map[Parsley[_], String], parserInfo: Option[(String, List[(Int, Int)])]): Unit = {
+    def registerNames(names: Map[Parsley[?], String], parserInfo: Option[(String, List[(Int, Int)])]): Unit = {
         parserInfo.map { case (filename, positions) => ParserInfoCollector.addInfo(ParserInfo(filename, positions)) }
         Renamer.addNames(names.map { case (k, v) => k.internal -> v })
     }
@@ -70,7 +70,7 @@ object Collector {
       *
       * @note Names assigned using this will take precedence over names assigned using [[parsley.debugger.combinator.named]].
       */
-    //def assignName(par: Parsley[_], name: String): Unit = Renamer.addName(par.internal, name)
+    //def assignName(par: Parsley[?], name: String): Unit = Renamer.addName(par.internal, name)
 
     /** Does the implementation of the collector for the current Scala platform actually work in
       * automatically finding parsers in objects and getting their field names as written in your
@@ -108,10 +108,10 @@ object Collector {
 // $COVERAGE-OFF$
 private [parsley] abstract class CollectorImpl {
     /** Collect names of parsers from an object. */
-    def collectNames(obj: Any): Map[LazyParsley[_], String]
+    def collectNames(obj: Any): Map[LazyParsley[?], String]
 
     /** Collect names of parsers from a [[parsley.token.Lexer]]. */
-    def collectLexer(lexer: Lexer): Map[LazyParsley[_], String]
+    def collectLexer(lexer: Lexer): Map[LazyParsley[?], String]
 
     /** Does the current platform's [[CollectorImpl]] actually get parsers from objects? */
     val supported: Boolean
@@ -119,9 +119,9 @@ private [parsley] abstract class CollectorImpl {
     // Try grabbing a parser from a LazyParsley or Parsley instance.
     // XXX: Doing a direct type test with match will cause Parsley objects to be instantiated.
     // XXX: Using a match-case expression without @unchecked causes an error in CI as these matches are not exhaustive.
-    protected def tryExtract(par: Any): LazyParsley[_] = (par: @unchecked) match {
-        case l: LazyParsley[_] => l
-        case p: Parsley[_]     => p.internal
+    protected def tryExtract(par: Any): LazyParsley[?] = (par: @unchecked) match {
+        case l: LazyParsley[?] => l
+        case p: Parsley[?]     => p.internal
     }
 
     // All of these objects inside a lexer are exposed, so are easy to collect parser names from.

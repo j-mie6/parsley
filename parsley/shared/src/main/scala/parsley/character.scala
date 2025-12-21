@@ -381,7 +381,7 @@ private [parsley] trait character {
       *
       * @example {{{
       * scala> import parsley.character.{letter, letterOrDigit, stringOfMany}
-      * scala> import parsley.syntax.zipped._
+      * scala> import parsley.syntax.zipped.*
       * scala> val ident = (letter, stringOfMany(letterOrDigit)).zipped((c, s) => s"&#36;c&#36;s")
       * scala> ident.parse("abdc9d")
       * val res0 = Success("abdc9d")
@@ -408,7 +408,7 @@ private [parsley] trait character {
       *
       * @example {{{
       * scala> import parsley.character.{letter, stringOfMany}
-      * scala> import parsley.syntax.zipped._
+      * scala> import parsley.syntax.zipped.*
       * scala> val ident = (letter, stringOfMany(_.isLetterOrDigit)).zipped((c, s) => s"&#36;c&#36;s")
       * scala> ident.parse("abdc9d")
       * val res0 = Success("abdc9d")
@@ -543,15 +543,18 @@ private [parsley] trait character {
       * @since 4.0.0
       * @group string
       */
-    final def strings[A](kv0: (String, Parsley[A]), kvs: (String, Parsley[A])*): Parsley[A] = {
+    final def strings[A](kv0: (String, Parsley[A]), kvs: (String, Parsley[A])*): Parsley[A] = strings(string(_).ut(), kv0, kvs*)
+
+    // requires that the given combinator is transparent
+    private [parsley] final def strings[A](comb: String => Parsley[String], kv0: (String, Parsley[A]), kvs: (String, Parsley[A])*): Parsley[A] = {
         // this isn't the best we could do: it's possible to eliminate backtracking with a Trie...
         // can this be done in a semantic preserving way without resorting to a new instruction?
         // I don't think it's worth it. Down the line a general Trie-backed optimisation would be
         // more effective.
         val ss = kv0 +: kvs
-        choice(ss.groupBy(_._1.head).toList.sortBy(_._1).view.map(_._2).flatMap { s =>
+        choice(ss.groupBy(_._1.charAt(0)).toList.sortBy(_._1).view.map(_._2).flatMap { s =>
             val (sLast, pLast) :: rest = s.toList.sortBy(_._1.length): @unchecked
-            ((string(sLast).ut() ~> pLast.ut()).ut() :: rest.map { case (s, p) => (atomic(string(s).ut()).ut() ~> p).ut() }).reverse
+            ((comb(sLast) ~> pLast).ut() :: rest.map { case (s, p) => (atomic(comb(s)).ut() ~> p).ut() }).reverse
         }.toSeq*).uo((kv0._1 +: kvs.map(_._1)).mkString("strings(", ", ", ")"))
     }
 

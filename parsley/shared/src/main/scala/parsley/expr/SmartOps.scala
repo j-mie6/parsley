@@ -6,7 +6,6 @@
 package parsley.expr
 
 import parsley.Parsley
-import parsley.combinator.choice
 
 /** This helper object builds values of `Ops[A, B]`, for fully heterogeneous precedence parsing.
   *
@@ -36,7 +35,14 @@ object GOps {
       * @since 2.2.0
       */
     def apply[A, B](fixity: Fixity)(op0: Parsley[fixity.Op[A, B]], ops: Parsley[fixity.Op[A, B]]*)(implicit wrap: A => B): Ops[A, B] = {
-        Ops[A, B](fixity)(choice((op0 +: ops): _*))(wrap)
+      val w = wrap
+      val f: fixity.type = fixity
+      val os = op0 +: ops
+      new Ops[A, B] {
+        val fixity: f.type = f
+        val ops = os
+        val wrap = w
+      }
     }
 }
 
@@ -65,5 +71,5 @@ object SOps {
       * @note currently a bug in scaladoc incorrect displays this functions type, it should be: `fixity.Op[A, B]`, NOT `Op[A, B]`.
       * @note the order of types in this method is reversed compared with [[GOps.apply]], this is due to a Scala typing issue.
       */
-    def apply[B, A <: B](fixity: Fixity)(op0: Parsley[fixity.Op[A, B]], ops: Parsley[fixity.Op[A, B]]*): Ops[A, B] = GOps(fixity)(op0, ops: _*)
+    def apply[B, A <: B](fixity: Fixity)(op0: Parsley[fixity.Op[A, B]], ops: Parsley[fixity.Op[A, B]]*): Ops[A, B] = GOps(fixity)(op0, ops*)
 }

@@ -24,8 +24,8 @@ private [parsley] object XCollector extends CollectorImpl {
     //      though it should be a safe type comparison if the version of scala-reflect remains
     //      constant between compile-time and runtime.
     // XXX: This works for Scala 2, but it is not guaranteed to work at all for Scala 3.
-    def collectNames(obj: Any): Map[LazyParsley[_], String] = {
-        val accumulator: mutable.HashMap[LazyParsley[_], String] = new mutable.HashMap()
+    def collectNames(obj: Any): Map[LazyParsley[?], String] = {
+        val accumulator: mutable.HashMap[LazyParsley[?], String] = new mutable.HashMap()
 
         val mirror = scala.reflect.runtime.currentMirror
         val objRefl = mirror.reflect(obj)
@@ -42,7 +42,7 @@ private [parsley] object XCollector extends CollectorImpl {
             val parser = getterRefl()
 
             parser match {
-                case _: LazyParsley[_] | _: Parsley[_] =>
+                case _: LazyParsley[?] | _: Parsley[?] =>
                     val name = getter.name.toString
                     accumulator.put(tryExtract(parser), name)
                 case _ => // Don't actually do anything.
@@ -55,5 +55,5 @@ private [parsley] object XCollector extends CollectorImpl {
     // XXX: See collectNames' hack (XXX) message for more information.
     // Collect all names from the exposed objects inside of a lexer, in case a user wants to know when a lexer is
     // automatically interacting with their parser.
-    def collectLexer(lexer: Lexer): Map[LazyParsley[_], String] = lexerObjects(lexer).flatMap(collectNames(_)).toMap
+    def collectLexer(lexer: Lexer): Map[LazyParsley[?], String] = lexerObjects(lexer).flatMap(collectNames(_)).toMap
 }

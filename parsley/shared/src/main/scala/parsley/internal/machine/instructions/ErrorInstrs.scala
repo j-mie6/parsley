@@ -7,7 +7,7 @@ package parsley.internal.machine.instructions
 
 import parsley.internal.errors.{CaretWidth, RigidCaret, UnexpectDesc}
 import parsley.internal.machine.Context
-import parsley.internal.machine.XAssert._
+import parsley.internal.machine.XAssert.*
 import parsley.internal.machine.errors.EmptyError
 
 private [internal] final class RelabelHints(labels: Iterable[String]) extends Instr {
@@ -174,7 +174,7 @@ private [internal] object SetLexicalAndFail extends Instr {
 private [internal] final class Fail(width: CaretWidth, msgs: String*) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        ctx.failWithMessage(width, msgs: _*)
+        ctx.failWithMessage(width, msgs*)
     }
     // $COVERAGE-OFF$
     override def toString: String = s"Fail(${msgs.mkString(", ")})"
@@ -200,9 +200,7 @@ private [internal] final class VanillaGen[A](gen: parsley.errors.VanillaGen[A]) 
         val unex = gen.unexpected(x)
         val reason = gen.reason(x)
         val err = unex.makeError(ctx.offset, ctx.line, ctx.col, gen.adjustWidth(x, caretWidth))
-        // Sorry, it's faster :(
-        if (reason.isDefined) ctx.fail(err.withReason(reason.get))
-        else ctx.fail(err)
+        ctx.fail(err.withReason(reason))
     }
 
     // $COVERAGE-OFF$
@@ -215,7 +213,7 @@ private [internal] final class SpecializedGen[A](gen: parsley.errors.Specialized
         ensureRegularInstruction(ctx)
         // stack will have an (A, Int) pair on it
         val (x, caretWidth) = ctx.stack.pop[(A, Int)]()
-        ctx.failWithMessage(new RigidCaret(gen.adjustWidth(x, caretWidth)), gen.messages(x): _*)
+        ctx.failWithMessage(new RigidCaret(gen.adjustWidth(x, caretWidth)), gen.messages(x)*)
     }
 
     // $COVERAGE-OFF$

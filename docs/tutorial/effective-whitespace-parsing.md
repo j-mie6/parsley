@@ -24,7 +24,7 @@ import parsley.character.{whitespace, string, item, endOfLine}
 import parsley.combinator.manyTill
 import parsley.errors.combinator.ErrorMethods //for hide
 
-def symbol(str: String): Parsley[String] = atomic(string(str))
+def symbol(str: String): Parsley[Unit] = atomic(string(str)).void
 
 val lineComment = symbol("//") ~> manyTill(item, endOfLine).void
 val multiComment = symbol("/*") ~> manyTill(item, symbol("*/")).void
@@ -44,7 +44,8 @@ parser we can start using it!
 ## Lexemes
 Lexemes are indivisible chunks of the input, the sort usually produced by a lexer in a
 classical setup. The `symbol` combinator I defined above forms part of this: it uses `atomic`
-to make an indivisible string, either you read the entire thing or none of it. The next piece
+to make an indivisible string, either you read the entire thing or none of it. You'll notice
+it `void`s out its output: this is because symbols are never "interesting", and we denote this by throwing away the result. The next piece
 of the puzzle is a combinator called `lexeme`, which should perform a parser and then always
 read spaces after it:
 
@@ -52,7 +53,7 @@ read spaces after it:
 def lexeme[A](p: Parsley[A]): Parsley[A] = p <~ skipWhitespace
 def token[A](p: Parsley[A]): Parsley[A] = lexeme(atomic(p))
 
-implicit def implicitSymbol(s: String): Parsley[String] = lexeme(symbol(s))
+given Conversion[String, Parsley[Unit]] = s => lexeme(symbol(s))
 ```
 
 The `token` combinator is a more general form of `symbol`, that works for all parsers, handling
@@ -60,7 +61,7 @@ them atomically _and_ consuming whitespace after. Note that it's important to co
 outside the scope of the `atomic`, otherwise malformed whitespace might cause backtracking for an
 otherwise legal token!
 
-With the `implicitSymbol` combinator, we can now treat all string literals as lexemes. This
+With the `Conversion[String, Parsley[Unit]]`, we can now treat all string literals as lexemes. This
 can be very useful, but ideally this could be improved by also recognising whether or not the
 provided string is a keyword, and if so, ensuring that it is not followed by another
 alphabetical character. This is out of scope for this post, however.
@@ -81,7 +82,7 @@ lazy val expr = precedence[BigInt](atom)(
 ```
 
 Other than introducing our new infrastructure, I've changed the characters in the original
-parser to strings: this is going to make them use our new `implicitLexeme` combinator! Notice
+parser to strings: this is going to make them use our new `Conversion[String, Parsley[Unit]]`! Notice
 how I've also marked the _whole_ of `number` as a token: we don't want to read whitespace
 between the digits, but instead after the entire number has been read, and a number should be entirely
 atomic. Now that we've done this we can try running it on some input and see what happens:
@@ -105,7 +106,7 @@ parser, however, we don't want to read the whitespace at the beginning in that c
 The eagle-eyed reader might have spotted that there is a distinction between the string literals we
 are using in the main parser and the `symbol`s we are using in the definitions of whitespace. Indeed,
 because we are using an implicit that consumes whitespace, it would be inappropriate
-to use it in the _definition_ of whitespace! If we were to pull in the `stringLift` implicit as we're
+to use it in the _definition_ of whitespace! If we were to pull in the `stringLift` conversion as we're
 used to, then Scala will report and ambiguous implicit and we'll be stuck. It's a _much_ better idea
 to limit the scope of these implicits, so we can be clear about which we mean where. To illustrate
 what I mean, let's restructure the code a little for the parser and ensure we don't run into any issues.
@@ -118,7 +119,7 @@ import parsley.expr.{precedence, Ops, InfixL}
 import parsley.errors.combinator.ErrorMethods //for hide
 
 object lexer {
-    private def symbol(str: String): Parsley[String] = atomic(string(str))
+    private def symbol(str: String): Parsley[Unit] = atomic(string(str)).void
 
     private val lineComment = symbol("//") ~> manyTill(item, endOfLine).void
     private val multiComment = symbol("/*") ~> manyTill(item, symbol("*/")).void
@@ -132,13 +133,13 @@ object lexer {
     val number = token(digit.foldLeft1[BigInt](0)((n, d) => n * 10 + d.asDigit))
 
     object implicits {
-        implicit def implicitSymbol(s: String): Parsley[String] =
+        given Conversion[String, Parsley[Unit]] = s =>
             lexeme(symbol(s)) // or `token(string(s))
     }
 }
 
 object expressions {
-    import lexer.implicits.implicitSymbol
+    import lexer.implicits.given
     import lexer.{number, fully}
 
     private lazy val atom: Parsley[BigInt] = "(" ~> expr <~ ")" | number
@@ -151,12 +152,8 @@ object expressions {
 ```
 
 In the above refactoring, I've introduced three distinct scopes: the `lexer`, the `lexer.implicits`
-and the `expressions`. Within `lexer`, I've marked the internal parts as `private`, in particular
-the `implicitSymbol` combinator that I've introduced to allow the lexer to use string literals in
-the description of the tokens. By marking `implicitSymbol` as `private`, we ensure that it cannot be
-accidentally used within `expressions`, where the main part of the parser is defined. In contrast,
-the `implicits` object nested within `lexer` provides the ability for the `expressions` object to
-hook into our whitespace sensitive string literal parsing (using `implicitToken`), and, but
+and the `expressions`. Within `lexer`, I've marked the internal parts as `private`. The `implicits` object nested within `lexer` provides the ability for the `expressions` object to
+hook into our whitespace sensitive string literal parsing (using `import lexer.implicits.given`), and, but
 enclosing it within the object, we prevent it being accidentally used inside the rest of the lexer
 (without an explicit import, which we know would be bad!). This is a good general structure to adopt,
 as it keeps the lexing code cleanly separated from the parser. If, for instance, you wanted to test

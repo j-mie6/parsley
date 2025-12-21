@@ -9,7 +9,7 @@ import parsley.token.errors.LabelConfig
 
 import parsley.internal.errors.ExpectDesc
 import parsley.internal.machine.Context
-import parsley.internal.machine.XAssert._
+import parsley.internal.machine.XAssert.*
 
 private [internal] final class Satisfies(f: Char => Boolean, expected: Iterable[ExpectDesc]) extends Instr {
     def this(f: Char => Boolean, expected: LabelConfig) = this(f, expected.asExpectDescs)
@@ -19,7 +19,7 @@ private [internal] final class Satisfies(f: Char => Boolean, expected: Iterable[
         else ctx.expectedFail(expected, unexpectedWidth = 1)
     }
     // $COVERAGE-OFF$
-    override def toString: String = "Sat(?)"
+    override def toString: String = "Sat(?(_))"
     // $COVERAGE-ON$
 }
 

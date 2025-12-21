@@ -56,7 +56,7 @@ private [parsley] final class NewReg[S, A](val ref: Ref[S], init: LazyParsley[S]
     private [parsley] var debugName = "fillRef"
     // $COVERAGE-ON$
 }
-private [parsley] final class Span(p: LazyParsley[_]) extends Unary[Any, String](p) {
+private [parsley] final class Span(p: LazyParsley[?]) extends Unary[Any, String](p) {
     override def make(p: StrictParsley[Any]): StrictParsley[String] = new backend.Span(p)
 
     // $COVERAGE-OFF$
@@ -67,7 +67,7 @@ private [parsley] final class Span(p: LazyParsley[_]) extends Unary[Any, String]
 }
 
 // $COVERAGE-OFF$
-private [parsley] final class Debug[A](p: LazyParsley[A], name: String, ascii: Boolean, break: Breakpoint, watchedRefs: Seq[(Ref[_], String)])
+private [parsley] final class Debug[A](p: LazyParsley[A], name: String, ascii: Boolean, break: Breakpoint, watchedRefs: Seq[(Ref[?], String)])
     extends Unary[A, A](p) {
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.Debug(p, name, ascii, break, watchedRefs)
 
@@ -75,7 +75,7 @@ private [parsley] final class Debug[A](p: LazyParsley[A], name: String, ascii: B
 
     private [parsley] var debugName = "debug"
 }
-private [parsley] final class DebugError[A](p: LazyParsley[A], name: String, ascii: Boolean, errBuilder: ErrorBuilder[_]) extends Unary[A, A](p) {
+private [parsley] final class DebugError[A](p: LazyParsley[A], name: String, ascii: Boolean, errBuilder: ErrorBuilder[?]) extends Unary[A, A](p) {
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.DebugError(p, name, ascii, errBuilder)
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p, name, ascii, errBuilder)

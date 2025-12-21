@@ -110,11 +110,11 @@ object unicode {
       *
       * @example {{{
       * scala> import parsley.unicode.satisfy
-      * scala> satisfy(Character.isDigit(_)).parse("")
+      * scala> satisfy(Character.isDigit).parse("")
       * val res0 = Failure(..)
-      * scala> satisfy(Character.isDigit(_)).parse("7")
+      * scala> satisfy(Character.isDigit).parse("7")
       * val res1 = Success(0x37)
-      * scala> satisfy(Character.isDigit(_)).parse("a5")
+      * scala> satisfy(Character.isDigit).parse("a5")
       * val res2 = Failure(..)
       * scala> def char(c: Int): Parsley[Int] = satisfy(_ == c)
       * }}}
@@ -370,7 +370,7 @@ object unicode {
       *
       * @example {{{
       * scala> import parsley.unicode.{letter, letterOrDigit, stringOfMany}
-      * scala> import parsley.syntax.zipped._
+      * scala> import parsley.syntax.zipped.*
       * scala> val ident = (letter, stringOfMany(letterOrDigit)).zipped((c, s) => s"&#36;{Character.toString(c)}&#36;s")
       * scala> ident.parse("abdc9d")
       * val res0 = Success("abdc9d")
@@ -397,7 +397,7 @@ object unicode {
       *
       * @example {{{
       * scala> import parsley.unicode.{letter, stringOfMany}
-      * scala> import parsley.syntax.zipped._
+      * scala> import parsley.syntax.zipped.*
       * scala> val ident = (letter, stringOfMany(Character.isLetterOrDigit(_))).zipped((c, s) => s"&#36;{Character.toString(c)}&#36;s")
       * scala> ident.parse("abdc9d")
       * val res0 = Success("abdc9d")

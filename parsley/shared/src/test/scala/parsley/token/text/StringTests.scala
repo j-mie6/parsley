@@ -5,11 +5,11 @@
  */
 package parsley.token.text
 
-import scala.Predef.{ArrowAssoc => _, _}
+import scala.Predef.{ArrowAssoc => _, *}
 import parsley.ParsleyTest
 import parsley.token.LexemeImpl
 
-import parsley.token.descriptions._
+import parsley.token.descriptions.*
 import parsley.token.errors.ErrorConfig
 import parsley.character.space
 import org.scalactic.source.Position
@@ -28,10 +28,16 @@ class StringTests extends ParsleyTest {
         makeString(desc, new RawCharacter(errConfig), false)
     private def makeRawMultiString(desc: TextDesc): StringParsers =
         makeString(desc, new RawCharacter(errConfig), true)
+    private def makeCombinedString(desc: TextDesc): StringParsers = {
+        val char = new EscapableCharacter(desc.escapeSequences, new Escape(desc.escapeSequences, errConfig, generic), space, errConfig)
+        val single = new ConcreteString(desc.stringEnds, char, desc.graphicCharacter, allowsAllSpace = false, errConfig)
+        val multi = new ConcreteString(desc.multiStringEnds, char, desc.graphicCharacter, allowsAllSpace = true, errConfig)
+        new CombinedStrings(desc.stringEnds, desc.multiStringEnds, single, multi, char, errConfig)
+    }
 
-    def unicodeCases(str: StringParsers)(tests: (String, Option[String], Position)*): Unit = cases(str.fullUtf16)(tests: _*)
-    def asciiCases(str: StringParsers)(tests: (String, Option[String], Position)*): Unit = cases(str.ascii)(tests: _*)
-    def extAsciiCases(str: StringParsers)(tests: (String, Option[String], Position)*): Unit = cases(str.latin1)(tests: _*)
+    def unicodeCases(str: StringParsers)(tests: (String, Option[String], Position)*): Unit = cases(str.fullUtf16)(tests*)
+    def asciiCases(str: StringParsers)(tests: (String, Option[String], Position)*): Unit = cases(str.ascii)(tests*)
+    def extAsciiCases(str: StringParsers)(tests: (String, Option[String], Position)*): Unit = cases(str.latin1)(tests*)
 
     val plain = TextDesc.plain.copy(
         graphicCharacter = Unicode(_ >= ' '),
@@ -160,4 +166,11 @@ class StringTests extends ParsleyTest {
         "\"abc\nc\"" -> Some("abc\nc"),
         "\"d\"" -> None,
     )
+
+    "combined strings" should "allow for for either string with no ambiguity" in {
+        asciiCases(makeCombinedString(plain.copy(stringEnds = Set(("\"", "\"")), multiStringEnds = Set(("\"\"\"", "\"\"\"")))))(
+            "\"abc\"" -> Some("abc"),
+            "\"\"\"abc\n\"\"\"" -> Some("abc\n"),
+        )
+    }
 }

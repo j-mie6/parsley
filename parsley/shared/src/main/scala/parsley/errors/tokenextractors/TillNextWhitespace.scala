@@ -20,7 +20,7 @@ import org.typelevel.scalaccompat.annotation.unused
   * @note In the case of unprintable characters or whitespace, this extractor will favour reporting
   *       a more meaningful name.
   */
-trait TillNextWhitespace { this: ErrorBuilder[_] =>
+trait TillNextWhitespace { this: ErrorBuilder[?] =>
     /** Should tokens be trimed to only be as wide as ''either'' the next whitespace or the
       * amount of input the parser tried to consumed, whichever is smaller?
       * @since 4.0.0

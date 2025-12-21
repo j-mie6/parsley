@@ -175,7 +175,10 @@ object combinator {
             val frozen = tree()
             val input = frozen.fullInput
 
-            view.render(input, frozen)
+            view match {
+              case view: DebugView.ConditionalRender if !view.shouldRender => 
+              case _ => view.render(input, frozen)
+            }
         }.impure
 
         atomic(attached <~ renderer) | (renderer ~> empty)

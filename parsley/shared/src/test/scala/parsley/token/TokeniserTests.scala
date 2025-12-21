@@ -5,9 +5,9 @@
  */
 package parsley.token
 
-import Predef.{ArrowAssoc => _, _}
+import Predef.{ArrowAssoc => _, *}
 
-import parsley._
+import parsley.*
 import parsley.Parsley.eof
 import parsley.character.string
 
@@ -124,10 +124,10 @@ class TokeniserTests extends ParsleyTest {
     }
     // Now they do :)
     it should "not allow hexadecimal floats without the exponent" in {
-        (tokeniser.lexeme.unsignedCombined.number <* eof).parse("0x340.0") shouldBe a [Failure[_]]
+        (tokeniser.lexeme.unsignedCombined.number <* eof).parse("0x340.0") shouldBe a [Failure[?]]
     }
     it should "not allow octal floats without the exponent" in {
-        (tokeniser.lexeme.unsignedCombined.number <* eof).parse("0o201.0") shouldBe a [Failure[_]]
+        (tokeniser.lexeme.unsignedCombined.number <* eof).parse("0o201.0") shouldBe a [Failure[?]]
     }
 
     "number" should "parse integers or floats" in {

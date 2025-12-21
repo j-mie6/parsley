@@ -8,7 +8,7 @@ package parsley.token.text
 import parsley.Parsley, Parsley.{atomic, empty, pure}
 import parsley.character.{bit, char, digit, hexDigit, octDigit, strings}
 import parsley.combinator.guardS
-import parsley.syntax.zipped._
+import parsley.syntax.zipped.*
 import parsley.token.descriptions.{EscapeDesc, NumberOfDigits, NumericEscape}
 import parsley.token.errors.{ErrorConfig, NotConfigured}
 import parsley.token.numeric
@@ -24,7 +24,7 @@ private [token] class OriginalEscape(desc: EscapeDesc, err: ErrorConfig, generic
             case e => e -> pure(desc.escTrie(e))
         }.toList match {
             case Nil => empty
-            case x::xs => atomic(strings(x, xs: _*))
+            case x::xs => atomic(strings(x, xs*))
         }
     }
 

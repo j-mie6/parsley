@@ -27,7 +27,7 @@ on entering and exiting a combinator:
 ```scala mdoc:to-string
 import parsley.Parsley.atomic
 import parsley.character.string
-import parsley.debug, debug._
+import parsley.debug, debug.*
 
 val hello = ( atomic(string("hello").debug("hello")).debug("atomic1")
             | string("hey").debug("hey")
@@ -60,11 +60,11 @@ will do the same during the exit.
 The `debug` combinator takes a variadic number of reference/name pairs as its last argument. These
 allow you to watch the values stored in references as well during the debugging process. For instance:
 
-```scala mdoc:to-string
+```scala mdoc:reset:to-string
 import parsley.Parsley.atomic
-import parsley.state._
+import parsley.state.*
 import parsley.character.string
-import parsley.debug._
+import parsley.debug.*
 
 val p = 0.makeRef { r1 =>
     false.makeRef { r2 =>
@@ -86,10 +86,10 @@ p.parse("hello world")
 The `debugError` is a slightly more experimental combinator that aims to provide some (lower-level)
 insight into how an error message came to be. For instance:
 
-```scala mdoc:to-string
+```scala mdoc:reset:to-string
 import parsley.character.{letter, digit, char}
 import parsley.Parsley.many
-import parsley.debug._
+import parsley.debug.*
 
 val q = (many( ( digit.debugError("digit")
                | letter.debugError("letter")
@@ -119,15 +119,15 @@ significance is given. Multiple runs can be performed and these will be aggregat
 can be cleared using `clear()`.
 @:@
 
-```scala mdoc:height=0
-import parsley.Parsley, Parsley.pure
+```scala mdoc:reset:height=0
+import parsley.Parsley, Parsley.{many, pure}
 import parsley.character.{string, char}
 import parsley.combinator.traverse
-import parsley.debug._
+import parsley.debug.*
 
 def classicString(s: String): Parsley[String] = s.toList match {
     case Nil => pure("")
-    case c :: cs => traverse(c, cs: _*)(char).map(_.mkString)
+    case c :: cs => traverse(c, cs*)(char).map(_.mkString)
 }
 
 implicit val profiler: Profiler = new Profiler

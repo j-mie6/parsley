@@ -145,7 +145,7 @@ just outlining the datatypes themselves and why they are how they are:
 
 ```scala mdoc
 object ast {
-    import parsley.generic._
+    import parsley.generic.*
 
     case class HaskellProgram(lines: List[ProgramUnit])
     sealed trait ProgramUnit
@@ -228,15 +228,15 @@ object ast {
     case class StrongApp(f: Expr10_, arg: Term) extends Expr10_
 
     sealed trait Term extends Expr10_
-    case class ConId(v: String) extends Term with PatCon with TyAtom
-    case class VarId(v: String) extends Term with PatNaked with TyAtom
-    case object UnitCon extends Term with PatNaked with ParserBridge0[Term with PatNaked]
-    case class TupleCon(arity: Int) extends Term with PatCon
+    case class ConId(v: String) extends Term, PatCon, TyAtom
+    case class VarId(v: String) extends Term, PatNaked, TyAtom
+    case object UnitCon extends Term, PatNaked, ParserBridge0[Term & PatNaked]
+    case class TupleCon(arity: Int) extends Term, PatCon
     case class ParensVal(x: Expr) extends Term
     case class TupleLit(xs: List[Expr]) extends Term
     case class ListLit(xs: List[Expr]) extends Term
 
-    trait Literal extends Term with PatNaked
+    trait Literal extends Term, PatNaked
     case class HsInt(x: BigInt) extends Literal
     case class HsString(s: String) extends Literal
     case class HsChar(c: Int) extends Literal
@@ -340,9 +340,9 @@ val /???/ = parsley.Parsley.empty
 import parsley.Parsley.atomic
 import parsley.combinator.{sepBy, sepBy1, countSome}
 
-import lexer._
-import implicits.implicitSymbol
-import ast._
+import lexer.*
+import lexer.implicits.given
+import ast.*
 
 val `<literal>` = atomic(HsDouble(FLOAT)) | HsInt(INTEGER) | HsString(STRING) | HsChar(CHAR)
 val `<var-id>` = VarId(VAR_ID)
@@ -350,13 +350,12 @@ val `<con-id>` = ConId(CON_ID)
 
 val `<expr>`: Parsley[Expr] = /???/
 
-val `<term>` = ( `<var-id>` | `<con-id>` | (UnitCon from "()")
-               | atomic(TupleCon("(" ~> countSome(",") <~ ")"))
-               | atomic(ParensVal("(" ~> `<expr>` <~ ")"))
-               | TupleLit("(" ~> sepBy1(`<expr>`, ",") <~ ")")
-               | ListLit("[" ~> sepBy(`<expr>`, ",") <~ "]")
-               | `<literal>`
-               )
+val `<term>` = `<var-id>` | `<con-id>` | (UnitCon from "()")
+             | atomic(TupleCon("(" ~> countSome(",") <~ ")"))
+             | atomic(ParensVal("(" ~> `<expr>` <~ ")"))
+             | TupleLit("(" ~> sepBy1(`<expr>`, ",") <~ ")")
+             | ListLit("[" ~> sepBy(`<expr>`, ",") <~ "]")
+             | (`<literal>`)
 ```
 
 Here, I've followed the structure of the grammar quite closely. I'm even making sure to follow the
@@ -366,7 +365,7 @@ use of the `sepBy` and `sepBy1` combinators to handle the comma separated values
 a list. Notice that there are three instances of backtracking _alone_ in this parser. Tuple
 constructions (like `(,,,)`), parenthesised values, and tuple literals all share the `(` token. That
 being said, so does `()`, but there it's been treated as a single atomic token by our
-`implicitSymbol`, so no backtracking required at the branching level. As I said, this could get
+implicit conversion, so no backtracking required at the branching level. As I said, this could get
 expensive, so we will re-visit it later. The same crops up with `FLOAT` and `INTEGER`, which may
 also overlap with each other: again, we will re-visit this later and use the `FLOAT_OR_INT` token
 instead. To deal with the number of `,` representing the arity of a tuple constructor operator, I've
@@ -402,10 +401,6 @@ lazy val `<expr>`: Parsley[Expr] = precedence {
 }
 lazy val `<expr-10>` = Atoms(/???/)
 ```
-```scala mdoc:invisible
-import scala.annotation.unused
-val _ = `<expr>`: @unused
-```
 
 Here we can see a whole bunch of interesting things! Firstly, up to this point we've been used to
 seeing `Ops` in our precedence, where here we are using `SOps` and the `Levels` list. This is
@@ -429,7 +424,7 @@ val `<pat-naked>`: Parsley[PatNaked] = /???/
 val `<pat>`: Parsley[Pat] = /???/
 
 val `<alt>` = Alt(`<pat>`, "->" ~> `<expr>`)
-lazy val `<func-app>` = `<term>`.reduceLeft(StrongApp)
+lazy val `<func-app>` = `<term>`.reduceLeft(StrongApp.apply)
 lazy val `<expr-10>` = Atoms(
     Lam("\\" ~> some(`<pat-naked>`), "->" ~> `<expr>`),
     Let("let" ~> `<clause>`, "in" ~> `<expr>`),
@@ -437,9 +432,6 @@ lazy val `<expr-10>` = Atoms(
     Case("case" ~> `<expr>`,
          "of" ~> "{" ~> sepBy1(`<alt>`, (";" | NEWLINE) <~ many(NEWLINE)) <~ "}"),
     `<func-app>`)
-```
-```scala mdoc:invisible
-val _ = `<expr-10>`: @unused
 ```
 
 This section of the parser is much more straightforward: we are using the regular shape of the
@@ -467,24 +459,19 @@ import parsley.expr.infix
 lazy val `<clause>` =
     Clause(`<var-id>`, many(`<pat-naked>`), option(`<guard>`), "=" ~> `<expr>`)
 lazy val `<pat-naked>`: Parsley[PatNaked] =
-    ( `<var-id>` | atomic(`<pat-con>`)
+      `<var-id>` | atomic(`<pat-con>`)
     | (UnitCon from "()") | (NilCon from "[]") | `<literal>` | (Wild from "_")
     | atomic(NestedPat("(" ~> `<pat>` <~ ")"))
     | PatTuple("(" ~> sepBy1(`<pat>`, ",") <~ ")")
     | PatList("[" ~> sepBy(`<pat>`, ",") <~ "]")
-    )
 lazy val `<pat>` = infix.right1(`<pat-paren>`)(PatCons from ":")
 lazy val `<pat-paren>` = atomic(`<pat-app>`) | `<pat-naked>`
 lazy val `<pat-app>` = PatApp(`<pat-con>`, some(`<pat-naked>`))
-lazy val `<pat-con>` = ( atomic("(" ~> (ConsCon from ":") <~ ")")
-                       | TupleCon("(" ~> countSome(",") <~ ")")
-                       | `<con-id>`
-                       )
+lazy val `<pat-con>` = atomic("(" ~> (ConsCon from ":") <~ ")")
+                     | TupleCon("(" ~> countSome(",") <~ ")")
+                     | (`<con-id>`)
 
 lazy val `<guard>` = "|" ~> `<expr>`
-```
-```scala mdoc:invisible
-val _ = `<clause>`: @unused
 ```
 
 Like I said, nothing too interesting here. Notice, however, that for `<pat>` I have used a
@@ -502,17 +489,15 @@ features.
 
 ```scala mdoc
 lazy val `<type>`: Parsley[Type] = infix.right1(`<type-app>`)(FunTy from "->")
-lazy val `<type-app>` = `<type-atom>`.reduceLeft(TyApp)
-lazy val `<type-atom>` = ( `<type-con>` | `<var-id>` | (UnitTy from "()")
-                         | ListTy("[" ~> `<type>` <~ "]")
-                         | atomic(ParenTy("(" ~> `<type>` <~ ")"))
-                         | TupleTy("(" ~> sepBy1(`<type>`, ",") <~ ")")
-                         )
-lazy val `<type-con>` = ( `<con-id>`
-                        | (ListConTy from "[]")
-                        | atomic("(" ~> (FunConTy from "->") <~ ")")
-                        | atomic(TupleConTy("(" ~> countSome(",") <~ ")"))
-                        )
+lazy val `<type-app>` = `<type-atom>`.reduceLeft(TyApp.apply)
+lazy val `<type-atom>` = `<type-con>` | `<var-id>` | (UnitTy from "()")
+                       | ListTy("[" ~> `<type>` <~ "]")
+                       | atomic(ParenTy("(" ~> `<type>` <~ ")"))
+                       | TupleTy("(" ~> sepBy1(`<type>`, ",") <~ ")")
+lazy val `<type-con>` = `<con-id>`
+                      | (ListConTy from "[]")
+                      | atomic("(" ~> (FunConTy from "->") <~ ")")
+                      | atomic(TupleConTy("(" ~> countSome(",") <~ ")"))
 ```
 
 We can see another instance of `infix.right1` out in the wild here, as well as the other `reduceLeft`
@@ -529,7 +514,7 @@ the more challenging aspect of managing a parser of this size and complexity.
 Here is a nice easy finish. These last rules are really just book-keeping. I'm also going to
 introduce a way of running the parser directly.
 
-```scala mdoc
+```scala mdoc:nest
 import parsley.Parsley.some
 import parsley.combinator.sepEndBy
 import parsley.errors.ErrorBuilder
@@ -544,9 +529,6 @@ lazy val `<constructors>` = sepBy1(`<constructor>`, "|")
 lazy val `<constructor>` = Con(`<con-id>`, many(`<type-atom>`))
 
 lazy val `<declaration>` = Decl(`<var-id>`, "::" ~> `<type>`)
-```
-```scala mdoc:invisible
-val _ = (x: String) => parse(x): @unused
 ```
 
 We do have to be careful here, there is some overlap between `<declaration>` and `<clause>`. This,
@@ -581,27 +563,21 @@ so we will start with them first. Let's remind ourselves of the three rules in q
 the parts we can handle:
 
 ```scala mdoc:nest:silent
-lazy val `<pat-con>` = ( atomic("(" ~> (ConsCon from ":") <~ ")")
-                       | TupleCon("(" ~> countSome(",") <~ ")")
-                       | `<con-id>`
-                       )
+lazy val `<pat-con>` = atomic("(" ~> (ConsCon from ":") <~ ")")
+                     | TupleCon("(" ~> countSome(",") <~ ")")
+                     | (`<con-id>`)
 
-val `<type-con>` = ( `<con-id>`
-                   | (ListConTy from "[]")
-                   | atomic("(" ~> (FunConTy from "->") <~ ")")
-                   | atomic(TupleConTy("(" ~> countSome(",") <~ ")"))
-                   )
+val `<type-con>` = `<con-id>`
+                 | (ListConTy from "[]")
+                 | atomic("(" ~> (FunConTy from "->") <~ ")")
+                 | atomic(TupleConTy("(" ~> countSome(",") <~ ")"))
 
-val `<term>` = ( `<var-id>` | `<con-id>` | (UnitCon from "()")
-               | atomic(TupleCon("(" ~> countSome(",") <~ ")"))
-               | atomic(ParensVal("(" ~> `<expr>` <~ ")"))
-               | TupleLit("(" ~> sepBy1(`<expr>`, ",") <~ ")")
-               | ListLit("[" ~> sepBy(`<expr>`, ",") <~ "]")
-               | `<literal>`
-               )
-```
-```scala mdoc:invisible
-val _ = `<pat-con>`: @unused
+val `<term>` = `<var-id>` | `<con-id>` | (UnitCon from "()")
+             | atomic(TupleCon("(" ~> countSome(",") <~ ")"))
+             | atomic(ParensVal("(" ~> `<expr>` <~ ")"))
+             | TupleLit("(" ~> sepBy1(`<expr>`, ",") <~ ")")
+             | ListLit("[" ~> sepBy(`<expr>`, ",") <~ "]")
+             | (`<literal>`)
 ```
 
 Now, with `<pat-con>` and `<type-con>`, they both contain backtracking because there are two portions
@@ -611,53 +587,41 @@ backtracking. Thankfully, these are all relatively easy to fix: we just need to 
 parentheses through the rules that contain them on the _inside_. This is a nice warm-up exercise:
 
 ```scala mdoc:nest:silent
-lazy val `<pat-con>` = ( atomic("(" ~> (ConsCon from ":") <~ ")")
-                       | "(" ~> TupleCon(countSome(",")) <~ ")"
-                       | `<con-id>`
-                       )
+lazy val `<pat-con>` = atomic("(" ~> (ConsCon from ":") <~ ")")
+                     | "(" ~> TupleCon(countSome(",")) <~ ")"
+                     | (`<con-id>`)
 
-val `<type-con>` = ( `<con-id>`
-                   | (ListConTy from "[]")
-                   | atomic("(" ~> (FunConTy from "->") <~ ")")
-                   | atomic("(" ~> TupleConTy(countSome(",")) <~ ")")
-                   )
+val `<type-con>` = `<con-id>`
+                 | (ListConTy from "[]")
+                 | atomic("(" ~> (FunConTy from "->") <~ ")")
+                 | atomic("(" ~> TupleConTy(countSome(",")) <~ ")")
 
-val `<term>` = ( `<var-id>` | `<con-id>` | (UnitCon from "()")
-               | atomic("(" ~> TupleCon(countSome(",")) <~ ")")
-               | atomic("(" ~> ParensVal(`<expr>`) <~ ")")
-               | "(" ~> TupleLit(sepBy1(`<expr>`, ",")) <~ ")"
-               | ListLit("[" ~> sepBy(`<expr>`, ",") <~ "]")
-               | `<literal>`
-               )
-```
-```scala mdoc:invisible
-val _ = `<pat-con>`: @unused
+val `<term>` = `<var-id>` | `<con-id>` | (UnitCon from "()")
+             | atomic("(" ~> TupleCon(countSome(",")) <~ ")")
+             | atomic("(" ~> ParensVal(`<expr>`) <~ ")")
+             | "(" ~> TupleLit(sepBy1(`<expr>`, ",")) <~ ")"
+             | ListLit("[" ~> sepBy(`<expr>`, ",") <~ "]")
+             | (`<literal>`)
 ```
 
 With the parentheses distributed, we can see that they are easily factored out (on both the left-
 and the right-hand sides):
 
 ```scala mdoc:nest:silent
-lazy val `<pat-con>` = ( "(" ~> ((ConsCon from ":") | TupleCon(countSome(","))) <~ ")"
-                       | `<con-id>`
-                       )
+lazy val `<pat-con>` = "(" ~> ((ConsCon from ":") | TupleCon(countSome(","))) <~ ")"
+                     | (`<con-id>`)
 
-val `<type-con>` = ( `<con-id>`
-                   | (ListConTy from "[]")
-                   | atomic("(" ~> ((FunConTy from "->") | TupleConTy(countSome(","))) <~ ")")
-                   )
+val `<type-con>` = `<con-id>`
+                 | (ListConTy from "[]")
+                 | atomic("(" ~> ((FunConTy from "->") | TupleConTy(countSome(","))) <~ ")")
 
-val `<term>` = ( `<var-id>` | `<con-id>` | (UnitCon from "()")
-               | "(" ~> ( TupleCon(countSome(","))
-                        | atomic(ParensVal(`<expr>`))
-                        | TupleLit(sepBy1(`<expr>`, ","))
-                        ) <~ ")"
-               | ListLit("[" ~> sepBy(`<expr>`, ",") <~ "]")
-               | `<literal>`
-               )
-```
-```scala mdoc:invisible
-val _ = `<pat-con>`: @unused
+val `<term>` = `<var-id>` | `<con-id>` | (UnitCon from "()")
+             | "(" ~> ( TupleCon(countSome(","))
+                      | atomic(ParensVal(`<expr>`))
+                      | TupleLit(sepBy1(`<expr>`, ","))
+                      ) <~ ")"
+             | ListLit("[" ~> sepBy(`<expr>`, ",") <~ "]")
+             | (`<literal>`)
 ```
 
 This has immediately eliminated three of the `atomic`s, but one persists inside `<term>`: this is
@@ -671,64 +635,50 @@ is less obvious. Let's start by recapping what the three rules are:
 
 ```scala mdoc:nest:silent
 lazy val `<pat-naked>`: Parsley[PatNaked] =
-    ( `<var-id>` | atomic(`<pat-con>`)
+      `<var-id>` | atomic(`<pat-con>`)
     | (UnitCon from "()") | (NilCon from "[]") | `<literal>` | (Wild from "_")
     | atomic(NestedPat("(" ~> `<pat>` <~ ")"))
     | PatTuple("(" ~> sepBy1(`<pat>`, ",") <~ ")")
     | PatList("[" ~> sepBy(`<pat>`, ",") <~ "]")
-    )
 
-lazy val `<type-atom>` = ( `<type-con>` | `<var-id>` | (UnitTy from "()")
-                         | ListTy("[" ~> `<type>` <~ "]")
-                         | atomic(ParenTy("(" ~> `<type>` <~ ")"))
-                         | TupleTy("(" ~> sepBy1(`<type>`, ",") <~ ")")
-                         )
+lazy val `<type-atom>` = `<type-con>` | `<var-id>` | (UnitTy from "()")
+                       | ListTy("[" ~> `<type>` <~ "]")
+                       | atomic(ParenTy("(" ~> `<type>` <~ ")"))
+                       | TupleTy("(" ~> sepBy1(`<type>`, ",") <~ ")")
 
-val `<term>` = ( `<var-id>` | `<con-id>` | (UnitCon from "()")
-               | "(" ~> ( TupleCon(countSome(","))
-                        | atomic(ParensVal(`<expr>`))
-                        | TupleLit(sepBy1(`<expr>`, ","))
-                        ) <~ ")"
-               | ListLit("[" ~> sepBy(`<expr>`, ",") <~ "]")
-               | `<literal>`
-               )
-```
-```scala mdoc:invisible
-val _ = `<pat-naked>`: @unused
-val _ = `<type-atom>`: @unused
+val `<term>` = `<var-id>` | `<con-id>` | (UnitCon from "()")
+             | "(" ~> ( TupleCon(countSome(","))
+                      | atomic(ParensVal(`<expr>`))
+                      | TupleLit(sepBy1(`<expr>`, ","))
+                      ) <~ ")"
+             | ListLit("[" ~> sepBy(`<expr>`, ",") <~ "]")
+             | (`<literal>`)
 ```
 
 First, let's do what we did to `<term>` to `<pat-naked>` and `<type-atom>`:
 
 ```scala mdoc:nest:silent
 lazy val `<pat-naked>`: Parsley[PatNaked] =
-    ( `<var-id>` | atomic(`<pat-con>`)
+      `<var-id>` | atomic(`<pat-con>`)
     | (UnitCon from "()") | (NilCon from "[]") | `<literal>` | (Wild from "_")
     | "(" ~> ( atomic(NestedPat(`<pat>`))
              | PatTuple(sepBy1(`<pat>`, ","))
              ) <~ ")"
     | PatList("[" ~> sepBy(`<pat>`, ",") <~ "]")
-    )
 
-lazy val `<type-atom>` = ( `<type-con>` | `<var-id>` | (UnitTy from "()")
-                         | ListTy("[" ~> `<type>` <~ "]")
-                         | "(" ~> ( atomic(ParenTy(`<type>`))
-                                  | TupleTy(sepBy1(`<type>`, ","))
-                                  ) <~ ")"
-                         )
+lazy val `<type-atom>` = `<type-con>` | `<var-id>` | (UnitTy from "()")
+                       | ListTy("[" ~> `<type>` <~ "]")
+                       | "(" ~> ( atomic(ParenTy(`<type>`))
+                                | TupleTy(sepBy1(`<type>`, ","))
+                                ) <~ ")"
 
-val `<term>` = ( `<var-id>` | `<con-id>` | (UnitCon from "()")
-               | "(" ~> ( TupleCon(countSome(","))
-                        | atomic(ParensVal(`<expr>`))
-                        | TupleLit(sepBy1(`<expr>`, ","))
-                        ) <~ ")"
-               | ListLit("[" ~> sepBy(`<expr>`, ",") <~ "]")
-               | `<literal>`
-               )
-```
-```scala mdoc:invisible
-val _ = `<pat-naked>`: @unused
-val _ = `<type-atom>`: @unused
+val `<term>` = `<var-id>` | `<con-id>` | (UnitCon from "()")
+             | "(" ~> ( TupleCon(countSome(","))
+                      | atomic(ParensVal(`<expr>`))
+                      | TupleLit(sepBy1(`<expr>`, ","))
+                      ) <~ ")"
+             | ListLit("[" ~> sepBy(`<expr>`, ",") <~ "]")
+             | (`<literal>`)
 ```
 
 Hopefully you can see that all three rules are similar to each other: they all have an `atomic`
@@ -737,7 +687,7 @@ _inside_ the factored parentheses. The problem is that they use different bridge
 new ***disambiguator bridge***! Let's take a look at them:
 
 ```scala mdoc:invisible
-import parsley.generic._
+import parsley.generic.*
 ```
 ```scala mdoc
 object NestedPatOrPatTuple extends ParserBridge1[List[Pat], PatNaked] {
@@ -770,28 +720,21 @@ adjust our parsers:
 
 ```scala mdoc:nest:silent
 lazy val `<pat-naked>`: Parsley[PatNaked] =
-    ( `<var-id>` | atomic(`<pat-con>`)
+      `<var-id>` | atomic(`<pat-con>`)
     | (UnitCon from "()") | (NilCon from "[]") | `<literal>` | (Wild from "_")
     | NestedPatOrPatTuple("(" ~> sepBy1(`<pat>`, ",") <~ ")")
     | PatList("[" ~> sepBy(`<pat>`, ",") <~ "]")
-    )
 
-lazy val `<type-atom>` = ( `<type-con>` | `<var-id>` | (UnitTy from "()")
-                         | ListTy("[" ~> `<type>` <~ "]")
-                         | ParenTyOrTupleTy("(" ~> sepBy1(`<type>`, ",") <~ ")")
-                         )
+lazy val `<type-atom>` = `<type-con>` | `<var-id>` | (UnitTy from "()")
+                       | ListTy("[" ~> `<type>` <~ "]")
+                       | ParenTyOrTupleTy("(" ~> sepBy1(`<type>`, ",") <~ ")")
 
-val `<term>` = ( `<var-id>` | `<con-id>` | (UnitCon from "()")
-               | "(" ~> ( TupleCon(countSome(","))
-                        | TupleLitOrParensVal(sepBy1(`<expr>`, ","))
-                        ) <~ ")"
-               | ListLit("[" ~> sepBy(`<expr>`, ",") <~ "]")
-               | `<literal>`
-               )
-```
-```scala mdoc:invisible
-val _ = `<pat-naked>`: @unused
-val _ = `<type-atom>`: @unused
+val `<term>` = `<var-id>` | `<con-id>` | (UnitCon from "()")
+             | "(" ~> ( TupleCon(countSome(","))
+                      | TupleLitOrParensVal(sepBy1(`<expr>`, ","))
+                      ) <~ ")"
+             | ListLit("[" ~> sepBy(`<expr>`, ",") <~ "]")
+             | (`<literal>`)
 ```
 
 By making use of our special disambiguators bridge, we've eliminated the pesky `atomic`s. I've put the
@@ -834,17 +777,12 @@ with the `atomic` in `<type-con>`.
 The reason for this `atomic` is more obvious when we compare it with `<type-atom>`:
 
 ```scala mdoc:nest:silent
-val `<type-con>` = ( `<con-id>`
-                   | (ListConTy from "[]")
-                   | atomic("(" ~> ((FunConTy from "->") | TupleConTy(countSome(","))) <~ ")")
-                   )
-lazy val `<type-atom>` = ( `<type-con>` | `<var-id>` | (UnitTy from "()")
-                         | ListTy("[" ~> `<type>` <~ "]")
-                         | ParenTyOrTupleTy("(" ~> sepBy1(`<type>`, ",") <~ ")")
-                         )
-```
-```scala mdoc:invisible
-val _ = `<type-atom>`: @unused
+val `<type-con>` = `<con-id>`
+                 | (ListConTy from "[]")
+                 | atomic("(" ~> ((FunConTy from "->") | TupleConTy(countSome(","))) <~ ")")
+lazy val `<type-atom>` = `<type-con>` | `<var-id>` | (UnitTy from "()")
+                       | ListTy("[" ~> `<type>` <~ "]")
+                       | ParenTyOrTupleTy("(" ~> sepBy1(`<type>`, ",") <~ ")")
 ```
 
 The `atomic` in `<type-con>` is used to backtrack out of the parentheses, since `ParenTyOrTupleTy`
@@ -854,18 +792,14 @@ and stop following the grammar as rigidly as we have been. Let's inline `<type-c
 to start with:
 
 ```scala mdoc:nest:silent
-lazy val `<type-atom>` = ( `<con-id>`
-                         | (ListConTy from "[]")
-                         | atomic("(" ~> ( (FunConTy from "->")
-                                         | TupleConTy(countSome(","))
-                                         ) <~ ")")
-                         | `<var-id>` | (UnitTy from "()")
-                         | ListTy("[" ~> `<type>` <~ "]")
-                         | ParenTyOrTupleTy("(" ~> sepBy1(`<type>`, ",") <~ ")")
-                         )
-```
-```scala mdoc:invisible
-val _ = `<type-atom>`: @unused
+lazy val `<type-atom>` = `<con-id>`
+                       | (ListConTy from "[]")
+                       | atomic("(" ~> ( (FunConTy from "->")
+                                       | TupleConTy(countSome(","))
+                                       ) <~ ")")
+                       | (`<var-id>`) | (UnitTy from "()")
+                       | ListTy("[" ~> `<type>` <~ "]")
+                       | ParenTyOrTupleTy("(" ~> sepBy1(`<type>`, ",") <~ ")")
 ```
 
 Right, now that they have been put together, we can see the problem more clearly. Let's now
@@ -874,55 +808,42 @@ mentioning that, for parsers without backtracking, we can always reorder the bra
 consequence; the restriction is that backtracking parsers cannot move ahead of their paired up branch.
 
 ```scala mdoc:nest:silent
-lazy val `<type-atom>` = ( `<con-id>`
-                         | (ListConTy from "[]")
-                         | `<var-id>` | (UnitTy from "()")
-                         | ListTy("[" ~> `<type>` <~ "]")
-                         | atomic("(" ~> ( (FunConTy from "->")
-                                         | TupleConTy(countSome(","))
-                                         ) <~ ")")
-                         | ParenTyOrTupleTy("(" ~> sepBy1(`<type>`, ",") <~ ")")
-                         )
-```
-```scala mdoc:invisible
-val _ = `<type-atom>`: @unused
+lazy val `<type-atom>` = `<con-id>`
+                       | (ListConTy from "[]")
+                       | (`<var-id>`) | (UnitTy from "()")
+                       | ListTy("[" ~> `<type>` <~ "]")
+                       | atomic("(" ~> ( (FunConTy from "->")
+                                       | TupleConTy(countSome(","))
+                                       ) <~ ")")
+                       | ParenTyOrTupleTy("(" ~> sepBy1(`<type>`, ",") <~ ")")
 ```
 
 This parser is a bit neater, and now we can apply our favourite tricks from part 1 to resolve this
 `atomic`:
 
 ```scala mdoc:nest:silent
-lazy val `<type-atom>` = ( `<con-id>`
-                         | (ListConTy from "[]")
-                         | `<var-id>` | (UnitTy from "()")
-                         | ListTy("[" ~> `<type>` <~ "]")
-                         | "(" ~> ( (FunConTy from "->")
-                                  | TupleConTy(countSome(","))
-                                  | ParenTyOrTupleTy(sepBy1(`<type>`, ","))
-                                  ) <~ ")"
-                         )
-```
-```scala mdoc:invisible
-val _ = `<type-atom>`: @unused
+lazy val `<type-atom>` = `<con-id>`
+                       | (ListConTy from "[]")
+                       | (`<var-id>`) | (UnitTy from "()")
+                       | ListTy("[" ~> `<type>` <~ "]")
+                       | "(" ~> ( (FunConTy from "->")
+                                | TupleConTy(countSome(","))
+                                | ParenTyOrTupleTy(sepBy1(`<type>`, ","))
+                                ) <~ ")"
 ```
 
 Nice! One down, three to go. Let's have a look at the two involving patterns together:
 
 ```scala mdoc:nest:silent
 lazy val `<pat-naked>`: Parsley[PatNaked] =
-    ( `<var-id>` | atomic(`<pat-con>`)
+      `<var-id>` | atomic(`<pat-con>`)
     | (UnitCon from "()") | (NilCon from "[]") | `<literal>` | (Wild from "_")
     | NestedPatOrPatTuple("(" ~> sepBy1(`<pat>`, ",") <~ ")")
     | PatList("[" ~> sepBy(`<pat>`, ",") <~ "]")
-    )
 lazy val `<pat-paren>` = atomic(`<pat-app>`) | `<pat-naked>`
 lazy val `<pat-app>` = PatApp(`<pat-con>`, some(`<pat-naked>`))
-lazy val `<pat-con>` = ( "(" ~> ((ConsCon from ":") | TupleCon(countSome(","))) <~ ")"
-                       | `<con-id>`
-                       )
-```
-```scala mdoc:invisible
-val _ = `<pat-paren>`: @unused
+lazy val `<pat-con>` = "(" ~> ((ConsCon from ":") | TupleCon(countSome(","))) <~ ")"
+                     | (`<con-id>`)
 ```
 
 I've omitted the `<pat>` rule here, since it's not relevant. Right, so the interaction of these rules
@@ -940,20 +861,15 @@ reinforce our factoring skills and duplicate the code to eliminate the `atomic`!
 
 ```scala mdoc:nest:silent
 lazy val `<pat-naked>`: Parsley[PatNaked] =
-    ( `<var-id>` | `<con-id>`
+      `<var-id>` | `<con-id>`
     | atomic("(" ~> ((ConsCon from ":") | TupleCon(countSome(","))) <~ ")")
     | NestedPatOrPatTuple("(" ~> sepBy1(`<pat>`, ",") <~ ")")
     | (UnitCon from "()") | (NilCon from "[]") | `<literal>` | (Wild from "_")
     | PatList("[" ~> sepBy(`<pat>`, ",") <~ "]")
-    )
 lazy val `<pat-paren>` = atomic(`<pat-app>`) | `<pat-naked>`
 lazy val `<pat-app>` = PatApp(`<pat-con>`, some(`<pat-naked>`))
-lazy val `<pat-con>` = ( "(" ~> ((ConsCon from ":") | TupleCon(countSome(","))) <~ ")"
-                       | `<con-id>`
-                       )
-```
-```scala mdoc:invisible
-val _ = `<pat-paren>`: @unused
+lazy val `<pat-con>` = "(" ~> ((ConsCon from ":") | TupleCon(countSome(","))) <~ ")"
+                     | (`<con-id>`)
 ```
 
 In the above parser, I inlined the parser and reorganised it to bring the offending sub-rules together.
@@ -961,22 +877,17 @@ We know the drill by this point, let's factor that out:
 
 ```scala mdoc:nest:silent
 lazy val `<pat-naked>`: Parsley[PatNaked] =
-    ( `<var-id>` | `<con-id>`
+      `<var-id>` | `<con-id>`
     | "(" ~> ( (ConsCon from ":")
              | TupleCon(countSome(","))
              | NestedPatOrPatTuple(sepBy1(`<pat>`, ","))
              ) <~ ")"
     | (UnitCon from "()") | (NilCon from "[]") | `<literal>` | (Wild from "_")
     | PatList("[" ~> sepBy(`<pat>`, ",") <~ "]")
-    )
 lazy val `<pat-paren>` = atomic(`<pat-app>`) | `<pat-naked>`
 lazy val `<pat-app>` = PatApp(`<pat-con>`, some(`<pat-naked>`))
-lazy val `<pat-con>` = ( "(" ~> ((ConsCon from ":") | TupleCon(countSome(","))) <~ ")"
-                       | `<con-id>`
-                       )
-```
-```scala mdoc:invisible
-val _ = `<pat-paren>`: @unused
+lazy val `<pat-con>` = "(" ~> ((ConsCon from ":") | TupleCon(countSome(","))) <~ ")"
+                     | (`<con-id>`)
 ```
 
 Nice, another `atomic` down! Now, what about the `atomic` in `<pat-paren>`? Well, it turns out
@@ -991,19 +902,14 @@ The first step is to return to our old parser:
 
 ```scala mdoc:nest:silent
 lazy val `<pat-naked>`: Parsley[PatNaked] =
-    ( `<var-id>` | atomic(`<pat-con>`)
+      `<var-id>` | atomic(`<pat-con>`)
     | (UnitCon from "()") | (NilCon from "[]") | `<literal>` | (Wild from "_")
     | NestedPatOrPatTuple("(" ~> sepBy1(`<pat>`, ",") <~ ")")
     | PatList("[" ~> sepBy(`<pat>`, ",") <~ "]")
-    )
 lazy val `<pat-paren>` = atomic(`<pat-app>`) | `<pat-naked>`
 lazy val `<pat-app>` = PatApp(`<pat-con>`, some(`<pat-naked>`))
-lazy val `<pat-con>` = ( "(" ~> ((ConsCon from ":") | TupleCon(countSome(","))) <~ ")"
-                       | `<con-id>`
-                       )
-```
-```scala mdoc:invisible
-val _ = `<pat-paren>`: @unused
+lazy val `<pat-con>` = "(" ~> ((ConsCon from ":") | TupleCon(countSome(","))) <~ ")"
+                     | (`<con-id>`)
 ```
 
 Now, we know that the `<pat-con>` is the problematic bit here, so let's break the `<pat-naked>` into
@@ -1012,19 +918,14 @@ two rules:
 ```scala mdoc:nest:silent
 lazy val `<pat-naked>` = atomic(`<pat-con>`) | `<pat-naked'>`
 lazy val `<pat-naked'>`: Parsley[PatNaked] =
-    ( `<var-id>`
+      `<var-id>`
     | (UnitCon from "()") | (NilCon from "[]") | `<literal>` | (Wild from "_")
     | NestedPatOrPatTuple("(" ~> sepBy1(`<pat>`, ",") <~ ")")
     | PatList("[" ~> sepBy(`<pat>`, ",") <~ "]")
-    )
 lazy val `<pat-paren>` = atomic(`<pat-app>`) | atomic(`<pat-con>`) | `<pat-naked'>`
 lazy val `<pat-app>` = PatApp(`<pat-con>`, some(`<pat-naked>`))
-lazy val `<pat-con>` = ( "(" ~> ((ConsCon from ":") | TupleCon(countSome(","))) <~ ")"
-                       | `<con-id>`
-                       )
-```
-```scala mdoc:invisible
-val _ = `<pat-paren>`: @unused
+lazy val `<pat-con>` = "(" ~> ((ConsCon from ":") | TupleCon(countSome(","))) <~ ")"
+                     | (`<con-id>`)
 ```
 
 Now, notice that I've inlined `<pat-naked>` into `<pat-paren>`. The reason I did this is to make it
@@ -1034,9 +935,6 @@ shuffling and move it into `<pat-app>`:
 ```scala mdoc:nest:silent
 lazy val `<pat-paren>` = atomic(`<pat-app>`) | `<pat-naked'>`
 lazy val `<pat-app>` = atomic(PatApp(`<pat-con>`, some(`<pat-naked>`))) | `<pat-con>`
-```
-```scala mdoc:invisible
-val _ = `<pat-paren>`: @unused
 ```
 
 Now, the aim here is to smash those `<pat-con>`s together! We can introduce a new disambiguator bridge to
@@ -1059,9 +957,6 @@ parser looks like now:
 lazy val `<pat-paren>` = atomic(`<pat-app>`) | `<pat-naked'>`
 lazy val `<pat-app>` = PatAppIfNonEmpty(`<pat-con>`, many(`<pat-naked>`))
 ```
-```scala mdoc:invisible
-val _ = `<pat-paren>`: @unused
-```
 
 Now, since we've switched to a `many`, we can actually push both of our `atomic`s down into the
 `<pat-con>` and leave it at that:
@@ -1069,31 +964,22 @@ Now, since we've switched to a `many`, we can actually push both of our `atomic`
 ```scala mdoc:nest:silent
 lazy val `<pat-naked>` = `<pat-con>` | `<pat-naked'>`
 lazy val `<pat-naked'>`: Parsley[PatNaked] =
-    ( `<var-id>`
+      `<var-id>`
     | (UnitCon from "()") | (NilCon from "[]") | `<literal>` | (Wild from "_")
     | NestedPatOrPatTuple("(" ~> sepBy1(`<pat>`, ",") <~ ")")
     | PatList("[" ~> sepBy(`<pat>`, ",") <~ "]")
-    )
 lazy val `<pat-paren>` = `<pat-app>` | `<pat-naked'>`
 lazy val `<pat-app>` = PatAppIfNonEmpty(`<pat-con>`, many(`<pat-naked>`))
-lazy val `<pat-con>` = ( atomic("(" ~> ((ConsCon from ":") | TupleCon(countSome(","))) <~ ")")
-                       | `<con-id>`
-                       )
-```
-```scala mdoc:invisible
-val _ = `<pat-paren>`: @unused
+lazy val `<pat-con>` = atomic("(" ~> ((ConsCon from ":") | TupleCon(countSome(","))) <~ ")")
+                     | (`<con-id>`)
 ```
 
 So, can we remove that last `atomic`? No. At least not without a collosal amount of very destructive
 refactoring of the grammar. What we can do, however, is make its scope ever so slightly smaller:
 
 ```scala mdoc:nest:silent
-lazy val `<pat-con>` = ( atomic("(" ~> ((ConsCon from ":") | TupleCon(countSome(",")))) <~ ")"
-                       | `<con-id>`
-                       )
-```
-```scala mdoc:invisible
-val _ = `<pat-con>`: @unused
+lazy val `<pat-con>` = atomic("(" ~> ((ConsCon from ":") | TupleCon(countSome(",")))) <~ ")"
+                     | (`<con-id>`)
 ```
 
 All I've done there is move it one parser to the left, that way, we commit to the branch as soon as
@@ -1110,9 +996,6 @@ val `<clause>` =
 
 val `<program>` =
     fully(sepEndBy(`<data>` | atomic(`<declaration>`) | `<clause>`, some(NEWLINE)))
-```
-```scala mdoc:invisible
-val _ = `<program>`: @unused
 ```
 
 I've skipped out the irrelevant `<data>` parser here. So, from the outset, this `atomic` doesn't
@@ -1147,7 +1030,7 @@ Now, to make this work nicely, I'm going to make use of the `<+>` combinator: pr
 this, we can define the factored `<program>`:
 
 ```scala mdoc:nest:silent
-import parsley.syntax.zipped._
+import parsley.syntax.zipped.*
 
 val `<declaration>` = "::" ~> `<type>`
 
@@ -1157,10 +1040,6 @@ val `<clause>` = Clause(`<var-id>`, `<partial-clause>`)
 val `<decl-or-clause>` = DeclOrClause(`<var-id>`, `<declaration>` <+> `<partial-clause>`)
 val `<program>` =
     fully(sepEndBy(`<data>` | `<decl-or-clause>`, some(NEWLINE)))
-```
-```scala mdoc:invisible
-val _ = `<program>`: @unused
-val _ = `<clause>`: @unused
 ```
 
 Why have we got two `<clause>`s? Well, we also need a `<clause>` for the `let`-expressions further
@@ -1193,10 +1072,6 @@ val `<clause>` = `<var-id>` <**> `<partial-clause>`
 val `<decl-or-clause>` = `<var-id>` <**> (`<declaration>` | `<partial-clause>`)
 val `<program>` =
     fully(sepEndBy(`<data>` | `<decl-or-clause>`, some(NEWLINE)))
-```
-```scala mdoc:invisible
-val _ = `<program>`: @unused
-val _ = `<clause>`: @unused
 ```
 
 This also works completely fine. This time, we use `<**>` to apply the `<var-id>` to the partially
@@ -1238,9 +1113,6 @@ object DeclOrClause
         case Right((args, guard, body)) => Clause(id, args, guard, body)(pos)
     }
 }
-```
-```scala mdoc:invisible
-val _ = DeclOrClause: @unused
 ```
 
 Much more straightforward, with no effect on any other bridge! This is worth considering if you do

@@ -10,7 +10,7 @@ import parsley.token.descriptions.PlusSignPresence
 import parsley.internal.deepembedding.Sign.{CombinedType, DoubleType, IntType, SignType}
 import parsley.internal.errors.{ExpectItem, ExpectRaw}
 import parsley.internal.machine.Context
-import parsley.internal.machine.XAssert._
+import parsley.internal.machine.XAssert.*
 import parsley.internal.machine.errors.ExpectedError
 
 private [internal] final class TokenSign(ty: SignType, plusPresence: PlusSignPresence) extends Instr {

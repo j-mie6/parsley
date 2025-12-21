@@ -6,8 +6,8 @@
 package parsley
 
 //TODO: this needs to be a generic package, or we can't have typeclasses in properly.
-import lift._
-import parsley.errors.combinator._
+import lift.*
+import parsley.errors.combinator.*
 
 /** This module contains the definition of 23 basic ''generic parser bridge traits'', which
   * are used to implement the ''Parser Bridge'' pattern for types that do not require metadata.
@@ -74,13 +74,13 @@ object generic {
           * @param op the parser that should be parsed before returning `con`.
           * @note equivalent to `from`.
           */
-        final def <#(op: Parsley[_]): Parsley[A] = this.from(op).uo(s"$this <#")
+        final def <#(op: Parsley[?]): Parsley[A] = this.from(op).uo(s"$this <#")
         /** The combinator on this implementing type that performs the parser and
           * returns `con`.
           *
           * @param op the parser that should be parsed before returning `con`.
           */
-        infix final def from(op: Parsley[_]): Parsley[A] = error(op.as(con).ut()).uo(s"$this.from")
+        infix final def from(op: Parsley[?]): Parsley[A] = error(op.as(con).ut()).uo(s"$this.from")
     }
 
     /** Generic bridge trait for singleton objects that simply return themselves
@@ -103,7 +103,7 @@ object generic {
           * sequence and combine the results of all the parsers. */
         def apply(x1: Parsley[T1]): Parsley[R] = error(lift1(this.con, x1).ut()).uo(this.toString)
         /** @inheritdoc */
-        override final def con: T1 => R = this.apply(_)
+        override final def con: T1 => R = this.apply
     }
 
     /** $bridgefor 2. */

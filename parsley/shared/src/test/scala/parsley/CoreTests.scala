@@ -5,15 +5,15 @@
  */
 package parsley
 
-import Predef.{ArrowAssoc => _, _}
+import Predef.{ArrowAssoc => _, *}
 
-import parsley.Parsley.{empty => pempty, _}
+import parsley.Parsley.{empty => pempty, not => notFollowedBy, *}
 import parsley.combinator.ifS
-import parsley.lift._
+import parsley.lift.*
 import parsley.character.{char, satisfy, digit, item, string}
 import parsley.syntax.character.{charLift, stringLift}
-import parsley.syntax.all._
-import parsley.state._
+import parsley.syntax.all.*
+import parsley.state.*
 import parsley.errors.combinator.{fail => pfail}
 
 class CoreTests extends ParsleyTest {
@@ -23,11 +23,11 @@ class CoreTests extends ParsleyTest {
     private val toUpper = (c: Char) => c.toUpper
 
     "Character parsers" should "fail on no input" in {
-        'a'.parse("") should not be a [Success[_]]
+        'a'.parse("") should not be a [Success[?]]
     }
 
     they should "fail when given incorrect input" in {
-        'a'.parse("b") should not be a [Success[_]]
+        'a'.parse("b") should not be a [Success[?]]
     }
 
     they should "succeed when given correct input" in {
@@ -42,7 +42,7 @@ class CoreTests extends ParsleyTest {
     }
 
     "Pure parsers" should "not require input" in {
-        unit.parse("") should not be a [Failure[_]]
+        unit.parse("") should not be a [Failure[?]]
     }
 
     they must "result in their correct value" in {
@@ -123,7 +123,7 @@ class CoreTests extends ParsleyTest {
     }
     they must "allow for flattening" in {
         pure(char('a')).flatten.parse("a") shouldBe Success('a')
-        Parsley.empty.flatten.parse("") shouldBe a [Failure[_]]
+        Parsley.empty.flatten.parse("") shouldBe a [Failure[?]]
     }
 
     "branch" must "work correctly for non-pure components" in {
@@ -144,7 +144,7 @@ class CoreTests extends ParsleyTest {
         ('a' <+> 'b').parse("b") shouldBe Success(Right('b'))
     }
     it should "not try the second alternative if the first failed after consuming input" in {
-        ("ab" | "ac").parse("ac") shouldBe a [Failure[_]]
+        ("ab" | "ac").parse("ac") shouldBe a [Failure[?]]
     }
     it should "not be affected by an empty on the left" in {
         inside((Parsley.empty <|> 'a').parse("b")) {
@@ -156,7 +156,7 @@ class CoreTests extends ParsleyTest {
     }
 
     "atomic" should "cause <|> to try second alternative even if input consumed" in {
-        atomic("ab").orElse("ac").parse("ac") should not be a [Failure[_]]
+        atomic("ab").orElse("ac").parse("ac") should not be a [Failure[?]]
     }
 
     "notFollowedBy" must "succeed if p fails" in {
@@ -166,7 +166,7 @@ class CoreTests extends ParsleyTest {
         notFollowedBy("aa").parse("a") should be (Success(()))
     }
     it must "fail if p succeeds" in {
-        notFollowedBy('a').parse("a") shouldBe a [Failure[_]]
+        notFollowedBy('a').parse("a") shouldBe a [Failure[?]]
     }
     it must "behave like empty if provided a parser that consumes no input" in {
         notFollowedBy(unit).parse("abc") shouldBe pempty.parse("abc")
@@ -174,7 +174,7 @@ class CoreTests extends ParsleyTest {
     }
 
     "lookAhead" should "consume no input on success" in {
-        lookAhead('a').parse("a") should not be a [Failure[_]]
+        lookAhead('a').parse("a") should not be a [Failure[?]]
         inside((lookAhead('a') *> 'b').parse("ab")) {
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs, 1))) =>
                 unex should contain (Raw("a"))
@@ -183,7 +183,7 @@ class CoreTests extends ParsleyTest {
         }
     }
     it must "fail when input is consumed, and input is consumed" in {
-        lookAhead("ab").parse("ac") shouldBe a [Failure[_]]
+        lookAhead("ab").parse("ac") shouldBe a [Failure[?]]
     }
     /*it should "not affect the state of the registers on success" in {
         val r1 = Reg.make[Int]
@@ -296,7 +296,7 @@ class CoreTests extends ParsleyTest {
 
     "filtered parsers" should "function correctly" in {
         val p = item.filterNot(_.isLower)
-        p.parse("a") shouldBe a [Failure[_]]
+        p.parse("a") shouldBe a [Failure[?]]
         p.parse("A") shouldBe Success('A')
     }
 
@@ -307,7 +307,7 @@ class CoreTests extends ParsleyTest {
         }
         p.parse("+") shouldBe Success(0)
         p.parse("C") shouldBe Success(3)
-        p.parse("a") shouldBe a [Failure[_]]
+        p.parse("a") shouldBe a [Failure[?]]
     }
 
     "foldRight" should "work correctly" in {
@@ -318,7 +318,7 @@ class CoreTests extends ParsleyTest {
     }
     "foldRight1" should "work correctly" in {
         val p = 'a'.foldRight1[List[Char]](Nil)(_::_)
-        p.parse("") shouldBe a [Failure[_]]
+        p.parse("") shouldBe a [Failure[?]]
         p.parse("aaa") should be (Success(List('a', 'a', 'a')))
     }
 
@@ -330,7 +330,7 @@ class CoreTests extends ParsleyTest {
     }
     "foldLeft1" should "work correctly" in {
         val p = digit.foldLeft1(0)((x, d) => x * 10 + d.asDigit)
-        p.parse("") shouldBe a [Failure[_]]
+        p.parse("") shouldBe a [Failure[?]]
         p.parse("123") should be (Success(123))
     }
     "reduceRightOption" should "return Some on success" in {
@@ -389,11 +389,11 @@ class CoreTests extends ParsleyTest {
         val n = Ref.make[Int]
         lazy val p: Parsley[Unit] = whileS(ifS(n.gets(_ % 2 == 0), some('a'), some('b')) *> n.update(_ - 1) *> n.gets(_ != 0))
         val q = atomic(n.set(4) *> p <* eof) | n.set(2) *> p <* eof
-        q.parse("aaaabbb") shouldBe a [Success[_]]
+        q.parse("aaaabbb") shouldBe a [Success[?]]
     }
 
     "flatMap" should "consistently generate a callee-save instruction if needed" in {
-        import parsley.state._
+        import parsley.state.*
         val r = Ref.make[Int]
         val p = unit.flatMap { _ =>
             r.update(_ + 1) *> r.get

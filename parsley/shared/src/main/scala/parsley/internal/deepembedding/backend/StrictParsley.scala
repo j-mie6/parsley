@@ -8,7 +8,7 @@ package parsley.internal.deepembedding.backend
 import scala.annotation.tailrec
 import scala.collection.mutable
 
-import parsley.XAssert._
+import parsley.XAssert.*
 import parsley.exceptions.CorruptedReferenceException
 import parsley.state.Ref
 
@@ -44,7 +44,7 @@ private [deepembedding] trait StrictParsley[+A] {
       * @param state the code generator state
       * @return the final array of instructions for this parser
       */
-    final private [deepembedding] def generateInstructions[M[_, +_]: ContOps](minRef: Int, usedRefs: Set[Ref[_]], bodyMap: Map[Let[_], StrictParsley[_]])
+    final private [deepembedding] def generateInstructions[M[_, +_]: ContOps](minRef: Int, usedRefs: Set[Ref[?]], bodyMap: Map[Let[?], StrictParsley[?]])
                                                                             (implicit state: CodeGenState): Array[Instr] = {
         implicit val instrs: InstrBuffer = newInstrBuffer
         perform {
@@ -107,7 +107,7 @@ private [deepembedding] object StrictParsley {
       * @param usedRefs the referenced used in this parser that may need allocation
       * @param instrs the instruction buffer
       */
-    private def allocateAndExpandRefs(minRef: Int, usedRefs: Set[Ref[_]])(implicit instrs: InstrBuffer): Unit = {
+    private def allocateAndExpandRefs(minRef: Int, usedRefs: Set[Ref[?]])(implicit instrs: InstrBuffer): Unit = {
         val blockedSlots = usedRefs.collect {
             case r if r.allocated => r.addr
         }
@@ -141,7 +141,7 @@ private [deepembedding] object StrictParsley {
       * @param state the code generation state, which contains the shared parsers
       * @return the list of return labels for each of the parsers (for TCO)
       */
-    private def finaliseLets[M[_, +_]: ContOps](bodyMap: Map[Let[_], StrictParsley[_]])(implicit instrs: InstrBuffer, state: CodeGenState): List[RetLoc] = {
+    private def finaliseLets[M[_, +_]: ContOps](bodyMap: Map[Let[?], StrictParsley[?]])(implicit instrs: InstrBuffer, state: CodeGenState): List[RetLoc] = {
         val retLocs = mutable.ListBuffer.empty[RetLoc]
         while (state.more) {
             val (let, producesResults, label) = state.nextLet()
@@ -247,9 +247,9 @@ private [deepembedding] class CodeGenState(val numRefs: Int) {
     /** The next jump-label identifier. */
     private var current = 0
     /** The shared-parsers that have been referenced at some point in the generation so far. */
-    private val queue = mutable.ListBuffer.empty[(Let[_], Boolean, Int)]
+    private val queue = mutable.ListBuffer.empty[(Let[?], Boolean, Int)]
     /** The mapping between a shared-parser and its generated jump-label. */
-    private val map = mutable.Map.empty[(Let[_], Boolean), Int]
+    private val map = mutable.Map.empty[(Let[?], Boolean), Int]
 
     /** Generates a unique jump-label. */
     def freshLabel(): Int = {
@@ -266,14 +266,14 @@ private [deepembedding] class CodeGenState(val numRefs: Int) {
       * @param sub the shared parser to collect a label for
       * @return the label assigned the given parser
       */
-    def getLabel(sub: Let[_], producesResults: Boolean): Int = map.getOrElseUpdate((sub, producesResults), {
+    def getLabel(sub: Let[?], producesResults: Boolean): Int = map.getOrElseUpdate((sub, producesResults), {
         val label = freshLabel()
         (sub, producesResults, label) +=: queue
         label
     })
 
     /** Returns the next shared-parser that has been refered during code generation */
-    def nextLet(): (Let[_], Boolean, Int) = queue.remove(0)
+    def nextLet(): (Let[?], Boolean, Int) = queue.remove(0)
     /** Are there any more shared-parsers left on the processing queue? */
     def more: Boolean = queue.nonEmpty
 
@@ -294,7 +294,7 @@ private [deepembedding] class CodeGenState(val numRefs: Int) {
     /** A map of reasons to the assigned jump-label to its instruction. */
     private val applyReasonMap = mutable.Map.empty[String, Int]
     /** A map of registers to the assigned jump-label to its instruction. */
-    private val putAndFailMap = mutable.Map.empty[Ref[_], Int]
+    private val putAndFailMap = mutable.Map.empty[Ref[?], Int]
     /** A map of dislodge amounts to the assigned jump-label to its instruction. */
     private val dislodgeAndFailMap = mutable.Map.empty[Int, Int]
 
@@ -313,7 +313,7 @@ private [deepembedding] class CodeGenState(val numRefs: Int) {
     /** Given a register, fetch the corresponding jump-label that will represent
       * the `PutAndFail(reg)` instruction in the final instruction array.
       */
-    def getLabelForPutAndFail(reg: Ref[_]): Int = putAndFailMap.getOrElseUpdate(reg, freshLabel())
+    def getLabelForPutAndFail(reg: Ref[?]): Int = putAndFailMap.getOrElseUpdate(reg, freshLabel())
     /** Given an amount to dislodge, fetch the corresponding jump-label that will represent
       * the `DislodgeAndFail(reg)` instruction in the final instruction array.
       */

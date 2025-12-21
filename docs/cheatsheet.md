@@ -77,9 +77,9 @@ normally lazy positions: `LazyParsley.unary_~` can be used to restore laziness i
 | `choice(_*)`      | `Parsley[A]* => Parsley[A]`                    | try each of the given parsers in turn until one succeeds: uses `<\|>`.                                                                    |
 | `option(_)`       | `Parsley[A] => Parsley[Option[A]]`             | try a parser, if it succeeds wrap the result in `Some`, and if it fails *without consuming input* return `None`.                          |
 | `optional(_)`     | `Parsley[A] => Parsley[Unit]`                  | optionally parse something (but if it fails, it must not consume input).                                                                  |
-| `sepBy1(_, _)`    | `(Parsley[A], =>Parsley[_]) => Parsley[List[A]]` | parse one thing separated by another, collecting all the results. Something like comma-separated arguments in a function call.            |
-| `endBy1(_, _)`    | `(Parsley[A], =>Parsley[_]) => Parsley[List[A]]` | same as above, but the sequence must be ended by the separator again. Something like semi-colon separated statements in C-like languages. |
-| `sepEndBy1(_, _)` | `(Parsley[A], =>Parsley[_]) => Parsley[List[A]]` | same as above, but the terminal separator is optional. Something like semi-colon separated statements in Scala.                           |
+| `sepBy1(_, _)`    | `(Parsley[A], =>Parsley[?]) => Parsley[List[A]]` | parse one thing separated by another, collecting all the results. Something like comma-separated arguments in a function call.            |
+| `endBy1(_, _)`    | `(Parsley[A], =>Parsley[?]) => Parsley[List[A]]` | same as above, but the sequence must be ended by the separator again. Something like semi-colon separated statements in C-like languages. |
+| `sepEndBy1(_, _)` | `(Parsley[A], =>Parsley[?]) => Parsley[List[A]]` | same as above, but the terminal separator is optional. Something like semi-colon separated statements in Scala.                           |
 
 ## Building Values and ASTs
 
@@ -107,7 +107,7 @@ val digits: Parsley[List[Char]] = some(digit)
 // `map` here is using a function of type `List[Char] => Int`
 val int: Parsley[Int] = digits.map(_.mkString.toInt) // equivalently `digits.map(_.mkString).map(_.toInt)
 // `map` here is being used to wrap the `Int` in the `Num` class
-val num: Parsley[Num] = int.map(Num)
+val num: Parsley[Num] = int.map(Num.apply)
 ```
 
 But when you need to combine the results of two parsers more options open up.
@@ -131,7 +131,7 @@ val nonzero = oneOf('1' to '9')
 val digits: Parsley[List[Char]] = nonzero <::> many(digit)
 // Using #> here to handle the plain ol' zero case
 val int: Parsley[Int] = char('0') #> 0 | digits.map(_.mkString.toInt)
-val num: Parsley[Num] = int.map(Num)
+val num: Parsley[Num] = int.map(Num.apply)
 ```
 
 But more generally, we could reach for the `lift` functions:
@@ -148,7 +148,7 @@ val nonzero = oneOf('1' to '9')
 val digits: Parsley[List[Char]] = lift2[Char, List[Char], List[Char]](_ :: _, nonzero, many(digit))
 // Using #> here to handle the plain ol' zero case
 val int: Parsley[Int] = char('0') #> 0 | digits.map(_.mkString.toInt)
-val num: Parsley[Num] = int.map(Num)
+val num: Parsley[Num] = int.map(Num.apply)
 ```
 
 Sadly, to do this, it's sometimes necessary to specify all the types, in particular for anonymous
@@ -185,7 +185,7 @@ import parsley.syntax.lift.{liftSyntax1, liftSyntax2}
 val charCons = (c: Char, cs: List[Char]) => c :: cs
 
 charCons.lift(nonzero, many(digit))
-Num.lift(int)
+Num.apply.lift(int)
 ```
 
 The `lift` functions work all the way up to 22 arguments (which is the Scala 2 limit on function arguments).

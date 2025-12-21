@@ -6,7 +6,7 @@ laika.site.metadata.description = "This page describes how to use generic bridge
 %}
 
 ```scala mdoc:invisible
-import parsley.Parsley, Parsley._
+import parsley.Parsley, Parsley.*
 import parsley.generic.ParserBridge1
 ```
 # Generic Bridges (`parsley.generic`)
@@ -37,7 +37,7 @@ val p = (px, py).zipped(Foo(_, _))
 
 These work fine for the most part, however, there are couple of problems with this:
 
-1. In Scala 3, `Foo(_, _)` actually needs to be written as `Foo.apply`, which introduces some (minor) noise;
+1. In Scala 3, instead of just `Foo`, we need to write `Foo(_, _)` or `Foo.apply`, which introduces some (minor) noise;
    `zipped` itself is even contributing noise.
 1. `Foo` itself is a simple constructor, if it gets more complex, readability rapidly decreases:
     - The result produced may require inspection of the data, including pattern matching (see [Normalising or Disambiguating Data]).
@@ -118,8 +118,8 @@ every bridge uniformly gets access to a couple of extra combinators in addition 
 
 ```scala
 trait ParserSingletonBridge[+T] {
-    final def from(op: Parsley[_]): Parsley[T]
-    final def <#(op: Parsley[_]): Parsley[T] = this.from(op)
+    final def from(op: Parsley[?]): Parsley[T]
+    final def <#(op: Parsley[?]): Parsley[T] = this.from(op)
 }
 ```
 
@@ -130,7 +130,7 @@ like in [chain](expr/chain.md) or [precedence](expr/precedence.md) combinators:
 
 ```scala mdoc:silent
 import parsley.expr.chain
-import parsley.syntax.character.stringLift
+import parsley.syntax.character.given
 
 val term = chain.left1(px)(Add.from("+")) // or `Add <# "+"`
 ```
@@ -161,10 +161,13 @@ Without any further configuration, notice that the result of parsing `"null"` is
 and `nullLit: Parsley[Expr]`.
 
 @:callout(error)
-Be aware that the type passed to the generic parameter cannot be itself:
+Be aware that, on Scala 2, the type passed to the generic parameter cannot be itself:
 
-```scala mdoc:fail
+```scala
 case object Bad extends ParserBridge0[Bad.type]
+// error: illegal cyclic reference involving object Bad
+// case object Bad extends ParserBridge0[Bad.type]
+//                                       ^^^
 ```
 
 Resolving this will require introducing an extra type, like `Expr` in the example with
@@ -275,8 +278,11 @@ can add in a `filter`-like combinator after the data has been constructed to val
 that the thing you've constructed is actually correct. As an example, it turns out that
 Scala 2 only allows tuples with a maximum of 22 elements:
 
-```scala mdoc:fail
+```scala
 val oops = (1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3)
+// error: tuples may not have more than 22 elements, but 23 given
+// val oops = (1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3)
+//
 ```
 
 How to adjust the parser to handle this? One possible approach is to use the `range` combinator:
@@ -291,8 +297,15 @@ val tupleOrParensObtuse =
 This works, but it's very obtuse. Not to mention that the error message generated isn't particularly
 good. @:todo(TODO: add error message?) Instead, we can hook some extra behaviour into the generated `apply`:
 
-```scala mdoc:nest
-import parsley.errors.combinator._
+```scala mdoc:invisible:nest
+// apparently, we need the whole family here...
+trait Expr
+case object NullLit extends Expr with ParserBridge0[Expr]
+val nullLit = NullLit <# "null"
+case class Tuple(exprs: NonEmptyList[Expr]) extends Expr
+```
+```scala mdoc
+import parsley.errors.combinator.*
 
 object TupleOrParens extends ParserBridge1[NonEmptyList[Expr], Expr] {
     def apply(exprs: NonEmptyList[Expr]): Expr = exprs match {

@@ -6,10 +6,9 @@
 package parsley.internal
 
 import parsley.{ParsleyTest, Success, Failure, TestError, VanillaError}
-import parsley.Parsley, Parsley._
+import parsley.Parsley, Parsley.*
 import parsley.character.{char, satisfy, digit, string, stringOfSome}
 import parsley.combinator.{atomicChoice, choice, optional}
-import parsley.expr._
 import parsley.syntax.character.charLift
 import parsley.errors.combinator.ErrorMethods
 
@@ -38,28 +37,12 @@ class InternalTests extends ParsleyTest {
         q.parse("a123b123c") should be (Success('3'))
     }
 
-    they should "work in the precedence parser with one op" in {
-        val atom = some(digit).map(_.mkString.toInt)
-        val expr = precedence[Int](atom)(
-            Ops(InfixL)('+'.as(_ + _)))
-        expr.internal.instrs.count(_ == instructions.Return) shouldBe 1
-    }
-
-    they should "appear frequently inside expression parsers" in {
-        val atom = some(digit).map(_.mkString.toInt)
-        val expr = precedence[Int](atom)(
-            Ops(InfixL)('+'.as(_ + _)),
-            Ops(InfixL)('*'.as(_ * _)),
-            Ops(InfixL)('%'.as(_ % _)))
-        expr.internal.instrs.count(_ == instructions.Return) shouldBe 3
-    }
-
     // Issue 118
     "error alternatives for JumpTable" should "be complete across all branches" in {
         val strs = Seq("hello", "hi", "abc", "good", "g")
-        val p = atomicChoice(strs.map(string): _*)
+        val p = atomicChoice(strs.map(string)*)
         assume(p.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 1)
-        val q = atomicChoice(strs.map(s => string(s).impure): _*)
+        val q = atomicChoice(strs.map(s => string(s).impure)*)
         assume(q.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 0)
         info("parsing 'h'")
         p.parse("h") shouldBe q.parse("h")
@@ -89,9 +72,9 @@ class InternalTests extends ParsleyTest {
     }
     they should "be complete when backtracking is disabled" in {
         val strs = Seq("hello", "hi", "abc", "good", "g")
-        val p = choice(strs.map(string): _*)
+        val p = choice(strs.map(string)*)
         assume(p.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 1)
-        val q = choice(strs.map(s => string(s).impure): _*)
+        val q = choice(strs.map(s => string(s).impure)*)
         assume(q.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 0)
         info("parsing 'h'")
         p.parse("h") shouldBe q.parse("h")

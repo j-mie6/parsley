@@ -25,7 +25,7 @@ private [deepembedding] abstract class Singleton[+A] extends LazyParsley[A] with
     def genInstrs(producesResults: Boolean)(implicit instrs: StrictParsley.InstrBuffer): Unit
 
     final override def inlinable: Boolean = true
-    final override def findLetsAux[M[_, +_]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: frontend.LetFinderState): M[R, Unit] = result(())
+    final override def findLetsAux[M[_, +_]: ContOps, R](seen: Set[LazyParsley[?]])(implicit state: frontend.LetFinderState): M[R, Unit] = result(())
     final override def preprocess[M[_, +_]: ContOps, R, A_ >: A](implicit lets: frontend.LetMap): M[R, StrictParsley[A_]] = result(this)
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)
                                               (implicit instrs: StrictParsley.InstrBuffer, state: backend.CodeGenState): M[R, Unit] = {

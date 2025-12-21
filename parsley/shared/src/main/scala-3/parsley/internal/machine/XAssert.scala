@@ -5,7 +5,7 @@
  */
 package parsley.internal.machine
 
-import parsley.XAssert._
+import parsley.XAssert.*
 
 // $COVERAGE-OFF$
 private [machine] object XAssert {

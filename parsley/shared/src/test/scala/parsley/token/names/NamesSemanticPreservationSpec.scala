@@ -6,21 +6,20 @@
 package parsley.token.names
 
 import org.scalatest.propspec.AnyPropSpec
-import org.scalatest.matchers._
+import org.scalatest.matchers.*
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 import parsley.Parsley
-import parsley.token.descriptions._
+import parsley.token.descriptions.*
 import parsley.token.errors.ErrorConfig
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 
-import parsley.token.LexemeImpl._
+import parsley.token.LexemeImpl.*
 import parsley.character.spaces
 
-import parsley.token.descriptions.DescGen
-import DescGen._
-//import DescShrink._
+import DescGen.*
+//import DescShrink.*
 
 class NamesSemanticPreservationSpec extends AnyPropSpec with ScalaCheckPropertyChecks with should.Matchers {
     implicit val config: PropertyCheckConfiguration = new PropertyCheckConfiguration(minSuccessful = 50)

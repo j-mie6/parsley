@@ -5,13 +5,13 @@
  */
 package parsley.token.names
 
-import Predef.{ArrowAssoc => _, _}
+import Predef.{ArrowAssoc => _, *}
 
 import parsley.{ParsleyTest, Failure}
-import parsley.token.LexemeImpl._
+import parsley.token.LexemeImpl.*
 import parsley.token.errors.ErrorConfig
 
-import parsley.token.descriptions._
+import parsley.token.descriptions.*
 import parsley.character.spaces
 import parsley.{TestError, VanillaError, Named}
 import org.scalactic.source.Position
@@ -27,19 +27,19 @@ class NamesTests extends ParsleyTest {
     val plainNames = makeSymbol(plainName, plainSym)
 
     def identCases(start: CharPred, letter: CharPred, sensitive: Boolean = true)(tests: (String, Option[String], Position)*): Unit = {
-        cases(makeSymbol(plainName.copy(identifierStart = start, identifierLetter = letter), plainSym.copy(caseSensitive = sensitive)).identifier)(tests: _*)
+        cases(makeSymbol(plainName.copy(identifierStart = start, identifierLetter = letter), plainSym.copy(caseSensitive = sensitive)).identifier)(tests*)
     }
 
     def opCases(start: CharPred, letter: CharPred)(tests: (String, Option[String], Position)*): Unit = {
-        cases(makeSymbol(plainName.copy(operatorStart = start, operatorLetter = letter), plainSym).userDefinedOperator)(tests: _*)
+        cases(makeSymbol(plainName.copy(operatorStart = start, operatorLetter = letter), plainSym).userDefinedOperator)(tests*)
     }
 
     def identCases(start: CharPred, letter: CharPred, refStart: CharPred)(tests: (String, Option[String], Position)*): Unit = {
-        cases(makeSymbol(plainName.copy(identifierStart = start, identifierLetter = letter), plainSym).identifier(refStart))(tests: _*)
+        cases(makeSymbol(plainName.copy(identifierStart = start, identifierLetter = letter), plainSym).identifier(refStart))(tests*)
     }
 
     def opCases(start: CharPred, letter: CharPred, refStart: CharPred, refEnd: CharPred)(tests: (String, Option[String], Position)*): Unit = {
-        cases(makeSymbol(plainName.copy(operatorStart = start, operatorLetter = letter), plainSym).userDefinedOperator(refStart, refEnd))(tests: _*)
+        cases(makeSymbol(plainName.copy(operatorStart = start, operatorLetter = letter), plainSym).userDefinedOperator(refStart, refEnd))(tests*)
     }
 
     "identifier" should "parse valid identifiers" in {

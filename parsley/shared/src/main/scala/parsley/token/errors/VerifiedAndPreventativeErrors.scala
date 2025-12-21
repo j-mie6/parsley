@@ -59,7 +59,7 @@ private final class ZeroDotFail private (msg0: String, msgs: String*) extends Pr
   * @group doubledot
   */
 object ZeroDotFail {
-    def apply(msg0: String, msgs: String*): PreventDotIsZeroConfig = new ZeroDotFail(msg0, msgs: _*)
+    def apply(msg0: String, msgs: String*): PreventDotIsZeroConfig = new ZeroDotFail(msg0, msgs*)
 }
 
 /** This class is used to configure what error should be generated when illegal characters in a string or character literal are parsable.
@@ -70,7 +70,7 @@ sealed abstract class VerifiedBadChars {
     private [token] def checkBadChar: Parsley[Nothing]
 }
 private final class BadCharsFail private (cs: Map[Int, Seq[String]]) extends VerifiedBadChars {
-    private [token] def checkBadChar: Parsley[Nothing] = satisfy(cs.contains).verifiedFail(cs.apply(_))
+    private [token] def checkBadChar: Parsley[Nothing] = satisfy(cs.contains).verifiedFail(cs)
 }
 /** This object makes "bad literal chars" generate a bunch of given messages in a ''specialised'' error. Requires a map from bad characters to their messages.
   * @since 4.1.0
@@ -81,7 +81,7 @@ object BadCharsFail {
 }
 
 private final class BadCharsReason private (cs: Map[Int, String]) extends VerifiedBadChars {
-    private [token] def checkBadChar: Parsley[Nothing] = satisfy(cs.contains).verifiedExplain(cs.apply(_))
+    private [token] def checkBadChar: Parsley[Nothing] = satisfy(cs.contains).verifiedExplain(cs)
 }
 /** This object makes "bad literal chars" generate a reason in a ''vanilla'' error. Requires a map from bad characters to their reasons.
   * @since 4.1.0

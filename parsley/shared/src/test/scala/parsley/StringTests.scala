@@ -5,11 +5,11 @@
  */
 package parsley
 
-import Predef.{ArrowAssoc => _, _}
+import Predef.{ArrowAssoc => _, *}
 
 import parsley.character.{string, strings, stringOfMany, stringOfSome}
 import parsley.syntax.character.stringLift
-import parsley.Parsley._
+import parsley.Parsley.*
 import parsley.position.pos
 
 class StringTests extends ParsleyTest {
@@ -18,16 +18,16 @@ class StringTests extends ParsleyTest {
     }
 
     "string" should "consume succeed if it is found at head" in {
-        "abc".parse("abc") should not be a [Failure[_]]
+        "abc".parse("abc") should not be a [Failure[?]]
     }
     it should "not consume input if it fails on first character" in {
-        ("abc" <|> "b").parse("b") should not be a [Failure[_]]
+        ("abc" <|> "b").parse("b") should not be a [Failure[?]]
     }
     it should "consume input if it fails mid-string" in {
-        ("abc" <|> "ab").parse("ab") shouldBe a [Failure[_]]
+        ("abc" <|> "ab").parse("ab") shouldBe a [Failure[?]]
     }
     it should "not consume input if it fails mid-string when combined with atomic" in {
-        (atomic("abc") <|> "ab").parse("ab") should not be a [Failure[_]]
+        (atomic("abc") <|> "ab").parse("ab") should not be a [Failure[?]]
     }
     it should "update positions correctly" in {
         stringPositionCheck(0, "abc") shouldBe Success((1, 4))

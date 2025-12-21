@@ -66,7 +66,7 @@ object DescGen {
         digitsRange.map(NumberOfDigits.AtMost(_)).map(numericEscapeOf(prefix)),
         Gen.containerOfN[Set, Int](4, digitsRange).suchThat(_.nonEmpty).map { set =>
             val x::xs = set.toList: @unchecked
-            numericEscapeOf(prefix)(NumberOfDigits.Exactly(x, xs: _*))
+            numericEscapeOf(prefix)(NumberOfDigits.Exactly(x, xs*))
         }
     )
 

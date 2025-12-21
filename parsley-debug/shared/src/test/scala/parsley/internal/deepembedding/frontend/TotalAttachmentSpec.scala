@@ -97,16 +97,30 @@ class TotalAttachmentSpec extends ParsleyTest {
                 CUnit
             } else failure()
 
+        override def visit[A](self: Precedence[A], parentIsTag: Boolean)(atoms: List[LazyParsley[Any]], ops: List[LazyOp], wraps: List[Any => Any]): ConstUnit[A] = {
+            if (parentIsTag == self.isOpaque) {
+                visitLazyPrec(atoms, ops, parentIsTag = false): @unused
+                CUnit
+            } else failure()
+        }
+
+        private def visitLazyPrec[A](atoms: List[LazyParsley[Any]], ops: List[LazyOp], parentIsTag: Boolean): ConstUnit[A] = {
+            atoms.foreach(visitUnknown(_, parentIsTag))
+            ops.foreach(op => visitUnknown(op.op, parentIsTag))
+            CUnit
+        }
+
         // Somehow IntelliJ Scala thinks this is tail-recursive... but ScalaC does not?
         //noinspection NoTailRecursionAnnotation
         override def visitUnknown[A](self: LazyParsley[A], parentIsTag: Boolean): ConstUnit[A] =
             self match {
-                case d: TaggedWith[_] if !parentIsTag => visitUnknown(d.subParser, parentIsTag = true)
-                case _: TaggedWith[_]                 => failure("Not allowed to stack debuggers.") // Can't have a debugged on top of another!
-                case s: singletons.Singleton[_]       => visitSingleton(s.asInstanceOf[singletons.Singleton[A]], parentIsTag)
-                case g: GenericLazyParsley[_]         => visitGeneric(g.asInstanceOf[GenericLazyParsley[A]], parentIsTag)
-                case alt: <|>[_]                      => alt.visit(this, parentIsTag)
-                case cpre: ChainPre[_]                => cpre.visit(this, parentIsTag)
+                case d: TaggedWith[?] if !parentIsTag => visitUnknown(d.subParser, parentIsTag = true)
+                case _: TaggedWith[?]                 => failure("Not allowed to stack debuggers.") // Can't have a debugged on top of another!
+                case s: singletons.Singleton[?]       => visitSingleton(s.asInstanceOf[singletons.Singleton[A]], parentIsTag)
+                case g: GenericLazyParsley[?]         => visitGeneric(g.asInstanceOf[GenericLazyParsley[A]], parentIsTag)
+                case alt: <|>[?]                      => alt.visit(this, parentIsTag)
+                case cpre: ChainPre[?]                => cpre.visit(this, parentIsTag)
+                case prec: Precedence[?]              => prec.visit(this, parentIsTag)
                 case _                                => if (parentIsTag) CUnit else failure()
             }
 
@@ -125,7 +139,7 @@ class TotalAttachmentSpec extends ParsleyTest {
             for (_ <- 0 until width) {
                 val (_, dbg) = attachDebugger(parserGenerator.generate(0))
                 dbg.internal match {
-                    case seq: *>[_] => verifier.visitUnknown(seq.right, parentIsTag = false)
+                    case seq: *>[?] => verifier.visitUnknown(seq.right, parentIsTag = false)
                     case _          => fail("Debugger not attached.")
                 }
             }
@@ -140,7 +154,7 @@ class TotalAttachmentSpec extends ParsleyTest {
 
                 val (_, dbg) = attachDebugger(par)
                 dbg.internal match {
-                    case seq: *>[_] => verifier.visitUnknown(seq.right, parentIsTag = false)
+                    case seq: *>[?] => verifier.visitUnknown(seq.right, parentIsTag = false)
                     case _ => fail("Debugger not attached.")
                 }
             }

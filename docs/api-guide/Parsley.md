@@ -38,7 +38,7 @@ the purposes of basic use, you can assume that Scala will automatically infer
 this type to be `String`, for which an `ErrorBuilder[String]` does implicitly
 exist.
 
-By importing `parsley.io._`, another `parseFromFile` method is added to
+By importing `parsley.io.*`, another `parseFromFile` method is added to
 `Parsley`, which works similarly, but loads the input from a file first.
 In future versions of `parsley`, this import will no longer be needed, and
 this will be an overloading of `parse`.
@@ -74,7 +74,7 @@ Combinators like `<*>`, `<**>` and `<::>` perform a similar role to `zip`, but
 combine the two results depending on the specific subtypes of the arguments.
 Both `<*>` and `<**>` perform function application, and `<::>` adds the result
 of the first parser onto a list returned by the second. These are all more
-specific versions of the `parsley.lift._` combinators, but are often useful
+specific versions of the `parsley.lift.*` combinators, but are often useful
 in practice.
 
 The `flatMap` combinator is another way of sequencing two parsers, but where

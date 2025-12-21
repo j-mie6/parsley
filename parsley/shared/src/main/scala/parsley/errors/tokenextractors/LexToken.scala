@@ -43,7 +43,7 @@ import org.typelevel.scalaccompat.annotation.unused
   *
   * @since 4.0.0
   */
-trait LexToken { this: ErrorBuilder[_] =>
+trait LexToken { this: ErrorBuilder[?] =>
     /** The tokens that should be recognised by this extractor: each parser should return the
       * intended name of the token exactly as it should appear in the `Named` token.
       *
@@ -60,9 +60,9 @@ trait LexToken { this: ErrorBuilder[_] =>
     // this parser cannot and must not fail
     private lazy val makeParser: Parsley[Either[::[(String, Int)], String]] = tokens match {
         case t0 +: ts =>
-            val toks = traverse(t0, ts: _*)(p => option(lookAhead(atomic(p) <~> position.offset))).map(_.flatten).collect { case toks@(_::_) => toks }
+            val toks = traverse(t0, ts*)(p => option(lookAhead(atomic(p) <~> position.offset))).map(_.flatten).collect { case toks@(_::_) => toks }
             // this can only fail if either there is no input (which there must be), or there is a token at the front, in which case `rawTok` is not parsed anyway
-            val rawTok = stringOfSome(traverse(t0, ts: _*)(notFollowedBy) ~> item)
+            val rawTok = stringOfSome(traverse(t0, ts*)(notFollowedBy) ~> item)
             toks <+> rawTok
         case _ => stringOfSome(_ => true).map(Right(_))
     }
@@ -124,7 +124,7 @@ object LexToken {
       * the generated error.
       * @since 4.0.0
       */
-    def constantSymbols(ps: (Parsley[_], String)*): Seq[Parsley[String]] = ps.map {
+    def constantSymbols(ps: (Parsley[?], String)*): Seq[Parsley[String]] = ps.map {
         case (p, n) => p.as(n)
     }
 }

@@ -4,10 +4,6 @@ laika.site.metadata.description = "How to handle left-recursion and precedence i
 %}
 # Building Expression Parsers
 
-```scala mdoc:invisible
-import scala.annotation.unused
-```
-
 @:callout(info)
 This page builds from the ground up on expression parsing. For a less
 discussion-based explanation see [precedence](../api-guide/expr/precedence.md), as well as [chain combinators](../api-guide/expr/chain.md) and [heterogeneous chain combinators](../api-guide/expr/infix.md) for more specific use-cases.
@@ -38,23 +34,22 @@ parse into an `Int`: behold, the magic of combinators!):
 ```scala mdoc:silent
 import parsley.Parsley, Parsley.atomic
 import parsley.character.digit
-import parsley.syntax.character.charLift
-import parsley.syntax.zipped._
+import parsley.syntax.character.given
+import parsley.syntax.zipped.*
 
 // Standard number parser
 val number = digit.foldLeft1[Int](0)((n, d) => n * 10 + d.asDigit)
 
-lazy val expr: Parsley[Int] =
-  atomic((expr <* '+', term).zipped(_ + _)) |
-  (expr <* '-', term).zipped(_ - _) |
-  term
-lazy val term: Parsley[Int] = (term <* '*', atom).zipped(_ * _) | atom
+lazy val expr: Parsley[Int] = atomic((~expr <* '+', term).zipped(_ + _))
+                            | (~expr <* '-', term).zipped(_ - _)
+                            | term
+lazy val term: Parsley[Int] = (~term <* '*', atom).zipped(_ * _) | atom
 lazy val atom: Parsley[Int] = '(' *> expr <* ')' | number
 ```
 
 This parser has a few glaring issues: for a start, the `atomic` is causing excessive backtracking!
 While there are ways to improve this, the real problem here is
-the _left-recursion_. Imagine you are evaluating this parser, first you look at `expr`, and then
+the _left-recursion_ (in fact, the `~` is used to stop the Scala compiler from complaining about it!). Imagine you are evaluating this parser, first you look at `expr`, and then
 your first task is to evaluate `expr`! In fact, due to the strictness of Parsley's combinators, this example breaks before the parser runs: on Scala 2, it will `StackOverflowError` at runtime when constructing the parser, and on Scala 3, it
 will report an infinitely recursive definition for `expr` and `term`. The solution is to turn to the `chain` combinators, but before we do that, let's
 eliminate the atomics and refactor it a little to make the transition less jarring:
@@ -62,7 +57,7 @@ eliminate the atomics and refactor it a little to make the transition less jarri
 ```scala mdoc:nest:silent
 import parsley.Parsley, Parsley.atomic
 import parsley.character.digit
-import parsley.syntax.character.charLift
+import parsley.syntax.character.given
 
 // Standard number parser
 val number = digit.foldLeft1[Int](0)((n, d) => n * 10 + d.asDigit)
@@ -71,11 +66,10 @@ val add = (y: Int) => (x: Int) => x + y
 val sub = (y: Int) => (x: Int) => x - y
 val mul = (y: Int) => (x: Int) => x * y
 
-lazy val expr: Parsley[Int] =
-  atomic(expr <**> ('+'.as(add) <*> term)) |
-  expr <**> ('-'.as(sub) <*> term) |
-  term
-lazy val term: Parsley[Int] = term <**> ('*'.as(mul) <*> atom) | atom
+lazy val expr: Parsley[Int] = atomic(~expr <**> ('+'.as(add) <*> term))
+                            | ~expr <**> ('-'.as(sub) <*> term)
+                            | term
+lazy val term: Parsley[Int] = ~term <**> ('*'.as(mul) <*> atom) | atom
 lazy val atom: Parsley[Int] = '(' ~> expr <~ ')' | number
 ```
 
@@ -84,10 +78,10 @@ result a function and apply that (flipped) to the right hand side (with `<*>`) a
 (with `<**>`). Now, in this form, hopefully you can notice we've exposed the leading `expr` so that
 its on its own: now we can factor a bit more:
 
-```scala mdoc:nest:silent
+```scala mdoc:nest:warn:silent
 lazy val expr: Parsley[Int] =
-  expr <**> (('+'.as(add) <*> term) | ('-'.as(sub) <*> term)) |
-  term
+    expr <**> (('+'.as(add) <*> term) | ('-'.as(sub) <*> term))
+  | term
 ```
 ```scala mdoc:invisible
 lazy val _ = expr: @scala.annotation.unused
@@ -96,13 +90,10 @@ lazy val _ = expr: @scala.annotation.unused
 Now we've eliminated the "backtracking" (if only we could make it that far!), but we can right factor
 the `|` too to obtain the simplest form for the parser:
 
-```scala mdoc:nest:silent
+```scala mdoc:nest:warn:silent
 lazy val expr: Parsley[Int] =
-  expr <**> (('+'.as(add) | '-'.as(sub)) <*> term) |
-  term
-```
-```scala mdoc:invisible
-lazy val _ = expr: @unused
+    expr <**> (('+'.as(add) | '-'.as(sub)) <*> term)
+  | term
 ```
 
 Now, at this point, I could demonstrate how to left-factor this grammar and produce something that
@@ -119,7 +110,7 @@ embodied by the `chain`-family. Here is the same example as before, but fixed us
 ```scala mdoc:silent:nest
 import parsley.Parsley
 import parsley.character.digit
-import parsley.syntax.character.charLift
+import parsley.syntax.character.given
 import parsley.expr.chain
 
 // Standard number parser
@@ -170,7 +161,7 @@ and Parsley is no exception. Let's see the same parser one last time and see wha
 ```scala mdoc:nest:silent
 import parsley.Parsley
 import parsley.character.digit
-import parsley.syntax.character.charLift
+import parsley.syntax.character.given
 import parsley.expr.{precedence, Ops, InfixL}
 
 val number = digit.foldLeft1[Int](0)((n, d) => n * 10 + d.asDigit)
@@ -303,7 +294,7 @@ The first form is the tightest first approach, and the second is the weakest fir
 ```scala mdoc:reset:silent
 import parsley.Parsley
 import parsley.character.digit
-import parsley.syntax.character.charLift
+import parsley.syntax.character.given
 import parsley.expr.{precedence, SOps, InfixL, Atoms}
 
 val number = digit.foldLeft1[Int](0)((n, d) => n * 10 + d.asDigit)
@@ -320,9 +311,9 @@ case class Number(x: Int) extends Atom
 case class Parens(x: Expr) extends Atom
 
 lazy val expr: Parsley[Expr] = precedence {
-  Atoms(number.map(Number), '(' ~> expr.map(Parens) <~ ')') :+
-  SOps(InfixL)('*' as Mul) :+
-  SOps(InfixL)('+' as Add, '-' as Sub)
+  Atoms(number.map(Number.apply), '(' ~> expr.map(Parens.apply) <~ ')') :+
+  SOps(InfixL)('*' as Mul.apply) :+
+  SOps(InfixL)('+' as Add.apply, '-' as Sub.apply)
 }
 ```
 
@@ -374,15 +365,15 @@ look like in practice?
 ```scala mdoc:silent
 import parsley.Parsley
 import parsley.character.digit
-import parsley.syntax.character.charLift
+import parsley.syntax.character.given
 import parsley.expr.{precedence, GOps, InfixL, Atoms}
 
 val number = digit.foldLeft1[Int](0)((n, d) => n * 10 + d.asDigit)
 
 lazy val expr: Parsley[Expr] = precedence {
-  Atoms(number.map(Number), '(' ~> expr.map(Parens) <~ ')') :+
-  GOps[Atom, Term](InfixL)('*' as Mul)(OfAtom) :+
-  GOps[Term, Expr](InfixL)('+' as Add, '-' as Sub)(OfTerm)
+  Atoms(number.map(Number.apply), '(' ~> expr.map(Parens.apply) <~ ')') :+
+  GOps[Atom, Term](InfixL)('*' as Mul.apply)(OfAtom.apply) :+
+  GOps[Term, Expr](InfixL)('+' as Add.apply, '-' as Sub.apply)(OfTerm.apply)
 }
 ```
 ```scala mdoc:invisible
@@ -430,9 +421,9 @@ to the different fixities:
 
 ```scala
 def infixLefts[A](ops: Parsley[(A, A) => A]*): Ops[A, A] =
-  Ops(InfixL)(ops: _*)
+  Ops(InfixL)(ops*)
 def prefixes[A](ops: Parsley[A => A]*): Ops[A, A] =
-  Ops(Prefix)(ops: _*)
+  Ops(Prefix)(ops*)
 ```
 
 The path-dependent type of `fixity.Op[A, A]` allows the types of the parsers to change accordingly.
@@ -451,10 +442,11 @@ Well, let's first understand why `(B, A) => B` is appropriate for left-associati
 right ones.
 
 ```scala mdoc:reset
-sealed trait Expr
-case class LOp(x: Expr, y: Int) extends Expr
-case class ROp(x: Int, y: Expr) extends Expr
-case class Number(x: Int) extends Expr
+enum Expr {
+    case LOp(x: Expr, y: Int)
+    case ROp(x: Int, y: Expr)
+    case Number(x: Int)
+}
 ```
 
 Notice that `LOp(LOp(Number(6), 5), 4)` is ok, because the right hand argument to `LOp` is always an
@@ -468,9 +460,10 @@ right, but not the left. The level for this would be `GOp[Int, Expr](InfixL)('@'
 For `Prefix` and `Postfix` it's a similar story:
 
 ```scala mdoc
-sealed trait BoolExpr
-case class Not(x: BoolExpr) extends BoolExpr
-case class Literal(b: Boolean) extends BoolExpr
+enum BoolExpr {
+    case Not(x: BoolExpr)
+    case Literal(b: Boolean)
+}
 ```
 
 We would like to be able to write `Not(Not(Literal(False)))`, which means that `Not` needs to accept

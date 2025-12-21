@@ -27,7 +27,7 @@ private [parsley] final class >>=[A, B](p: LazyParsley[A], private val f: A => L
     // $COVERAGE-ON$
 }
 
-private [parsley] final class *>[A](_p: LazyParsley[_], _q: =>LazyParsley[A]) extends Binary[Any, A, A](_p, _q) {
+private [parsley] final class *>[A](_p: LazyParsley[?], _q: =>LazyParsley[A]) extends Binary[Any, A, A](_p, _q) {
     override def make(p: StrictParsley[Any], q: StrictParsley[A]): StrictParsley[A] = backend.*>(p, q)
 
     // $COVERAGE-OFF$
@@ -36,7 +36,7 @@ private [parsley] final class *>[A](_p: LazyParsley[_], _q: =>LazyParsley[A]) ex
     private [parsley] var debugName = "~>"
     // $COVERAGE-ON$
 }
-private [parsley] final class <*[A](_p: LazyParsley[A], _q: =>LazyParsley[_]) extends Binary[A, Any, A](_p, _q) {
+private [parsley] final class <*[A](_p: LazyParsley[A], _q: =>LazyParsley[?]) extends Binary[A, Any, A](_p, _q) {
     override def make(p: StrictParsley[A], q: StrictParsley[Any]): StrictParsley[A] = backend.<*(p, q)
 
     // $COVERAGE-OFF$

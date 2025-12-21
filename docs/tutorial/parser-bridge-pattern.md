@@ -77,7 +77,7 @@ in x * y
 
 Now let's see how this changes the parser:
 
-```scala mdoc
+```scala mdoc:compile-only
 import parsley.Parsley
 
 object ast {
@@ -99,21 +99,22 @@ object expressions {
     import parsley.combinator.sepEndBy1
     import parsley.syntax.lift.liftSyntax2
 
-    import lexer.implicits.implicitSymbol
+    import lexer.implicits.given
     import lexer.{number, fully, identifier}
-    import ast._
+    import ast.*
 
-    lazy val atom: Parsley[Expr] =
-        "(" ~> expr <~ ")" | number.map(Num) | identifier.map(Var)
+    lazy val atom: Parsley[Expr] = "(" ~> expr <~ ")"
+                                 | number.map(Num.apply)
+                                 | identifier.map(Var.apply)
     lazy val expr = precedence[Expr](atom)(
-        Ops(Prefix)("negate" as Neg),
-        Ops(InfixL)("*" as Mul),
-        Ops(InfixL)("+" as Add, "-" as Sub))
+        Ops(Prefix)("negate" as Neg.apply),
+        Ops(InfixL)("*" as Mul.apply),
+        Ops(InfixL)("+" as Add.apply, "-" as Sub.apply))
 
-    lazy val binding = Binding.lift(identifier, "=" ~> letExpr)
+    lazy val binding = Binding.apply.lift(identifier, "=" ~> letExpr)
     lazy val bindings = sepEndBy1(binding, ";")
     lazy val letExpr: Parsley[LetExpr] =
-      Let.lift("let" ~> bindings, "in" ~> expr) | expr
+      Let.apply.lift("let" ~> bindings, "in" ~> expr) | expr
 
     val parser = fully(letExpr)
 }
@@ -170,10 +171,12 @@ get that position information in and get it "working" again. The combinators for
 position information are:
 
 ```scala
-import parsley.position._
+import parsley.position.*
+/*
 val line: Parsley[Int]
 val col: Parsley[Int]
 val pos: Parsley[(Int, Int)] = line.zip(col)
+*/
 ```
 
 So in this case, `pos` is what we are after, our first instinct might be to just add it as an
@@ -202,13 +205,13 @@ help Scala's type inference figure out what we want.
 ```scala mdoc:invisible
 import ast.{Binding, LetExpr}
 import parsley.Parsley.empty
-import parsley.position._
+import parsley.position.*
 import lexer.identifier
-import lexer.implicits._
+import lexer.implicits.given
 val letExpr: Parsley[LetExpr] = empty
 ```
-```scala mdoc:silent
-import parsley.syntax.zipped._
+```scala mdoc:compile-only
+import parsley.syntax.zipped.*
 val binding: Parsley[Binding] =
     pos <**> (identifier, "=" ~> letExpr).zipped(Binding(_, _) _)
 ```
@@ -286,7 +289,7 @@ object lexer {
 ```scala mdoc
 object ast {
     import parsley.position.pos
-    import parsley.syntax.zipped._
+    import parsley.syntax.zipped.*
 
     sealed trait LetExpr
     case class Let(bindings: List[Binding], x: Expr)(val pos: (Int, Int)) extends LetExpr
@@ -295,11 +298,11 @@ object ast {
     // New code here!
     object Let {
         def apply(bindings: Parsley[List[Binding]], x: Parsley[Expr]): Parsley[Let] =
-            pos <**> (bindings, x).zipped(Let(_, _) _)
+            pos <**> (bindings, x).zipped(Let.apply)
     }
     object Binding {
         def apply(v: Parsley[String], x: Parsley[LetExpr]): Parsley[Binding] =
-            pos <**> (v, x).zipped(Binding(_, _) _)
+            pos <**> (v, x).zipped(Binding.apply)
     }
 
     sealed trait Expr extends LetExpr
@@ -312,10 +315,10 @@ object ast {
 
     // New code here!
     object Num {
-        def apply(x: Parsley[BigInt]): Parsley[Num] = pos <**> x.map(Num(_) _)
+        def apply(x: Parsley[BigInt]): Parsley[Num] = pos <**> x.map(Num.apply)
     }
     object Var {
-        def apply(x: Parsley[String]): Parsley[Var] = pos <**> x.map(Var(_) _)
+        def apply(x: Parsley[String]): Parsley[Var] = pos <**> x.map(Var.apply)
     }
 }
 ```
@@ -327,7 +330,7 @@ absent from the builder: this is the entire point! If we need to remove the posi
 position to an existing node), we only need to make the change in the bridge constructor:
 
 ```scala
-pos <**> (v, x).zipped(Binding(_, _) _) ===> (v, x).zipped(Binding(_, _))
+pos <**> (v, x).zipped(Binding.apply) ===> (v, x).zipped(Binding.apply)
 ```
 
 This makes it really easy to change!
@@ -343,16 +346,17 @@ object expressions {
     import parsley.expr.{precedence, Ops, InfixL, Prefix}
     import parsley.combinator.sepEndBy1
 
-    import lexer.implicits.implicitSymbol
+    import lexer.implicits.given
     import lexer.{number, fully, identifier}
-    import ast._
+    import ast.*
 
-    private lazy val atom: Parsley[Expr] =
-        "(" ~> expr <~ ")" | Num(number) | Var(identifier)
+    private lazy val atom: Parsley[Expr] = "(" ~> expr <~ ")"
+                                         | Num(number)
+                                         | Var(identifier)
     private lazy val expr = precedence[Expr](atom)(
-        Ops(Prefix)("negate" as Neg),
-        Ops(InfixL)("*" as Mul),
-        Ops(InfixL)("+" as Add, "-" as Sub))
+        Ops(Prefix)("negate" as Neg.apply),
+        Ops(InfixL)("*" as Mul.apply),
+        Ops(InfixL)("+" as Add.apply, "-" as Sub.apply))
 
     private lazy val binding = Binding(identifier, "=" ~> letExpr)
     private lazy val bindings = sepEndBy1(binding, ";")
@@ -376,17 +380,17 @@ So far, we've constructed four bridge constructors:
 ```scala
 object Let {
     def apply(bindings: Parsley[List[Binding]], x: Parsley[Expr]): Parsley[Let] =
-        pos <**> (bindings, x).zipped(Let(_, _) _)
+        pos <**> (bindings, x).zipped(Let.apply)
 }
 object Binding {
     def apply(v: Parsley[String], x: Parsley[LetExpr]): Parsley[Binding] =
-        pos <**> (v, x).zipped(Binding(_, _) _)
+        pos <**> (v, x).zipped(Binding.apply)
 }
 object Num {
-    def apply(x: Parsley[BigInt]): Parsley[Num] = pos <**> x.map(Num(_) _)
+    def apply(x: Parsley[BigInt]): Parsley[Num] = pos <**> x.map(Num.apply)
 }
 object Var {
-    def apply(x: Parsley[String]): Parsley[Var] = pos <**> x.map(Var(_) _)
+    def apply(x: Parsley[String]): Parsley[Var] = pos <**> x.map(Var.apply)
 }
 ```
 
@@ -400,43 +404,22 @@ the _Template Method_ pattern:
   Method_ lets subclassses redefine certain steps of an algorithm (called hooks) without changing
   the algorithm's structure.
 
-Let's first desuguar these four objects a little to make the shared structure between `Let` and
-`Binding` as well as between `Num` and `Var` more apparent:
+Notice that we can simplify the scoping of the `apply` calls:
 
 ```scala
 object Let {
     def apply(bindings: Parsley[List[Binding]], x: Parsley[Expr]): Parsley[Let] =
-        pos <**> (bindings, x).zipped(Let.apply(_, _) _)
+        pos <**> (bindings, x).zipped(this.apply)
 }
 object Binding {
     def apply(v: Parsley[String], x: Parsley[LetExpr]): Parsley[Binding] =
-        pos <**> (v, x).zipped(Binding.apply(_, _) _)
+        pos <**> (v, x).zipped(this.apply)
 }
 object Num {
-    def apply(x: Parsley[BigInt]): Parsley[Num] = pos <**> x.map(Num.apply(_) _)
+    def apply(x: Parsley[BigInt]): Parsley[Num] = pos <**> x.map(this.apply)
 }
 object Var {
-    def apply(x: Parsley[String]): Parsley[Var] = pos <**> x.map(Var.apply(_) _)
-}
-```
-
-This exposes the fact that `Let()` is just sugar for `Let.apply()`, which is automatically
-generated by the compiler into companion objects. Now simplify the scoping of these `apply` calls:
-
-```scala
-object Let {
-    def apply(bindings: Parsley[List[Binding]], x: Parsley[Expr]): Parsley[Let] =
-        pos <**> (bindings, x).zipped(this.apply(_, _) _)
-}
-object Binding {
-    def apply(v: Parsley[String], x: Parsley[LetExpr]): Parsley[Binding] =
-        pos <**> (v, x).zipped(this.apply(_, _) _)
-}
-object Num {
-    def apply(x: Parsley[BigInt]): Parsley[Num] = pos <**> x.map(this.apply(_) _)
-}
-object Var {
-    def apply(x: Parsley[String]): Parsley[Var] = pos <**> x.map(this.apply(_) _)
+    def apply(x: Parsley[String]): Parsley[Var] = pos <**> x.map(this.apply)
 }
 ```
 
@@ -446,7 +429,7 @@ constructors themselves. But there is enough structure here to extract some shin
 template traits:
 
 ```scala mdoc:invisible
-import parsley.syntax.zipped._
+import parsley.syntax.zipped.*
 import parsley.position.pos
 ```
 ```scala mdoc
@@ -454,13 +437,13 @@ trait ParserBridgePos1[-A, +B] {
     // this is called the "hook": it's the hole in the template that must be implemented
     def apply(x: A)(pos: (Int, Int)): B
     // this is the template method, in this case the template for the bridge constructor
-    def apply(x: Parsley[A]): Parsley[B] = pos <**> x.map(this.apply(_) _)
+    def apply(x: Parsley[A]): Parsley[B] = pos <**> x.map(this.apply)
 }
 
 trait ParserBridgePos2[-A, -B, +C] {
     def apply(x: A, y: B)(pos: (Int, Int)): C
     def apply(x: Parsley[A], y: Parsley[B]): Parsley[C] =
-        pos <**> (x, y).zipped(this.apply(_, _) _)
+        pos <**> (x, y).zipped(this.apply)
 }
 ```
 
@@ -472,13 +455,13 @@ within `parsley.generic`):
 ```scala mdoc
 trait ParserBridge1[-A, +B] {
     def apply(x: A): B
-    def apply(x: Parsley[A]): Parsley[B] = x.map(this.apply(_))
+    def apply(x: Parsley[A]): Parsley[B] = x.map(this.apply)
 }
 
 trait ParserBridge2[-A, -B, +C] {
     def apply(x: A, y: B): C
     def apply(x: Parsley[A], y: Parsley[B]): Parsley[C] =
-        (x, y).zipped(this.apply(_, _))
+        (x, y).zipped(this.apply)
 }
 ```
 
@@ -545,15 +528,15 @@ import parsley.Parsley
 import parsley.position.pos
 ```
 ```scala mdoc
-import parsley.ap._
+import parsley.ap.*
 
 trait ParserBridgePos1[-A, +B] {
     def apply(x: A)(pos: (Int, Int)): B
     private def con(pos: (Int, Int)): A => B = this.apply(_)(pos)
 
     def apply(x: Parsley[A]): Parsley[B] = ap1(pos.map(con), x)
-    def from(op: Parsley[_]): Parsley[A => B] = pos.map(con) <~ op
-    final def <#(op: Parsley[_]): Parsley[A => B] = this from op
+    def from(op: Parsley[?]): Parsley[A => B] = pos.map(con) <~ op
+    final def <#(op: Parsley[?]): Parsley[A => B] = this from op
 
 }
 
@@ -562,8 +545,8 @@ trait ParserBridgePos2[-A, -B, +C] {
     private def con(pos: (Int, Int)): (A, B) => C = this.apply(_, _)(pos)
 
     def apply(x: Parsley[A], y: =>Parsley[B]): Parsley[C] = ap2(pos.map(con), x, y)
-    def from(op: Parsley[_]): Parsley[(A, B) => C] = pos.map(con) <* op
-    final def <#(op: Parsley[_]): Parsley[(A, B) => C] = this from op
+    def from(op: Parsley[?]): Parsley[(A, B) => C] = pos.map(con) <* op
+    final def <#(op: Parsley[?]): Parsley[(A, B) => C] = this from op
 }
 ```
 
@@ -602,7 +585,7 @@ object expressions {
 
     import lexer.implicits.implicitSymbol
     import lexer.{number, fully, identifier}
-    import ast._
+    import ast.*
 
     private lazy val atom: Parsley[Expr] =
         "(" ~> expr <~ ")" | Num(number) | Var(identifier)
@@ -635,16 +618,16 @@ trait ParserBridgePos1[-A, +B] {
     def apply(x: A)(pos: (Int, Int)): B
     private def con(pos: (Int, Int)): A => B = this.apply(_)(pos)
 
-    def from(op: Parsley[_]): Parsley[A => B] = pos.map(con) <* op
-    final def <#(op: Parsley[_]): Parsley[A => B] = this from op
+    def from(op: Parsley[?]): Parsley[A => B] = pos.map(con) <* op
+    final def <#(op: Parsley[?]): Parsley[A => B] = this from op
 }
 
 trait ParserBridgePos2[-A, -B, +C] {
     def apply(x: A, y: B)(pos: (Int, Int)): C
     private def con(pos: (Int, Int)): (A, B) => C = this.apply(_, _)(pos)
 
-    def from(op: Parsley[_]): Parsley[(A, B) => C] = pos.map(con) <* op
-    final def <#(op: Parsley[_]): Parsley[(A, B) => C] = this from op
+    def from(op: Parsley[?]): Parsley[(A, B) => C] = pos.map(con) <* op
+    final def <#(op: Parsley[?]): Parsley[(A, B) => C] = this from op
 }
 ```
 
@@ -656,13 +639,13 @@ the common code:
 ```scala mdoc:invisible:reset
 import parsley.Parsley
 import parsley.position.pos
-import parsley.ap._
+import parsley.ap.*
 ```
 ```scala mdoc
 trait ParserSingletonBridgePos[+A] {
     protected def con(pos: (Int, Int)): A
-    def from(op: Parsley[_]): Parsley[A] = pos.map(this.con(_)) <* op
-    final def <#(op: Parsley[_]): Parsley[A] = this from op
+    def from(op: Parsley[?]): Parsley[A] = pos.map(this.con) <* op
+    final def <#(op: Parsley[?]): Parsley[A] = this from op
 }
 
 trait ParserBridgePos1[-A, +B] extends ParserSingletonBridgePos[A => B] {
@@ -693,15 +676,15 @@ Our definitions of `ParserBridgePos1` and `ParserBridgePos2` can also benefit fr
 ```scala mdoc:invisible:reset
 import parsley.Parsley
 import parsley.position.pos
-import parsley.ap._
+import parsley.ap.*
 ```
 ```scala mdoc
 import parsley.generic
 
 trait ParserSingletonBridgePos[+A] extends generic.ErrorBridge {
     protected def con(pos: (Int, Int)): A
-    def from(op: Parsley[_]): Parsley[A] = error(pos.map(this.con(_)) <* op)
-    final def <#(op: Parsley[_]): Parsley[A] = this from op
+    def from(op: Parsley[?]): Parsley[A] = error(pos.map(this.con) <* op)
+    final def <#(op: Parsley[?]): Parsley[A] = this from op
 }
 
 trait ParserBridgePos1[-A, +B] extends ParserSingletonBridgePos[A => B] {
@@ -784,9 +767,9 @@ object expressions {
     import parsley.expr.{precedence, Ops, InfixL, Prefix}
     import parsley.combinator.sepEndBy1
 
-    import lexer.implicits.implicitSymbol
+    import lexer.implicits.given
     import lexer.{number, fully, identifier}
-    import ast._
+    import ast.*
 
     private lazy val atom: Parsley[Expr] =
         "(" ~> expr <~ ")" | Num(number) | Var(identifier)

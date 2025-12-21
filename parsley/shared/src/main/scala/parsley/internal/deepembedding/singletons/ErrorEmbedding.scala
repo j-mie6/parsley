@@ -29,7 +29,7 @@ private [parsley] final class Fail(width: CaretWidth, msgs: String*) extends Sin
     // $COVERAGE-OFF$
     override def pretty: String = s"fail(${msgs.mkString(", ")})"
     // $COVERAGE-ON$
-    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = instrs += new instructions.Fail(width, msgs: _*)
+    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = instrs += new instructions.Fail(width, msgs*)
 
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Nothing] = visitor.visit(this, context)(width, msgs)

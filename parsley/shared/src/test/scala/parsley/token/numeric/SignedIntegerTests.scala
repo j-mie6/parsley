@@ -5,11 +5,11 @@
  */
 package parsley.token.numeric
 
-import Predef.{ArrowAssoc => _, _}
+import Predef.{ArrowAssoc => _, *}
 
 import parsley.ParsleyTest
 import parsley.token.LexemeImpl
-import parsley.token.descriptions._
+import parsley.token.descriptions.*
 import parsley.token.errors.ErrorConfig
 import org.scalactic.source.Position
 
@@ -23,17 +23,17 @@ class SignedIntegerTests extends ParsleyTest {
     val noPlus = makeInteger(plain.copy(positiveSign = PlusSignPresence.Illegal))
     val alwaysPlus = makeInteger(plain.copy(positiveSign = PlusSignPresence.Required))
 
-    private def decimalCases(int: IntegerParsers)(tests: (String, Option[BigInt], Position)*): Unit = cases(int.decimal)(tests: _*)
-    private def hexadecimalCases(int: IntegerParsers)(tests: (String, Option[BigInt], Position)*): Unit = cases(int.hexadecimal)(tests: _*)
-    private def octalCases(int: IntegerParsers)(tests: (String, Option[BigInt], Position)*): Unit = cases(int.octal)(tests: _*)
-    private def binaryCases(int: IntegerParsers)(tests: (String, Option[BigInt], Position)*): Unit = cases(int.binary)(tests: _*)
-    private def numberCases(int: IntegerParsers)(tests: (String, Option[BigInt], Position)*): Unit = cases(int.number)(tests: _*)
+    private def decimalCases(int: IntegerParsers)(tests: (String, Option[BigInt], Position)*): Unit = cases(int.decimal)(tests*)
+    private def hexadecimalCases(int: IntegerParsers)(tests: (String, Option[BigInt], Position)*): Unit = cases(int.hexadecimal)(tests*)
+    private def octalCases(int: IntegerParsers)(tests: (String, Option[BigInt], Position)*): Unit = cases(int.octal)(tests*)
+    private def binaryCases(int: IntegerParsers)(tests: (String, Option[BigInt], Position)*): Unit = cases(int.binary)(tests*)
+    private def numberCases(int: IntegerParsers)(tests: (String, Option[BigInt], Position)*): Unit = cases(int.number)(tests*)
 
-    //private def decimalCases(desc: NumericDesc)(tests: (String, Option[BigInt], Position)*): Unit = decimalCases(makeInteger(desc))(tests: _*)
-    //private def hexadecimalCases(desc: NumericDesc)(tests: (String, Option[BigInt], Position)*): Unit = hexadecimalCases(makeInteger(desc))(tests: _*)
-    //private def octalCases(desc: NumericDesc)(tests: (String, Option[BigInt], Position)*): Unit = octalCases(makeInteger(desc))(tests: _*)
-    //private def binaryCases(desc: NumericDesc)(tests: (String, Option[BigInt], Position)*): Unit = binaryCases(makeInteger(desc))(tests: _*)
-    //private def numberCases(desc: NumericDesc)(tests: (String, Option[BigInt], Position)*): Unit = numberCases(makeInteger(desc))(tests: _*)
+    //private def decimalCases(desc: NumericDesc)(tests: (String, Option[BigInt], Position)*): Unit = decimalCases(makeInteger(desc))(tests*)
+    //private def hexadecimalCases(desc: NumericDesc)(tests: (String, Option[BigInt], Position)*): Unit = hexadecimalCases(makeInteger(desc))(tests*)
+    //private def octalCases(desc: NumericDesc)(tests: (String, Option[BigInt], Position)*): Unit = octalCases(makeInteger(desc))(tests*)
+    //private def binaryCases(desc: NumericDesc)(tests: (String, Option[BigInt], Position)*): Unit = binaryCases(makeInteger(desc))(tests*)
+    //private def numberCases(desc: NumericDesc)(tests: (String, Option[BigInt], Position)*): Unit = numberCases(makeInteger(desc))(tests*)
 
     "signed decimal" should "parse valid decimal numbers of any size" in decimalCases(optionalPlus)(
         "0"                     -> Some(0),
