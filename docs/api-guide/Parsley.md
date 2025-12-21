@@ -38,7 +38,7 @@ the purposes of basic use, you can assume that Scala will automatically infer
 this type to be `String`, for which an `ErrorBuilder[String]` does implicitly
 exist.
 
-By importing `parsley.io._`, another `parseFromFile` method is added to
+By importing `parsley.io.*`, another `parseFromFile` method is added to
 `Parsley`, which works similarly, but loads the input from a file first.
 In future versions of `parsley`, this import will no longer be needed, and
 this will be an overloading of `parse`.

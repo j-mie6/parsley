@@ -63,7 +63,7 @@ that into the reference. As examples:
 
 ```scala mdoc:to-string
 import parsley.character.item
-import parsley.state._
+import parsley.state.*
 
 List.empty[Char].makeRef { r1 =>
     item.fillRef { r2 =>
@@ -115,7 +115,7 @@ context-sensitive parsing of XML tags can be done:
 import parsley.Parsley.{atomic, notFollowedBy}
 import parsley.character.{stringOfSome, letter}
 import parsley.combinator.optional
-import parsley.syntax.character.{charLift, stringLift}
+import parsley.syntax.character.given
 
 val openTag = atomic('<' <~ notFollowedBy('/'))
 val tagName = stringOfSome(letter)
@@ -236,7 +236,8 @@ def setOf[A](p: Parsley[A]): Parsley[Set[A]] = {
 
 In the above code, a set is carried around in a reference, and a new element
 is added into this set every iteration. When the loop completes (successfully), the set in the reference is returned. A more efficient implementation, however,
-would use `persist` and a mutable set (along with `impure` and `fresh`): this, of course, still uses a reference.
+would use `persist` and a mutable set (along with `impure` and `fresh`): this, of course, still uses a reference. That said, the idiomatic, and fastest, implementation
+is to write `many(p, Set)`.
 
 #### Whitespace-Sensitive Languages
 Another application of long-term state is to track indentation levels in

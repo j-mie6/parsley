@@ -24,7 +24,7 @@ The environment will be carried around in a `StateT` state monad, and errors con
 obviously the **parser**:
 
 ```scala mdoc
-import cats.syntax.all._
+import cats.syntax.all.given
 object eval {
     import cats.data.StateT
     import cats.Monad
@@ -61,7 +61,7 @@ operations are just "lifting" the relevant operations into our monad. Just so yo
 might be stitched together, here are some example programs:
 
 ```scala mdoc:to-string
-import eval._
+import eval.*
 store("x", add(number(5), ask("v"))).runS(Map("v" -> 3))
 store("x", add(number(5), ask("v"))).runS(Map.empty)
 
@@ -88,7 +88,7 @@ import parsley.Parsley
 object lexer {
     import parsley.token.{Lexer, Basic}
     import parsley.token.descriptions.{LexicalDesc, NameDesc, SymbolDesc}
-    import parsley.errors.combinator._
+    import parsley.errors.combinator.*
 
     private val desc = LexicalDesc.plain.copy(
         nameDesc = NameDesc.plain.copy(
@@ -115,17 +115,18 @@ object lexer {
 
 ```scala mdoc:silent
 import parsley.Parsley.atomic
-import lexer.implicits.implicitSymbol
+import lexer.implicits.given
 import lexer.{number, identifier, fully}
 import parsley.combinator.sepEndBy
-import parsley.syntax.zipped._
+import parsley.syntax.zipped.*
 import parsley.expr.{Prefix, InfixR, InfixL, precedence, Ops}
 
 def infixN[A, B](p: Parsley[A])(op: Parsley[(A, A) => B]): Parsley[B] =
     (p, op, p).zipped((x, f, y) => f(x, y))
 
-lazy val atom: Parsley[Eval[Int]] =
-    "(" ~> expr <~ ")" | number.map(eval.number) | identifier.map(ask)
+lazy val atom: Parsley[Eval[Int]] = "(" ~> expr <~ ")"
+                                  | number.map(eval.number)
+                                  | identifier.map(ask)
 lazy val expr = precedence[Eval[Int]](atom)(
     Ops(Prefix)("negate" as negate),
     Ops(InfixL)("*" as mul),
@@ -193,7 +194,7 @@ the user with an `.explain`, and explain that semi-colons are not something that
 position:
 
 ```scala mdoc:nest:silent
-import parsley.errors.combinator._
+import parsley.errors.combinator.*
 lazy val ifStmt: Parsley[Eval[Unit]] =
     ( "if" ~> pred
     , braces(stmts)
@@ -506,7 +507,6 @@ val _noBoolCheck = pred.void.preventWith(
     },
     labels = "arithmetic expression"
 )
-
 
 def _noBool[A](p: Parsley[A]): Parsley[A] = _noBoolCheck ~> p
 ```

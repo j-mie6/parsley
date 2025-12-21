@@ -107,7 +107,7 @@ val digits: Parsley[List[Char]] = some(digit)
 // `map` here is using a function of type `List[Char] => Int`
 val int: Parsley[Int] = digits.map(_.mkString.toInt) // equivalently `digits.map(_.mkString).map(_.toInt)
 // `map` here is being used to wrap the `Int` in the `Num` class
-val num: Parsley[Num] = int.map(Num)
+val num: Parsley[Num] = int.map(Num.apply)
 ```
 
 But when you need to combine the results of two parsers more options open up.
@@ -131,7 +131,7 @@ val nonzero = oneOf('1' to '9')
 val digits: Parsley[List[Char]] = nonzero <::> many(digit)
 // Using #> here to handle the plain ol' zero case
 val int: Parsley[Int] = char('0') #> 0 | digits.map(_.mkString.toInt)
-val num: Parsley[Num] = int.map(Num)
+val num: Parsley[Num] = int.map(Num.apply)
 ```
 
 But more generally, we could reach for the `lift` functions:
@@ -148,7 +148,7 @@ val nonzero = oneOf('1' to '9')
 val digits: Parsley[List[Char]] = lift2[Char, List[Char], List[Char]](_ :: _, nonzero, many(digit))
 // Using #> here to handle the plain ol' zero case
 val int: Parsley[Int] = char('0') #> 0 | digits.map(_.mkString.toInt)
-val num: Parsley[Num] = int.map(Num)
+val num: Parsley[Num] = int.map(Num.apply)
 ```
 
 Sadly, to do this, it's sometimes necessary to specify all the types, in particular for anonymous
@@ -185,7 +185,7 @@ import parsley.syntax.lift.{liftSyntax1, liftSyntax2}
 val charCons = (c: Char, cs: List[Char]) => c :: cs
 
 charCons.lift(nonzero, many(digit))
-Num.lift(int)
+Num.apply.lift(int)
 ```
 
 The `lift` functions work all the way up to 22 arguments (which is the Scala 2 limit on function arguments).

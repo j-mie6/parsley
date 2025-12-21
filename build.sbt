@@ -23,7 +23,7 @@ inThisBuild(List(
   licenses := List("BSD-3-Clause" -> url("https://opensource.org/licenses/BSD-3-Clause")),
   versionScheme := Some("early-semver"),
   crossScalaVersions := Seq(Scala213, Scala212, Scala3),
-  scalaVersion := Scala213,
+  scalaVersion := Scala3,
   mimaBinaryIssueFilters ++= mima.issueFilters,
   // CI Configuration
   tlCiReleaseBranches := Seq(mainBranch),
@@ -138,6 +138,9 @@ lazy val docs = project
         "org.typelevel" %% "cats-core" % "2.13.0",
         "com.github.j-mie6" %% "parsley-cats" % "1.5.0"
     ),
+    // TODO: enable this when we switch to 3.8
+    //Compile / scalacOptions += "-experimental",
+    Compile / scalacOptions --= Seq("-unchecked", "-deprecation", "-Wunused:imports", "-Wunused:locals"),
   )
 
 def testCoverageJob(cacheSteps: List[WorkflowStep]) = WorkflowJob(

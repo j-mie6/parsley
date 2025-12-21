@@ -33,7 +33,7 @@ scan comments:
 
 ```scala mdoc:to-string
 import parsley.character.{string, item, endOfLine}
-import parsley.combinator.{manyTill}
+import parsley.combinator.manyTill
 
 val comment = string("//") ~> manyTill(item, endOfLine)
 comment.parse("// this is a comment\n")

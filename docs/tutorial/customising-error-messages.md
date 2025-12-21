@@ -24,7 +24,7 @@ object lexer {
     import parsley.combinator.manyTill
 
     private def symbol(str: String) = atomic(string(str)).void
-    private implicit def implicitSymbol(tok: String) = symbol(tok)
+    given Conversion[String, Parsley[Unit]] = symbol
 
     private val lineComment = "//" ~> manyTill(item, endOfLine).void
     private val multiComment = "/*" ~> manyTill(item, "*/").void
@@ -39,14 +39,14 @@ object lexer {
         token(digit.foldLeft1[BigInt](0)((n, d) => n * 10 + d.asDigit))
 
     object implicits {
-        implicit def implicitSymbol(s: String): Parsley[Unit] = lexeme(symbol(s))
+        given Conversion[String, Parsley[Unit]] = s => lexeme(symbol(s))
     }
 }
 
 object expressions {
     import parsley.expr.{precedence, Ops, InfixL}
 
-    import lexer.implicits.implicitSymbol
+    import lexer.implicits.given
     import lexer.{number, fully}
 
     private lazy val atom: Parsley[BigInt] = "(" ~> expr <~ ")" | number
@@ -121,8 +121,8 @@ import parsley.Parsley, Parsley.{atomic, many}
 import parsley.character.{digit, whitespace, string, item, endOfLine}
 import parsley.combinator.manyTill
 
-def symbol(str: String) = atomic(string(str))
-implicit def implicitSymbol(tok: String) = symbol(tok)
+def symbol(str: String) = atomic(string(str)).void
+given Conversion[String, Parsley[Unit]] = symbol
 
 val lineComment = "//" ~> manyTill(item, endOfLine).void
 val multiComment = "/*" ~> manyTill(item, "*/").void
@@ -135,12 +135,13 @@ def token[A](p: =>Parsley[A]) = lexeme(atomic(p))
 def mkNumber(digit: Parsley[Char], ws: Parsley[Unit]): Parsley[BigInt] =
     atomic(digit.foldLeft1[BigInt](0)((n, d) => n * 10 + d.asDigit)) <~ ws
 
-def mkExpressions(number: Parsley[BigInt], whiteSpace: Parsley[Unit]) = new {
+trait Parsable[A] { def parse(input: String): parsley.Result[String, A] }
+def mkExpressions(number: Parsley[BigInt], whiteSpace: Parsley[Unit]) = new Parsable[BigInt] {
     import parsley.Parsley.eof
     import parsley.expr.{precedence, Ops, InfixL}
 
-    private implicit def implicitSymbol(str: String): Parsley[Unit] =
-        symbol(str) ~> whiteSpace
+    private given Conversion[String, Parsley[Unit]] =
+        str => symbol(str) ~> whiteSpace
 
     private lazy val atom: Parsley[BigInt] = "(" ~> expr <~ ")" | number
     private lazy val expr = precedence[BigInt](atom)(
@@ -158,7 +159,7 @@ there are no compelling use-cases for it in this example. Let's start off by giv
 `comment` and see what happens:
 
 ```scala mdoc:nest:silent
-import parsley.errors.combinator._
+import parsley.errors.combinator.*
 
 val comment = (lineComment | multiComment).label("comment")
 ```
@@ -185,7 +186,7 @@ able to write whitespace in places, it's not _usually_ the solution to someone's
 it a good candidate for the `hide` combinator:
 
 ```scala mdoc:silent:nest
-import parsley.errors.combinator._
+import parsley.errors.combinator.*
 
 val skipWhitespace = many(whitespace.void | comment).void.hide
 ```
@@ -217,7 +218,7 @@ val lineComment = "//" *> manyTill(item, endOfLine.label("end of comment")).void
 val multiComment = "/*" *> manyTill(item, "*/".label("end of comment")).void
 ```
 ```scala mdoc:invisible
-import parsley.errors.combinator._
+//import parsley.errors.combinator.*
 
 val comment = (lineComment | multiComment).label("comment")
 val skipWhitespace = many(whitespace.void | comment).void.hide
@@ -293,7 +294,7 @@ special here, when multiple labels are encountered with the same name, they will
 import parsley.Parsley.eof
 import parsley.expr.{precedence, Ops, InfixL}
 
-implicit def implicitSymbol(str: String): Parsley[Unit] = symbol(str) ~> skipWhitespace
+given Conversion[String, Parsley[Unit]] = str => symbol(str) ~> skipWhitespace
 
 lazy val atom: Parsley[BigInt] = "(" ~> expr <~ ")" | number
 ```
@@ -305,7 +306,7 @@ lazy val expr = precedence[BigInt](atom)(
 ```
 
 ```scala mdoc:invisible
-val expressions = new {
+val expressions = new Parsable[BigInt] {
     def parse(input: String) = (skipWhitespace ~> expr <~ eof).parse(input)
 }
 ```
@@ -337,7 +338,7 @@ Joe. The take home from this is to try and avoid labelling `expr` with `.label("
 because that just ends up making something that is no longer useful or informative:
 
 ```scala mdoc:nest:invisible
-val expressions = new {
+val expressions = new Parsable[BigInt] {
     def parse(input: String) =
         (skipWhitespace ~> expr.label("expression") <~ eof).parse(input)
 }
@@ -357,14 +358,14 @@ wider parser!
 
 ```scala mdoc:reset
 import parsley.Parsley, Parsley.{atomic, eof, many}
-import parsley.errors.combinator._
+import parsley.errors.combinator.*
 
 object lexer {
     import parsley.character.{digit, whitespace, string, item, endOfLine}
     import parsley.combinator.manyTill
+    import parsley.syntax.character.given
 
     private def symbol(str: String) = atomic(string(str)).void
-    private implicit def implicitSymbol(tok: String) = symbol(tok)
 
     private val lineComment = "//" ~> manyTill(item, endOfLine).void.label("end of comment")
     private val multiComment = "/*" ~> manyTill(item, "*/").void.label("end of comment")
@@ -380,14 +381,14 @@ object lexer {
     }.label("number")
 
     object implicits {
-        implicit def implicitSymbol(s: String): Parsley[Unit] = lexeme(symbol(s))
+        given Conversion[String, Parsley[Unit]] = s => lexeme(symbol(s))
     }
 }
 
 object expressions {
     import parsley.expr.{precedence, Ops, InfixL}
 
-    import lexer.implicits.implicitSymbol
+    import lexer.implicits.given // or * if using parsley's (it uses Scala 2)
     import lexer.{number, fully}
 
     private lazy val atom: Parsley[BigInt] = "(" ~> expr <~ ")" | number
@@ -416,10 +417,10 @@ cook up a string literal parser, supporting some (limited) escape sequences.
 
 ```scala mdoc:reset:silent
 import parsley.Parsley
-import parsley.syntax.character.charLift
+import parsley.syntax.character.given
 import parsley.combinator.choice
-import parsley.character._
-import parsley.errors.combinator._
+import parsley.character.*
+import parsley.errors.combinator.*
 
 val escapeChar =
     choice('n' as '\n', 't' as '\t', '\"', '\\')

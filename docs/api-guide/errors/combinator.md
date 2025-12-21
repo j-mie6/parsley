@@ -87,7 +87,7 @@ derivatives.
 When combinators that read characters fail, they produce "expected" components
 in error messages:
 
-```scala mdoc:to-string
+```scala mdoc:reset:to-string
 import parsley.character.{char, string, satisfy}
 
 char('a').parse("b")
@@ -132,7 +132,8 @@ message, providing more high-level reasons for the error or explanations about
 a syntactic construct. It behaves similarly to `label` in that it will only
 apply when the position of the error message matches the offset that the combinator entered at.
 
-```scala mdoc:to-string
+```scala mdoc:reset:to-string
+import parsley.character.digit
 import parsley.errors.combinator.ErrorMethods
 
 digit.explain("a digit is needed, for some reason").parse("a")
@@ -148,7 +149,8 @@ whitespace, which is *almost* never the solution to any parsing problem, and
 would otherwise distract from rest of the error content. The `hide` combinator
 can be used to suppress a parser from appearing in the rest of a message:
 
-```scala mdoc:to-string
+```scala mdoc:reset:to-string
+import parsley.character.{char, digit}
 import parsley.errors.combinator.ErrorMethods
 
 (char('a') | digit.hide).parse("b")
@@ -176,13 +178,13 @@ Notice that the above error makes no sense. This is why `amend` is a precision
 tool: it should ideally be used in conjunction with other combinators. For instance:
 
 ```scala mdoc:silent
-import parsley.syntax.character.charLift
+import parsley.syntax.character.given
 import parsley.combinator.choice
 import parsley.character.{noneOf, stringOfMany}
 
 val escapeChar = choice('n'.as('\n'), 't'.as('\t'), '\"', '\\')
-val strLetter =
-    noneOf('\"', '\\').label("string char") | ('\\' ~> escapeChar).label("escape char")
+val strLetter = noneOf('\"', '\\').label("string char")
+              | ('\\' ~> escapeChar).label("escape char")
 val strLit = '\"' ~> stringOfMany(strLetter) <~ '\"'
 ```
 ```scala mdoc:to-string
@@ -212,8 +214,8 @@ providing an explanation:
 ```scala mdoc:silent:nest
 import parsley.Parsley.empty
 val escapeChar = choice('n'.as('\n'), 't'.as('\t'), '\"', '\\') | empty(2)
-val strLetter = noneOf('\"', '\\').label("string char") |
-                amend('\\' ~> escapeChar)
+val strLetter = noneOf('\"', '\\').label("string char")
+              | amend('\\' ~> escapeChar)
                   .label("escape char")
                   .explain("escape characters are \\n, \\t, \\\", or \\\\")
 ```

@@ -139,7 +139,7 @@ are the two shapes of call that will be made for the different types of error me
 
 #### Vanilla
 ```scala mdoc:silent:nest
-val builder = implicitly[ErrorBuilder[String]]
+val builder = summon[ErrorBuilder[String]]
 val err = builder.build (
     builder.pos(1, 5),
     builder.source(None),
@@ -161,9 +161,7 @@ val err = builder.build (
 )
 ```
 ```scala mdoc:passthrough
-println(s"""```
-$err
-```""")
+println(s"```\n$err\n```")
 ```
 
 One builder call not shown here, is a call to
@@ -172,7 +170,7 @@ deferred to [Token Extraction in `ErrorBuilder`]
 
 #### Specialised
 ```scala mdoc:silent:nest
-val builder = implicitly[ErrorBuilder[String]]
+val builder = summon[ErrorBuilder[String]]
 val err = builder.build (
     builder.pos(2, 6),
     builder.source(Some("foo.txt")),
@@ -191,9 +189,7 @@ val err = builder.build (
 )
 ```
 ```scala mdoc:passthrough
-println(s"""```
-$err
-```""")
+println(s"```\n$err\n```")
 ```
 
 ## Constructing Test Errors

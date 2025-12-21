@@ -33,7 +33,7 @@ libraryDependencies += "com.github.j-mie6" %% "parsley-cats" % "1.5.0"
 
 ```scala
 scala> import parsley.Parsley
-scala> import parsley.syntax.character.{charLift, stringLift}
+scala> import parsley.syntax.character.given
 
 scala> val hello: Parsley[Unit] = ('h' ~> ("ello" | "i") ~> " world!").void
 scala> hello.parse("hello world!")
