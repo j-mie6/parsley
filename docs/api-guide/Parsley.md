@@ -74,7 +74,7 @@ Combinators like `<*>`, `<**>` and `<::>` perform a similar role to `zip`, but
 combine the two results depending on the specific subtypes of the arguments.
 Both `<*>` and `<**>` perform function application, and `<::>` adds the result
 of the first parser onto a list returned by the second. These are all more
-specific versions of the `parsley.lift._` combinators, but are often useful
+specific versions of the `parsley.lift.*` combinators, but are often useful
 in practice.
 
 The `flatMap` combinator is another way of sequencing two parsers, but where

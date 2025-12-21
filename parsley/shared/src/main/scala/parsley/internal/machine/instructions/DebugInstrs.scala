@@ -6,13 +6,13 @@
 // $COVERAGE-OFF$
 package parsley.internal.machine.instructions
 
-import parsley.XAssert._
+import parsley.XAssert.*
 import parsley.debug.Profiler
 import parsley.errors.ErrorBuilder
 
 import parsley.internal.errors.{ExpectItem, FancyError, ParseError, TrivialError}
 import parsley.internal.machine.Context
-import parsley.internal.machine.XAssert._
+import parsley.internal.machine.XAssert.*
 
 import Indenter.indentAndUnlines
 import InputSlicer.Pad
@@ -89,7 +89,7 @@ private [instructions] trait Logger extends PrettyPortal with InputSlicer with C
                 case (addr, name) => s"    $name = ${ctx.regs(addr)}"
             } :+ ""
         }
-        indentAndUnlines(ctx, s"$prelude$input$ends" +: caret +: regSummary: _*)
+        indentAndUnlines(ctx, (s"$prelude$input$ends" +: caret +: regSummary)*)
     }
     final protected def doBreak(ctx: Context): Unit = {
         print(indentAndUnlines(ctx,
@@ -159,7 +159,7 @@ private [instructions] final case class ErrLogData(hintsOffset: Int, hints: Set[
     def stillValid(newHintsOffset: Int): Boolean = hintsOffset == newHintsOffset
 }
 
-private [internal] final class LogErrBegin(var label: Int, override val name: String, override val ascii: Boolean)(implicit errBuilder: ErrorBuilder[_])
+private [internal] final class LogErrBegin(var label: Int, override val name: String, override val ascii: Boolean)(implicit errBuilder: ErrorBuilder[?])
     extends InstrWithLabel with ErrLogger {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
@@ -174,7 +174,7 @@ private [internal] final class LogErrBegin(var label: Int, override val name: St
     override def toString: String = s"LogErrBegin($label, $name)"
 }
 
-private [internal] final class LogErrEnd(override val name: String, override val ascii: Boolean)(implicit errBuilder: ErrorBuilder[_])
+private [internal] final class LogErrEnd(override val name: String, override val ascii: Boolean)(implicit errBuilder: ErrorBuilder[?])
     extends Instr with ErrLogger {
     override def apply(ctx: Context): Unit = {
         assert(ctx.running, "cannot wrap a Halt with a debug")
@@ -212,7 +212,7 @@ private [internal] final class LogErrEnd(override val name: String, override val
             val defuncErr = ctx.inFlightError
             val err = defuncErr.asParseError(ctx.errorItemBuilder)
             println(preludeString(Exit, ctx, s": ${red("Fail")}"))
-            println(Indenter.indentAndUnlines(ctx, LogErrEnd.format(err): _*))
+            println(Indenter.indentAndUnlines(ctx, LogErrEnd.format(err)*))
             ctx.fail()
         }
     }

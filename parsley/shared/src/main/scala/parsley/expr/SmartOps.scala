@@ -71,5 +71,5 @@ object SOps {
       * @note currently a bug in scaladoc incorrect displays this functions type, it should be: `fixity.Op[A, B]`, NOT `Op[A, B]`.
       * @note the order of types in this method is reversed compared with [[GOps.apply]], this is due to a Scala typing issue.
       */
-    def apply[B, A <: B](fixity: Fixity)(op0: Parsley[fixity.Op[A, B]], ops: Parsley[fixity.Op[A, B]]*): Ops[A, B] = GOps(fixity)(op0, ops: _*)
+    def apply[B, A <: B](fixity: Fixity)(op0: Parsley[fixity.Op[A, B]], ops: Parsley[fixity.Op[A, B]]*): Ops[A, B] = GOps(fixity)(op0, ops*)
 }

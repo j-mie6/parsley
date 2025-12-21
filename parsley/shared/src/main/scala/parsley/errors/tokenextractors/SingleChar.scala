@@ -17,7 +17,7 @@ import org.typelevel.scalaccompat.annotation.unused
   * @note In the case of unprintable characters or whitespace, this extractor will favour reporting
   *       a more meaningful name.
   */
-trait SingleChar { this: ErrorBuilder[_] =>
+trait SingleChar { this: ErrorBuilder[?] =>
     /** @see [[parsley.errors.ErrorBuilder.unexpectedToken `ErrorBuilder.unexpectedToken`]] */
     override final def unexpectedToken(cs: Iterable[Char], @unused amountOfInputParserWanted: Int, @unused lexicalError: Boolean): Token = {
         SingleChar.unexpectedToken(cs)

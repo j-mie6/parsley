@@ -6,17 +6,17 @@
 package parsley
 
 import parsley.combinator.optional
-import parsley.Parsley._
+import parsley.Parsley.*
 import parsley.syntax.character.{charLift, stringLift}
 import parsley.character.digit
 import parsley.errors.combinator.{fail => pfail, unexpected, amend, partialAmend, entrench, dislodge, amendThenDislodge, /*partialAmendThenDislodge,*/ ErrorMethods}
-import parsley.errors.patterns._
+import parsley.errors.patterns.*
 
 class ErrorTests extends ParsleyTest {
     "mzero parsers" should "always fail" in {
-        (Parsley.empty ~> 'a').parse("a") shouldBe a [Failure[_]]
-        (pfail("") ~> 'a').parse("a") shouldBe a [Failure[_]]
-        (unexpected("x") *> 'a').parse("a") shouldBe a [Failure[_]]
+        (Parsley.empty ~> 'a').parse("a") shouldBe a [Failure[?]]
+        (pfail("") ~> 'a').parse("a") shouldBe a [Failure[?]]
+        (unexpected("x") *> 'a').parse("a") shouldBe a [Failure[?]]
     }
 
     lazy val r: Parsley[List[String]] = "correct error message" <::> r
@@ -335,7 +335,7 @@ class ErrorTests extends ParsleyTest {
         inside(p.parse("abc")) { case Failure(TestError((1, 2), _)) => }
     }
     it should "not affect input consumption" in {
-        (amend('a' *> 'b') <|> 'a').parse("a") shouldBe a [Failure[_]]
+        (amend('a' *> 'b') <|> 'a').parse("a") shouldBe a [Failure[?]]
     }
 
     "entrench" should "prevent the change of error messages under it" in {

@@ -13,7 +13,7 @@ import parsley.token.CharPred
 import parsley.internal.collection.immutable.Trie
 import parsley.internal.errors.{ExpectDesc, ExpectItem}
 import parsley.internal.machine.Context
-import parsley.internal.machine.XAssert._
+import parsley.internal.machine.XAssert.*
 import parsley.internal.machine.instructions.Instr
 
 private [token] abstract class Specific extends Instr {

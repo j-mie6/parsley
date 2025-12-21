@@ -5,10 +5,10 @@
  */
 package parsley.internal.machine.instructions
 
-import parsley.XAssert._
+import parsley.XAssert.*
 
 import parsley.internal.machine.Context
-import parsley.internal.machine.XAssert._
+import parsley.internal.machine.XAssert.*
 import parsley.internal.machine.errors.{EmptyError, EmptyHints}
 
 // Stack Manipulators

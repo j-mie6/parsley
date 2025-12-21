@@ -207,7 +207,7 @@ private [backend] object Choice {
         case Nil => instructions.JumpTablePreds.fromList(corrected.toList)
     }
 
-    private def codeGenRoots[M[_, +_]: ContOps, R](roots: List[(Int, List[StrictParsley[_]])], end: Int, producesResults: Boolean)
+    private def codeGenRoots[M[_, +_]: ContOps, R](roots: List[(Int, List[StrictParsley[?]])], end: Int, producesResults: Boolean)
                                                   (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = roots match {
         case (l, root)::roots_ =>
             instrs += new instructions.Label(l)
@@ -301,11 +301,11 @@ private [backend] object Choice {
         case Lift3(_, t, _, _)                   => tablable(t, backtracks)
         case t <*> _                             => tablable(t, backtracks)
         case Seq(before, r, _)                   => tablable(before.headOption.getOrElse(r), backtracks)
-        case Chainl(_: Pure[_], p, _)            => tablable(p, backtracks)
+        case Chainl(_: Pure[?], p, _)            => tablable(p, backtracks)
         case Chainl(init, _, _)                  => tablable(init, backtracks)
         case Chainr(p, _)                        => tablable(p, backtracks)
         case ChainPost(p, _)                     => tablable(p, backtracks)
-        case Many(_: Pure[_], p)                 => tablable(p, backtracks)
+        case Many(_: Pure[?], p)                 => tablable(p, backtracks)
         case Many(init, _)                       => tablable(init, backtracks)
         case ManyUntil(init, _)                  => tablable(init, backtracks)
         case SepEndBy1(p, _, _)                  => tablable(p, backtracks)

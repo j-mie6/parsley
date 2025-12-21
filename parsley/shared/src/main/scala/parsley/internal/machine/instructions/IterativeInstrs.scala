@@ -7,10 +7,10 @@ package parsley.internal.machine.instructions
 
 import scala.collection.mutable
 
-import parsley.XAssert._
+import parsley.XAssert.*
 
 import parsley.internal.machine.Context
-import parsley.internal.machine.XAssert._
+import parsley.internal.machine.XAssert.*
 
 private [internal] final class Many(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
@@ -75,7 +75,7 @@ private final class AndThen[-A, B, +C](f: A => B, g: B => C) extends (A => C) {
     final def apply(x: A): C = g match {
         case g: AndThen[_, _, _] => g(f(x))
         case g                   => g(f(x))
-    } 
+    }
 }
 
 private [internal] final class ChainPre(var label: Int) extends InstrWithLabel {

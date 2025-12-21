@@ -194,7 +194,7 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
-        def preventativeExplain(reason: A => String, labels: String*): Parsley[Unit] = this.preventWithVanillaRaw(x => Some(reason(x)), labels: _*)
+        def preventativeExplain(reason: A => String, labels: String*): Parsley[Unit] = this.preventWithVanillaRaw(x => Some(reason(x)), labels*)
 
         /** Ensures this parser does not succeed, failing with a vanilla error with an unexpected message and caret spanning the parse and a given reason.
           *
@@ -208,7 +208,7 @@ object patterns {
           * @note $autoAmend
           * @note $atomicNonTerminal
           */
-        def preventativeExplain(reason: String, labels: String*): Parsley[Unit] = con(p).void.preventativeExplain(_ => reason, labels: _*)
+        def preventativeExplain(reason: String, labels: String*): Parsley[Unit] = con(p).void.preventativeExplain(_ => reason, labels*)
 
         /** Ensures this parser does not succeed, failing with an error as described by the given `ErrorGen` object.
           *
@@ -225,7 +225,7 @@ object patterns {
         def preventWith(err: ErrorGen[A], labels: String*): Parsley[Unit] = {
             val inner: Parsley[Either[(A, Int), Unit]] = withWidth(atomic(con(p)).hide) <+> unit
             val labelledErr = labels match {
-                case l1 +: ls       => err.parser.label(l1, ls: _*)
+                case l1 +: ls       => err.parser.label(l1, ls*)
                 case _              => err.parser
             }
             amend(select(inner, labelledErr))
@@ -235,11 +235,11 @@ object patterns {
             this.preventWith(new VanillaGen[A] {
                 override def unexpected(x: A) = unexGen(x)
                 override def reason(x: A) = reasonGen(x)
-            }, labels: _*)
+            }, labels*)
         }
 
         @inline private def preventWithVanillaRaw(reasonGen: A => Option[String], labels: String*) = {
-            this.preventWithVanilla(_ => VanillaGen.RawItem, reasonGen, labels: _*)
+            this.preventWithVanilla(_ => VanillaGen.RawItem, reasonGen, labels*)
         }
     }
 }

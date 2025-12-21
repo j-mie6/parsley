@@ -7,13 +7,13 @@ package parsley.internal.machine.instructions
 
 import scala.annotation.tailrec
 
-import parsley.XAssert._
+import parsley.XAssert.*
 import parsley.token.descriptions.SpaceDesc
 import parsley.token.errors.ErrorConfig
 
 import parsley.internal.errors.{ExpectDesc, ExpectItem, RigidCaret, UnexpectDesc}
 import parsley.internal.machine.Context
-import parsley.internal.machine.XAssert._
+import parsley.internal.machine.XAssert.*
 
 private [instructions] abstract class CommentLexer extends Instr {
     protected [this] val start: String

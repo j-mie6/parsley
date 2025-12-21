@@ -7,7 +7,7 @@ package parsley.internal.deepembedding.backend
 
 import parsley.token.errors.Label
 
-import parsley.internal.deepembedding.singletons._
+import parsley.internal.deepembedding.singletons.*
 import parsley.internal.machine.instructions
 
 private [deepembedding] final class ErrorLabel[A](val p: StrictParsley[A], private val label: String, private val labels: scala.Seq[String])
@@ -18,11 +18,11 @@ private [deepembedding] final class ErrorLabel[A](val p: StrictParsley[A], priva
     override def handlerLabel(state: CodeGenState): Int = state.getLabelForRelabelError(label +: labels)
     // don't need to be limited to not hidden when the thing can never internally generate hints
     final override def optimise: StrictParsley[A] = p match {
-        case CharTok(c, x) => new CharTok(c, x, Label(label, labels: _*)).asInstanceOf[StrictParsley[A]]
-        case SupplementaryCharTok(c, x) => new SupplementaryCharTok(c, x, Label(label, labels: _*)).asInstanceOf[StrictParsley[A]]
-        case StringTok(s, x) => new StringTok(s, x, Label(label, labels: _*)).asInstanceOf[StrictParsley[A]]
-        case Satisfy(f) => new Satisfy(f, Label(label, labels: _*)).asInstanceOf[StrictParsley[A]]
-        case UniSatisfy(f) => new UniSatisfy(f, Label(label, labels: _*)).asInstanceOf[StrictParsley[A]]
+        case CharTok(c, x) => new CharTok(c, x, Label(label, labels*)).asInstanceOf[StrictParsley[A]]
+        case SupplementaryCharTok(c, x) => new SupplementaryCharTok(c, x, Label(label, labels*)).asInstanceOf[StrictParsley[A]]
+        case StringTok(s, x) => new StringTok(s, x, Label(label, labels*)).asInstanceOf[StrictParsley[A]]
+        case Satisfy(f) => new Satisfy(f, Label(label, labels*)).asInstanceOf[StrictParsley[A]]
+        case UniSatisfy(f) => new UniSatisfy(f, Label(label, labels*)).asInstanceOf[StrictParsley[A]]
         case ErrorLabel(p, _, _) => ErrorLabel(p, label, labels)
         case _ => this
     }
@@ -104,8 +104,8 @@ private [backend] object ErrorExplain {
 
 private [backend] object TablableErrors {
     def unapply[A](self: StrictParsley[A]): Option[StrictParsley[A]] = self match {
-        case self: ErrorAmend[_] => Some(self.p)
-        case self: ErrorLexical[_] => Some(self.p) // is this correct?
+        case self: ErrorAmend[?] => Some(self.p)
+        case self: ErrorLexical[?] => Some(self.p) // is this correct?
         case _ => None
     }
 }

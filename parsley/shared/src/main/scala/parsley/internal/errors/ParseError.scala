@@ -13,7 +13,7 @@ private [internal] sealed trait ParseError {
     val line: Int
 
     protected def format(line: String, beforeLines: List[String], afterLines: List[String], caret: Int)
-                        (implicit builder: ErrorBuilder[_]): builder.ErrorInfoLines
+                        (implicit builder: ErrorBuilder[?]): builder.ErrorInfoLines
     private [internal] final def format[Err](sourceName: Option[String])(implicit helper: LineBuilder, builder: ErrorBuilder[Err]): Err = {
         val Some((errLine, caret)) = helper.getLineWithCaret(offset): @unchecked
         val beforeLines = helper.getLinesBefore(offset, builder.numLinesBefore)
@@ -26,7 +26,7 @@ private [internal] sealed trait ParseError {
 private [internal] case class TrivialError(offset: Int, line: Int, col: Int,
                                            unexpected: Either[Int, UnexpectItem], expecteds: Set[ExpectItem], reasons: Set[String], lexicalError: Boolean)
     extends ParseError {
-    def format(line: String, beforeLines: List[String], afterLines: List[String], caret: Int)(implicit builder: ErrorBuilder[_]): builder.ErrorInfoLines = {
+    def format(line: String, beforeLines: List[String], afterLines: List[String], caret: Int)(implicit builder: ErrorBuilder[?]): builder.ErrorInfoLines = {
         val unexpectedTok = unexpected.map(_.formatUnexpect(lexicalError))
         // TODO: could we support multi-line carets?
         // FIXME: This should probably use the number of codepoints and not length
@@ -41,7 +41,7 @@ private [internal] case class TrivialError(offset: Int, line: Int, col: Int,
     }
 }
 private [internal] case class FancyError(offset: Int, line: Int, col: Int, msgs: List[String], caretWidth: Int) extends ParseError {
-    def format(line: String, beforeLines: List[String], afterLines: List[String], caret: Int)(implicit builder: ErrorBuilder[_]): builder.ErrorInfoLines = {
+    def format(line: String, beforeLines: List[String], afterLines: List[String], caret: Int)(implicit builder: ErrorBuilder[?]): builder.ErrorInfoLines = {
         builder.specializedError(
             builder.combineMessages(msgs.map(builder.message(_))),
             builder.lineInfo(line, beforeLines, afterLines, this.line, caret, math.min(caretWidth, line.length - caret + 1)))

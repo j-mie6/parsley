@@ -6,7 +6,7 @@
 package parsley
 
 import Parsley.unit
-import parsley.position._
+import parsley.position.*
 import parsley.character.{char, string}
 
 class PositionTests extends ParsleyTest {

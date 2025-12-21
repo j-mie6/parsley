@@ -7,7 +7,7 @@ package parsley.token
 
 import parsley.ParsleyTest
 
-import descriptions._
+import descriptions.*
 
 class DescriptionRequireTests extends ParsleyTest {
     "SymbolDesc" should "not allow an intersection between operators and keywords" in {

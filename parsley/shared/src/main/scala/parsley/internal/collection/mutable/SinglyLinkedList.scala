@@ -5,7 +5,7 @@
  */
 package parsley.internal.collection.mutable
 
-import parsley.XAssert._
+import parsley.XAssert.*
 
 import SinglyLinkedList.{LinkedListIterator, Node}
 

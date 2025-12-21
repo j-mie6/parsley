@@ -10,14 +10,14 @@ import scala.collection.{mutable, Factory}
 import parsley.exceptions.NonProductiveIterationException
 
 import parsley.internal.deepembedding.ContOps, ContOps.{ContAdapter, suspend}
-import parsley.internal.deepembedding.singletons._
+import parsley.internal.deepembedding.singletons.*
 import parsley.internal.machine.instructions
 
 import StrictParsley.InstrBuffer
 
 private [deepembedding] final class Many[A, C](val init: StrictParsley[mutable.Builder[A, C]], val p: StrictParsley[A]) extends Unary[A, C] {
     final override def optimise: StrictParsley[C] = p match {
-        case _: Pure[_] => throw new NonProductiveIterationException("many") // scalastyle:ignore throw
+        case _: Pure[?] => throw new NonProductiveIterationException("many") // scalastyle:ignore throw
         case _          => this
     }
     final override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
@@ -45,7 +45,7 @@ private [backend] object Many {
 private [backend] sealed abstract class ChainLike[A](p: StrictParsley[A], op: StrictParsley[A => A]) extends StrictParsley[A] {
     def inlinable: Boolean = false
     override def optimise: StrictParsley[A] = op match {
-        case _: Pure[_] => throw new NonProductiveIterationException("chain") // scalastyle:ignore throw
+        case _: Pure[?] => throw new NonProductiveIterationException("chain") // scalastyle:ignore throw
         case _: MZero   => p
         case _          => this
     }
@@ -155,7 +155,7 @@ private [backend] object Chainr {
     def unapply[A, B](p: Chainr[A, B]): Some[(StrictParsley[A], StrictParsley[(A, B) => B])] = Some((p.p, p.op))
 }
 
-private [deepembedding] final class SepEndBy1[A, C](val p: StrictParsley[A], val sep: StrictParsley[_], val factory: Factory[A, C]) extends StrictParsley[C] {
+private [deepembedding] final class SepEndBy1[A, C](val p: StrictParsley[A], val sep: StrictParsley[?], val factory: Factory[A, C]) extends StrictParsley[C] {
     def inlinable: Boolean = false
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val body = state.freshLabel()
@@ -184,7 +184,7 @@ private [deepembedding] final class SepEndBy1[A, C](val p: StrictParsley[A], val
 
 // FIXME: untested
 private [backend] object SepEndBy1 {
-    def unapply[A, C](p: SepEndBy1[A, C]): Some[(StrictParsley[A], StrictParsley[_], Factory[A, C])] = Some((p.p, p.sep, p.factory))
+    def unapply[A, C](p: SepEndBy1[A, C]): Some[(StrictParsley[A], StrictParsley[?], Factory[A, C])] = Some((p.p, p.sep, p.factory))
 }
 
 // TODO: unify :/

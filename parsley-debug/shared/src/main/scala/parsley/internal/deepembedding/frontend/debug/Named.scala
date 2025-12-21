@@ -15,7 +15,7 @@ import parsley.internal.deepembedding.frontend.LetMap
 // $COVERAGE-OFF$
 // Wrapper parser class indicating explicitly named parsers.
 private [parsley] final class Named[A](_p: LazyParsley[A], val name: String) extends Unary[A, A](_p) {
-    XAssert.assert(!p.isInstanceOf[Named[_]], "Named parsers should not be nested within each other directly.")
+    XAssert.assert(!p.isInstanceOf[Named[?]], "Named parsers should not be nested within each other directly.")
     def make(p: StrictParsley[A]): StrictParsley[A] = p
     // preprocessing for named should not trigger optimisation, so bypass the optimised call in Unary
     override def preprocess[M[_, +_]: ContOps, R, A_ >: A](implicit lets: LetMap): M[R, StrictParsley[A_]] = p.preprocess

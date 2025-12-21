@@ -11,12 +11,12 @@ import parsley.internal.deepembedding.ContOps, ContOps.{suspend, ContAdapter}
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 
 /**
-  * This trait represents combinators that are iterative, that is, they execute 
+  * This trait represents combinators that are iterative, that is, they execute
   * parsers multiple times until they cannot match any more
   */
 private [parsley] sealed trait Iterative
 
-private [parsley] final class Many[A, C](init: LazyParsley[mutable.Builder[A, C]], p: =>LazyParsley[A], private [parsley] var debugName: String) 
+private [parsley] final class Many[A, C](init: LazyParsley[mutable.Builder[A, C]], p: =>LazyParsley[A], private [parsley] var debugName: String)
     extends Binary[mutable.Builder[A, C], A, C](init, p) with Iterative {
     override def make(init: StrictParsley[mutable.Builder[A, C]], p: StrictParsley[A]): StrictParsley[C] = new backend.Many(init, p)
 
@@ -34,7 +34,7 @@ private [parsley] final class ChainPost[A](p: LazyParsley[A], _op: =>LazyParsley
     // $COVERAGE-ON$
 }
 private [parsley] final class ChainPre[A](p: LazyParsley[A], op: LazyParsley[A => A]) extends LazyParsley[A] with Iterative {
-    final override def findLetsAux[M[_, +_]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] = {
+    final override def findLetsAux[M[_, +_]: ContOps, R](seen: Set[LazyParsley[?]])(implicit state: LetFinderState): M[R, Unit] = {
         suspend(p.findLets[M, R](seen)) >> suspend(op.findLets(seen))
     }
     final override def preprocess[M[_, +_]: ContOps, R, A_ >: A](implicit lets: LetMap): M[R, StrictParsley[A_]] =
@@ -67,7 +67,7 @@ private [parsley] final class Chainr[A, B](p: LazyParsley[A], op: =>LazyParsley[
     private [parsley] var debugName = "infix.right1"
     // $COVERAGE-ON$
 }
-private [parsley] final class SepEndBy1[A, C](p: LazyParsley[A], sep: =>LazyParsley[_], factory: Factory[A, C]) extends Binary[A, Any, C](p, sep) with Iterative {
+private [parsley] final class SepEndBy1[A, C](p: LazyParsley[A], sep: =>LazyParsley[?], factory: Factory[A, C]) extends Binary[A, Any, C](p, sep) with Iterative {
     override def make(p: StrictParsley[A], sep: StrictParsley[Any]): StrictParsley[C] = new backend.SepEndBy1(p, sep, factory)
 
     // $COVERAGE-OFF$

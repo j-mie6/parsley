@@ -8,7 +8,7 @@ package parsley.expr
 import parsley.syntax.character.{charLift, stringLift}
 import parsley.character
 import parsley.Parsley
-import ExprGen._
+import ExprGen.*
 import parsley.Success
 import parsley.Failure
 import parsley.ParsleyTest

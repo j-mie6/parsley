@@ -104,7 +104,7 @@ that will keep the parser faster. Currently, there is no primitive functionality
 for parsing with respect to values inside references, like so:
 
 ```scala mdoc:silent
-def string(r: Ref[String]): Parsley[String] = r.get.flatMap(parsley.character.string(_))
+def string(r: Ref[String]): Parsley[String] = r.get.flatMap(parsley.character.string)
 ```
 
 The scope of the `flatMap` in that combinator is small, however, so is likely

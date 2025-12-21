@@ -6,7 +6,7 @@
 package parsley.internal.collection.immutable
 
 import org.scalatest.propspec.AnyPropSpec
-import org.scalatest.matchers._
+import org.scalatest.matchers.*
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 class TrieSpec extends AnyPropSpec with ScalaCheckPropertyChecks with should.Matchers {

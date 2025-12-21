@@ -55,7 +55,7 @@ abstract class SpecializedMessage[A] extends SpecializedFilterConfig[A] { self =
     }
     private [parsley] final override def collect[B](p: Parsley[A])(f: PartialFunction[A, B]) = p.collectMsg(message(_))(f)
     private [parsley] final override def mkError(offset: Int, line: Int, col: Int, caretWidth: Int, x: A): DefuncError = {
-        new ClassicFancyError(offset, line, col, new RigidCaret(caretWidth), message(x): _*)
+        new ClassicFancyError(offset, line, col, new RigidCaret(caretWidth), message(x)*)
     }
 
     // $COVERAGE-OFF$

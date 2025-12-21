@@ -6,7 +6,7 @@
 package parsley.syntax
 
 import parsley.Parsley
-import parsley.lift._
+import parsley.lift.*
 
 /** This module provides alternatives to the `f.lift(x, y)` syntax, `(x, y).zipped(f)`, which works better with type inference.
   *
@@ -16,7 +16,7 @@ import parsley.lift._
   *
   * @example {{{
   * scala> import parsley.character.char
-  * scala> import parsley.syntax.zipped._
+  * scala> import parsley.syntax.zipped.*
   * scala> case class Add(x: Int, y: Int)
   * scala> val p = (char('a').as(4), char('b').as(5)).zipped(Add)
   * scala> p.parse("ab")

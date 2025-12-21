@@ -601,7 +601,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * scala> import parsley.character.letter
       * scala> val keywords = Set("if", "then", "else")
       * scala> val identifier = some(letter).map(_.mkString)
-      *                                     .filterNot(keywords.contains(_))
+      *                                     .filterNot(keywords.contains)
       * scala> identifier.parse("hello")
       * val res0 = Success("hello")
       * scala> identifier.parse("if")
@@ -1150,7 +1150,7 @@ private [parsley] abstract class ParsleyImpl {
       * @return a parser that will parse `p` then possibly parse `q` to transform `p`'s result into a `B`.
       * @group cond
       */
-    final def select[A, B](p: Parsley[Either[A, B]], q: =>Parsley[A => B]): Parsley[B] = branch(p, q, transPure(identity[B](_))).uo("select")
+    final def select[A, B](p: Parsley[Either[A, B]], q: =>Parsley[A => B]): Parsley[B] = branch(p, q, transPure(identity[B] _)).uo("select")
     /** This combinator parses its argument `p`, but rolls back any consumed input on failure.
       *
       * If the parser `p` succeeds, then `atomic(p)` has no effect. However, if `p` failed,

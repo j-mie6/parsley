@@ -86,9 +86,9 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
 
     /** True if associated DebugView extends the Manageable trait */
     def manageableView: Boolean = view match {
-        case _: DebugView.Manageable => true 
+        case _: DebugView.Manageable => true
         case _ => false
-    } 
+    }
 
     private var firstBreakpoint: Boolean = true
 
@@ -118,10 +118,10 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
                 } else if (breakpointSkips != DebugContext.TerminateDebugging && breakpointSkips != DebugContext.SkipAllBreakpoints) { // Breakpoint exit
                     view match {
                         case view: DebugView.Manageable => {
-                            
+
                             // Wait for RemoteView to return breakpoint skips and updated state
                             val (newSkips, newRefs): (Int, Seq[CodedRef]) = view.renderManage(fullInput, debugTree, codedRefs.get*)
-                            
+
                             // Update breakpoint skips
                             breakpointSkips = newSkips
                             Some(newRefs)
@@ -137,7 +137,7 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
                 if (breakpointSkips == DebugContext.TerminateDebugging) view.shouldRender = false
                 newRefs
             }
-            
+
             case _ => None
         }
 
@@ -146,7 +146,7 @@ private [parsley] class DebugContext(private val toStringRules: PartialFunction[
     }
 
     // Push a new parser onto the parser callstack.
-    def push(fullInput: String, parser: LazyParsley[_], isIterative: Boolean, userAssignedName: Option[String]): Unit = {
+    def push(fullInput: String, parser: LazyParsley[?], isIterative: Boolean, userAssignedName: Option[String]): Unit = {
 
         val newTree = new TransientDebugTree(fullInput = fullInput)
         newTree.name = Renamer.nameOf(userAssignedName, parser)

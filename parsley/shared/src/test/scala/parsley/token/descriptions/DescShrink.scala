@@ -7,7 +7,7 @@ package parsley.token.descriptions
 
 import org.scalacheck.Shrink
 
-import org.typelevel.scalaccompat.annotation._
+import org.typelevel.scalaccompat.annotation.*
 
 object DescShrink {
     // TODO: shrinking logic for new esc desc stuff

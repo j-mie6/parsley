@@ -5,27 +5,27 @@
  */
 package parsley.expr
 
-import Predef.{ArrowAssoc => _, _}
+import Predef.{ArrowAssoc => _, *}
 
-import parsley._
+import parsley.*
 import parsley.token.{descriptions => desc}
 import parsley.character.digit
 import parsley.syntax.character.{charLift, stringLift}
-import parsley.position._
-import parsley.generic._
+import parsley.position.*
+import parsley.generic.*
 
 class ExpressionParserTests extends ParsleyTest {
     "chain.postfix" must "require an initial value" in {
         chain.postfix('1' #> 1)('+' #> (_ + 1)).parseAll("1") should be (Success(1))
     }
     it must "parse all operators that follow" in {
-        chain.postfix('1' #> 1)('+' #> (_ + 1)).parseAll("1++++++++++++++") should not be a [Failure[_]]
+        chain.postfix('1' #> 1)('+' #> (_ + 1)).parseAll("1++++++++++++++") should not be a [Failure[?]]
     }
     it must "apply the functions" in {
         chain.postfix('1' #> 1)('+' #> (_ + 1)).parseAll("1++++++++++++++") should be (Success(15))
     }
     it must "fail if an operator fails after consuming input" in {
-        chain.postfix('1' #> 1)("++" #> (_ + 1)).parseAll("1+++++++++++++") shouldBe a [Failure[_]]
+        chain.postfix('1' #> 1)("++" #> (_ + 1)).parseAll("1+++++++++++++") shouldBe a [Failure[?]]
     }
     it must "not leave the stack in an inconsistent state on failure" in {
         val p = chain.postfix('1' #> 1)(col.as[Int => Int](_ + 1) <* '+')
@@ -40,36 +40,36 @@ class ExpressionParserTests extends ParsleyTest {
         )
     }
     it must "parse all operators that follow" in {
-        chain.postfix1('1' #> 1)('+'.as[Int => Int](_ + 1)).parse("1++++++++++++++") should not be a [Failure[_]]
+        chain.postfix1('1' #> 1)('+'.as[Int => Int](_ + 1)).parse("1++++++++++++++") should not be a [Failure[?]]
     }
     it must "apply the functions" in {
         chain.postfix1('1' #> 1)('+'.as[Int => Int](_ + 1)).parse("1++++++++++++++") should be (Success(15))
     }
     it must "fail if an operator fails after consuming input" in {
-        chain.postfix1('1' #> 1)("++".as[Int => Int](_ + 1)).parse("1+++++++++++++") shouldBe a [Failure[_]]
+        chain.postfix1('1' #> 1)("++".as[Int => Int](_ + 1)).parse("1+++++++++++++") shouldBe a [Failure[?]]
     }
 
     "chain.prefix" must "parse an operatorless value" in {
         chain.prefix('1' #> 1)('+' #> (_ + 1)).parse("1") should be (Success(1))
     }
     it must "parse all operators that precede a value" in {
-        chain.prefix('1' #> 1)('+' #> (_ + 1)).parse("+++++++++++1") should not be a [Failure[_]]
+        chain.prefix('1' #> 1)('+' #> (_ + 1)).parse("+++++++++++1") should not be a [Failure[?]]
     }
     it must "fail if the final value is absent" in {
-        chain.prefix('1' #> 1)('+' #> (_ + 1)).parse("+++++++++++") shouldBe a [Failure[_]]
+        chain.prefix('1' #> 1)('+' #> (_ + 1)).parse("+++++++++++") shouldBe a [Failure[?]]
     }
     it must "apply the functions" in {
         chain.prefix('1' #> 1)('+' #> (_ + 1)).parse("+++++++++++1") should be (Success(12))
     }
 
     "chain.prefix1" must "not parse an operatorless value" in {
-        chain.prefix1('1' #> 1)('+'.as[Int => Int](_ + 1)).parse("1") shouldBe a [Failure[_]]
+        chain.prefix1('1' #> 1)('+'.as[Int => Int](_ + 1)).parse("1") shouldBe a [Failure[?]]
     }
     it must "parse all operators that precede a value" in {
-        chain.prefix1('1' #> 1)('+'.as[Int => Int](_ + 1)).parse("+++++++++++1") should not be a [Failure[_]]
+        chain.prefix1('1' #> 1)('+'.as[Int => Int](_ + 1)).parse("+++++++++++1") should not be a [Failure[?]]
     }
     it must "fail if the final value is absent" in {
-        chain.prefix1('1' #> 1)('+'.as[Int => Int](_ + 1)).parse("+++++++++++") shouldBe a [Failure[_]]
+        chain.prefix1('1' #> 1)('+'.as[Int => Int](_ + 1)).parse("+++++++++++") shouldBe a [Failure[?]]
     }
     it must "apply the functions" in {
         chain.prefix1('1' #> 1)('+'.as[Int => Int](_ + 1)).parse("+++++++++++1") shouldBe Success(12)
@@ -274,7 +274,7 @@ class ExpressionParserTests extends ParsleyTest {
             Atoms(Num(digit.map(_.asDigit)), Parens('(' *> expr <* ')')) :+
             GOps[Atom, Term](InfixL)(Mul <# '*')(TermOf.apply) :+
             GOps[Term, Expr](InfixL)(Add <# '+')(ExprOf.apply))
-        expr.parse("1*(2+3)") shouldBe a [Success[_]]
+        expr.parse("1*(2+3)") shouldBe a [Success[?]]
     }
 
     "mixed expressions" should "also be parsable" in {
@@ -304,10 +304,10 @@ class ExpressionParserTests extends ParsleyTest {
         )
 
         lazy val atom: Parsley[Expr] = Constant(tok.lexeme.names.identifier)
-        lazy val expr: Parsley[Expr] = precedence(op, ops: _*)(atom)
+        lazy val expr: Parsley[Expr] = precedence(op, ops*)(atom)
 
-        expr.parse("o.f()") shouldBe a [Success[_]]
-        expr.parse("o.f(x,y)") shouldBe a [Success[_]]
+        expr.parse("o.f()") shouldBe a [Success[?]]
+        expr.parse("o.f(x,y)") shouldBe a [Success[?]]
     }
 
     "mixed chains" should "allow the mixing of prefix with infix-right" in {

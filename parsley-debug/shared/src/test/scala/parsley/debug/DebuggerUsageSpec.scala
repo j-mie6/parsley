@@ -9,12 +9,12 @@ import scala.annotation.experimental
 
 // scalastyle:off underscore.import
 import org.typelevel.scalaccompat.annotation.unused
-import parsley.Parsley, Parsley._
+import parsley.Parsley, Parsley.*
 import parsley.ParsleyTest
-import parsley.character._
+import parsley.character.*
 import parsley.debug.combinator.{attachDebugger, named, detectDivergence}
 import parsley.debug.internal.DebugContext
-import parsley.expr._
+import parsley.expr.*
 import parsley.internal.deepembedding.frontend.debug.TaggedWith
 import parsley.internal.deepembedding.backend.debug.Debugging
 // scalastyle:on underscore.import
@@ -51,7 +51,7 @@ class DebuggerUsageSpec extends ParsleyTest {
     }
 
     it should "not cause references to be unallocated" in {
-        import parsley.state._
+        import parsley.state.*
         val p = detectDivergence(7.makeRef(r => many(char('a') *> r.get)))
         p.parse("aaa").get shouldBe List(7, 7, 7)
     }

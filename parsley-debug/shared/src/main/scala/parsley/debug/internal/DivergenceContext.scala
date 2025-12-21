@@ -15,8 +15,8 @@ import parsley.internal.deepembedding.frontend.LazyParsley
 // FIXME: in future, this should use better tuned exception names
 
 private [parsley] final class DivergenceContext {
-    case class CtxSnap(pc: Int, instrs: Array[_], off: Int, regs: List[AnyRef])
-    case class HandlerSnap(pc: Int, instrs: Array[_])
+    case class CtxSnap(pc: Int, instrs: Array[?], off: Int, regs: List[AnyRef])
+    case class HandlerSnap(pc: Int, instrs: Array[?])
     private case class Snapshot(name: String, internalName: String, ctxSnap: CtxSnap, handlerSnap: Option[HandlerSnap], children: mutable.ListBuffer[Snapshot]) {
         // this is true when the ctxSnaps match
         def matchesParent(that: Snapshot): Boolean = this.ctxSnap == that.ctxSnap
@@ -32,7 +32,7 @@ private [parsley] final class DivergenceContext {
     // For a recursive structure, I think the pruning actually would work, and can be done
     private val snaps = mutable.Stack.empty[Snapshot]
 
-    def takeSnapshot(parser: LazyParsley[_], userAssignedName: Option[String], ctxSnap: CtxSnap, handlerSnap: Option[HandlerSnap]): Unit = {
+    def takeSnapshot(parser: LazyParsley[?], userAssignedName: Option[String], ctxSnap: CtxSnap, handlerSnap: Option[HandlerSnap]): Unit = {
         val name = Renamer.nameOf(userAssignedName, parser)
         val internalName = Renamer.internalName(parser)
         // at this point we may have some old snapshots on the stack

@@ -25,11 +25,11 @@ import parsley.internal.deepembedding.Traverse.traverse
 // FIXME: this clobbers the register allocator, apparently?
 private [parsley] final class TaggedWith[A](factory: TagFactory)(val origin: LazyParsley[A], val subParser: LazyParsley[A], isIterative: Boolean, userAssignedName: Option[String])
     extends LazyParsley[A] {
-    XAssert.assert(!origin.isInstanceOf[TaggedWith[_]], "Tagged parsers should not be nested within each other directly.")
+    XAssert.assert(!origin.isInstanceOf[TaggedWith[?]], "Tagged parsers should not be nested within each other directly.")
 
     def make(p: StrictParsley[A]): StrictParsley[A] = factory.create(origin, p, isIterative, userAssignedName)
 
-    override def findLetsAux[M[_, +_] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] = suspend(subParser.findLets(seen))
+    override def findLetsAux[M[_, +_] : ContOps, R](seen: Set[LazyParsley[?]])(implicit state: LetFinderState): M[R, Unit] = suspend(subParser.findLets(seen))
     override def preprocess[M[_, +_] : ContOps, R, A_ >: A](implicit lets: LetMap): M[R, StrictParsley[A_]] = {
         for (p <- suspend[M, R, StrictParsley[A]](subParser.optimised[M, R, A])) yield make(p)
     }
@@ -62,14 +62,14 @@ private [parsley] object TaggedWith {
     // This map tracks seen parsers to prevent infinitely recursive parsers from overflowing the stack (and ties
     // the knot for these recursive parsers).
     // Use maps with weak keys or don't pass this into a >>= parser.
-    private final class ParserTracker(val map: mutable.Map[LazyParsley[_], TaggingResultPromise[_]]) {
+    private final class ParserTracker(val map: mutable.Map[LazyParsley[?], TaggingResultPromise[?]]) {
         def put[A](par: LazyParsley[A], bubblesIterative: Boolean): TaggingResultPromise[A] = {
             val prom = new TaggingResultPromise[A](bubblesIterative)
             map(par) = prom
             prom
         }
         def get[A](par: LazyParsley[A]): TaggingResult[A] = map(par).get.asInstanceOf[TaggingResult[A]]
-        def hasSeen(par: LazyParsley[_]): Boolean = map.contains(par)
+        def hasSeen(par: LazyParsley[?]): Boolean = map.contains(par)
     }
 
     // these two classes are used to allow for parsers to be added into the ParserTracker map without

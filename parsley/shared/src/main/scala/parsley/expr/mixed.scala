@@ -5,7 +5,7 @@
  */
 package parsley.expr
 
-import parsley.Parsley, Parsley._
+import parsley.Parsley, Parsley.*
 import parsley.XAnnotation.{implicitNotFound212, implicitNotFound213}
 import parsley.lift.lift4
 import parsley.syntax.zipped.zippedSyntax2

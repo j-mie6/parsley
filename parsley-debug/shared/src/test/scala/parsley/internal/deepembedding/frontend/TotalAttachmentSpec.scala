@@ -114,13 +114,13 @@ class TotalAttachmentSpec extends ParsleyTest {
         //noinspection NoTailRecursionAnnotation
         override def visitUnknown[A](self: LazyParsley[A], parentIsTag: Boolean): ConstUnit[A] =
             self match {
-                case d: TaggedWith[_] if !parentIsTag => visitUnknown(d.subParser, parentIsTag = true)
-                case _: TaggedWith[_]                 => failure("Not allowed to stack debuggers.") // Can't have a debugged on top of another!
-                case s: singletons.Singleton[_]       => visitSingleton(s.asInstanceOf[singletons.Singleton[A]], parentIsTag)
-                case g: GenericLazyParsley[_]         => visitGeneric(g.asInstanceOf[GenericLazyParsley[A]], parentIsTag)
-                case alt: <|>[_]                      => alt.visit(this, parentIsTag)
-                case cpre: ChainPre[_]                => cpre.visit(this, parentIsTag)
-                case prec: Precedence[_]              => prec.visit(this, parentIsTag)
+                case d: TaggedWith[?] if !parentIsTag => visitUnknown(d.subParser, parentIsTag = true)
+                case _: TaggedWith[?]                 => failure("Not allowed to stack debuggers.") // Can't have a debugged on top of another!
+                case s: singletons.Singleton[?]       => visitSingleton(s.asInstanceOf[singletons.Singleton[A]], parentIsTag)
+                case g: GenericLazyParsley[?]         => visitGeneric(g.asInstanceOf[GenericLazyParsley[A]], parentIsTag)
+                case alt: <|>[?]                      => alt.visit(this, parentIsTag)
+                case cpre: ChainPre[?]                => cpre.visit(this, parentIsTag)
+                case prec: Precedence[?]              => prec.visit(this, parentIsTag)
                 case _                                => if (parentIsTag) CUnit else failure()
             }
 
@@ -139,7 +139,7 @@ class TotalAttachmentSpec extends ParsleyTest {
             for (_ <- 0 until width) {
                 val (_, dbg) = attachDebugger(parserGenerator.generate(0))
                 dbg.internal match {
-                    case seq: *>[_] => verifier.visitUnknown(seq.right, parentIsTag = false)
+                    case seq: *>[?] => verifier.visitUnknown(seq.right, parentIsTag = false)
                     case _          => fail("Debugger not attached.")
                 }
             }
@@ -154,7 +154,7 @@ class TotalAttachmentSpec extends ParsleyTest {
 
                 val (_, dbg) = attachDebugger(par)
                 dbg.internal match {
-                    case seq: *>[_] => verifier.visitUnknown(seq.right, parentIsTag = false)
+                    case seq: *>[?] => verifier.visitUnknown(seq.right, parentIsTag = false)
                     case _ => fail("Debugger not attached.")
                 }
             }

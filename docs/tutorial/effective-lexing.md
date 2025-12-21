@@ -243,7 +243,7 @@ object implicits {
 ```scala mdoc:invisible
 import parsley.Failure
 import implicits.given
-assert("negate".parse("negatex").isInstanceOf[Failure[_]])
+assert("negate".parse("negatex").isInstanceOf[Failure[?]])
 ```
 
 Now, when we use a string literal in our original parser, it will first check to see if that is
@@ -377,7 +377,7 @@ object lexer {
 ```scala mdoc:invisible
 import parsley.Failure
 import lexer.implicits.given
-assert("negate".parse("negatex").isInstanceOf[Failure[_]])
+assert("negate".parse("negatex").isInstanceOf[Failure[?]])
 ```
 
 The `Conversion[String, Parsley[Unit]]` we developed before, along with `operator` and

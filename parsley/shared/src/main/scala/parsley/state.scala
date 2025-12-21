@@ -7,7 +7,7 @@ package parsley
 
 import scala.collection.IterableFactory
 
-import parsley.XAssert._
+import parsley.XAssert.*
 import parsley.combinator.{whenS, whileS}
 import parsley.syntax.zipped.{zippedSyntax2}
 import parsley.exceptions.UnfilledReferenceException
@@ -403,7 +403,7 @@ object state {
       * @see [[[parsley.state.forYieldP_[A,B,CC[_]]* `forYieldP_`]]] for a version that returns the results of each `body` parse.
       * @group comb
       */
-    def forP_[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: Parsley[A] => Parsley[_]): Parsley[Unit] = {
+    def forP_[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: Parsley[A] => Parsley[?]): Parsley[Unit] = {
         init.fillRef { ref =>
           lazy val _cond = ref.gets(cond)
           lazy val _step = ref.update(step)
@@ -508,7 +508,7 @@ object state {
       * @see [[[parsley.state.forYieldP[A,B,CC[_]]* `forYieldP`]]] for a version that returns the results of each `body` parse.
       * @group comb
       */
-    def forP[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: =>Parsley[_]): Parsley[Unit] = {
+    def forP[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: =>Parsley[?]): Parsley[Unit] = {
         lazy val _body = body
         forP_(init, cond, step) { _ =>
             _body

@@ -5,7 +5,7 @@
  */
 package annotation
 import parsley.Parsley
-import parsley.quick._
+import parsley.quick.*
 
 import scala.annotation.experimental
 

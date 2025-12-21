@@ -77,9 +77,9 @@ normally lazy positions: `LazyParsley.unary_~` can be used to restore laziness i
 | `choice(_*)`      | `Parsley[A]* => Parsley[A]`                    | try each of the given parsers in turn until one succeeds: uses `<\|>`.                                                                    |
 | `option(_)`       | `Parsley[A] => Parsley[Option[A]]`             | try a parser, if it succeeds wrap the result in `Some`, and if it fails *without consuming input* return `None`.                          |
 | `optional(_)`     | `Parsley[A] => Parsley[Unit]`                  | optionally parse something (but if it fails, it must not consume input).                                                                  |
-| `sepBy1(_, _)`    | `(Parsley[A], =>Parsley[_]) => Parsley[List[A]]` | parse one thing separated by another, collecting all the results. Something like comma-separated arguments in a function call.            |
-| `endBy1(_, _)`    | `(Parsley[A], =>Parsley[_]) => Parsley[List[A]]` | same as above, but the sequence must be ended by the separator again. Something like semi-colon separated statements in C-like languages. |
-| `sepEndBy1(_, _)` | `(Parsley[A], =>Parsley[_]) => Parsley[List[A]]` | same as above, but the terminal separator is optional. Something like semi-colon separated statements in Scala.                           |
+| `sepBy1(_, _)`    | `(Parsley[A], =>Parsley[?]) => Parsley[List[A]]` | parse one thing separated by another, collecting all the results. Something like comma-separated arguments in a function call.            |
+| `endBy1(_, _)`    | `(Parsley[A], =>Parsley[?]) => Parsley[List[A]]` | same as above, but the sequence must be ended by the separator again. Something like semi-colon separated statements in C-like languages. |
+| `sepEndBy1(_, _)` | `(Parsley[A], =>Parsley[?]) => Parsley[List[A]]` | same as above, but the terminal separator is optional. Something like semi-colon separated statements in Scala.                           |
 
 ## Building Values and ASTs
 

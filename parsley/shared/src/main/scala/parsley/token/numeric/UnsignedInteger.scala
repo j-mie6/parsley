@@ -47,7 +47,7 @@ private [token] final class UnsignedInteger(desc: NumericDesc, err: ErrorConfig,
     override def binary: Parsley[BigInt] = err.labelIntegerUnsignedBinary.apply(_binary)
     override def number: Parsley[BigInt] = err.labelIntegerUnsignedNumber.apply(_number)
 
-    private def when(b: Boolean, p: =>Parsley[_]): Parsley[_] = if (b) p else unit
+    private def when(b: Boolean, p: =>Parsley[?]): Parsley[?] = if (b) p else unit
 
     val leadingBreakChar = desc.literalBreakChar match {
         case BreakCharDesc.NoBreakChar => unit

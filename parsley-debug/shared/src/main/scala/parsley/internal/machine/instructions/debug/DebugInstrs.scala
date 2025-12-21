@@ -12,12 +12,12 @@ import parsley.debug.internal.{DebugContext, DivergenceContext}
 import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.machine.Context
 import parsley.internal.machine.instructions.{Instr, InstrWithLabel}
-import parsley.internal.machine.XAssert._
+import parsley.internal.machine.XAssert.*
 
 import parsley.internal.machine.stacks.Stack.StackExt
 
 // Enter into the scope of a parser in the current context.
-private [internal] class EnterParser(var label: Int, origin: LazyParsley[_], isIterative: Boolean, userAssignedName: Option[String])(dbgCtx: DebugContext) extends InstrWithLabel {
+private [internal] class EnterParser(var label: Int, origin: LazyParsley[?], isIterative: Boolean, userAssignedName: Option[String])(dbgCtx: DebugContext) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         // Uncomment to debug entries and exits.
@@ -77,7 +77,7 @@ private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends Instr 
     // $COVERAGE-ON$
 }
 
-private [internal] class TakeSnapshot(var label: Int, origin: LazyParsley[_], userAssignedName: Option[String])(dtx: DivergenceContext) extends InstrWithLabel {
+private [internal] class TakeSnapshot(var label: Int, origin: LazyParsley[?], userAssignedName: Option[String])(dtx: DivergenceContext) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         val handler = ctx.handlers
@@ -105,16 +105,16 @@ private [internal] class DropSnapshot(dtx: DivergenceContext) extends Instr {
 }
 
 private [internal] class TriggerBreakpoint(dbgCtx: DebugContext, isAfter: Boolean, refs: RefCodec*) extends Instr {
-    
+
     override def apply(ctx: Context): Unit = {
         // Encode ref using associated Codec
         def encode[A](refCodec: RefCodec) = refCodec.codec.encode(ctx.regs(refCodec.ref.addr).asInstanceOf[refCodec.A])
-        
+
         // Encode all refs if view is manageable
         val codedRefs: Option[Seq[CodedRef]] = if (dbgCtx.manageableView) (
             Some(refs.map(refCodec => (refCodec.ref.addr, encode(refCodec))))
         ) else None
-        
+
         // Trigger breakpoint and update refs (if manageable)
         // All errors here are silent
         for {
@@ -123,7 +123,7 @@ private [internal] class TriggerBreakpoint(dbgCtx: DebugContext, isAfter: Boolea
             rc <- refs.find(_.ref.addr == refAddr)
             decoded <- rc.codec.decode(refVal)
         } ctx.writeReg(refAddr, decoded)
-        
+
         ctx.inc()
     }
 

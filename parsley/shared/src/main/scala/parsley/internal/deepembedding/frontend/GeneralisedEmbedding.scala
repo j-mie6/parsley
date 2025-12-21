@@ -15,7 +15,7 @@ private [parsley] sealed abstract class GenericLazyParsley[A] extends LazyParsle
 private [frontend] abstract class Unary[A, B](private [frontend] val p: LazyParsley[A]) extends GenericLazyParsley[B] {
     def make(p: StrictParsley[A]): StrictParsley[B]
 
-    final override def findLetsAux[M[_, +_]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R,Unit] =
+    final override def findLetsAux[M[_, +_]: ContOps, R](seen: Set[LazyParsley[?]])(implicit state: LetFinderState): M[R,Unit] =
         suspend(p.findLets(seen))
     override def preprocess[M[_, +_]: ContOps, R, B_ >: B](implicit lets: LetMap): M[R, StrictParsley[B_]] =
         for (p <- suspend(p.optimised[M, R, A])) yield make(p)
@@ -27,7 +27,7 @@ private [frontend] abstract class Binary[A, B, C](private [frontend] val left: L
 
     def make(p: StrictParsley[A], q: StrictParsley[B]): StrictParsley[C]
 
-    final override def findLetsAux[M[_, +_]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R,Unit] = {
+    final override def findLetsAux[M[_, +_]: ContOps, R](seen: Set[LazyParsley[?]])(implicit state: LetFinderState): M[R,Unit] = {
         suspend(left.findLets[M, R](seen)) >> suspend(right.findLets(seen))
     }
     final override def preprocess[M[_, +_]: ContOps, R, C_ >: C](implicit lets: LetMap): M[R, StrictParsley[C_]] =
@@ -45,7 +45,7 @@ private [frontend] abstract class Ternary[A, B, C, D](private [frontend] val fir
 
     def make(p: StrictParsley[A], q: StrictParsley[B], r: StrictParsley[C]): StrictParsley[D]
 
-    final override def findLetsAux[M[_, +_]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] = {
+    final override def findLetsAux[M[_, +_]: ContOps, R](seen: Set[LazyParsley[?]])(implicit state: LetFinderState): M[R, Unit] = {
         suspend(first.findLets[M, R](seen)) >> suspend(second.findLets(seen)) >> suspend(third.findLets(seen))
     }
     final override def preprocess[M[_, +_]: ContOps, R, D_ >: D](implicit lets: LetMap): M[R, StrictParsley[D_]] =

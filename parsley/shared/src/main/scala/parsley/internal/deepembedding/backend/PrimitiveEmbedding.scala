@@ -10,7 +10,7 @@ import parsley.errors.ErrorBuilder
 import parsley.state.Ref
 
 import parsley.internal.deepembedding.ContOps, ContOps.{ContAdapter, result, suspend}
-import parsley.internal.deepembedding.singletons._
+import parsley.internal.deepembedding.singletons.*
 import parsley.internal.machine.instructions
 
 import StrictParsley.InstrBuffer
@@ -21,8 +21,8 @@ private [deepembedding] final class Atomic[A](val p: StrictParsley[A]) extends S
     override def instrNeedsLabel: Boolean = false
     override def handlerLabel(state: CodeGenState): Int  = state.getLabel(instructions.RestoreAndFail)
     override def optimise: StrictParsley[A] = p match {
-        case p: CharTok[_] => p
-        case p: Atomic[_] => p
+        case p: CharTok[?] => p
+        case p: Atomic[?] => p
         //case StringTok(s, _) if s.size == 1 => p
         case _ => this
     }
@@ -108,7 +108,7 @@ private [deepembedding] final class NewReg[S, A](reg: Ref[S], init: StrictParsle
     // $COVERAGE-ON$
 }
 
-private [deepembedding] final class Span(p: StrictParsley[_]) extends StrictParsley[String] {
+private [deepembedding] final class Span(p: StrictParsley[?]) extends StrictParsley[String] {
     def inlinable: Boolean = false
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         if (producesResults) {
@@ -127,7 +127,7 @@ private [deepembedding] final class Span(p: StrictParsley[_]) extends StrictPars
 
 // $COVERAGE-OFF$
 private [deepembedding] final class Debug[A](val p: StrictParsley[A], name: String, ascii: Boolean,
-                                             break: Breakpoint, watchedRefs: scala.Seq[(Ref[_], String)] @nowarn3)
+                                             break: Breakpoint, watchedRefs: scala.Seq[(Ref[?], String)] @nowarn3)
     extends Unary[A, A] {
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val watchedAddrs = watchedRefs.map {
@@ -143,7 +143,7 @@ private [deepembedding] final class Debug[A](val p: StrictParsley[A], name: Stri
     final override def pretty(p: String): String = p
 }
 
-private [deepembedding] final class DebugError[A](val p: StrictParsley[A], name: String, ascii: Boolean, errBuilder: ErrorBuilder[_]) extends Unary[A, A] {
+private [deepembedding] final class DebugError[A](val p: StrictParsley[A], name: String, ascii: Boolean, errBuilder: ErrorBuilder[?]) extends Unary[A, A] {
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler = state.freshLabel()
         instrs += new instructions.LogErrBegin(handler, name, ascii)(errBuilder)

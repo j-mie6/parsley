@@ -5,11 +5,11 @@
  */
 package parsley.token.text
 
-import scala.Predef.{ArrowAssoc => _, _}
+import scala.Predef.{ArrowAssoc => _, *}
 import parsley.ParsleyTest
 import parsley.token.LexemeImpl
 
-import parsley.token.descriptions._
+import parsley.token.descriptions.*
 import parsley.token.errors.ErrorConfig
 import parsley.character.space
 import org.scalactic.source.Position
@@ -35,9 +35,9 @@ class StringTests extends ParsleyTest {
         new CombinedStrings(desc.stringEnds, desc.multiStringEnds, single, multi, char, errConfig)
     }
 
-    def unicodeCases(str: StringParsers)(tests: (String, Option[String], Position)*): Unit = cases(str.fullUtf16)(tests: _*)
-    def asciiCases(str: StringParsers)(tests: (String, Option[String], Position)*): Unit = cases(str.ascii)(tests: _*)
-    def extAsciiCases(str: StringParsers)(tests: (String, Option[String], Position)*): Unit = cases(str.latin1)(tests: _*)
+    def unicodeCases(str: StringParsers)(tests: (String, Option[String], Position)*): Unit = cases(str.fullUtf16)(tests*)
+    def asciiCases(str: StringParsers)(tests: (String, Option[String], Position)*): Unit = cases(str.ascii)(tests*)
+    def extAsciiCases(str: StringParsers)(tests: (String, Option[String], Position)*): Unit = cases(str.latin1)(tests*)
 
     val plain = TextDesc.plain.copy(
         graphicCharacter = Unicode(_ >= ' '),

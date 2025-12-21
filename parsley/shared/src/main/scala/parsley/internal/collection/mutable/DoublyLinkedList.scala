@@ -7,7 +7,7 @@ package parsley.internal.collection.mutable
 
 import scala.collection.AbstractIterator
 
-import parsley.XAssert._
+import parsley.XAssert.*
 
 import DoublyLinkedList.Node
 

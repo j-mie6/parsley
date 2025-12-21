@@ -49,9 +49,9 @@ private [token] final class UnsignedReal(desc: NumericDesc, err: ErrorConfig, ge
     override def binary: Parsley[BigDecimal] = err.labelRealBinary(_binary)
     override def number: Parsley[BigDecimal] = err.labelRealNumber(_number)
 
-    private def when(b: Boolean, p: =>Parsley[_]): Parsley[_] = if (b) p else unit
+    private def when(b: Boolean, p: =>Parsley[?]): Parsley[?] = if (b) p else unit
 
-    def leadingBreakChar(label: LabelConfig): Parsley[_] = desc.literalBreakChar match {
+    def leadingBreakChar(label: LabelConfig): Parsley[?] = desc.literalBreakChar match {
         case BreakCharDesc.NoBreakChar => unit
         case BreakCharDesc.Supported(breakChar, allowedAfterNonDecimalPrefix) =>
             when(allowedAfterNonDecimalPrefix, err.labelNumericBreakChar.orElse(label)(optional(breakChar)))

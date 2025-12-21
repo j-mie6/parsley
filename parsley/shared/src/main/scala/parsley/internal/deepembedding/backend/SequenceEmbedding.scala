@@ -5,12 +5,12 @@
  */
 package parsley.internal.deepembedding.backend
 
-import parsley.XAssert._
+import parsley.XAssert.*
 
 import parsley.internal.collection.mutable.DoublyLinkedList
 import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
 import parsley.internal.deepembedding.frontend
-import parsley.internal.deepembedding.singletons._
+import parsley.internal.deepembedding.singletons.*
 import parsley.internal.machine.instructions
 
 import StrictParsley.InstrBuffer
@@ -21,7 +21,7 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
     // TODO: Refactor
     override def optimise: StrictParsley[B] = (left, right) match {
         // Fusion laws
-        case (uf, Pure(x)) if (uf.isInstanceOf[Pure[_]] || uf.isInstanceOf[_ <*> _]) => uf match {
+        case (uf, Pure(x)) if (uf.isInstanceOf[Pure[?]] || uf.isInstanceOf[_ <*> _]) => uf match {
             // first position fusion
             case Pure(f) => new Pure(f(x))
             // second position fusion
@@ -62,7 +62,7 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
             case ux <* v => <*(<*>(uf, ux).optimise, v).optimise
             // re-association law 3: p *> pure x = pure x <* p
             // consequence of re-association law 3: left <*> (q *> pure x) = (left <*> pure x) <* q
-            case v *> (ux: Pure[_]) => <*(<*>(uf, ux).optimise, v).optimise
+            case v *> (ux: Pure[?]) => <*(<*>(uf, ux).optimise, v).optimise
             case _ => this
         }
         // consequence of left zero law and monadic definition of <*>, preserving error properties of left
@@ -109,30 +109,30 @@ private [deepembedding] final class >>=[A, B](val p: StrictParsley[A], private [
     // $COVERAGE-ON$
 }
 
-private [deepembedding] final class Seq[A](private [backend] var before: DoublyLinkedList[StrictParsley[_]],
+private [deepembedding] final class Seq[A](private [backend] var before: DoublyLinkedList[StrictParsley[?]],
                                            private [backend] var res: StrictParsley[A],
-                                           private [backend] var after: DoublyLinkedList[StrictParsley[_]]) extends StrictParsley[A] {
+                                           private [backend] var after: DoublyLinkedList[StrictParsley[?]]) extends StrictParsley[A] {
     def inlinable: Boolean = false
 
     private def mergeIntoRight(p: StrictParsley[A]): this.type = p match {
         case Seq(rs1, rr, rs2) =>
             before.stealAll(rs1)
-            assume(!rr.isInstanceOf[Pure[_]] || rs2.isEmpty, "if rr is pure, then rs2 is empty, which retains normalisation")
+            assume(!rr.isInstanceOf[Pure[?]] || rs2.isEmpty, "if rr is pure, then rs2 is empty, which retains normalisation")
             after = rs2
             res = rr
             this
         case _ => this
     }
 
-    private def mergeFromRight(p: Seq[_], into: DoublyLinkedList[StrictParsley[_]]): this.type = {
+    private def mergeFromRight(p: Seq[?], into: DoublyLinkedList[StrictParsley[?]]): this.type = {
         into.stealAll(p.before)
         Seq.whenNonPure(p.res, into.addOne(_))
         into.stealAll(p.after)
         this
     }
 
-    private def chooseInto(p: StrictParsley[A]): DoublyLinkedList[StrictParsley[_]] = p match {
-        case _: Pure[_] => before
+    private def chooseInto(p: StrictParsley[A]): DoublyLinkedList[StrictParsley[?]] = p match {
+        case _: Pure[?] => before
         case _          => after
     }
 
@@ -140,9 +140,9 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
     // TODO: can this be optimised to reduce repeated matching?
     override def optimise: StrictParsley[A] = this match {
         // Assume that this is eliminated first, so not other before or afters
-        case (_: Pure[_] | _: Get[_] | Line | Col | Offset) **> u => u
+        case (_: Pure[?] | _: Get[?] | Line | Col | Offset) **> u => u
         case (p: MZero) **> _ => p
-        case u <** (_: Pure[_] | _: Get[_] | Line | Col | Offset) => u
+        case u <** (_: Pure[?] | _: Get[?] | Line | Col | Offset) => u
         case (p: MZero) <** _ => p
         case u@Seq(bs1, br, bs2) **> r =>
             bs2.lastOption match {
@@ -160,23 +160,23 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
                 case _ =>
                     before = rs1
                     res = rr
-                    assume(!rr.isInstanceOf[Pure[_]] || rs2.isEmpty, "rs2 is empty when rr is Pure")
+                    assume(!rr.isInstanceOf[Pure[?]] || rs2.isEmpty, "rs2 is empty when rr is Pure")
                     assume(after.size == 1 && (after.head eq p), "after can only contain just p, which is going to get flattened, so it can be dropped")
                     after = rs2
                     val into = chooseInto(rr)
                     p match {
-                        case p: Seq[_] => mergeFromRight(p, into)
+                        case p: Seq[?] => mergeFromRight(p, into)
                         case p =>
                             into.addOne(p)
                             this
                     }
             }
-        case r <** (p: Seq[_]) =>
+        case r <** (p: Seq[?]) =>
             assume(after.size == 1 && (after.head eq p), "after can only contain just p, which is going to get flattened, so it can be cleared")
             after.clear()
             mergeFromRight(p, chooseInto(r))
         // shift pure to the right by swapping before and after (before is empty linked list!)
-        case (_: Pure[_]) <* _ =>
+        case (_: Pure[?]) <* _ =>
             assume(before.isEmpty, "empty can reuse before instead of allocating a new list because before is empty")
             val empty = before
             before = after
@@ -215,19 +215,19 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
 }
 
 private [backend] object Seq {
-    def unapply[A](self: Seq[A]): Some[(DoublyLinkedList[StrictParsley[_]], StrictParsley[A], DoublyLinkedList[StrictParsley[_]])] = {
+    def unapply[A](self: Seq[A]): Some[(DoublyLinkedList[StrictParsley[?]], StrictParsley[A], DoublyLinkedList[StrictParsley[?]])] = {
         Some((self.before, self.res, self.after))
     }
 
-    private [Seq] def codeGenMany[M[_, +_]: ContOps, R](it: Iterator[StrictParsley[_]])
+    private [Seq] def codeGenMany[M[_, +_]: ContOps, R](it: Iterator[StrictParsley[?]])
                                                        (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         if (it.hasNext) {
             suspend(it.next().codeGen[M, R](producesResults = false)) >> suspend(codeGenMany(it))
         } else result(())
     }
 
-    private [Seq] def whenNonPure(p: StrictParsley[_], f: StrictParsley[_] => Unit): Unit = p match {
-        case _: Pure[_] =>
+    private [Seq] def whenNonPure(p: StrictParsley[?], f: StrictParsley[?] => Unit): Unit = p match {
+        case _: Pure[?] =>
         case p          => f(p)
     }
 }
@@ -237,38 +237,38 @@ private [backend] object <*> {
     def unapply[A, B](self: <*>[A, B]): Some[(StrictParsley[A=>B], StrictParsley[A])] = Some((self.left, self.right))
 }
 private [deepembedding] object *> {
-    def apply[A](left: StrictParsley[_], right: StrictParsley[A]): Seq[A] = {
-        val before = DoublyLinkedList.empty[StrictParsley[_]]
+    def apply[A](left: StrictParsley[?], right: StrictParsley[A]): Seq[A] = {
+        val before = DoublyLinkedList.empty[StrictParsley[?]]
         before.addOne(left)
         *>(before, right)
     }
-    private [backend] def apply[A](before: DoublyLinkedList[StrictParsley[_]], res: StrictParsley[A]): Seq[A] = new Seq(before, res, DoublyLinkedList.empty)
-    private [backend] def unapply[A](self: Seq[A]): Option[(DoublyLinkedList[StrictParsley[_]], StrictParsley[A])] = {
+    private [backend] def apply[A](before: DoublyLinkedList[StrictParsley[?]], res: StrictParsley[A]): Seq[A] = new Seq(before, res, DoublyLinkedList.empty)
+    private [backend] def unapply[A](self: Seq[A]): Option[(DoublyLinkedList[StrictParsley[?]], StrictParsley[A])] = {
         if (self.after.isEmpty) Some((self.before, self.res))
         else None
     }
 }
 private [backend] object **> {
-    private [backend] def unapply[A](self: Seq[A]): Option[(StrictParsley[_], StrictParsley[A])] = *>.unapply(self).collect {
+    private [backend] def unapply[A](self: Seq[A]): Option[(StrictParsley[?], StrictParsley[A])] = *>.unapply(self).collect {
         case (before, res) if self.before.size == 1 => (before.head, res)
     }
 }
 
 private [deepembedding]  object <* {
-    def apply[A](left: StrictParsley[A], right: StrictParsley[_]): Seq[A] = {
-        val after = DoublyLinkedList.empty[StrictParsley[_]]
+    def apply[A](left: StrictParsley[A], right: StrictParsley[?]): Seq[A] = {
+        val after = DoublyLinkedList.empty[StrictParsley[?]]
         after.addOne(right)
         <*(left, after)
     }
-    private [backend] def apply[A](res: StrictParsley[A], after: DoublyLinkedList[StrictParsley[_]]): Seq[A] = new Seq(DoublyLinkedList.empty, res, after)
-    private [backend] def unapply[A](self: Seq[A]): Option[(StrictParsley[A], DoublyLinkedList[StrictParsley[_]])] = {
+    private [backend] def apply[A](res: StrictParsley[A], after: DoublyLinkedList[StrictParsley[?]]): Seq[A] = new Seq(DoublyLinkedList.empty, res, after)
+    private [backend] def unapply[A](self: Seq[A]): Option[(StrictParsley[A], DoublyLinkedList[StrictParsley[?]])] = {
         if (self.before.isEmpty) Some((self.res, self.after))
         else None
     }
 }
 
 private [backend] object <** {
-    private [backend] def unapply[A](self: Seq[A]): Option[(StrictParsley[A], StrictParsley[_])] = <*.unapply(self).collect {
+    private [backend] def unapply[A](self: Seq[A]): Option[(StrictParsley[A], StrictParsley[?])] = <*.unapply(self).collect {
         case (res, after) if after.size == 1 => (res, after.head)
     }
 }

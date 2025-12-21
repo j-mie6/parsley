@@ -6,7 +6,7 @@
 package parsley.syntax
 
 import parsley.Parsley, Parsley.pure
-import parsley.lift._
+import parsley.lift.*
 
 /** This module provides the "`lift` syntax", which enables a `lift` combinator on functions
   * of arities up to 22, applying the function across the results of several parsers.

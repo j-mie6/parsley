@@ -47,5 +47,5 @@ object Ops {
       * @note currently a bug in scaladoc incorrect displays this functions type, it should be: `fixity.Op[A, A]`, NOT `Op[A, A]`.
       * @since 2.2.0
       */
-    def apply[A](fixity: Fixity)(op0: Parsley[fixity.Op[A, A]], ops: Parsley[fixity.Op[A, A]]*): Ops[A, A] = GOps[A, A](fixity)(op0, ops: _*)
+    def apply[A](fixity: Fixity)(op0: Parsley[fixity.Op[A, A]], ops: Parsley[fixity.Op[A, A]]*): Ops[A, A] = GOps[A, A](fixity)(op0, ops*)
 }

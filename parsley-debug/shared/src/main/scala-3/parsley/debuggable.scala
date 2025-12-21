@@ -54,7 +54,7 @@ import scala.quoted.*
 
     // this can see through type aliases
     private def isParsley(using Quotes)(tyRepr: quotes.reflect.TypeRepr) = tyRepr.asType match {
-        case '[Parsley[_]] => true
+        case '[Parsley[?]] => true
         case _             => false
     }
 }

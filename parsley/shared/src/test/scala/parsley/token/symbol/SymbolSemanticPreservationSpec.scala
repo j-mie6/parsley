@@ -6,21 +6,21 @@
 package parsley.token.symbol
 
 import org.scalatest.propspec.AnyPropSpec
-import org.scalatest.matchers._
+import org.scalatest.matchers.*
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
-import parsley.token.LexemeImpl._
+import parsley.token.LexemeImpl.*
 
 import parsley.Parsley
-import parsley.token.descriptions._
+import parsley.token.descriptions.*
 import parsley.token.errors.ErrorConfig
 import parsley.character.spaces
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
 
 import parsley.token.descriptions.DescGen
-import DescGen._
-//import DescShrink._
+import DescGen.*
+//import DescShrink.*
 
 class SymbolSemanticPreservationSpec extends AnyPropSpec with ScalaCheckPropertyChecks with should.Matchers {
     implicit val config: PropertyCheckConfiguration = new PropertyCheckConfiguration(minSuccessful = 50)

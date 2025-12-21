@@ -7,7 +7,7 @@ package parsley.internal.machine.instructions
 
 import parsley.internal.errors.{CaretWidth, RigidCaret, UnexpectDesc}
 import parsley.internal.machine.Context
-import parsley.internal.machine.XAssert._
+import parsley.internal.machine.XAssert.*
 import parsley.internal.machine.errors.EmptyError
 
 private [internal] final class RelabelHints(labels: Iterable[String]) extends Instr {
@@ -174,7 +174,7 @@ private [internal] object SetLexicalAndFail extends Instr {
 private [internal] final class Fail(width: CaretWidth, msgs: String*) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        ctx.failWithMessage(width, msgs: _*)
+        ctx.failWithMessage(width, msgs*)
     }
     // $COVERAGE-OFF$
     override def toString: String = s"Fail(${msgs.mkString(", ")})"

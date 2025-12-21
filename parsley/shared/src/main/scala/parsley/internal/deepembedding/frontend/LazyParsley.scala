@@ -8,7 +8,7 @@ package parsley.internal.deepembedding.frontend
 import scala.annotation.nowarn
 import scala.collection.mutable
 
-import parsley.XAssert._
+import parsley.XAssert.*
 import parsley.state.Ref
 
 import parsley.internal.deepembedding.{Cont, ContOps, Id}, ContOps.{perform, result, ContAdapter}
@@ -70,7 +70,7 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
       * @param seen the set of all nodes that have previously been seen by the let-finding
       * @param state stores all the information of the let-finding process
       */
-    protected def findLetsAux[M[_, +_]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit]
+    protected def findLetsAux[M[_, +_]: ContOps, R](seen: Set[LazyParsley[?]])(implicit state: LetFinderState): M[R, Unit]
 
     /** Describes how to recursively convert this combinator into a `StrictParsley` by `optimise`ing its sub-trees.
       *
@@ -112,7 +112,7 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
         implicit val letFinderState: LetFinderState = new LetFinderState
         (perform[M, Array[Instr]] {
             findLets(Set.empty) >> {
-                val usedRefs: Set[Ref[_]] = letFinderState.usedRefs
+                val usedRefs: Set[Ref[?]] = letFinderState.usedRefs
                 implicit val letMap: LetMap = LetMap(letFinderState.lets, letFinderState.recs)
                 for { sp <- this.optimised } yield {
                     implicit val state: backend.CodeGenState = new backend.CodeGenState(letFinderState.numRefs)
@@ -136,7 +136,7 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
       * @param seen the set of all nodes that have previously been seen by the let-finding
       * @param state stores all the information of the let-finding process
       */
-    final protected [frontend] def findLets[M[_, +_]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] = {
+    final protected [frontend] def findLets[M[_, +_]: ContOps, R](seen: Set[LazyParsley[?]])(implicit state: LetFinderState): M[R, Unit] = {
         state.addPred(this)
         if (seen.contains(this)) result(state.addRec(this))
         else if (state.notProcessedBefore(this)) {
@@ -209,14 +209,14 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
 /** A mix-in trait that denotes that this parser uses a specific register, which must be allocated. */
 private [deepembedding] trait UsesRef {
     /** The register used by this combinator. */
-    val ref: Ref[_]
+    val ref: Ref[?]
 }
 
 /** This is a collection of builders that track the shared parsers and used registers during Pass 1 */
 private [deepembedding] class LetFinderState {
-    private val _recs = mutable.Set.empty[LazyParsley[_]]
-    private val _preds = mutable.Map.empty[LazyParsley[_], Int]
-    private val _usedRefs = mutable.Set.empty[Ref[_]]
+    private val _recs = mutable.Set.empty[LazyParsley[?]]
+    private val _preds = mutable.Map.empty[LazyParsley[?], Int]
+    private val _usedRefs = mutable.Set.empty[Ref[?]]
 
     /** Adds a "predecessor" to a given parser, which means that it is referenced by another parser.
       *
@@ -224,40 +224,40 @@ private [deepembedding] class LetFinderState {
       *
       * @param p the parser to add a predecessor to
       */
-    private [frontend] def addPred(p: LazyParsley[_]): Unit = _preds(p) = _preds.getOrElse(p, 0) + 1
+    private [frontend] def addPred(p: LazyParsley[?]): Unit = _preds(p) = _preds.getOrElse(p, 0) + 1
     /** If a parser is identified as being recursive, keep track of it.
       *
       * @param p a recursive parser
       */
-    private [frontend] def addRec(p: LazyParsley[_]): Unit = _recs += p
+    private [frontend] def addRec(p: LazyParsley[?]): Unit = _recs += p
     /** If a register has been used by a parser, keep track of it.
       *
       * @param reg the register used by the parser.
       */
-    private [frontend] def addRef(ref: Ref[_]): Unit = _usedRefs += ref
+    private [frontend] def addRef(ref: Ref[?]): Unit = _usedRefs += ref
     /** Has the given parser never been analysed before? */
-    private [frontend] def notProcessedBefore(p: LazyParsley[_]): Boolean = _preds(p) == 1
+    private [frontend] def notProcessedBefore(p: LazyParsley[?]): Boolean = _preds(p) == 1
 
     /** Returns all the parsers which are referenced two or more times across the tree. */
-    private [frontend] def lets: Iterable[LazyParsley[_]] = _preds.toSeq.view.collect {
+    private [frontend] def lets: Iterable[LazyParsley[?]] = _preds.toSeq.view.collect {
         case (p, refs) if refs >= 2 => p
     }
     /** Returns all the recursive parsers in the tree */
-    private [frontend] lazy val recs: Set[LazyParsley[_]] = _recs.toSet
+    private [frontend] lazy val recs: Set[LazyParsley[?]] = _recs.toSet
     /** Returns all the registers used by the parser */
-    private [frontend] def usedRefs: Set[Ref[_]] = _usedRefs.toSet
+    private [frontend] def usedRefs: Set[Ref[?]] = _usedRefs.toSet
     /** Returns the number of registers used by the parser */
     private [frontend] def numRefs: Int = _usedRefs.size
 }
 
 /** Represents a map of let-bound lazy parsers to their strict equivalents. */
-private [deepembedding] final class LetMap private (letGen: Map[LazyParsley[_], LetMap => StrictParsley[_]], recs: Set[LazyParsley[_]]) {
+private [deepembedding] final class LetMap private (letGen: Map[LazyParsley[?], LetMap => StrictParsley[?]], recs: Set[LazyParsley[?]]) {
     // This might not necessarily contain Let nodes: if they were inlined then they will not be present here
-    private val letMap = mutable.Map.empty[LazyParsley[_], StrictParsley[_]]
-    private val bodyMap = mutable.Map.empty[backend.Let[_], StrictParsley[_]]
+    private val letMap = mutable.Map.empty[LazyParsley[?], StrictParsley[?]]
+    private val bodyMap = mutable.Map.empty[backend.Let[?], StrictParsley[?]]
 
     /** Is the given parser a let-binding? */
-    def contains(p: LazyParsley[_]): Boolean = letGen.contains(p)
+    def contains(p: LazyParsley[?]): Boolean = letGen.contains(p)
 
     /** Returns the strict parser that represents a given let-bound parser.
       *
@@ -281,7 +281,7 @@ private [deepembedding] final class LetMap private (letGen: Map[LazyParsley[_], 
             }
     }
 
-    def bodies: Map[backend.Let[_], StrictParsley[_]] = bodyMap.toMap
+    def bodies: Map[backend.Let[?], StrictParsley[?]] = bodyMap.toMap
 
     // $COVERAGE-OFF$
     override def toString: String = letMap.toString
@@ -293,10 +293,10 @@ private [frontend] object LetMap {
       * @param lets the identified shared non-recursive parsers to include
       * @param recs the identified recursive parsers that may be required in the translation
       */
-    def apply[M[_, +_]: ContOps](lets: Iterable[LazyParsley[_]], recs: Set[LazyParsley[_]]): LetMap = {
+    def apply[M[_, +_]: ContOps](lets: Iterable[LazyParsley[?]], recs: Set[LazyParsley[?]]): LetMap = {
         new LetMap(lets.map(p => p -> ((_self: LetMap) => {
             implicit val self: LetMap = _self
-            perform[M, StrictParsley[_]](p.knownLetTopOptimised)
+            perform[M, StrictParsley[?]](p.knownLetTopOptimised)
         })).toMap, recs)
     }
 }

@@ -85,7 +85,7 @@ arguments, it can infer the type of the function based on the arguments. This
 may appear slightly less natural, however:
 
 ```scala mdoc:to-string
-import parsley.syntax.zipped._
+import parsley.syntax.zipped.*
 (char('a').as(5), char('b').as(6)).zipped(_ + _).parse("ab")
 ```
 

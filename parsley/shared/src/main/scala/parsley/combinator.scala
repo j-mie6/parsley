@@ -107,7 +107,7 @@ private [parsley] trait combinator {
 
     // This combinator is still used in internal testing, but is a trap for new users
     // it will not be exposed in the API again.
-    private [parsley] final def atomicChoice[A](ps: Parsley[A]*): Parsley[A] = choice(ps.map(atomic(_))*)
+    private [parsley] final def atomicChoice[A](ps: Parsley[A]*): Parsley[A] = choice(ps.map(atomic)*)
 
     /** This combinator will parse each of `ps` in order, collecting the results.
       *
@@ -255,7 +255,7 @@ private [parsley] trait combinator {
       * @note equivalent to `optionalAs(p, ())`.
       * @group opt
       */
-    final def optional(p: Parsley[_]): Parsley[Unit] = optionalAs(p, ()).uo("optional")
+    final def optional(p: Parsley[?]): Parsley[Unit] = optionalAs(p, ()).uo("optional")
 
     /** This combinator will parse `p` if possible, otherwise will do nothing.
       *
@@ -279,7 +279,7 @@ private [parsley] trait combinator {
       * @return a parser that tries to parse `p`, returning `x` regardless of success or failure.
       * @group opt
       */
-    final def optionalAs[A](p: Parsley[_], x: A): Parsley[A] = (p.as(x).ut() </> x).uo("optionalAs")
+    final def optionalAs[A](p: Parsley[?], x: A): Parsley[A] = (p.as(x).ut() </> x).uo("optionalAs")
 
     /** This combinator can eliminate an `Option` from the result of the parser `p`.
       *
@@ -407,7 +407,7 @@ private [parsley] trait combinator {
       * @group iter
       * @since 4.5.0
       */
-    final def countMany(p: Parsley[_]): Parsley[Int] = p.foldLeft(0)((n, _) => n + 1).uo("countMany")
+    final def countMany(p: Parsley[?]): Parsley[Int] = p.foldLeft(0)((n, _) => n + 1).uo("countMany")
 
     /** This combinator repeatedly parses a given parser '''one''' or more times, returning how many times it succeeded.
       *
@@ -434,7 +434,7 @@ private [parsley] trait combinator {
       * @group iter
       * @since 4.5.0
       */
-    final def countSome(p: Parsley[_]): Parsley[Int] = p.foldLeft1(0)((n, _) => n + 1).uo("countSome")
+    final def countSome(p: Parsley[?]): Parsley[Int] = p.foldLeft1(0)((n, _) => n + 1).uo("countSome")
 
     /** This combinator parses '''zero''' or more occurrences of `p`, separated by `sep`.
       *
@@ -458,7 +458,7 @@ private [parsley] trait combinator {
       * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
-    final def sepBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepBy(p, sep, List)
+    final def sepBy[A](p: Parsley[A], sep: =>Parsley[?]): Parsley[List[A]] = sepBy(p, sep, List)
     /** This combinator parses '''zero''' or more occurrences of `p`, separated by `sep`.
       *
       * Behaves just like `sepBy1`, except does not require an initial `p`, returning an empty structure instead.
@@ -484,7 +484,7 @@ private [parsley] trait combinator {
       * @since 5.0.0
       * @group sep
       */
-    final def sepBy[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
+    final def sepBy[A, C](p: Parsley[A], sep: =>Parsley[?], factory: Factory[A, C]): Parsley[C] = {
         (sepBy1(p, sep, factory).ut() |: fresh(factory.newBuilder.result())).uo("sepBy")
     }
 
@@ -513,7 +513,7 @@ private [parsley] trait combinator {
       * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
-    final def sepBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepBy1(p, sep, List)
+    final def sepBy1[A](p: Parsley[A], sep: =>Parsley[?]): Parsley[List[A]] = sepBy1(p, sep, List)
     /** This combinator parses '''one''' or more occurrences of `p`, separated by `sep`.
       *
       * First parses a `p`. Then parses `sep` followed by `p` until there are no more `sep`s.
@@ -542,7 +542,7 @@ private [parsley] trait combinator {
       * @since 5.0.0
       * @group sep
       */
-    final def sepBy1[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = secretSome(p, (sep ~> p).ut(), factory, "sepBy1")
+    final def sepBy1[A, C](p: Parsley[A], sep: =>Parsley[?], factory: Factory[A, C]): Parsley[C] = secretSome(p, (sep ~> p).ut(), factory, "sepBy1")
 
     /** This combinator parses '''zero''' or more occurrences of `p`, separated and optionally ended by `sep`.
       *
@@ -566,7 +566,7 @@ private [parsley] trait combinator {
       * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
-    final def sepEndBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepEndBy(p, sep, List)
+    final def sepEndBy[A](p: Parsley[A], sep: =>Parsley[?]): Parsley[List[A]] = sepEndBy(p, sep, List)
     /** This combinator parses '''zero''' or more occurrences of `p`, separated and optionally ended by `sep`.
       *
       * Behaves just like `sepEndBy1`, except does not require an initial `p`, returning an empty structure instead.
@@ -592,7 +592,7 @@ private [parsley] trait combinator {
       * @since 5.0.0
       * @group sep
       */
-    final def sepEndBy[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
+    final def sepEndBy[A, C](p: Parsley[A], sep: =>Parsley[?], factory: Factory[A, C]): Parsley[C] = {
         (sepEndBy1(p, sep, factory).ut() |: fresh(factory.newBuilder.result())).uo("sepEndBy")
     }
 
@@ -621,7 +621,7 @@ private [parsley] trait combinator {
       * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
-    final def sepEndBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepEndBy1(p, sep, List)
+    final def sepEndBy1[A](p: Parsley[A], sep: =>Parsley[?]): Parsley[List[A]] = sepEndBy1(p, sep, List)
     /** This combinator parses '''one''' or more occurrences of `p`, separated and optionally ended by `sep`.
       *
       * First parses a `p`. Then parses `sep` followed by `p` until there are no more: if a final `sep` exists, this is parsed.
@@ -650,7 +650,7 @@ private [parsley] trait combinator {
       * @since 5.0.0
       * @group sep
       */
-    final def sepEndBy1[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
+    final def sepEndBy1[A, C](p: Parsley[A], sep: =>Parsley[?], factory: Factory[A, C]): Parsley[C] = {
         new Parsley(new frontend.SepEndBy1(p.internal, sep.internal, factory))
     }
 
@@ -676,7 +676,7 @@ private [parsley] trait combinator {
       * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
-    final def endBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = endBy(p, sep, List)
+    final def endBy[A](p: Parsley[A], sep: =>Parsley[?]): Parsley[List[A]] = endBy(p, sep, List)
      /** This combinator parses '''zero''' or more occurrences of `p`, separated and ended by `sep`.
       *
       * Behaves just like `endBy1`, except does not require an initial `p` and `sep`, returning an empty structure instead.
@@ -702,7 +702,7 @@ private [parsley] trait combinator {
       * @since 5.0.0
       * @group sep
       */
-    final def endBy[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = {
+    final def endBy[A, C](p: Parsley[A], sep: =>Parsley[?], factory: Factory[A, C]): Parsley[C] = {
         many((p <~ sep).ut(), factory).uo("endBy")
     }
 
@@ -730,7 +730,7 @@ private [parsley] trait combinator {
       * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
-    final def endBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = endBy1(p, sep, List)
+    final def endBy1[A](p: Parsley[A], sep: =>Parsley[?]): Parsley[List[A]] = endBy1(p, sep, List)
     /** This combinator parses '''one''' or more occurrences of `p`, separated and ended by `sep`.
       *
       * Parses `p` followed by `sep` one or more times.
@@ -758,7 +758,7 @@ private [parsley] trait combinator {
       * @since 5.0.0
       * @group sep
       */
-    final def endBy1[A, C](p: Parsley[A], sep: =>Parsley[_], factory: Factory[A, C]): Parsley[C] = some((p <~ sep).ut(), factory).uo("endBy1")
+    final def endBy1[A, C](p: Parsley[A], sep: =>Parsley[?], factory: Factory[A, C]): Parsley[C] = some((p <~ sep).ut(), factory).uo("endBy1")
 
     /** This combinator repeatedly parses a given parser '''zero''' or more times, until the `end` parser succeeds, collecting the results into a list.
       *
@@ -784,7 +784,7 @@ private [parsley] trait combinator {
       * @group iter
       * @since 4.5.0
       */
-    final def manyTill[A](p: Parsley[A], end: Parsley[_]): Parsley[List[A]] = manyTill(p, end, List)
+    final def manyTill[A](p: Parsley[A], end: Parsley[?]): Parsley[List[A]] = manyTill(p, end, List)
     /** This combinator repeatedly parses a given parser '''zero''' or more times, until the `end` parser succeeds, collecting the results into a `C`.
       *
       * First tries to parse `end`, if it fails '''without consuming input''', then parses `p`, which must succeed. This repeats until `end` succeeds.
@@ -811,10 +811,10 @@ private [parsley] trait combinator {
       * @group iter
       * @since 5.0.0
       */
-    final def manyTill[A, C](p: Parsley[A], end: Parsley[_], factory: Factory[A, C]): Parsley[C] = secretSomeTill(fresh(factory.newBuilder), p, end, "manyTill")
+    final def manyTill[A, C](p: Parsley[A], end: Parsley[?], factory: Factory[A, C]): Parsley[C] = secretSomeTill(fresh(factory.newBuilder), p, end, "manyTill")
 
     // TODO: find a way to make this redundant
-    private [parsley] final def skipManyUntil(p: Parsley[_], end: Parsley[_]): Parsley[Unit] = {
+    private [parsley] final def skipManyUntil(p: Parsley[?], end: Parsley[?]): Parsley[Unit] = {
         new Parsley(new frontend.SkipManyUntil((end.as(parsley.internal.machine.instructions.ManyUntil.Stop).ut() |: p.void.ut(): Parsley[Any]).internal))
     }
 
@@ -845,7 +845,7 @@ private [parsley] trait combinator {
       * @group iter
       * @since 4.5.0
       */
-    final def someTill[A](p: Parsley[A], end: Parsley[_]): Parsley[List[A]] = someTill(p, end, List)
+    final def someTill[A](p: Parsley[A], end: Parsley[?]): Parsley[List[A]] = someTill(p, end, List)
     /** This combinator repeatedly parses a given parser '''one''' or more times, until the `end` parser succeeds, collecting the results into a `C`.
       *
       * First ensures that trying to parse `end` fails, then tries to parse `p`. If it succeed then it will repeatedly: try to parse `end`, if it fails
@@ -875,10 +875,10 @@ private [parsley] trait combinator {
       * @group iter
       * @since 5.0.0
       */
-    final def someTill[A, C](p: Parsley[A], end: Parsley[_], factory: Factory[A, C]): Parsley[C] = {
+    final def someTill[A, C](p: Parsley[A], end: Parsley[?], factory: Factory[A, C]): Parsley[C] = {
         secretSomeTill((notFollowedBy(end).ut() ~> p.map(factory.newBuilder += _).ut()).ut(), p, end, "someTill")
     }
-    private def secretSomeTill[A, C](init: Parsley[mutable.Builder[A, C]], p: Parsley[A], end: Parsley[_], debugName: String): Parsley[C] = {
+    private def secretSomeTill[A, C](init: Parsley[mutable.Builder[A, C]], p: Parsley[A], end: Parsley[?], debugName: String): Parsley[C] = {
         val body = (end.as(parsley.internal.machine.instructions.ManyUntil.Stop).ut() |: p: Parsley[Any])
         new Parsley(new frontend.ManyTill(init.internal, body.internal, debugName))
     }
@@ -955,7 +955,7 @@ private [parsley] trait combinator {
       * based on state. In particular, this can be used to define the `forP` combinator.
       *
       * @example {{{
-      * def forP[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: =>Parsley[_]): Parsley[Unit] = {
+      * def forP[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: =>Parsley[?]): Parsley[Unit] = {
       *     val reg = Reg.make[A]
       *     lazy val _cond = reg.gets(cond)
       *     lazy val _step = reg.modify(step)
@@ -1125,7 +1125,7 @@ private [parsley] trait combinator {
       * @group range
       * @since 4.4.0
       */
-    final def count(min: Int, max: Int)(p: Parsley[_]): Parsley[Int] = min.makeRef { i =>
+    final def count(min: Int, max: Int)(p: Parsley[?]): Parsley[Int] = min.makeRef { i =>
         ((exactly(min, p).ut() ~> many(((guardS(i.gets(_ < max).ut()).ut() ~> p).ut() ~> i.update(_ + 1).ut()).ut()).ut()).ut() ~> i.get.ut()).ut()
     }.uo("count")
 }

@@ -29,7 +29,7 @@ class debuggable extends StaticAnnotation {
 
 private object debuggable {
     def impl(c: blackbox.Context)(annottees: c.Tree*): c.Tree = {
-        import c.universe._
+        import c.universe.*
         // to accurately model the Scala 3 equivalent, we are treated like a black-box
         // macro: only the first annottee is relevant, and this must be a class or an object
         // anything else is returned as is.
@@ -47,8 +47,8 @@ private object debuggable {
     }
 
     private def collect(c: blackbox.Context)(treeName: String, defs: List[c.Tree], recon: List[c.Tree] => c.Tree): c.Tree = {
-        import c.universe._
-        val parsleyTy = c.typeOf[Parsley[_]].typeSymbol
+        import c.universe.*
+        val parsleyTy = c.typeOf[Parsley[?]].typeSymbol
         lazy val noBody = atPos(c.enclosingPosition)(q"??? : @scala.annotation.nowarn")
         // can't typecheck constructors in a stand-alone block
         val seenNames = mutable.Set.empty[TermName]
@@ -144,7 +144,7 @@ private object debuggable {
     }
 
     private def reportAnonClass(c: blackbox.Context)(dfn: c.Tree) = {
-        import c.universe._
+        import c.universe.*
         val anonClasses = dfn.filter {
             case ClassDef(_, TypeName(name), _, _) => name.contains("$anon")
             case _ => false
@@ -156,7 +156,7 @@ private object debuggable {
     }
 
     private def reportOverloading(c: blackbox.Context)(overloadings: Set[c.TermName], dfn: c.Tree) = {
-        import c.universe._
+        import c.universe.*
         val badOverloadings = dfn.filter {
             case Ident(tn: TermName) => overloadings.contains(tn)
             case _ => false
@@ -168,7 +168,7 @@ private object debuggable {
     }
 
     private def reportUsedEnclosing(c: blackbox.Context)(enclosingName: String, dfn: c.Tree) = {
-        import c.universe._
+        import c.universe.*
         val badUse = dfn.find {
             case Ident(TermName(name)) => name == enclosingName
             case _ => false

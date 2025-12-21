@@ -7,7 +7,7 @@ package parsley.internal.machine.errors
 
 import scala.collection.mutable
 
-import parsley.XAssert._
+import parsley.XAssert.*
 
 import parsley.internal.errors.{CaretWidth, EndOfInput, ExpectItem, FancyError, TrivialError, UnexpectDesc, UnexpectItem}
 

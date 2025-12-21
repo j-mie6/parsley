@@ -5,7 +5,7 @@
  */
 package parsley.internal.machine.errors
 
-import parsley.XAssert._
+import parsley.XAssert.*
 
 import parsley.internal.errors.{CaretWidth, ExpectDesc, ExpectItem, FancyError, ParseError, TrivialError, UnexpectDesc}
 

@@ -16,6 +16,6 @@ class CoreIOTests extends ParsleyTest {
         (manyTill(item, "Jamie Willis") *> item).parseFile(new File("LICENSE")).get shouldBe Success('\n')
     }
     it should "fail with an error when file does not exist" in {
-        Parsley.empty.parseFile(new File("foo.diuh")) shouldBe a [scala.util.Failure[_]]
+        Parsley.empty.parseFile(new File("foo.diuh")) shouldBe a [scala.util.Failure[?]]
     }
 }

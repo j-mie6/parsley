@@ -63,7 +63,7 @@ private [token] class OriginalSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc,
             }
             case end::ends => atomic {
                 err.labelSymbol.getOrElse(name, NotConfigured).orElse(err.defaultSymbolOperator.config(name))(string(name)) *>
-                notFollowedBy(opLetter <|> strings(end, ends: _*)).label(err.labelSymbolEndOfOperator(name))
+                notFollowedBy(opLetter <|> strings(end, ends*)).label(err.labelSymbolEndOfOperator(name))
             }
         }
     }

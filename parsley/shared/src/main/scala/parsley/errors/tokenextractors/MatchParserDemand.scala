@@ -19,7 +19,7 @@ import org.typelevel.scalaccompat.annotation.unused
   * @note In the case of unprintable characters or whitespace, this extractor will favour reporting
   *       a more meaningful name.
   */
-trait MatchParserDemand { this: ErrorBuilder[_] =>
+trait MatchParserDemand { this: ErrorBuilder[?] =>
     /** @see [[parsley.errors.ErrorBuilder.unexpectedToken `ErrorBuilder.unexpectedToken`]] */
     override final def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int, @unused lexicalError: Boolean): Token = {
         MatchParserDemand.unexpectedToken(cs, amountOfInputParserWanted)

@@ -5,12 +5,12 @@
  */
 package parsley.token.symbol
 
-import Predef.{ArrowAssoc => _, _}
+import Predef.{ArrowAssoc => _, *}
 
-import parsley._
-import parsley.token.LexemeImpl._
+import parsley.*
+import parsley.token.LexemeImpl.*
 
-import parsley.token.descriptions._
+import parsley.token.descriptions.*
 import parsley.token.errors.ErrorConfig
 import parsley.character.{spaces, string}
 import org.scalactic.source.Position
@@ -32,13 +32,13 @@ class SymbolTests extends ParsleyTest {
     val caseInsensitive = makeSymbol(plainName, plainSym.copy(caseSensitive = false))
     val caseInsensitiveUni = makeSymbol(plainName.copy(identifierLetter = Unicode(Character.isAlphabetic(_))), plainSym.copy(caseSensitive = false))
 
-    def boolCases(p: Parsley[Unit])(tests: (String, Boolean, Position)*): Unit = cases(p, noEof = true)(tests.map { case (i, r, pos) => (i, if (r) Some(()) else None, pos) }: _*)
+    def boolCases(p: Parsley[Unit])(tests: (String, Boolean, Position)*): Unit = cases(p, noEof = true)(tests.map { case (i, r, pos) => (i, if (r) Some(()) else None, pos) }*)
     def namedCases(sym: String => Parsley[Unit])(ktests: (String, Seq[(String, Boolean, Position)])*): Unit = {
-        for ((key, tests) <- ktests) boolCases(sym(key))(tests: _*)
+        for ((key, tests) <- ktests) boolCases(sym(key))(tests*)
     }
 
-    def keyCases(sym: Symbol)(ktests: (String, Seq[(String, Boolean, Position)])*): Unit = namedCases(sym.softKeyword)(ktests: _*)
-    def opCases(sym: Symbol)(ktests: (String, Seq[(String, Boolean, Position)])*): Unit = namedCases(sym.softOperator)(ktests: _*)
+    def keyCases(sym: Symbol)(ktests: (String, Seq[(String, Boolean, Position)])*): Unit = namedCases(sym.softKeyword)(ktests*)
+    def opCases(sym: Symbol)(ktests: (String, Seq[(String, Boolean, Position)])*): Unit = namedCases(sym.softOperator)(ktests*)
 
     // ident
     "soft keywords" should "parse even when not in the keyword set" in keyCases(plainSymbol)(
@@ -181,7 +181,7 @@ class SymbolTests extends ParsleyTest {
     }
 
     "symbols" should "be parsed according to category" in {
-        import plainSymbol.implicits._
+        import plainSymbol.implicits.*
         boolCases("keyword")(
             "keyword" -> true,
             "keyworda" -> false,
