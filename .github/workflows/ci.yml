@@ -27,13 +27,13 @@ jobs:
         java: [temurin@11, temurin@17, temurin@21]
         project: [rootJS, rootJVM, rootNative]
         exclude:
-          - scala: 2.12
+          - scala: 2.13
             java: temurin@17
-          - scala: 2.12
+          - scala: 2.13
             java: temurin@21
-          - scala: 3
+          - scala: 2.12
             java: temurin@17
-          - scala: 3
+          - scala: 2.12
             java: temurin@21
           - project: rootJS
             java: temurin@17
