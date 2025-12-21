@@ -388,17 +388,17 @@
             </tr>
             <tr>
               <td><code>sepBy1(_, _)</code></td>
-              <td><code>(Parsley[A], =&gt;Parsley[_]) =&gt; Parsley[List[A]]</code></td>
+              <td><code>(Parsley[A], =&gt;Parsley[?]) =&gt; Parsley[List[A]]</code></td>
               <td>parse one thing separated by another, collecting all the results. Something like comma-separated arguments in a function call.</td>
             </tr>
             <tr>
               <td><code>endBy1(_, _)</code></td>
-              <td><code>(Parsley[A], =&gt;Parsley[_]) =&gt; Parsley[List[A]]</code></td>
+              <td><code>(Parsley[A], =&gt;Parsley[?]) =&gt; Parsley[List[A]]</code></td>
               <td>same as above, but the sequence must be ended by the separator again. Something like semi-colon separated statements in C-like languages.</td>
             </tr>
             <tr>
               <td><code>sepEndBy1(_, _)</code></td>
-              <td><code>(Parsley[A], =&gt;Parsley[_]) =&gt; Parsley[List[A]]</code></td>
+              <td><code>(Parsley[A], =&gt;Parsley[?]) =&gt; Parsley[List[A]]</code></td>
               <td>same as above, but the terminal separator is optional. Something like semi-colon separated statements in Scala.</td>
             </tr>
           </tbody>

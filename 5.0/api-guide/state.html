@@ -239,7 +239,7 @@
         function in full everytime it is executed, if the size of the body is reduced,
         that will keep the parser faster. Currently, there is no primitive functionality
         for parsing with respect to values inside references, like so:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">string</span><span>(</span><span class="identifier">r</span><span>: </span><span class="type-name">Ref</span><span>[</span><span class="type-name">String</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">r</span><span>.</span><span class="identifier">get</span><span>.</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">string</span><span>(</span><span class="identifier">_</span><span>))</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">string</span><span>(</span><span class="identifier">r</span><span>: </span><span class="type-name">Ref</span><span>[</span><span class="type-name">String</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">r</span><span>.</span><span class="identifier">get</span><span>.</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">string</span><span>)</span></code></pre>
         <p>The scope of the <code>flatMap</code> in that combinator is small, however, so is likely
         much more efficient than one that didn&#39;t use persistence. With this, the
         context-sensitive parsing of XML tags can be done:</p>
@@ -249,9 +249,9 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">character</span><span>.</span><span class="keyword">given</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">openTag</span><span> = </span><span class="identifier">atomic</span><span>(</span><span class="char-literal">&#39;&lt;&#39;</span><span> &lt;~ </span><span class="identifier">notFollowedBy</span><span>(</span><span class="char-literal">&#39;/&#39;</span><span>))
-</span><span class="comment">// openTag: Parsley[Char] = parsley.Parsley@54856a2a
+</span><span class="comment">// openTag: Parsley[Char] = parsley.Parsley@4a2afbc9
 </span><span class="keyword">val</span><span> </span><span class="identifier">tagName</span><span> = </span><span class="identifier">stringOfSome</span><span>(</span><span class="identifier">letter</span><span>)
-</span><span class="comment">// tagName: Parsley[String] = parsley.Parsley@f93a610
+</span><span class="comment">// tagName: Parsley[String] = parsley.Parsley@538a02c6
 </span><span>
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">content</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">optional</span><span>(</span><span class="identifier">tag</span><span>)
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">tag</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = (</span><span class="identifier">openTag</span><span> ~&gt; </span><span class="identifier">tagName</span><span> &lt;~ </span><span class="char-literal">&#39;&gt;&#39;</span><span>).</span><span class="identifier">fillRef</span><span> { </span><span class="identifier">name</span><span> =&gt;
@@ -334,7 +334,7 @@
         if the corresponding closing bracket cannot be parsed, it will use an
         unconditional <a href="errors/patterns.html#verified-errors"><em>Verified Error</em></a> to report a message based on the last opened bracket. The results are below:</p>
         <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="identifier">brackets</span><span>
-</span><span class="comment">// p: Parsley[Unit] = parsley.Parsley@5a8d5b94
+</span><span class="comment">// p: Parsley[Unit] = parsley.Parsley@5c5964f
 </span><span>
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;()()()&quot;</span><span>)
 </span><span class="comment">// res5: Result[String, Unit] = Success(())
@@ -414,7 +414,7 @@
     } ~&gt;
     </span><span class="identifier">i</span><span>.</span><span class="identifier">get</span><span> &lt;~ </span><span class="identifier">eof</span><span>
 }
-</span><span class="comment">// abcs: Parsley[Int] = parsley.Parsley@17289463
+</span><span class="comment">// abcs: Parsley[Int] = parsley.Parsley@5eea0453
 </span><span>
 </span><span class="identifier">abcs</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;aabbcc&quot;</span><span>)
 </span><span class="comment">// res12: Result[String, Int] = Success(2)
