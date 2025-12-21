@@ -61,7 +61,7 @@
 
   <div class="row links">
     
-    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M15/">API</a>
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_3/5.0.0-M15/">API</a>
     
     <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
   <g class="svg-shape">
@@ -77,7 +77,7 @@
 
   <div class="row">
     
-    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M15/">API</a>
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_3/5.0.0-M15/">API</a>
     
     <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
   <g class="svg-shape">
@@ -162,7 +162,7 @@
         more performant way at a cost to expressive power.</p>
         <div class="callout info">
           <i class="icofont-laika info">&#xef4e;</i>
-          <p><em>The Scaladoc for this page can be found at <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M15/parsley/state$.html"><code>parsley.state</code></a>.</em></p>
+          <p><em>The Scaladoc for this page can be found at <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_3/5.0.0-M15/parsley/state$.html"><code>parsley.state</code></a>.</em></p>
         </div>
         
         <h2 id="references" class="section"><a class="anchor-link left" href="#references"><i class="icofont-laika link">&#xef71;</i></a>References</h2>
@@ -204,14 +204,14 @@
         contained within. The <code>set</code> method takes the result of a parser and stores
         that into the reference. As examples:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">item</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">state</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">state</span><span>.*
 
 </span><span class="type-name">List</span><span>.</span><span class="identifier">empty</span><span>[</span><span class="type-name">Char</span><span>].</span><span class="identifier">makeRef</span><span> { </span><span class="identifier">r1</span><span> =&gt;
     </span><span class="identifier">item</span><span>.</span><span class="identifier">fillRef</span><span> { </span><span class="identifier">r2</span><span> =&gt;
         </span><span class="identifier">r1</span><span>.</span><span class="identifier">set</span><span>(</span><span class="identifier">r2</span><span>.</span><span class="identifier">get</span><span> &lt;::&gt; (</span><span class="identifier">r2</span><span>.</span><span class="identifier">get</span><span> &lt;::&gt; </span><span class="identifier">r1</span><span>.</span><span class="identifier">get</span><span>))
     } *&gt; </span><span class="identifier">r1</span><span>.</span><span class="identifier">get</span><span>
 }.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;a&quot;</span><span>)
-</span><span class="comment">// res0: parsley.Result[String, List[Char]] = Success(List(a, a))</span></code></pre>
+</span><span class="comment">// res0: Result[String, List[Char]] = Success(List(a, a))</span></code></pre>
         <p>The above example fills a reference <code>r1</code>, with the empty list, then fills
         a second reference <code>r2</code> with the result of parsing any character. The value
         in <code>r1</code> is updated with the list obtained by prepending the parsed character onto
@@ -229,7 +229,7 @@
         </span><span class="identifier">r1</span><span>.</span><span class="identifier">set</span><span>(</span><span class="identifier">c</span><span> &lt;::&gt; (</span><span class="identifier">c</span><span> &lt;::&gt; </span><span class="identifier">r1</span><span>.</span><span class="identifier">get</span><span>))
     } *&gt; </span><span class="identifier">r1</span><span>.</span><span class="identifier">get</span><span>
 }.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;a&quot;</span><span>)
-</span><span class="comment">// res1: parsley.Result[String, List[Char]] = Success(List(a, a))</span></code></pre>
+</span><span class="comment">// res1: Result[String, List[Char]] = Success(List(a, a))</span></code></pre>
         <p>Persist can be thought of as a composition of <code>fillRef</code> and <code>get</code>, or
         alternatively as a composition of <code>flatMap</code> and <code>pure</code>.</p>
         
@@ -246,12 +246,12 @@
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>.{</span><span class="identifier">atomic</span><span>, </span><span class="identifier">notFollowedBy</span><span>}
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">stringOfSome</span><span>, </span><span class="identifier">letter</span><span>}
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">optional</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">charLift</span><span>, </span><span class="identifier">stringLift</span><span>}
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">character</span><span>.</span><span class="keyword">given</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">openTag</span><span> = </span><span class="identifier">atomic</span><span>(</span><span class="char-literal">&#39;&lt;&#39;</span><span> &lt;~ </span><span class="identifier">notFollowedBy</span><span>(</span><span class="char-literal">&#39;/&#39;</span><span>))
-</span><span class="comment">// openTag: Parsley[Char] = parsley.Parsley@67a71585
+</span><span class="comment">// openTag: Parsley[Char] = parsley.Parsley@79ea8894
 </span><span class="keyword">val</span><span> </span><span class="identifier">tagName</span><span> = </span><span class="identifier">stringOfSome</span><span>(</span><span class="identifier">letter</span><span>)
-</span><span class="comment">// tagName: Parsley[String] = parsley.Parsley@755dfb4c
+</span><span class="comment">// tagName: Parsley[String] = parsley.Parsley@3dc0abc1
 </span><span>
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">content</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">optional</span><span>(</span><span class="identifier">tag</span><span>)
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">tag</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = (</span><span class="identifier">openTag</span><span> ~&gt; </span><span class="identifier">tagName</span><span> &lt;~ </span><span class="char-literal">&#39;&gt;&#39;</span><span>).</span><span class="identifier">fillRef</span><span> { </span><span class="identifier">name</span><span> =&gt;
@@ -259,15 +259,15 @@
 }
 
 </span><span class="identifier">tag</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;&lt;hello&gt;&lt;/hello&gt;&quot;</span><span>)
-</span><span class="comment">// res2: parsley.Result[String, Unit] = Success(())
+</span><span class="comment">// res2: Result[String, Unit] = Success(())
 </span><span class="identifier">tag</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;&lt;hello&gt;&lt;/hi&gt;&quot;</span><span>)
-</span><span class="comment">// res3: parsley.Result[String, Unit] = Failure((line 1, column 10):
+</span><span class="comment">// res3: Result[String, Unit] = Failure((line 1, column 10):
 //   unexpected &quot;hi&gt;&quot;
 //   expected &quot;hello&quot;
 //   &gt;&lt;hello&gt;&lt;/hi&gt;
 //             ^^^)
 </span><span class="identifier">tag</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;&lt;a&gt;&lt;b&gt;&lt;/b&gt;&lt;/c&gt;&quot;</span><span>)
-</span><span class="comment">// res4: parsley.Result[String, Unit] = Failure((line 1, column 13):
+</span><span class="comment">// res4: Result[String, Unit] = Failure((line 1, column 13):
 //   unexpected &quot;c&quot;
 //   expected &quot;a&quot;
 //   &gt;&lt;a&gt;&lt;b&gt;&lt;/b&gt;&lt;/c&gt;
@@ -334,33 +334,33 @@
         if the corresponding closing bracket cannot be parsed, it will use an
         unconditional <a href="errors/patterns.html#verified-errors"><em>Verified Error</em></a> to report a message based on the last opened bracket. The results are below:</p>
         <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="identifier">brackets</span><span>
-</span><span class="comment">// p: Parsley[Unit] = parsley.Parsley@3fe6f623
+</span><span class="comment">// p: Parsley[Unit] = parsley.Parsley@2b1ab177
 </span><span>
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;()()()&quot;</span><span>)
-</span><span class="comment">// res5: parsley.Result[String, Unit] = Success(())
+</span><span class="comment">// res5: Result[String, Unit] = Success(())
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;[][][]&quot;</span><span>)
-</span><span class="comment">// res6: parsley.Result[String, Unit] = Success(())
+</span><span class="comment">// res6: Result[String, Unit] = Success(())
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;{}[]()&quot;</span><span>)
-</span><span class="comment">// res7: parsley.Result[String, Unit] = Success(())
+</span><span class="comment">// res7: Result[String, Unit] = Success(())
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;[[[[[]]]]]&quot;</span><span>)
-</span><span class="comment">// res8: parsley.Result[String, Unit] = Success(())
+</span><span class="comment">// res8: Result[String, Unit] = Success(())
 </span><span>
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;([)]&quot;</span><span>)
-</span><span class="comment">// res9: parsley.Result[String, Unit] = Failure((line 1, column 3):
+</span><span class="comment">// res9: Result[String, Unit] = Failure((line 1, column 3):
 //   unexpected &quot;)&quot;
 //   expected &quot;(&quot;, &quot;[&quot;, &quot;]&quot;, or &quot;{&quot;
 //   unclosed [ originating at (1,2)
 //   &gt;([)]
 //      ^)
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;({(&quot;</span><span>)
-</span><span class="comment">// res10: parsley.Result[String, Unit] = Failure((line 1, column 4):
+</span><span class="comment">// res10: Result[String, Unit] = Failure((line 1, column 4):
 //   unexpected end of input
 //   expected &quot;(&quot;, &quot;)&quot;, &quot;[&quot;, or &quot;{&quot;
 //   unclosed ( originating at (1,3)
 //   &gt;({(
 //       ^)
 </span><span class="identifier">p</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;()[]{[(){}}&quot;</span><span>)
-</span><span class="comment">// res11: parsley.Result[String, Unit] = Failure((line 1, column 11):
+</span><span class="comment">// res11: Result[String, Unit] = Failure((line 1, column 11):
 //   unexpected &quot;}&quot;
 //   expected &quot;(&quot;, &quot;[&quot;, &quot;]&quot;, or &quot;{&quot;
 //   unclosed [ originating at (1,6)
@@ -386,7 +386,8 @@
 }</span></code></pre>
         <p>In the above code, a set is carried around in a reference, and a new element
         is added into this set every iteration. When the loop completes (successfully), the set in the reference is returned. A more efficient implementation, however,
-        would use <code>persist</code> and a mutable set (along with <code>impure</code> and <code>fresh</code>): this, of course, still uses a reference.</p>
+        would use <code>persist</code> and a mutable set (along with <code>impure</code> and <code>fresh</code>): this, of course, still uses a reference. That said, the idiomatic, and fastest, implementation
+        is to write <code>many(p, Set)</code>.</p>
         
         <h4 id="whitespace-sensitive-languages" class="section"><a class="anchor-link left" href="#whitespace-sensitive-languages"><i class="icofont-laika link">&#xef71;</i></a>Whitespace-Sensitive Languages</h4>
         <p>Another application of long-term state is to track indentation levels in
@@ -413,14 +414,14 @@
     } ~&gt;
     </span><span class="identifier">i</span><span>.</span><span class="identifier">get</span><span> &lt;~ </span><span class="identifier">eof</span><span>
 }
-</span><span class="comment">// abcs: Parsley[Int] = parsley.Parsley@6bdf3caf
+</span><span class="comment">// abcs: Parsley[Int] = parsley.Parsley@3f5059ae
 </span><span>
 </span><span class="identifier">abcs</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;aabbcc&quot;</span><span>)
-</span><span class="comment">// res12: parsley.Result[String, Int] = Success(2)
+</span><span class="comment">// res12: Result[String, Int] = Success(2)
 </span><span class="identifier">abcs</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;aaaaabbbbbccccc&quot;</span><span>)
-</span><span class="comment">// res13: parsley.Result[String, Int] = Success(5)
+</span><span class="comment">// res13: Result[String, Int] = Success(5)
 </span><span class="identifier">abcs</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;aaaabbbbbbcccc&quot;</span><span>)
-</span><span class="comment">// res14: parsley.Result[String, Int] = Failure((line 1, column 9):
+</span><span class="comment">// res14: Result[String, Int] = Failure((line 1, column 9):
 //   unexpected &quot;b&quot;
 //   expected &quot;c&quot;
 //   &gt;aaaabbbbbbcccc

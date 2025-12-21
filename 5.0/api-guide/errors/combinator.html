@@ -61,7 +61,7 @@
 
   <div class="row links">
     
-    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M15/">API</a>
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_3/5.0.0-M15/">API</a>
     
     <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
   <g class="svg-shape">
@@ -77,7 +77,7 @@
 
   <div class="row">
     
-    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M15/">API</a>
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_3/5.0.0-M15/">API</a>
     
     <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
   <g class="svg-shape">
@@ -169,7 +169,7 @@
         the <code>parsley.errors.combinator</code> module.</p>
         <div class="callout info">
           <i class="icofont-laika info">&#xef4e;</i>
-          <p><em>The Scaladoc for this page can be found at <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M15/parsley/errors/combinator$.html"><code>parsley.errors.combinator</code></a>.</em></p>
+          <p><em>The Scaladoc for this page can be found at <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_3/5.0.0-M15/parsley/errors/combinator$.html"><code>parsley.errors.combinator</code></a>.</em></p>
         </div>
         
         <h2 id="failure-combinators" class="section"><a class="anchor-link left" href="#failure-combinators"><i class="icofont-laika link">&#xef71;</i></a>Failure Combinators</h2>
@@ -218,12 +218,12 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">unexpected</span><span>
 
 </span><span class="identifier">unexpected</span><span>(</span><span class="number-literal">3</span><span>, </span><span class="string-literal">&quot;foo&quot;</span><span>).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abcd&quot;</span><span>)
-</span><span class="comment">// res0: parsley.Result[String, Nothing] = Failure((line 1, column 1):
+</span><span class="comment">// res0: Result[String, Nothing] = Failure((line 1, column 1):
 //   unexpected foo
 //   &gt;abcd
 //    ^^^)
 </span><span>(</span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;a&#39;</span><span>) | </span><span class="identifier">unexpected</span><span>(</span><span class="string-literal">&quot;not an a&quot;</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;baa&quot;</span><span>)
-</span><span class="comment">// res1: parsley.Result[String, Char] = Failure((line 1, column 1):
+</span><span class="comment">// res1: Result[String, Char] = Failure((line 1, column 1):
 //   unexpected not an a
 //   expected &quot;a&quot;
 //   &gt;baa
@@ -246,26 +246,26 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">fail</span><span>
 
 </span><span class="identifier">fail</span><span>(</span><span class="number-literal">2</span><span>, </span><span class="string-literal">&quot;msg1&quot;</span><span>, </span><span class="string-literal">&quot;msg2&quot;</span><span>, </span><span class="string-literal">&quot;msg3&quot;</span><span>).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>)
-</span><span class="comment">// res2: parsley.Result[String, Nothing] = Failure((line 1, column 1):
+</span><span class="comment">// res2: Result[String, Nothing] = Failure((line 1, column 1):
 //   msg1
 //   msg2
 //   msg3
 //   &gt;abc
 //    ^^)
 </span><span>(</span><span class="identifier">fail</span><span>(</span><span class="number-literal">1</span><span>, </span><span class="string-literal">&quot;msg1&quot;</span><span>) | </span><span class="identifier">fail</span><span>(</span><span class="number-literal">2</span><span>, </span><span class="string-literal">&quot;msg2&quot;</span><span>) | </span><span class="identifier">fail</span><span>(</span><span class="string-literal">&quot;msg3&quot;</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>)
-</span><span class="comment">// res3: parsley.Result[String, Nothing] = Failure((line 1, column 1):
+</span><span class="comment">// res3: Result[String, Nothing] = Failure((line 1, column 1):
 //   msg1
 //   msg2
 //   msg3
 //   &gt;abc
 //    ^^)
 </span><span>(</span><span class="identifier">fail</span><span>(</span><span class="string-literal">&quot;msg&quot;</span><span>) | </span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;xyz&quot;</span><span>)
-</span><span class="comment">// res4: parsley.Result[String, String] = Failure((line 1, column 1):
+</span><span class="comment">// res4: Result[String, String] = Failure((line 1, column 1):
 //   msg
 //   &gt;xyz
 //    ^^^)
 </span><span>(</span><span class="identifier">fail</span><span>(</span><span class="number-literal">1</span><span>, </span><span class="string-literal">&quot;msg&quot;</span><span>) | </span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;xyz&quot;</span><span>)
-</span><span class="comment">// res5: parsley.Result[String, String] = Failure((line 1, column 1):
+</span><span class="comment">// res5: Result[String, String] = Failure((line 1, column 1):
 //   msg
 //   &gt;xyz
 //    ^)</span></code></pre>
@@ -292,19 +292,19 @@
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">char</span><span>, </span><span class="identifier">string</span><span>, </span><span class="identifier">satisfy</span><span>}
 
 </span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;a&#39;</span><span>).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;b&quot;</span><span>)
-</span><span class="comment">// res6: parsley.Result[String, Char] = Failure((line 1, column 1):
+</span><span class="comment">// res7: Result[String, Char] = Failure((line 1, column 1):
 //   unexpected &quot;b&quot;
 //   expected &quot;a&quot;
 //   &gt;b
 //    ^)
 </span><span class="identifier">string</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;xyz&quot;</span><span>)
-</span><span class="comment">// res7: parsley.Result[String, String] = Failure((line 1, column 1):
+</span><span class="comment">// res8: Result[String, String] = Failure((line 1, column 1):
 //   unexpected &quot;xyz&quot;
 //   expected &quot;abc&quot;
 //   &gt;xyz
 //    ^^^)
 </span><span class="identifier">satisfy</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">isDigit</span><span>).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;a&quot;</span><span>)
-</span><span class="comment">// res8: parsley.Result[String, Char] = Failure((line 1, column 1):
+</span><span class="comment">// res9: Result[String, Char] = Failure((line 1, column 1):
 //   unexpected &quot;a&quot;
 //   &gt;a
 //    ^)</span></code></pre>
@@ -316,9 +316,9 @@
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="type-name">ErrorMethods</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">digit</span><span> = </span><span class="identifier">satisfy</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">isDigit</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;digit&quot;</span><span>)
-</span><span class="comment">// digit: parsley.Parsley[Char] = parsley.Parsley@48164fee
+</span><span class="comment">// digit: Parsley[Char] = parsley.Parsley@544a832f
 </span><span class="identifier">digit</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;a&quot;</span><span>)
-</span><span class="comment">// res9: parsley.Result[String, Char] = Failure((line 1, column 1):
+</span><span class="comment">// res10: Result[String, Char] = Failure((line 1, column 1):
 //   unexpected &quot;a&quot;
 //   expected digit
 //   &gt;a
@@ -334,15 +334,15 @@
         error message properly lines up with the point the input was at when it
         entered the combinator - otherwise, the label may be inaccurate. For example:</p>
         <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">twoDigits</span><span> = (</span><span class="identifier">digit</span><span> *&gt; </span><span class="identifier">digit</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;two digits&quot;</span><span>)
-</span><span class="comment">// twoDigits: parsley.Parsley[Char] = parsley.Parsley@1e3ba6b
+</span><span class="comment">// twoDigits: Parsley[Char] = parsley.Parsley@6fe1fb3c
 </span><span class="identifier">twoDigits</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;a&quot;</span><span>)
-</span><span class="comment">// res10: parsley.Result[String, Char] = Failure((line 1, column 1):
+</span><span class="comment">// res11: Result[String, Char] = Failure((line 1, column 1):
 //   unexpected &quot;a&quot;
 //   expected two digits
 //   &gt;a
 //    ^)
 </span><span class="identifier">twoDigits</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;1a&quot;</span><span>)
-</span><span class="comment">// res11: parsley.Result[String, Char] = Failure((line 1, column 2):
+</span><span class="comment">// res12: Result[String, Char] = Failure((line 1, column 2):
 //   unexpected &quot;a&quot;
 //   expected digit
 //   &gt;1a
@@ -353,10 +353,11 @@
         message, providing more high-level reasons for the error or explanations about
         a syntactic construct. It behaves similarly to <code>label</code> in that it will only
         apply when the position of the error message matches the offset that the combinator entered at.</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="type-name">ErrorMethods</span><span>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">digit</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="type-name">ErrorMethods</span><span>
 
 </span><span class="identifier">digit</span><span>.</span><span class="identifier">explain</span><span>(</span><span class="string-literal">&quot;a digit is needed, for some reason&quot;</span><span>).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;a&quot;</span><span>)
-</span><span class="comment">// res12: parsley.Result[String, Char] = Failure((line 1, column 1):
+</span><span class="comment">// res14: Result[String, Char] = Failure((line 1, column 1):
 //   unexpected &quot;a&quot;
 //   expected digit
 //   a digit is needed, for some reason
@@ -372,10 +373,11 @@
         whitespace, which is <em>almost</em> never the solution to any parsing problem, and
         would otherwise distract from rest of the error content. The <code>hide</code> combinator
         can be used to suppress a parser from appearing in the rest of a message:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="type-name">ErrorMethods</span><span>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">char</span><span>, </span><span class="identifier">digit</span><span>}
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="type-name">ErrorMethods</span><span>
 
 (</span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;a&#39;</span><span>) | </span><span class="identifier">digit</span><span>.</span><span class="identifier">hide</span><span>).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;b&quot;</span><span>)
-</span><span class="comment">// res13: parsley.Result[String, Char] = Failure((line 1, column 1):
+</span><span class="comment">// res16: Result[String, Char] = Failure((line 1, column 1):
 //   unexpected &quot;b&quot;
 //   expected &quot;a&quot;
 //   &gt;b
@@ -395,23 +397,23 @@
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">amend</span><span>
 
 </span><span class="identifier">amend</span><span>(</span><span class="identifier">digit</span><span> *&gt; </span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;a&#39;</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;9b&quot;</span><span>)
-</span><span class="comment">// res14: parsley.Result[String, Char] = Failure((line 1, column 1):
+</span><span class="comment">// res17: Result[String, Char] = Failure((line 1, column 1):
 //   unexpected &quot;9&quot;
 //   expected &quot;a&quot;
 //   &gt;9b
 //    ^)</span></code></pre>
         <p>Notice that the above error makes no sense. This is why <code>amend</code> is a precision
         tool: it should ideally be used in conjunction with other combinators. For instance:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">charLift</span><span>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">character</span><span>.</span><span class="keyword">given</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">choice</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">noneOf</span><span>, </span><span class="identifier">stringOfMany</span><span>}
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">escapeChar</span><span> = </span><span class="identifier">choice</span><span>(</span><span class="char-literal">&#39;n&#39;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="char-literal">&#39;</span><span class="escape-sequence">\n</span><span class="char-literal">&#39;</span><span>), </span><span class="char-literal">&#39;t&#39;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="char-literal">&#39;</span><span class="escape-sequence">\t</span><span class="char-literal">&#39;</span><span>), </span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span>)
-</span><span class="keyword">val</span><span> </span><span class="identifier">strLetter</span><span> =
-    </span><span class="identifier">noneOf</span><span>(</span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;string char&quot;</span><span>) | (</span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span> ~&gt; </span><span class="identifier">escapeChar</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;escape char&quot;</span><span>)
+</span><span class="keyword">val</span><span> </span><span class="identifier">strLetter</span><span> = </span><span class="identifier">noneOf</span><span>(</span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;string char&quot;</span><span>)
+              | (</span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span> ~&gt; </span><span class="identifier">escapeChar</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;escape char&quot;</span><span>)
 </span><span class="keyword">val</span><span> </span><span class="identifier">strLit</span><span> = </span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span> ~&gt; </span><span class="identifier">stringOfMany</span><span>(</span><span class="identifier">strLetter</span><span>) &lt;~ </span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span></code></pre>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">strLit</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;</span><span class="escape-sequence">\&quot;\\</span><span class="string-literal">b</span><span class="escape-sequence">\&quot;</span><span class="string-literal">&quot;</span><span>)
-</span><span class="comment">// res15: parsley.Result[String, String] = Failure((line 1, column 3):
+</span><span class="comment">// res18: Result[String, String] = Failure((line 1, column 3):
 //   unexpected &quot;b&quot;
 //   expected &quot;&quot;&quot;, &quot;\&quot;, &quot;n&quot;, or &quot;t&quot;
 //   &gt;&quot;\b&quot;
@@ -423,7 +425,7 @@
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">strLetter</span><span> = </span><span class="identifier">noneOf</span><span>(</span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;string char&quot;</span><span>) |
                 </span><span class="identifier">amend</span><span>(</span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span> ~&gt; </span><span class="identifier">escapeChar</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;escape char&quot;</span><span>)</span></code></pre>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">strLit</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;</span><span class="escape-sequence">\&quot;\\</span><span class="string-literal">b</span><span class="escape-sequence">\&quot;</span><span class="string-literal">&quot;</span><span>)
-</span><span class="comment">// res16: parsley.Result[String, String] = Failure((line 1, column 2):
+</span><span class="comment">// res19: Result[String, String] = Failure((line 1, column 2):
 //   unexpected &quot;\&quot;
 //   expected escape char or string char
 //   &gt;&quot;\b&quot;
@@ -433,12 +435,12 @@
         providing an explanation:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>.</span><span class="identifier">empty</span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">escapeChar</span><span> = </span><span class="identifier">choice</span><span>(</span><span class="char-literal">&#39;n&#39;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="char-literal">&#39;</span><span class="escape-sequence">\n</span><span class="char-literal">&#39;</span><span>), </span><span class="char-literal">&#39;t&#39;</span><span>.</span><span class="identifier">as</span><span>(</span><span class="char-literal">&#39;</span><span class="escape-sequence">\t</span><span class="char-literal">&#39;</span><span>), </span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span>) | </span><span class="identifier">empty</span><span>(</span><span class="number-literal">2</span><span>)
-</span><span class="keyword">val</span><span> </span><span class="identifier">strLetter</span><span> = </span><span class="identifier">noneOf</span><span>(</span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;string char&quot;</span><span>) |
-                </span><span class="identifier">amend</span><span>(</span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span> ~&gt; </span><span class="identifier">escapeChar</span><span>)
+</span><span class="keyword">val</span><span> </span><span class="identifier">strLetter</span><span> = </span><span class="identifier">noneOf</span><span>(</span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;string char&quot;</span><span>)
+              | </span><span class="identifier">amend</span><span>(</span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span> ~&gt; </span><span class="identifier">escapeChar</span><span>)
                   .</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;escape char&quot;</span><span>)
                   .</span><span class="identifier">explain</span><span>(</span><span class="string-literal">&quot;escape characters are </span><span class="escape-sequence">\\</span><span class="string-literal">n, </span><span class="escape-sequence">\\</span><span class="string-literal">t, </span><span class="escape-sequence">\\\&quot;</span><span class="string-literal">, or </span><span class="escape-sequence">\\\\</span><span class="string-literal">&quot;</span><span>)</span></code></pre>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">strLit</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;</span><span class="escape-sequence">\&quot;\\</span><span class="string-literal">b</span><span class="escape-sequence">\&quot;</span><span class="string-literal">&quot;</span><span>)
-</span><span class="comment">// res17: parsley.Result[String, String] = Failure((line 1, column 2):
+</span><span class="comment">// res20: Result[String, String] = Failure((line 1, column 2):
 //   unexpected &quot;\b&quot;
 //   expected escape char or string char
 //   escape characters are \n, \t, \&quot;, or \\

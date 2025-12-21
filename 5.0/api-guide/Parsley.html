@@ -61,7 +61,7 @@
 
   <div class="row links">
     
-    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M15/">API</a>
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_3/5.0.0-M15/">API</a>
     
     <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
   <g class="svg-shape">
@@ -77,7 +77,7 @@
 
   <div class="row">
     
-    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M15/">API</a>
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_3/5.0.0-M15/">API</a>
     
     <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
   <g class="svg-shape">
@@ -165,8 +165,8 @@
         together. The companion object also contains some primitive combinators and parsers.</p>
         <div class="callout info">
           <i class="icofont-laika info">&#xef4e;</i>
-          <p><em>The Scaladoc for this page can be found at <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M15/parsley/Parsley.html"><code>parsley.Parsley</code> (class)</a>
-          and <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M15/parsley/Parsley$.html"><code>parsley.Parsley</code> (object)</a>.</em></p>
+          <p><em>The Scaladoc for this page can be found at <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_3/5.0.0-M15/parsley/Parsley.html"><code>parsley.Parsley</code> (class)</a>
+          and <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_3/5.0.0-M15/parsley/Parsley$.html"><code>parsley.Parsley</code> (object)</a>.</em></p>
         </div>
         
         <h2 id="class-parsley" class="section"><a class="anchor-link left" href="#class-parsley"><i class="icofont-laika link">&#xef71;</i></a>Class <code>Parsley</code></h2>
@@ -193,7 +193,7 @@
         the purposes of basic use, you can assume that Scala will automatically infer
         this type to be <code>String</code>, for which an <code>ErrorBuilder[String]</code> does implicitly
         exist.</p>
-        <p>By importing <code>parsley.io._</code>, another <code>parseFromFile</code> method is added to
+        <p>By importing <code>parsley.io.*</code>, another <code>parseFromFile</code> method is added to
         <code>Parsley</code>, which works similarly, but loads the input from a file first.
         In future versions of <code>parsley</code>, this import will no longer be needed, and
         this will be an overloading of <code>parse</code>.</p>
@@ -337,26 +337,26 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>.{</span><span class="identifier">many</span><span>, </span><span class="identifier">some</span><span>}
 
 </span><span class="identifier">many</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">zip</span><span>(</span><span class="identifier">digit</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;&quot;</span><span>)
-</span><span class="comment">// res0: parsley.Result[String, List[(Char, Char)]] = Success(List())
+</span><span class="comment">// res0: Result[String, List[Tuple2[Char, Char]]] = Success(List())
 </span><span class="identifier">many</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">zip</span><span>(</span><span class="identifier">digit</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;1234&quot;</span><span>)
-</span><span class="comment">// res1: parsley.Result[String, List[(Char, Char)]] = Success(List((1,2), (3,4)))
+</span><span class="comment">// res1: Result[String, List[Tuple2[Char, Char]]] = Success(List((1,2), (3,4)))
 </span><span class="identifier">many</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">zip</span><span>(</span><span class="identifier">digit</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;12345&quot;</span><span>)
-</span><span class="comment">// res2: parsley.Result[String, List[(Char, Char)]] = Failure((line 1, column 6):
+</span><span class="comment">// res2: Result[String, List[Tuple2[Char, Char]]] = Failure((line 1, column 6):
 //   unexpected end of input
 //   expected digit
 //   &gt;12345
 //         ^)
 </span><span>
 </span><span class="identifier">some</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">zip</span><span>(</span><span class="identifier">digit</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;&quot;</span><span>)
-</span><span class="comment">// res3: parsley.Result[String, List[(Char, Char)]] = Failure((line 1, column 1):
+</span><span class="comment">// res3: Result[String, List[Tuple2[Char, Char]]] = Failure((line 1, column 1):
 //   unexpected end of input
 //   expected digit
 //   &gt;
 //    ^)
 </span><span class="identifier">some</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">zip</span><span>(</span><span class="identifier">digit</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;1234&quot;</span><span>)
-</span><span class="comment">// res4: parsley.Result[String, List[(Char, Char)]] = Success(List((1,2), (3,4)))
+</span><span class="comment">// res4: Result[String, List[Tuple2[Char, Char]]] = Success(List((1,2), (3,4)))
 </span><span class="identifier">some</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">zip</span><span>(</span><span class="identifier">digit</span><span>)).</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;12345&quot;</span><span>)
-</span><span class="comment">// res5: parsley.Result[String, List[(Char, Char)]] = Failure((line 1, column 6):
+</span><span class="comment">// res5: Result[String, List[Tuple2[Char, Char]]] = Failure((line 1, column 6):
 //   unexpected end of input
 //   expected digit
 //   &gt;12345

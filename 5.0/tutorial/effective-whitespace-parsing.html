@@ -61,7 +61,7 @@
 
   <div class="row links">
     
-    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M15/">API</a>
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_3/5.0.0-M15/">API</a>
     
     <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
   <g class="svg-shape">
@@ -77,7 +77,7 @@
 
   <div class="row">
     
-    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M15/">API</a>
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_3/5.0.0-M15/">API</a>
     
     <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
   <g class="svg-shape">
@@ -173,7 +173,7 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">manyTill</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="type-name">ErrorMethods</span><span> </span><span class="comment">//for hide
 </span><span>
-</span><span class="keyword">def</span><span> </span><span class="declaration-name">symbol</span><span>(</span><span class="identifier">str</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">atomic</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">str</span><span>))
+</span><span class="keyword">def</span><span> </span><span class="declaration-name">symbol</span><span>(</span><span class="identifier">str</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">atomic</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">str</span><span>)).</span><span class="identifier">void</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">lineComment</span><span> = </span><span class="identifier">symbol</span><span>(</span><span class="string-literal">&quot;//&quot;</span><span>) ~&gt; </span><span class="identifier">manyTill</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>).</span><span class="identifier">void</span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">multiComment</span><span> = </span><span class="identifier">symbol</span><span>(</span><span class="string-literal">&quot;/*&quot;</span><span>) ~&gt; </span><span class="identifier">manyTill</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">symbol</span><span>(</span><span class="string-literal">&quot;*/&quot;</span><span>)).</span><span class="identifier">void</span><span>
@@ -191,18 +191,19 @@
         <h2 id="lexemes" class="section"><a class="anchor-link left" href="#lexemes"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2 </span>Lexemes</h2>
         <p>Lexemes are indivisible chunks of the input, the sort usually produced by a lexer in a
         classical setup. The <code>symbol</code> combinator I defined above forms part of this: it uses <code>atomic</code>
-        to make an indivisible string, either you read the entire thing or none of it. The next piece
+        to make an indivisible string, either you read the entire thing or none of it. You&#39;ll notice
+        it <code>void</code>s out its output: this is because symbols are never &quot;interesting&quot;, and we denote this by throwing away the result. The next piece
         of the puzzle is a combinator called <code>lexeme</code>, which should perform a parser and then always
         read spaces after it:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">lexeme</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">p</span><span> &lt;~ </span><span class="identifier">skipWhitespace</span><span>
 </span><span class="keyword">def</span><span> </span><span class="declaration-name">token</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">atomic</span><span>(</span><span class="identifier">p</span><span>))
 
-</span><span class="keyword">implicit</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">implicitSymbol</span><span>(</span><span class="identifier">s</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">symbol</span><span>(</span><span class="identifier">s</span><span>))</span></code></pre>
+</span><span class="keyword">given</span><span> </span><span class="type-name">Conversion</span><span>[</span><span class="type-name">String</span><span>, </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>]] = </span><span class="identifier">s</span><span> =&gt; </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">symbol</span><span>(</span><span class="identifier">s</span><span>))</span></code></pre>
         <p>The <code>token</code> combinator is a more general form of <code>symbol</code>, that works for all parsers, handling
         them atomically <em>and</em> consuming whitespace after. Note that it&#39;s important to consume the whitespace
         outside the scope of the <code>atomic</code>, otherwise malformed whitespace might cause backtracking for an
         otherwise legal token!</p>
-        <p>With the <code>implicitSymbol</code> combinator, we can now treat all string literals as lexemes. This
+        <p>With the <code>Conversion[String, Parsley[Unit]]</code>, we can now treat all string literals as lexemes. This
         can be very useful, but ideally this could be improved by also recognising whether or not the
         provided string is a keyword, and if so, ensuring that it is not followed by another
         alphabetical character. This is out of scope for this post, however.</p>
@@ -212,22 +213,22 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">expr</span><span>.{</span><span class="identifier">precedence</span><span>, </span><span class="type-name">Ops</span><span>, </span><span class="type-name">InfixL</span><span>}
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">number</span><span> = </span><span class="identifier">token</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">foldLeft1</span><span>[</span><span class="type-name">BigInt</span><span>](</span><span class="number-literal">0</span><span>)((</span><span class="identifier">n</span><span>, </span><span class="identifier">d</span><span>) =&gt; </span><span class="identifier">n</span><span> * </span><span class="number-literal">10</span><span> + </span><span class="identifier">d</span><span>.</span><span class="identifier">asDigit</span><span>))
-</span><span class="comment">// number: Parsley[BigInt] = parsley.Parsley@1b8a78fa
+</span><span class="comment">// number: Parsley[BigInt] = parsley.Parsley@7b839a60
 </span><span>
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">atom</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">BigInt</span><span>] = </span><span class="string-literal">&quot;(&quot;</span><span> ~&gt; </span><span class="identifier">expr</span><span> &lt;~ </span><span class="string-literal">&quot;)&quot;</span><span> | </span><span class="identifier">number</span><span>
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span> = </span><span class="identifier">precedence</span><span>[</span><span class="type-name">BigInt</span><span>](</span><span class="identifier">atom</span><span>)(
   </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="identifier">as</span><span> (</span><span class="identifier">_</span><span> * </span><span class="identifier">_</span><span>)),
   </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> </span><span class="identifier">as</span><span> (</span><span class="identifier">_</span><span> + </span><span class="identifier">_</span><span>), </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="identifier">as</span><span> (</span><span class="identifier">_</span><span> - </span><span class="identifier">_</span><span>)))</span></code></pre>
         <p>Other than introducing our new infrastructure, I&#39;ve changed the characters in the original
-        parser to strings: this is going to make them use our new <code>implicitLexeme</code> combinator! Notice
+        parser to strings: this is going to make them use our new <code>Conversion[String, Parsley[Unit]]</code>! Notice
         how I&#39;ve also marked the <em>whole</em> of <code>number</code> as a token: we don&#39;t want to read whitespace
         between the digits, but instead after the entire number has been read, and a number should be entirely
         atomic. Now that we&#39;ve done this we can try running it on some input and see what happens:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">expr</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;5 + </span><span class="escape-sequence">\n</span><span class="string-literal">6 /*hello!*/ * 7&quot;</span><span>)
-</span><span class="comment">// res0: parsley.Result[String, BigInt] = Success(47)
+</span><span class="comment">// res0: Result[String, BigInt] = Success(47)
 </span><span>
 </span><span class="identifier">expr</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot; 5 * (</span><span class="escape-sequence">\n</span><span class="string-literal">2 + 3)&quot;</span><span>)
-</span><span class="comment">// res1: parsley.Result[String, BigInt] = Failure((line 1, column 1):
+</span><span class="comment">// res1: Result[String, BigInt] = Failure((line 1, column 1):
 //   unexpected space
 //   expected &quot;(&quot; or digit
 //   &gt; 5 * (
@@ -246,7 +247,7 @@
         <p>The eagle-eyed reader might have spotted that there is a distinction between the string literals we
         are using in the main parser and the <code>symbol</code>s we are using in the definitions of whitespace. Indeed,
         because we are using an implicit that consumes whitespace, it would be inappropriate
-        to use it in the <em>definition</em> of whitespace! If we were to pull in the <code>stringLift</code> implicit as we&#39;re
+        to use it in the <em>definition</em> of whitespace! If we were to pull in the <code>stringLift</code> conversion as we&#39;re
         used to, then Scala will report and ambiguous implicit and we&#39;ll be stuck. It&#39;s a <em>much</em> better idea
         to limit the scope of these implicits, so we can be clear about which we mean where. To illustrate
         what I mean, let&#39;s restructure the code a little for the parser and ensure we don&#39;t run into any issues.</p>
@@ -257,7 +258,7 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="type-name">ErrorMethods</span><span> </span><span class="comment">//for hide
 </span><span>
 </span><span class="keyword">object</span><span> </span><span class="identifier">lexer</span><span> {
-    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">symbol</span><span>(</span><span class="identifier">str</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">atomic</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">str</span><span>))
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">symbol</span><span>(</span><span class="identifier">str</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">atomic</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">str</span><span>)).</span><span class="identifier">void</span><span>
 
     </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">lineComment</span><span> = </span><span class="identifier">symbol</span><span>(</span><span class="string-literal">&quot;//&quot;</span><span>) ~&gt; </span><span class="identifier">manyTill</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>).</span><span class="identifier">void</span><span>
     </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">multiComment</span><span> = </span><span class="identifier">symbol</span><span>(</span><span class="string-literal">&quot;/*&quot;</span><span>) ~&gt; </span><span class="identifier">manyTill</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">symbol</span><span>(</span><span class="string-literal">&quot;*/&quot;</span><span>)).</span><span class="identifier">void</span><span>
@@ -271,13 +272,13 @@
     </span><span class="keyword">val</span><span> </span><span class="identifier">number</span><span> = </span><span class="identifier">token</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">foldLeft1</span><span>[</span><span class="type-name">BigInt</span><span>](</span><span class="number-literal">0</span><span>)((</span><span class="identifier">n</span><span>, </span><span class="identifier">d</span><span>) =&gt; </span><span class="identifier">n</span><span> * </span><span class="number-literal">10</span><span> + </span><span class="identifier">d</span><span>.</span><span class="identifier">asDigit</span><span>))
 
     </span><span class="keyword">object</span><span> </span><span class="identifier">implicits</span><span> {
-        </span><span class="keyword">implicit</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">implicitSymbol</span><span>(</span><span class="identifier">s</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] =
+        </span><span class="keyword">given</span><span> </span><span class="type-name">Conversion</span><span>[</span><span class="type-name">String</span><span>, </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>]] = </span><span class="identifier">s</span><span> =&gt;
             </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">symbol</span><span>(</span><span class="identifier">s</span><span>)) </span><span class="comment">// or `token(string(s))
 </span><span>    }
 }
 
 </span><span class="keyword">object</span><span> </span><span class="identifier">expressions</span><span> {
-    </span><span class="keyword">import</span><span> </span><span class="identifier">lexer</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">implicitSymbol</span><span>
+    </span><span class="keyword">import</span><span> </span><span class="identifier">lexer</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="keyword">given</span><span>
     </span><span class="keyword">import</span><span> </span><span class="identifier">lexer</span><span>.{</span><span class="identifier">number</span><span>, </span><span class="identifier">fully</span><span>}
 
     </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">atom</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">BigInt</span><span>] = </span><span class="string-literal">&quot;(&quot;</span><span> ~&gt; </span><span class="identifier">expr</span><span> &lt;~ </span><span class="string-literal">&quot;)&quot;</span><span> | </span><span class="identifier">number</span><span>
@@ -288,12 +289,8 @@
     </span><span class="keyword">val</span><span> </span><span class="identifier">parser</span><span> = </span><span class="identifier">fully</span><span>(</span><span class="identifier">expr</span><span>)
 }</span></code></pre>
         <p>In the above refactoring, I&#39;ve introduced three distinct scopes: the <code>lexer</code>, the <code>lexer.implicits</code>
-        and the <code>expressions</code>. Within <code>lexer</code>, I&#39;ve marked the internal parts as <code>private</code>, in particular
-        the <code>implicitSymbol</code> combinator that I&#39;ve introduced to allow the lexer to use string literals in
-        the description of the tokens. By marking <code>implicitSymbol</code> as <code>private</code>, we ensure that it cannot be
-        accidentally used within <code>expressions</code>, where the main part of the parser is defined. In contrast,
-        the <code>implicits</code> object nested within <code>lexer</code> provides the ability for the <code>expressions</code> object to
-        hook into our whitespace sensitive string literal parsing (using <code>implicitToken</code>), and, but
+        and the <code>expressions</code>. Within <code>lexer</code>, I&#39;ve marked the internal parts as <code>private</code>. The <code>implicits</code> object nested within <code>lexer</code> provides the ability for the <code>expressions</code> object to
+        hook into our whitespace sensitive string literal parsing (using <code>import lexer.implicits.given</code>), and, but
         enclosing it within the object, we prevent it being accidentally used inside the rest of the lexer
         (without an explicit import, which we know would be bad!). This is a good general structure to adopt,
         as it keeps the lexing code cleanly separated from the parser. If, for instance, you wanted to test

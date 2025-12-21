@@ -61,7 +61,7 @@
 
   <div class="row links">
     
-    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M15/">API</a>
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_3/5.0.0-M15/">API</a>
     
     <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
   <g class="svg-shape">
@@ -77,7 +77,7 @@
 
   <div class="row">
     
-    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/5.0.0-M15/">API</a>
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_3/5.0.0-M15/">API</a>
     
     <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
   <g class="svg-shape">
@@ -196,7 +196,7 @@
         are assumed:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">letter</span><span>, </span><span class="identifier">digit</span><span>, </span><span class="identifier">stringOfSome</span><span>}
-</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">stringLift</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">character</span><span>.</span><span class="keyword">given</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">int</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Int</span><span>] = </span><span class="identifier">digit</span><span>.</span><span class="identifier">foldLeft1</span><span>(</span><span class="number-literal">0</span><span>)((</span><span class="identifier">n</span><span>, </span><span class="identifier">d</span><span>) =&gt; </span><span class="identifier">n</span><span> * </span><span class="number-literal">10</span><span> + </span><span class="identifier">d</span><span>.</span><span class="identifier">asDigit</span><span>)
 </span><span class="keyword">val</span><span> </span><span class="identifier">ident</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">stringOfSome</span><span>(</span><span class="identifier">letter</span><span>)</span></code></pre>
@@ -207,23 +207,25 @@
         <code>Ops</code> smart-constructor, and make use of the simple flat
         structure. As an example:</p>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">expr</span><span>.{</span><span class="identifier">precedence</span><span>, </span><span class="type-name">Ops</span><span>, </span><span class="type-name">InfixL</span><span>}
+</span><span class="keyword">import</span><span> </span><span class="type-name">Expr</span><span>.*
 
-</span><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">Expr</span><span>
-</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Add</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Expr</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Expr</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Expr</span><span>
-</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Sub</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Expr</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Expr</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Expr</span><span>
-</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Mul</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Expr</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Expr</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Expr</span><span>
-</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Num</span><span>(</span><span class="identifier">n</span><span>: </span><span class="type-name">Int</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Expr</span><span>
-</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Var</span><span>(</span><span class="identifier">v</span><span>: </span><span class="type-name">String</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Expr</span><span>
+</span><span class="keyword">enum</span><span> </span><span class="type-name">Expr</span><span> {
+    </span><span class="keyword">case</span><span> </span><span class="type-name">Add</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Expr</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Expr</span><span>)
+    </span><span class="keyword">case</span><span> </span><span class="type-name">Sub</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Expr</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Expr</span><span>)
+    </span><span class="keyword">case</span><span> </span><span class="type-name">Mul</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Expr</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Expr</span><span>)
+    </span><span class="keyword">case</span><span> </span><span class="type-name">Num</span><span>(</span><span class="identifier">n</span><span>: </span><span class="type-name">Int</span><span>)
+    </span><span class="keyword">case</span><span> </span><span class="type-name">Var</span><span>(</span><span class="identifier">v</span><span>: </span><span class="type-name">String</span><span>)
+}
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Expr</span><span>] =
-    </span><span class="identifier">precedence</span><span>(</span><span class="identifier">ident</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Var</span><span>), </span><span class="identifier">int</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Num</span><span>))(
-        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Mul</span><span>),
-        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Add</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Sub</span><span>)
+    </span><span class="identifier">precedence</span><span>(</span><span class="identifier">ident</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Var</span><span>.</span><span class="identifier">apply</span><span>), </span><span class="identifier">int</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Num</span><span>.</span><span class="identifier">apply</span><span>))(
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="keyword">as</span><span> </span><span class="type-name">Mul</span><span>.</span><span class="identifier">apply</span><span>),
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> </span><span class="keyword">as</span><span> </span><span class="type-name">Add</span><span>.</span><span class="identifier">apply</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="keyword">as</span><span> </span><span class="type-name">Sub</span><span>.</span><span class="identifier">apply</span><span>)
     )
-</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@1dfe8e4
+</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@6076ea89
 </span><span>
 </span><span class="identifier">expr</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;x+5*y&quot;</span><span>)
-</span><span class="comment">// res0: parsley.Result[String, Expr] = Success(Add(Var(x),Mul(Num(5),Var(y))))</span></code></pre>
+</span><span class="comment">// res0: Result[String, Expr] = Success(Add(Var(x),Mul(Num(5),Var(y))))</span></code></pre>
         <p>In the above example, notice that <code>Add</code> and <code>Sub</code> are within the
         same <code>Ops</code>, and therefore are the same precedence; <code>Mul</code> is closer to the atoms lexically than <code>Add</code> and <code>Sub</code> are, so it binds tighter. All levels have been marked as left associative with <code>InfixL</code>. When using <code>Prefix</code> or <code>Postfix</code>, the type of the
         parsers in the <code>Ops</code> will have type <code>Parsley[A =&gt; A]</code> instead
@@ -268,7 +270,7 @@
 
 </span><span class="keyword">object</span><span> </span><span class="type-name">GOps</span><span> {
     </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>](</span><span class="identifier">fixity</span><span>: </span><span class="type-name">Fixity</span><span>)(</span><span class="identifier">ops</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="identifier">fixity</span><span>.</span><span class="type-name">Op</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>]]*)
-                   (</span><span class="keyword">implicit</span><span> </span><span class="identifier">wrap</span><span>: </span><span class="type-name">A</span><span> =&gt; </span><span class="type-name">B</span><span>): </span><span class="type-name">Ops</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>]
+                   (</span><span class="keyword">using</span><span> </span><span class="identifier">wrap</span><span>: </span><span class="type-name">A</span><span> =&gt; </span><span class="type-name">B</span><span>): </span><span class="type-name">Ops</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>]
 }</span></code></pre>
         <p>The <code>SOps</code> object allows the input and output to the layer to vary so long as they are in a sub-type relation: this is the most common form of heterogeneous hierarchy that leverages Scala&#39;s strengths. Otherwise, <code>GOps</code> handles any arbitrary relationship between the types, so long as there is a known implicit <code>A =&gt; B</code> conversion.</p>
         <p>Since the types between layers differ, a variadic argument list cannot be used to collect them together. Instead, the <code>Ops</code> are
@@ -296,14 +298,14 @@
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Expr</span><span>] =
     </span><span class="identifier">precedence</span><span> {
-        </span><span class="type-name">Atoms</span><span>(</span><span class="identifier">ident</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Var</span><span>), </span><span class="identifier">int</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Num</span><span>)) :+
-        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Mul</span><span>) :+
-        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span class="identifier">as</span><span> </span><span class="type-name">Add</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Sub</span><span>)
+        </span><span class="type-name">Atoms</span><span>(</span><span class="identifier">ident</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Var</span><span>.</span><span class="identifier">apply</span><span>), </span><span class="identifier">int</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Num</span><span>.</span><span class="identifier">apply</span><span>)) :+
+        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="keyword">as</span><span> </span><span class="type-name">Mul</span><span>.</span><span class="identifier">apply</span><span>) :+
+        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span class="keyword">as</span><span> </span><span class="type-name">Add</span><span>.</span><span class="identifier">apply</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="keyword">as</span><span> </span><span class="type-name">Sub</span><span>.</span><span class="identifier">apply</span><span>)
     }
-</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@2a399dd1
+</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@4c2fff5c
 </span><span>
 </span><span class="identifier">expr</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;x+5*y&quot;</span><span>)
-</span><span class="comment">// res1: parsley.Result[String, Expr] = Success(Add(Var(x),Mul(Num(5),Var(y))))</span></code></pre>
+</span><span class="comment">// res1: Result[String, Expr] = Success(Add(Var(x),Mul(Num(5),Var(y))))</span></code></pre>
         <p>Here, the types within the syntax tree are very specific about
         the fact that all three operators are left associative. To be
         able to use this type with precedence <code>SOps</code> is required, since
@@ -315,30 +317,26 @@
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Expr</span><span>] =
     </span><span class="identifier">precedence</span><span> {
-        </span><span class="type-name">Atoms</span><span>(</span><span class="identifier">ident</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Var</span><span>), </span><span class="identifier">int</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Num</span><span>)) :+
-        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixR</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Mul</span><span>) :+
-        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Add</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Sub</span><span>)
+        </span><span class="type-name">Atoms</span><span>(</span><span class="identifier">ident</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Var</span><span>.</span><span class="identifier">apply</span><span>), </span><span class="identifier">int</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Num</span><span>.</span><span class="identifier">apply</span><span>)) :+
+        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixR</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="keyword">as</span><span> </span><span class="type-name">Mul</span><span>.</span><span class="identifier">apply</span><span>) :+
+        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> </span><span class="keyword">as</span><span> </span><span class="type-name">Add</span><span>.</span><span class="identifier">apply</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="keyword">as</span><span> </span><span class="type-name">Sub</span><span>.</span><span class="identifier">apply</span><span>)
     }
-</span><span class="comment">// error: type mismatch;
-//  found   : parsley.Parsley[Mul.type]
-//  required: parsley.Parsley[parsley.expr.InfixR.Op[Term,Term]]
-//     (which expands to)  parsley.Parsley[(Term, Term) =&gt; Term]
-//         SOps(InfixR)(&quot;*&quot; as Mul) :+
-//                      ^^^^^^^^^^</span></code></pre>
-        <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Expr</span><span>] =
+</span><span class="comment">// error:
+// Found:    (Term, Atom) =&gt; Term
+// Required: (Term, Term) =&gt; Term
+//         SOps(InfixR)(&quot;*&quot; as Mul.apply) :+
+//                             ^^^^^^^^^</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Expr</span><span>] =
     </span><span class="identifier">precedence</span><span> {
-        </span><span class="type-name">Atoms</span><span>(</span><span class="identifier">ident</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Var</span><span>), </span><span class="identifier">int</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Num</span><span>)) :+
-        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Add</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Sub</span><span>) :+
-        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="identifier">as</span><span> </span><span class="type-name">Mul</span><span>)
+        </span><span class="type-name">Atoms</span><span>(</span><span class="identifier">ident</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Var</span><span>.</span><span class="identifier">apply</span><span>), </span><span class="identifier">int</span><span>.</span><span class="identifier">map</span><span>(</span><span class="type-name">Num</span><span>.</span><span class="identifier">apply</span><span>)) :+
+        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> </span><span class="keyword">as</span><span> </span><span class="type-name">Add</span><span>.</span><span class="identifier">apply</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="keyword">as</span><span> </span><span class="type-name">Sub</span><span>.</span><span class="identifier">apply</span><span>) :+
+        </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="keyword">as</span><span> </span><span class="type-name">Mul</span><span>.</span><span class="identifier">apply</span><span>)
     }
-</span><span class="comment">// error: inferred type arguments [Atom,Term] do not conform to method :+&#39;s type parameter bounds [Aʹ &gt;: Expr,B]
-//         SOps(InfixL)(&quot;+&quot; as Add, &quot;-&quot; as Sub) :+
-//                                              ^^
-// error: type mismatch;
-//  found   : parsley.expr.Ops[Atom,Term]
-//  required: parsley.expr.Ops[Aʹ,B]
-//         SOps(InfixL)(&quot;*&quot; as Mul)
-//         ^^^^^^^^^^^^</span></code></pre>
+</span><span class="comment">// error:
+// Found:    (Term, Atom) =&gt; Expr
+// Required: (Expr, Expr) =&gt; Expr
+//         SOps(InfixL)(&quot;*&quot; as Mul.apply)
+//                             ^^^^^^^^^</span></code></pre>
 
         
 <hr class="footer-rule"/>
