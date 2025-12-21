@@ -437,8 +437,8 @@ object combinator {
           */
         def guardAgainst(pred: PartialFunction[A, Seq[String]]): Parsley[A] = {
             // Sad, but it means I don't have to duplicate
-            val f = (x: A) => pred.andThen(left).applyOrElse[A, Either[Seq[String], A]](x, right)
-            this.mapFilterMsg(f).uo("guardAgainst")
+            val bad = pred.andThen(left)
+            this.mapFilterMsg(bad.applyOrElse(_, right[A])).uo("guardAgainst")
         }
 
         /** This combinator applies a partial function `pf` to the result of this parser if its result is defined for `pf`, failing if it is not.
@@ -500,8 +500,9 @@ object combinator {
           * @group filter
           */
         def collectMsg[B](msggen: A => Seq[String])(pf: PartialFunction[A, B]): Parsley[B] = {
-            val f = (x: A) => pf.andThen(right).applyOrElse(x, msggen.andThen(left))
-            this.mapFilterMsg(f).uo("collectMsg")
+            val good = pf.andThen(right)
+            val bad = msggen.andThen(left)
+            this.mapFilterMsg(good.applyOrElse(_, bad)).uo("collectMsg")
         }
 
         /** This combinator conditionally transforms the result of this parser with a given function, if a `Left` is
