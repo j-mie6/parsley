@@ -30,7 +30,7 @@ private class BridgeImpl(using Quotes) {
         val tyArgs = tyRepr.typeArgs
         tyRepr match {
             case Bridgeable(cls, tyParams, bridgeParams, otherParams) =>
-                val categorisedArgs = categoriseArgs(cls, bridgeParams :: otherParams, 1, primary = true)
+                val categorisedArgs = categoriseArgs(cls, bridgeParams :: otherParams, 1, primary = true, mutable.ListBuffer.empty)
                 // Used for the types of the lambda passed to combinator
                 println(categorisedArgs)
                 val bridgePrimaryArgs = bridgeParams.collect {
@@ -70,7 +70,7 @@ private class BridgeImpl(using Quotes) {
     private def defaulted(cls: Symbol, n: Int): Option[Symbol] = cls.companionModule.declaredMethod(defaultName(n)).headOption
 
     @tailrec
-    private def categoriseArgs(cls: Symbol, nonPrimaryArgs: List[List[Symbol]], n: Int, primary: Boolean, buf: mutable.ListBuffer[List[BridgeArg]] = mutable.ListBuffer.empty): List[List[BridgeArg]] = nonPrimaryArgs match {
+    private def categoriseArgs(cls: Symbol, nonPrimaryArgs: List[List[Symbol]], n: Int, primary: Boolean, buf: mutable.ListBuffer[List[BridgeArg]]): List[List[BridgeArg]] = nonPrimaryArgs match {
         case Nil => buf.toList
         case args :: restArgs =>
             categoriseArgs(cls, restArgs, n + args.length, primary = false, buf += args.zipWithIndex.map {
@@ -149,7 +149,7 @@ private class BridgeImpl(using Quotes) {
     private def synthesiseLift[R: Type](existsUniquePosition: Option[PosImpl[?]], argTys: List[TypeRepr], con: Term, args: List[Term]): Expr[Parsley[R]] = {
         val tys = argTys :+ TypeRepr.of[R]
         val arity = argTys.size + existsUniquePosition.size
-        TypeRepr.of[parsley.lift.type].typeSymbol.methodMember(s"lift$arity").headOption.map('{parsley.lift}.asTerm.select(_)) match {
+        TypeRepr.of[parsley.lift.type].typeSymbol.methodMember(s"lift$arity").headOption.map('{parsley.lift}.asTerm.select) match {
             case Some(lift) => existsUniquePosition match {
                 case Some(impl@PosImpl(_, given Type[posTy])) =>
                     val posTyRepr = TypeRepr.of[posTy]
@@ -427,7 +427,7 @@ private class BridgeImpl(using Quotes) {
         // TODO: is there a better way to retrieve the bridge with desired arity?
         val bridgeTy = TypeTree.ref(TypeRepr.of[bridges.type].typeSymbol.typeMember(s"Bridge$arity"))
 
-        // BridgeN[T1, ..., TN, R]       
+        // BridgeN[T1, ..., TN, R]
         val parents = List(Applied(bridgeTy, argTys.map(Inferred(_)) :+ TypeTree.of[R]))
 
         // def apply(p1: Parsley[T1], ..., pN: parsley[TN]): Parsley[R]
@@ -461,23 +461,18 @@ private class BridgeImpl(using Quotes) {
     */
 
     private object Bridgeable {
-        def unapply(ty: TypeRepr): Option[(Symbol, List[Symbol], List[Symbol], List[List[Symbol]])] = {
-            val clsDef = ty.classSymbol
-            clsDef match {
-                case Some(cls) =>
-                    val primCon = cls.primaryConstructor
-                    Option.when(!primCon.isNoSymbol) {
-                        // some of the arguments lists may be type introductions
-                        // we should filter those out and handle separately
-                        val (tyParamss, valParamss) = primCon.paramSymss.partition(_.forall(_.isType))
-                        valParamss match {
-                            // TODO: this .flatten might not work with curried types; but they don't exist yet?
-                            // (might have to be careful with extension methods too, but extension bridges seem... weird)
-                            case bridgeParams :: otherParams => (cls, tyParamss.flatten, bridgeParams, otherParams)
-                            case Nil                         => (cls, tyParamss.flatten, Nil, Nil)
-                        }
-                    }
-                case None => None
+        def unapply(ty: TypeRepr): Option[(Symbol, List[Symbol], List[Symbol], List[List[Symbol]])] = ty.classSymbol.flatMap { cls =>
+            val primCon = cls.primaryConstructor
+            Option.when(!primCon.isNoSymbol) {
+                // some of the arguments lists may be type introductions
+                // we should filter those out and handle separately
+                val (tyParamss, valParamss) = primCon.paramSymss.partition(_.forall(_.isType))
+                valParamss match {
+                    // TODO: this .flatten might not work with curried types; but they don't exist yet?
+                    // (might have to be careful with extension methods too, but extension bridges seem... weird)
+                    case bridgeParams :: otherParams => (cls, tyParamss.flatten, bridgeParams, otherParams)
+                    case Nil                         => (cls, tyParamss.flatten, Nil, Nil)
+                }
             }
         }
     }
