@@ -43,6 +43,10 @@ private class BridgeImpl(using Quotes) {
                 }
                 val con = constructor[T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, existsUniquePosition.map(_.tyRepr))
                 val body = synthesiseLift[S](existsUniquePosition, bridgePrimaryArgs.map(_._2), con, _)
+                // TODO: ut()/uo(name) call (override toString, I guess? the three combinators have different names to eachother)
+                // TODO: error call
+                // TODO: labels/reason override
+                // TODO: synthesise from
 
                 // TODO: ensure validation if Err is encountered (report separately, but then abort if failed (Option))
                 synthesiseBridge[S](bridgePrimaryArgs.map(_._2.asType), body)

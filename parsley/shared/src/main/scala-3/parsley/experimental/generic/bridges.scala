@@ -13,6 +13,7 @@ Problem space:
     * How are error bridges incorporated in (annotation?)
 */
 
+// TODO: <# synthesis and from api. Incorporate Singleton bridge (non-template as parent)
 object bridges {
     abstract class Bridge1[T, R] extends ErrorBridge {
         def apply(p1: Parsley[T]): Parsley[R]
