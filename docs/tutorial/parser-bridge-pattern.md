@@ -681,7 +681,7 @@ import parsley.ap.*
 ```scala mdoc
 import parsley.bridges
 
-trait ParserSingletonBridgePos[+A] extends bridges.SingletonBridge {
+trait ParserSingletonBridgePos[+A] extends bridges.SingletonBridge[A] {
     protected def con(pos: (Int, Int)): A
     protected final def singleton = pos.map(con)
 }
