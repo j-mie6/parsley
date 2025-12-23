@@ -32,7 +32,7 @@ private class BridgeImpl(using Quotes) {
             case Bridgeable(cls, tyParams, bridgeParams, otherParams) =>
                 val categorisedArgs = categoriseArgs(cls, bridgeParams :: otherParams, 1, primary = true, mutable.ListBuffer.empty)
                 // Used for the types of the lambda passed to combinator
-                println(categorisedArgs)
+                //println(categorisedArgs)
                 val bridgePrimaryArgs = bridgeParams.collect {
                     case sym if isPos(sym).isEmpty => (sym.name, tyRepr.memberType(sym).substituteTypes(tyParams, tyArgs))
                 }
@@ -42,14 +42,18 @@ private class BridgeImpl(using Quotes) {
                     case (pos, _)                    => pos
                 }
                 val con = constructor[T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, existsUniquePosition.map(_.tyRepr))
-                val body = synthesiseLift[S](existsUniquePosition, bridgePrimaryArgs.map(_._2), con, _)
+                val lift = synthesiseLift[S](existsUniquePosition, bridgePrimaryArgs.map(_._2), con, _)
+                val from = [Fn] => { (fnTy: Type[Fn]) =>
+                    given Type[Fn] = fnTy
+                    val curriedCon = curriedConstructor[Fn, T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, existsUniquePosition.map(_.tyRepr))
+                    synthesiseSingle[Fn](existsUniquePosition, curriedCon)
+                }
                 // TODO: ut()/uo(name) call (override toString, I guess? the three combinators have different names to eachother)
                 // TODO: error call
                 // TODO: labels/reason override
-                // TODO: synthesise from
 
                 // TODO: ensure validation if Err is encountered (report separately, but then abort if failed (Option))
-                synthesiseBridge[S](bridgePrimaryArgs.map(_._2.asType), body)
+                synthesiseBridge[S](bridgePrimaryArgs.map(_._2.asType), lift, from)
             case _ => report.errorAndAbort("can only make bridges for constructible classes or objects")
         }
     }
@@ -90,6 +94,7 @@ private class BridgeImpl(using Quotes) {
             })
     }
 
+    // FIXME: I don't like the duplication here...
     /** Constructs a lambda for a constructor applied to defaults and threading required metadata
       *
       * @param cls the class for the constructor
@@ -110,6 +115,30 @@ private class BridgeImpl(using Quotes) {
                 case paramTerms => (None, paramTerms)
             appliedCon(cls, lamSym, paramTermsWithoutPos.toVector, clsTyArgs, otherArgs, posParam)
         })
+    }
+
+    /** Constructs a lambda for a constructor applied to defaults and threading required metadata
+      *
+      * @param cls the class for the constructor
+      * @param lamArgs the arguments for the lambda (without positions or defaulted)
+      * @param clsTyArgs the type parameters provided to the constructor
+      * @param otherArgs any remaining non-primary arguments
+      * @param posRepr the position
+      * @return a lambda of the form `pos => (lamArgs..) => cls[clsTyArgs](..)(otherArgs)`
+      */
+    private def curriedConstructor[Fn: Type, R: Type](cls: Symbol, lamArgs: List[(String, TypeRepr)], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]], posRepr: Option[TypeRepr]): Term = {
+        val (paramNames, lamTys) = lamArgs.unzip
+        // grrrrrrrr why has Scala given me Tree and not Term?!
+        def inner(owner: Symbol, posParam: Option[Term]) = Lambda(owner, MethodType(paramNames)(_ => lamTys, _ => TypeRepr.of[R]), { (lamSym, params) =>
+            val paramTerms = params.map(_.asExpr.asTerm)
+            appliedCon(cls, lamSym, paramTerms.toVector, clsTyArgs, otherArgs, posParam)
+        })
+        posRepr.fold(inner(Symbol.spliceOwner, None)) { posRepr =>
+            Lambda(Symbol.spliceOwner, MethodType(List("pos"))(_ => List(posRepr), _ => TypeRepr.of[Fn]), { (outerLamSym, posParam) =>
+                // grrrrrrrr why has Scala given me Tree and not Term?!
+                inner(outerLamSym, posParam.map(_.asExpr.asTerm).headOption)
+            })
+        }
     }
 
     private def appliedCon(cls: Symbol, owner: Symbol, lamParams: IndexedSeq[Term], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]], posParam: Option[Term]): Term = {
@@ -169,18 +198,27 @@ private class BridgeImpl(using Quotes) {
         }
     }
 
-    private def synthesiseBridge[R: Type](argTys: List[Type[?]], body: List[Term] => Expr[Parsley[R]]): Expr[ErrorBridge] = (argTys.size: @switch) match {
+    private def synthesiseSingle[R: Type](existsUniquePosition: Option[PosImpl[?]], con: Term): Expr[Parsley[R]] = existsUniquePosition match {
+        case Some(impl@PosImpl(_, given Type[posTy])) => '{${impl.parser}.map[R](${con.asExprOf[posTy => R]})}
+        case None => '{Parsley.pure[R](${con.asExprOf[R]})}
+    }
+
+    private def synthesiseBridge[R: Type](argTys: List[Type[?]], lift: List[Term] => Expr[Parsley[R]], single: [T] => Type[T] => Expr[Parsley[T]]): Expr[ErrorBridge] = (argTys.size: @switch) match {
         case 1 => (argTys: @unchecked) match {
             case List('[t1]) => '{
                 new bridges.Bridge1[t1, R] {
-                    def apply(p1: Parsley[t1]): Parsley[R] = ${ body(List('p1.asTerm)) }
+                    def apply(p1: Parsley[t1]): Parsley[R] = ${lift(List('p1.asTerm))}
+                    def from(op: Parsley[?]): Parsley[t1 => R] = ${single(Type.of[t1 => R])} <~ op
                 }
             }
         }
         case 2 => (argTys: @unchecked) match {
             case List('[t1], '[t2]) => '{
                 new bridges.Bridge2[t1, t2, R] {
-                    def apply(p1: Parsley[t1], p2: Parsley[t2]): Parsley[R] = ${ body(List('p1.asTerm, 'p2.asTerm)) }
+                    def apply(p1: Parsley[t1], p2: Parsley[t2]): Parsley[R] =
+                        ${lift(List('p1.asTerm, 'p2.asTerm))}
+                    def from(op: Parsley[?]): Parsley[(t1, t2) => R] =
+                        ${single(Type.of[(t1, t2) => R])} <~ op
                 }
             }
         }
@@ -188,7 +226,9 @@ private class BridgeImpl(using Quotes) {
             case List('[t1], '[t2], '[t3]) => '{
                 new bridges.Bridge3[t1, t2, t3, R] {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3]): Parsley[R] =
-                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm)) }
+                        ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm))}
+                    def from(op: Parsley[?]): Parsley[(t1, t2, t3) => R] =
+                        ${single(Type.of[(t1, t2, t3) => R])} <~ op
                 }
             }
         }
@@ -196,7 +236,9 @@ private class BridgeImpl(using Quotes) {
             case List('[t1], '[t2], '[t3], '[t4]) => '{
                 new bridges.Bridge4[t1, t2, t3, t4, R] {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4]): Parsley[R] =
-                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm)) }
+                        ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm))}
+                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4) => R])} <~ op
                 }
             }
         }
@@ -204,7 +246,9 @@ private class BridgeImpl(using Quotes) {
             case List('[t1], '[t2], '[t3], '[t4], '[t5]) => '{
                 new bridges.Bridge5[t1, t2, t3, t4, t5, R] {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5]): Parsley[R] =
-                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm)) }
+                        ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm))}
+                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5) => R])} <~ op
                 }
             }
         }
@@ -213,8 +257,10 @@ private class BridgeImpl(using Quotes) {
                 new bridges.Bridge6[t1, t2, t3, t4, t5, t6, R] {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6]): Parsley[R] =
-                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
-                                     'p6.asTerm)) }
+                        ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                    'p6.asTerm))}
+                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6) => R])} <~ op
                 }
             }
         }
@@ -223,8 +269,10 @@ private class BridgeImpl(using Quotes) {
                 new bridges.Bridge7[t1, t2, t3, t4, t5, t6, t7, R] {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7]): Parsley[R] =
-                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
-                                     'p6.asTerm, 'p7.asTerm)) }
+                        ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                    'p6.asTerm, 'p7.asTerm))}
+                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7) => R])} <~ op
                 }
             }
         }
@@ -233,8 +281,10 @@ private class BridgeImpl(using Quotes) {
                 new bridges.Bridge8[t1, t2, t3, t4, t5, t6, t7, t8, R] {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8]): Parsley[R] =
-                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
-                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm)) }
+                        ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                    'p6.asTerm, 'p7.asTerm, 'p8.asTerm))}
+                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8) => R])} <~ op
                 }
             }
         }
@@ -243,8 +293,10 @@ private class BridgeImpl(using Quotes) {
                 new bridges.Bridge9[t1, t2, t3, t4, t5, t6, t7, t8, t9, R] {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9]): Parsley[R] =
-                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
-                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm)) }
+                        ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                    'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm))}
+                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9) => R])} <~ op
                 }
             }
         }
@@ -253,8 +305,10 @@ private class BridgeImpl(using Quotes) {
                 new bridges.Bridge10[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, R] {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10]): Parsley[R] =
-                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
-                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm)) }
+                        ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                    'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm))}
+                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) => R])} <~ op
                 }
             }
         }
@@ -264,9 +318,11 @@ private class BridgeImpl(using Quotes) {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11]): Parsley[R] =
-                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
-                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
-                                     'p11.asTerm)) }
+                        ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                    'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
+                                    'p11.asTerm))}
+                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11) => R])} <~ op
                 }
             }
         }
@@ -276,9 +332,11 @@ private class BridgeImpl(using Quotes) {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11], p12: Parsley[t12]): Parsley[R] =
-                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
-                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
-                                     'p11.asTerm, 'p12.asTerm)) }
+                        ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                    'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
+                                    'p11.asTerm, 'p12.asTerm))}
+                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12) => R])} <~ op
                 }
             }
         }
@@ -288,9 +346,11 @@ private class BridgeImpl(using Quotes) {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13]): Parsley[R] =
-                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
-                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
-                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm)) }
+                        ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                    'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
+                                    'p11.asTerm, 'p12.asTerm, 'p13.asTerm))}
+                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13) => R])} <~ op
                 }
             }
         }
@@ -300,9 +360,11 @@ private class BridgeImpl(using Quotes) {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14]): Parsley[R] =
-                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
-                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
-                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm)) }
+                        ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                    'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
+                                    'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm))}
+                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14) => R])} <~ op
                 }
             }
         }
@@ -312,9 +374,11 @@ private class BridgeImpl(using Quotes) {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15]): Parsley[R] =
-                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
-                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
-                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm)) }
+                        ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                    'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
+                                    'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm))}
+                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15) => R])} <~ op
                 }
             }
         }
@@ -325,10 +389,12 @@ private class BridgeImpl(using Quotes) {
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
                               p16: Parsley[t16]): Parsley[R] =
-                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
-                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
-                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
-                                     'p16.asTerm)) }
+                        ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                    'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
+                                    'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
+                                    'p16.asTerm))}
+                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16) => R])} <~ op
                 }
             }
         }
@@ -339,10 +405,12 @@ private class BridgeImpl(using Quotes) {
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
                               p16: Parsley[t16], p17: Parsley[t17]): Parsley[R] =
-                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
-                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
-                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
-                                     'p16.asTerm, 'p17.asTerm)) }
+                        ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                    'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
+                                    'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
+                                    'p16.asTerm, 'p17.asTerm))}
+                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17) => R])} <~ op
                 }
             }
         }
@@ -353,10 +421,12 @@ private class BridgeImpl(using Quotes) {
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
                               p16: Parsley[t16], p17: Parsley[t17], p18: Parsley[t18]): Parsley[R] =
-                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
-                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
-                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
-                                     'p16.asTerm, 'p17.asTerm, 'p18.asTerm)) }
+                        ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                    'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
+                                    'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
+                                    'p16.asTerm, 'p17.asTerm, 'p18.asTerm))}
+                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18) => R])} <~ op
                 }
             }
         }
@@ -367,10 +437,12 @@ private class BridgeImpl(using Quotes) {
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
                               p16: Parsley[t16], p17: Parsley[t17], p18: Parsley[t18], p19: Parsley[t19]): Parsley[R] =
-                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
-                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
-                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
-                                     'p16.asTerm, 'p17.asTerm, 'p18.asTerm, 'p19.asTerm)) }
+                        ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                    'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
+                                    'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
+                                    'p16.asTerm, 'p17.asTerm, 'p18.asTerm, 'p19.asTerm))}
+                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19) => R])} <~ op
                 }
             }
         }
@@ -381,10 +453,12 @@ private class BridgeImpl(using Quotes) {
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
                               p16: Parsley[t16], p17: Parsley[t17], p18: Parsley[t18], p19: Parsley[t19], p20: Parsley[t20]): Parsley[R] =
-                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
-                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
-                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
-                                     'p16.asTerm, 'p17.asTerm, 'p18.asTerm, 'p19.asTerm, 'p20.asTerm)) }
+                        ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                    'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
+                                    'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
+                                    'p16.asTerm, 'p17.asTerm, 'p18.asTerm, 'p19.asTerm, 'p20.asTerm))}
+                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20) => R])} <~ op
                 }
             }
         }
@@ -396,11 +470,13 @@ private class BridgeImpl(using Quotes) {
                               p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
                               p16: Parsley[t16], p17: Parsley[t17], p18: Parsley[t18], p19: Parsley[t19], p20: Parsley[t20],
                               p21: Parsley[t21]): Parsley[R] =
-                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
-                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
-                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
-                                     'p16.asTerm, 'p17.asTerm, 'p18.asTerm, 'p19.asTerm, 'p20.asTerm,
-                                     'p21.asTerm)) }
+                        ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                    'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
+                                    'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
+                                    'p16.asTerm, 'p17.asTerm, 'p18.asTerm, 'p19.asTerm, 'p20.asTerm,
+                                    'p21.asTerm))}
+                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21) => R])} <~ op
                 }
             }
         }
@@ -412,11 +488,13 @@ private class BridgeImpl(using Quotes) {
                               p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
                               p16: Parsley[t16], p17: Parsley[t17], p18: Parsley[t18], p19: Parsley[t19], p20: Parsley[t20],
                               p21: Parsley[t21], p22: Parsley[t22]): Parsley[R] =
-                        ${ body(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
-                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
-                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
-                                     'p16.asTerm, 'p17.asTerm, 'p18.asTerm, 'p19.asTerm, 'p20.asTerm,
-                                     'p21.asTerm, 'p22.asTerm)) }
+                        ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
+                                    'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
+                                    'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
+                                    'p16.asTerm, 'p17.asTerm, 'p18.asTerm, 'p19.asTerm, 'p20.asTerm,
+                                    'p21.asTerm, 'p22.asTerm))}
+                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22) => R])} <~ op
                 }
             }
         }
@@ -424,6 +502,7 @@ private class BridgeImpl(using Quotes) {
     }
 
     // TODO: use this generalised synthesis method once Symbol.newClass and ClassDef are no longer marked experimental
+    // TODO: only does lift synthesis, not the singleton/errors/etc
     /*
     @experimental
     private def synthesiseBridge[R: Type](argTys: List[TypeRepr], body: List[Term] => Expr[Parsley[R]]): Expr[ErrorBridge] = {
