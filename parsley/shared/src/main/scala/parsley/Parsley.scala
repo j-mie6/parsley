@@ -939,11 +939,12 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
     // $COVERAGE-ON$
 
     // hidden methods (TODO: move these?)
-    private [parsley] def ut(): Parsley[A] = {
+    // 2.12 does not allow the this.type on AnyVal classes...
+    private [parsley] def ut()/*: this.type*/ = {
         internal.transparent()
         this
     }
-    private [parsley] def uo(name: String): Parsley[A] = {
+    private [parsley] def uo(name: String)/*: this.type*/ = {
         internal.opaque(name)
         this
     }

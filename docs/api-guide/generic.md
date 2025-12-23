@@ -75,7 +75,7 @@ templates (see [the associated tutorial](../tutorial/parser-bridge-pattern.md) f
 The [`parsley.generic`](@:api(parsley.generic$)) module contains `ParserBridge1` through
 `ParserBridge22` as well as `ParserBridge0`; they all extend `ParserBridgeSingleton`, which provides
 some additional combinators as well as `ErrorBridge`, which allows labels and a reason to be attached
-to a bridge.
+to a bridge. @:todo(TODO: no longer error bridge, needs a rethink)
 
 ### `ParserBridge1[-T1, +R]` through `ParserBridge22[-T1, .., -T22, +R]`
 Each of these traits are designed to be implemented ideally by a companion object for a `case class`.
