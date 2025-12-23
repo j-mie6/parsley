@@ -667,8 +667,8 @@ This provides a _modest_ improvement over the original versions.
 
 ### Adding Errors
 The generic bridges found in `parsley.generic` offer one additional component that is absent from the
-descriptions above: they all extend `generic.ParserSingleBridge`, which in turn extends
-`generic.ErrorBridge`. This trait exposes hook methods for `labels` and `reason`, which allow for
+descriptions above: they all extend `bridges.SingletonBridge`, which in turn extends
+`bridges.ErrorBridge`. This trait exposes hook methods for `labels` and `reason`, which allow for
 error messages to be associated with the bridge, and in exchange provides the template `error` combinator:
 this is supposed to be called within the bridge to annotate a parser with the provided error messages.
 Our definitions of `ParserBridgePos1` and `ParserBridgePos2` can also benefit from this:
@@ -679,22 +679,21 @@ import parsley.position.pos
 import parsley.ap.*
 ```
 ```scala mdoc
-import parsley.generic
+import parsley.bridges
 
-trait ParserSingletonBridgePos[+A] extends generic.ErrorBridge {
+trait ParserSingletonBridgePos[+A] extends bridges.SingletonBridge {
     protected def con(pos: (Int, Int)): A
-    def from(op: Parsley[?]): Parsley[A] = error(pos.map(this.con) <* op)
-    final def <#(op: Parsley[?]): Parsley[A] = this from op
+    protected final def singleton = pos.map(con)
 }
 
-trait ParserBridgePos1[-A, +B] extends ParserSingletonBridgePos[A => B] {
+trait ParserBridgePos1[-A, +B] extends bridges.Bridge1[A, B] with ParserSingletonBridgePos[A => B] {
     def apply(x: A)(pos: (Int, Int)): B
     def apply(x: Parsley[A]): Parsley[B] = error(ap1(pos.map(con), x))
 
     override final def con(pos: (Int, Int)): A => B = this.apply(_)(pos)
 }
 
-trait ParserBridgePos2[-A, -B, +C] extends ParserSingletonBridgePos[(A, B) => C] {
+trait ParserBridgePos2[-A, -B, +C] extends bridges.Bridge2[A, B, C] with ParserSingletonBridgePos[(A, B) => C] {
     def apply(x: A, y: B)(pos: (Int, Int)): C
     def apply(x: Parsley[A], y: =>Parsley[B]): Parsley[C] = error(ap2(pos.map(con), x, y))
 
