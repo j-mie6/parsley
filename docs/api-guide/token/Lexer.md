@@ -113,7 +113,7 @@ in any way, it will be parsed literally, as if `string` had been used.
 The `symbol` object also defines a bunch of pre-made helper parsers for some common symbols
 like `;`, `,`, and so on. They are just defined in terms of `symbol.apply(String)` or `symbol.apply(Char)`.
 
-@:style(paragraph) Implicits @:@ `symbol.implicits` contains the function `implicitSymbol`,
+@:style(paragraph) Implicits @:@ `symbol.implicits` contains an `implicitSymbol: Conversion[String, Parsley[Unit]]`,
 which does the same job as `symbol.apply`, but is defined as an implicit conversion. By
 importing this, string literals can themselves serve as parsers of type `Parsley[Unit]`, and
 parse symbols correctly. With this, it instead of `symbol("if")` you can simply write `"if"`.
