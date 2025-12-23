@@ -583,7 +583,7 @@ object expressions {
     import parsley.expr.{precedence, Ops, InfixL, Prefix}
     import parsley.combinator.sepEndBy1
 
-    import lexer.implicits.implicitSymbol
+    import lexer.implicits.given
     import lexer.{number, fully, identifier}
     import ast.*
 
