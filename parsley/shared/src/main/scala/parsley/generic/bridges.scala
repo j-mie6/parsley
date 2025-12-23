@@ -6,16 +6,13 @@
 package parsley
 package generic
 
-import scala.annotation.transparentTrait
-
 import Parsley.transPure
 import lift.*
 
 // $COVERAGE-OFF$
 // scalastyle:off parameter.number ensure.single.space.after.token
 // Allows for easier implementation for the singleton = pure case
-@transparentTrait
-private trait PureSingletonImpl[+A] { this:  bridges.SingletonBridge[A] =>
+private [generic] trait PureSingletonImpl[+A] { this:  bridges.SingletonBridge[A] =>
     /** The abstract hook method: what value is the singleton representing?
       * @since 4.0.0
       */
