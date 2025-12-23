@@ -83,9 +83,6 @@ lazy val expr: Parsley[Int] =
     expr <**> (('+'.as(add) <*> term) | ('-'.as(sub) <*> term))
   | term
 ```
-```scala mdoc:invisible
-lazy val _ = expr: @scala.annotation.unused
-```
 
 Now we've eliminated the "backtracking" (if only we could make it that far!), but we can right factor
 the `|` too to obtain the simplest form for the parser:
@@ -170,9 +167,6 @@ lazy val expr: Parsley[Int] = precedence[Int]('(' ~> expr <~ ')', number)(
     Ops(InfixL)('*' as (_ * _)),
     Ops(InfixL)('+' as (_ + _), '-' as (_ - _)))
 ```
-```scala mdoc:invisible
-lazy val _ = expr: @scala.annotation.unused
-```
 
 This is a _lot_ smaller! The way `precedence` works is that it is first provided with the
 `atom`s of the expression, and then each precedence level in turn (as many as needed),
@@ -188,9 +182,6 @@ lazy val expr: Parsley[Int] = precedence[Int](
     Ops[Int](InfixL)('+' as (_ + _), '-' as (_ - _)),
     Ops[Int](InfixL)('*' as (_ * _)))(
     '(' ~> expr <~ ')', number)
-```
-```scala mdoc:invisible
-lazy val _ = expr: @scala.annotation.unused
 ```
 
 But due to the ordering that type inference happens, this form is a bit more cumbersome.
@@ -375,9 +366,6 @@ lazy val expr: Parsley[Expr] = precedence {
   GOps[Atom, Term](InfixL)('*' as Mul.apply)(OfAtom.apply) :+
   GOps[Term, Expr](InfixL)('+' as Add.apply, '-' as Sub.apply)(OfTerm.apply)
 }
-```
-```scala mdoc:invisible
-lazy val _ = expr: @scala.annotation.unused
 ```
 
 Not so different from the original using `SOps`, but if you can allow subtyping in your AST, you
