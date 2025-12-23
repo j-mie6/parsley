@@ -9,7 +9,7 @@ package experimental.generic
 import scala.annotation.{switch, tailrec}
 import scala.collection.mutable
 import scala.quoted.*
-import generic.ErrorBridge
+import bridges.ErrorBridge
 
 // TODO: consider how to incorporate the errors in cleanly
 inline transparent def bridge[T]: ErrorBridge = bridge[T, T]
@@ -17,6 +17,12 @@ inline transparent def bridge[T, S >: T]: ErrorBridge = ${bridgeImpl[T, S]('Nil,
 private def bridgeImpl[T: Type, S >: T: Type](labels: Expr[List[String]], reason: Expr[Option[String]])(using Quotes): Expr[ErrorBridge] = {
     BridgeImpl().synthesise[T, S](labels, reason)
 }
+
+// this is annoying, but needs to be available publically, otherwise macros can't see it
+transparent trait InternalMethodLeak { this: bridges.SingletonBridge[?] =>
+    def macroImplLiftedWrap[A](p: Parsley[A]) = error(p.ut()).uo(name)
+}
+
 // having a class here simplifies the importing of quotes.reflect.* for the enum
 // (FIXME: it is considered bad practice, so I will probably just make a parametric enum later)
 private class BridgeImpl(using Quotes) {
@@ -206,7 +212,7 @@ private class BridgeImpl(using Quotes) {
         // TODO: make generation of labels/reason conditional as to not bloat the objects
         case 1 => (argTys: @unchecked) match {
             case List('[t1]) => '{
-                new bridges.Bridge1[t1, R] with bridges.InternalMethodLeak {
+                new bridges.Bridge1[t1, R] with InternalMethodLeak {
                     def apply(p1: Parsley[t1]): Parsley[R] = macroImplLiftedWrap(${lift(List('p1.asTerm))})
                     def singleton: Parsley[t1 => R] = ${single(Type.of[t1 => R])}
                     override def labels: List[String] = $errLabels
@@ -217,7 +223,7 @@ private class BridgeImpl(using Quotes) {
         }
         case 2 => (argTys: @unchecked) match {
             case List('[t1], '[t2]) => '{
-                new bridges.Bridge2[t1, t2, R] with bridges.InternalMethodLeak {
+                new bridges.Bridge2[t1, t2, R] with InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm))}
                     def singleton: Parsley[(t1, t2) => R] =
@@ -230,7 +236,7 @@ private class BridgeImpl(using Quotes) {
         }
         case 3 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3]) => '{
-                new bridges.Bridge3[t1, t2, t3, R] with bridges.InternalMethodLeak {
+                new bridges.Bridge3[t1, t2, t3, R] with InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm))}
                     def singleton: Parsley[(t1, t2, t3) => R] =
@@ -243,7 +249,7 @@ private class BridgeImpl(using Quotes) {
         }
         case 4 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4]) => '{
-                new bridges.Bridge4[t1, t2, t3, t4, R] with bridges.InternalMethodLeak {
+                new bridges.Bridge4[t1, t2, t3, t4, R] with InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm))}
                     def singleton: Parsley[(t1, t2, t3, t4) => R] =
@@ -256,7 +262,7 @@ private class BridgeImpl(using Quotes) {
         }
         case 5 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5]) => '{
-                new bridges.Bridge5[t1, t2, t3, t4, t5, R] with bridges.InternalMethodLeak {
+                new bridges.Bridge5[t1, t2, t3, t4, t5, R] with InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm))}
                     def singleton: Parsley[(t1, t2, t3, t4, t5) => R] =
@@ -269,7 +275,7 @@ private class BridgeImpl(using Quotes) {
         }
         case 6 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6]) => '{
-                new bridges.Bridge6[t1, t2, t3, t4, t5, t6, R] with bridges.InternalMethodLeak {
+                new bridges.Bridge6[t1, t2, t3, t4, t5, t6, R] with InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
@@ -284,7 +290,7 @@ private class BridgeImpl(using Quotes) {
         }
         case 7 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7]) => '{
-                new bridges.Bridge7[t1, t2, t3, t4, t5, t6, t7, R] with bridges.InternalMethodLeak {
+                new bridges.Bridge7[t1, t2, t3, t4, t5, t6, t7, R] with InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
@@ -299,7 +305,7 @@ private class BridgeImpl(using Quotes) {
         }
         case 8 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8]) => '{
-                new bridges.Bridge8[t1, t2, t3, t4, t5, t6, t7, t8, R] with bridges.InternalMethodLeak {
+                new bridges.Bridge8[t1, t2, t3, t4, t5, t6, t7, t8, R] with InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
@@ -314,7 +320,7 @@ private class BridgeImpl(using Quotes) {
         }
         case 9 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9]) => '{
-                new bridges.Bridge9[t1, t2, t3, t4, t5, t6, t7, t8, t9, R] with bridges.InternalMethodLeak {
+                new bridges.Bridge9[t1, t2, t3, t4, t5, t6, t7, t8, t9, R] with InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
@@ -329,7 +335,7 @@ private class BridgeImpl(using Quotes) {
         }
         case 10 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10]) => '{
-                new bridges.Bridge10[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, R] with bridges.InternalMethodLeak {
+                new bridges.Bridge10[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, R] with InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
@@ -344,7 +350,7 @@ private class BridgeImpl(using Quotes) {
         }
         case 11 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11]) => '{
-                new bridges.Bridge11[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, R] with bridges.InternalMethodLeak {
+                new bridges.Bridge11[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, R] with InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11]): Parsley[R] = macroImplLiftedWrap:
@@ -361,7 +367,7 @@ private class BridgeImpl(using Quotes) {
         }
         case 12 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12]) => '{
-                new bridges.Bridge12[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, R] with bridges.InternalMethodLeak {
+                new bridges.Bridge12[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, R] with InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11], p12: Parsley[t12]): Parsley[R] = macroImplLiftedWrap:
@@ -378,7 +384,7 @@ private class BridgeImpl(using Quotes) {
         }
         case 13 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13]) => '{
-                new bridges.Bridge13[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, R] with bridges.InternalMethodLeak {
+                new bridges.Bridge13[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, R] with InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13]): Parsley[R] = macroImplLiftedWrap:
@@ -395,7 +401,7 @@ private class BridgeImpl(using Quotes) {
         }
         case 14 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13], '[t14]) => '{
-                new bridges.Bridge14[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, R] with bridges.InternalMethodLeak {
+                new bridges.Bridge14[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, R] with InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14]): Parsley[R] = macroImplLiftedWrap:
@@ -412,7 +418,7 @@ private class BridgeImpl(using Quotes) {
         }
         case 15 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13], '[t14], '[t15]) => '{
-                new bridges.Bridge15[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, R] with bridges.InternalMethodLeak {
+                new bridges.Bridge15[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, R] with InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15]): Parsley[R] = macroImplLiftedWrap:
@@ -429,7 +435,7 @@ private class BridgeImpl(using Quotes) {
         }
         case 16 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13], '[t14], '[t15], '[t16]) => '{
-                new bridges.Bridge16[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, R] with bridges.InternalMethodLeak {
+                new bridges.Bridge16[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, R] with InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
@@ -448,7 +454,7 @@ private class BridgeImpl(using Quotes) {
         }
         case 17 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13], '[t14], '[t15], '[t16], '[t17]) => '{
-                new bridges.Bridge17[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, R] with bridges.InternalMethodLeak {
+                new bridges.Bridge17[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, R] with InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
@@ -467,7 +473,7 @@ private class BridgeImpl(using Quotes) {
         }
         case 18 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13], '[t14], '[t15], '[t16], '[t17], '[t18]) => '{
-                new bridges.Bridge18[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, R] with bridges.InternalMethodLeak {
+                new bridges.Bridge18[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, R] with InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
@@ -486,7 +492,7 @@ private class BridgeImpl(using Quotes) {
         }
         case 19 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13], '[t14], '[t15], '[t16], '[t17], '[t18], '[t19]) => '{
-                new bridges.Bridge19[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, R] with bridges.InternalMethodLeak {
+                new bridges.Bridge19[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, R] with InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
@@ -505,7 +511,7 @@ private class BridgeImpl(using Quotes) {
         }
         case 20 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13], '[t14], '[t15], '[t16], '[t17], '[t18], '[t19], '[t20]) => '{
-                new bridges.Bridge20[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, R] with bridges.InternalMethodLeak {
+                new bridges.Bridge20[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, R] with InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
@@ -524,7 +530,7 @@ private class BridgeImpl(using Quotes) {
         }
         case 21 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13], '[t14], '[t15], '[t16], '[t17], '[t18], '[t19], '[t20], '[t21]) => '{
-                new bridges.Bridge21[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, R] with bridges.InternalMethodLeak {
+                new bridges.Bridge21[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, R] with InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
@@ -545,7 +551,7 @@ private class BridgeImpl(using Quotes) {
         }
         case 22 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13], '[t14], '[t15], '[t16], '[t17], '[t18], '[t19], '[t20], '[t21], '[t22]) => '{
-                new bridges.Bridge22[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, R] with bridges.InternalMethodLeak {
+                new bridges.Bridge22[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, R] with InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
