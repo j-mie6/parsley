@@ -11,9 +11,12 @@ import scala.collection.mutable
 import scala.quoted.*
 import generic.ErrorBridge
 
+// TODO: consider how to incorporate the errors in cleanly
 inline transparent def bridge[T]: ErrorBridge = bridge[T, T]
-inline transparent def bridge[T, S >: T]: ErrorBridge = ${bridgeImpl[T, S]}
-private def bridgeImpl[T: Type, S >: T: Type](using Quotes): Expr[ErrorBridge] = BridgeImpl().synthesise[T, S]
+inline transparent def bridge[T, S >: T]: ErrorBridge = ${bridgeImpl[T, S]('Nil, 'None)}
+private def bridgeImpl[T: Type, S >: T: Type](labels: Expr[List[String]], reason: Expr[Option[String]])(using Quotes): Expr[ErrorBridge] = {
+    BridgeImpl().synthesise[T, S](labels, reason)
+}
 // having a class here simplifies the importing of quotes.reflect.* for the enum
 // (FIXME: it is considered bad practice, so I will probably just make a parametric enum later)
 private class BridgeImpl(using Quotes) {
@@ -25,7 +28,7 @@ private class BridgeImpl(using Quotes) {
         case Err(name: String, pos: Option[Position])
     }
 
-    def synthesise[T: Type, S >: T: Type] = {
+    def synthesise[T: Type, S >: T: Type](labels: Expr[List[String]], reason: Expr[Option[String]]) = {
         val tyRepr = TypeRepr.of[T]
         val tyArgs = tyRepr.typeArgs
         tyRepr match {
@@ -48,15 +51,8 @@ private class BridgeImpl(using Quotes) {
                     val curriedCon = curriedConstructor[Fn, T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, existsUniquePosition.map(_.tyRepr))
                     synthesiseSingle[Fn](existsUniquePosition, curriedCon)
                 }
-                // TODO: override name
-                // TODO: labels/reason override
-                /*
-                Problem space:
-                    * How are error bridges incorporated in (annotation?)
-                */
-
                 // TODO: ensure validation if Err is encountered (report separately, but then abort if failed (Option))
-                synthesiseBridge[S](bridgePrimaryArgs.map(_._2.asType), lift, from)
+                synthesiseBridge[S](tyRepr.typeSymbol.name, bridgePrimaryArgs.map(_._2.asType), lift, from, labels, reason)
             case _ => report.errorAndAbort("can only make bridges for constructible classes or objects")
         }
     }
@@ -206,12 +202,16 @@ private class BridgeImpl(using Quotes) {
         case None => '{Parsley.pure[R](${con.asExprOf[R]})}
     }
 
-    private def synthesiseBridge[R: Type](argTys: List[Type[?]], lift: List[Term] => Expr[Parsley[R]], single: [T] => Type[T] => Expr[Parsley[T]]): Expr[ErrorBridge] = (argTys.size: @switch) match {
+    private def synthesiseBridge[R: Type](n: String, argTys: List[Type[?]], lift: List[Term] => Expr[Parsley[R]], single: [T] => Type[T] => Expr[Parsley[T]], errLabels: Expr[List[String]], errReason: Expr[Option[String]]): Expr[ErrorBridge] = (argTys.size: @switch) match {
+        // TODO: make generation of labels/reason conditional as to not bloat the objects
         case 1 => (argTys: @unchecked) match {
             case List('[t1]) => '{
                 new bridges.Bridge1[t1, R] with bridges.InternalMethodLeak {
                     def apply(p1: Parsley[t1]): Parsley[R] = macroImplLiftedWrap(${lift(List('p1.asTerm))})
                     def singleton: Parsley[t1 => R] = ${single(Type.of[t1 => R])}
+                    override def labels: List[String] = $errLabels
+                    override def reason: Option[String] = $errReason
+                    override protected def name = ${Expr(n)}
                 }
             }
         }
@@ -222,6 +222,9 @@ private class BridgeImpl(using Quotes) {
                         ${lift(List('p1.asTerm, 'p2.asTerm))}
                     def singleton: Parsley[(t1, t2) => R] =
                         ${single(Type.of[(t1, t2) => R])}
+                    override def labels: List[String] = $errLabels
+                    override def reason: Option[String] = $errReason
+                    override protected def name = ${Expr(n)}
                 }
             }
         }
@@ -232,6 +235,9 @@ private class BridgeImpl(using Quotes) {
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm))}
                     def singleton: Parsley[(t1, t2, t3) => R] =
                         ${single(Type.of[(t1, t2, t3) => R])}
+                    override def labels: List[String] = $errLabels
+                    override def reason: Option[String] = $errReason
+                    override protected def name = ${Expr(n)}
                 }
             }
         }
@@ -242,6 +248,9 @@ private class BridgeImpl(using Quotes) {
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm))}
                     def singleton: Parsley[(t1, t2, t3, t4) => R] =
                         ${single(Type.of[(t1, t2, t3, t4) => R])}
+                    override def labels: List[String] = $errLabels
+                    override def reason: Option[String] = $errReason
+                    override protected def name = ${Expr(n)}
                 }
             }
         }
@@ -252,6 +261,9 @@ private class BridgeImpl(using Quotes) {
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm))}
                     def singleton: Parsley[(t1, t2, t3, t4, t5) => R] =
                         ${single(Type.of[(t1, t2, t3, t4, t5) => R])}
+                    override def labels: List[String] = $errLabels
+                    override def reason: Option[String] = $errReason
+                    override protected def name = ${Expr(n)}
                 }
             }
         }
@@ -264,6 +276,9 @@ private class BridgeImpl(using Quotes) {
                                     'p6.asTerm))}
                     def singleton: Parsley[(t1, t2, t3, t4, t5, t6) => R] =
                         ${single(Type.of[(t1, t2, t3, t4, t5, t6) => R])}
+                    override def labels: List[String] = $errLabels
+                    override def reason: Option[String] = $errReason
+                    override protected def name = ${Expr(n)}
                 }
             }
         }
@@ -276,6 +291,9 @@ private class BridgeImpl(using Quotes) {
                                     'p6.asTerm, 'p7.asTerm))}
                     def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7) => R] =
                         ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7) => R])}
+                    override def labels: List[String] = $errLabels
+                    override def reason: Option[String] = $errReason
+                    override protected def name = ${Expr(n)}
                 }
             }
         }
@@ -288,6 +306,9 @@ private class BridgeImpl(using Quotes) {
                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm))}
                     def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8) => R] =
                         ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8) => R])}
+                    override def labels: List[String] = $errLabels
+                    override def reason: Option[String] = $errReason
+                    override protected def name = ${Expr(n)}
                 }
             }
         }
@@ -300,6 +321,9 @@ private class BridgeImpl(using Quotes) {
                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm))}
                     def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9) => R] =
                         ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9) => R])}
+                    override def labels: List[String] = $errLabels
+                    override def reason: Option[String] = $errReason
+                    override protected def name = ${Expr(n)}
                 }
             }
         }
@@ -312,6 +336,9 @@ private class BridgeImpl(using Quotes) {
                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm))}
                     def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) => R] =
                         ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) => R])}
+                    override def labels: List[String] = $errLabels
+                    override def reason: Option[String] = $errReason
+                    override protected def name = ${Expr(n)}
                 }
             }
         }
@@ -326,6 +353,9 @@ private class BridgeImpl(using Quotes) {
                                     'p11.asTerm))}
                     def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11) => R] =
                         ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11) => R])}
+                    override def labels: List[String] = $errLabels
+                    override def reason: Option[String] = $errReason
+                    override protected def name = ${Expr(n)}
                 }
             }
         }
@@ -340,6 +370,9 @@ private class BridgeImpl(using Quotes) {
                                     'p11.asTerm, 'p12.asTerm))}
                     def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12) => R] =
                         ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12) => R])}
+                    override def labels: List[String] = $errLabels
+                    override def reason: Option[String] = $errReason
+                    override protected def name = ${Expr(n)}
                 }
             }
         }
@@ -354,6 +387,9 @@ private class BridgeImpl(using Quotes) {
                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm))}
                     def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13) => R] =
                         ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13) => R])}
+                    override def labels: List[String] = $errLabels
+                    override def reason: Option[String] = $errReason
+                    override protected def name = ${Expr(n)}
                 }
             }
         }
@@ -368,6 +404,9 @@ private class BridgeImpl(using Quotes) {
                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm))}
                     def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14) => R] =
                         ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14) => R])}
+                    override def labels: List[String] = $errLabels
+                    override def reason: Option[String] = $errReason
+                    override protected def name = ${Expr(n)}
                 }
             }
         }
@@ -382,6 +421,9 @@ private class BridgeImpl(using Quotes) {
                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm))}
                     def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15) => R] =
                         ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15) => R])}
+                    override def labels: List[String] = $errLabels
+                    override def reason: Option[String] = $errReason
+                    override protected def name = ${Expr(n)}
                 }
             }
         }
@@ -398,6 +440,9 @@ private class BridgeImpl(using Quotes) {
                                     'p16.asTerm))}
                     def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16) => R] =
                         ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16) => R])}
+                    override def labels: List[String] = $errLabels
+                    override def reason: Option[String] = $errReason
+                    override protected def name = ${Expr(n)}
                 }
             }
         }
@@ -414,6 +459,9 @@ private class BridgeImpl(using Quotes) {
                                     'p16.asTerm, 'p17.asTerm))}
                     def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17) => R] =
                         ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17) => R])}
+                    override def labels: List[String] = $errLabels
+                    override def reason: Option[String] = $errReason
+                    override protected def name = ${Expr(n)}
                 }
             }
         }
@@ -430,6 +478,9 @@ private class BridgeImpl(using Quotes) {
                                     'p16.asTerm, 'p17.asTerm, 'p18.asTerm))}
                     def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18) => R] =
                         ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18) => R])}
+                    override def labels: List[String] = $errLabels
+                    override def reason: Option[String] = $errReason
+                    override protected def name = ${Expr(n)}
                 }
             }
         }
@@ -446,6 +497,9 @@ private class BridgeImpl(using Quotes) {
                                     'p16.asTerm, 'p17.asTerm, 'p18.asTerm, 'p19.asTerm))}
                     def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19) => R] =
                         ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19) => R])}
+                    override def labels: List[String] = $errLabels
+                    override def reason: Option[String] = $errReason
+                    override protected def name = ${Expr(n)}
                 }
             }
         }
@@ -462,6 +516,9 @@ private class BridgeImpl(using Quotes) {
                                     'p16.asTerm, 'p17.asTerm, 'p18.asTerm, 'p19.asTerm, 'p20.asTerm))}
                     def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20) => R] =
                         ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20) => R])}
+                    override def labels: List[String] = $errLabels
+                    override def reason: Option[String] = $errReason
+                    override protected def name = ${Expr(n)}
                 }
             }
         }
@@ -480,6 +537,9 @@ private class BridgeImpl(using Quotes) {
                                     'p21.asTerm))}
                     def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21) => R] =
                         ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21) => R])}
+                    override def labels: List[String] = $errLabels
+                    override def reason: Option[String] = $errReason
+                    override protected def name = ${Expr(n)}
                 }
             }
         }
@@ -498,6 +558,9 @@ private class BridgeImpl(using Quotes) {
                                     'p21.asTerm, 'p22.asTerm))}
                     def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22) => R] =
                         ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22) => R])}
+                    override def labels: List[String] = $errLabels
+                    override def reason: Option[String] = $errReason
+                    override protected def name = ${Expr(n)}
                 }
             }
         }
