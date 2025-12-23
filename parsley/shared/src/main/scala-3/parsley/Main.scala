@@ -3,7 +3,8 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package parsley
+package bridge.test
+import parsley.*
 import parsley.experimental.generic.*
 
 case class Pos(line: Int, col: Int, offset: Int)

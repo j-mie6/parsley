@@ -48,9 +48,12 @@ private class BridgeImpl(using Quotes) {
                     val curriedCon = curriedConstructor[Fn, T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, existsUniquePosition.map(_.tyRepr))
                     synthesiseSingle[Fn](existsUniquePosition, curriedCon)
                 }
-                // TODO: ut()/uo(name) call (override toString, I guess? the three combinators have different names to eachother)
-                // TODO: error call
+                // TODO: override name
                 // TODO: labels/reason override
+                /*
+                Problem space:
+                    * How are error bridges incorporated in (annotation?)
+                */
 
                 // TODO: ensure validation if Err is encountered (report separately, but then abort if failed (Option))
                 synthesiseBridge[S](bridgePrimaryArgs.map(_._2.asType), lift, from)
@@ -206,295 +209,295 @@ private class BridgeImpl(using Quotes) {
     private def synthesiseBridge[R: Type](argTys: List[Type[?]], lift: List[Term] => Expr[Parsley[R]], single: [T] => Type[T] => Expr[Parsley[T]]): Expr[ErrorBridge] = (argTys.size: @switch) match {
         case 1 => (argTys: @unchecked) match {
             case List('[t1]) => '{
-                new bridges.Bridge1[t1, R] {
-                    def apply(p1: Parsley[t1]): Parsley[R] = ${lift(List('p1.asTerm))}
-                    def from(op: Parsley[?]): Parsley[t1 => R] = ${single(Type.of[t1 => R])} <~ op
+                new bridges.Bridge1[t1, R] with bridges.InternalMethodLeak {
+                    def apply(p1: Parsley[t1]): Parsley[R] = macroImplLiftedWrap(${lift(List('p1.asTerm))})
+                    def singleton: Parsley[t1 => R] = ${single(Type.of[t1 => R])}
                 }
             }
         }
         case 2 => (argTys: @unchecked) match {
             case List('[t1], '[t2]) => '{
-                new bridges.Bridge2[t1, t2, R] {
-                    def apply(p1: Parsley[t1], p2: Parsley[t2]): Parsley[R] =
+                new bridges.Bridge2[t1, t2, R] with bridges.InternalMethodLeak {
+                    def apply(p1: Parsley[t1], p2: Parsley[t2]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm))}
-                    def from(op: Parsley[?]): Parsley[(t1, t2) => R] =
-                        ${single(Type.of[(t1, t2) => R])} <~ op
+                    def singleton: Parsley[(t1, t2) => R] =
+                        ${single(Type.of[(t1, t2) => R])}
                 }
             }
         }
         case 3 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3]) => '{
-                new bridges.Bridge3[t1, t2, t3, R] {
-                    def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3]): Parsley[R] =
+                new bridges.Bridge3[t1, t2, t3, R] with bridges.InternalMethodLeak {
+                    def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm))}
-                    def from(op: Parsley[?]): Parsley[(t1, t2, t3) => R] =
-                        ${single(Type.of[(t1, t2, t3) => R])} <~ op
+                    def singleton: Parsley[(t1, t2, t3) => R] =
+                        ${single(Type.of[(t1, t2, t3) => R])}
                 }
             }
         }
         case 4 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4]) => '{
-                new bridges.Bridge4[t1, t2, t3, t4, R] {
-                    def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4]): Parsley[R] =
+                new bridges.Bridge4[t1, t2, t3, t4, R] with bridges.InternalMethodLeak {
+                    def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm))}
-                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4) => R] =
-                        ${single(Type.of[(t1, t2, t3, t4) => R])} <~ op
+                    def singleton: Parsley[(t1, t2, t3, t4) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4) => R])}
                 }
             }
         }
         case 5 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5]) => '{
-                new bridges.Bridge5[t1, t2, t3, t4, t5, R] {
-                    def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5]): Parsley[R] =
+                new bridges.Bridge5[t1, t2, t3, t4, t5, R] with bridges.InternalMethodLeak {
+                    def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm))}
-                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5) => R] =
-                        ${single(Type.of[(t1, t2, t3, t4, t5) => R])} <~ op
+                    def singleton: Parsley[(t1, t2, t3, t4, t5) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5) => R])}
                 }
             }
         }
         case 6 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6]) => '{
-                new bridges.Bridge6[t1, t2, t3, t4, t5, t6, R] {
+                new bridges.Bridge6[t1, t2, t3, t4, t5, t6, R] with bridges.InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
-                              p6: Parsley[t6]): Parsley[R] =
+                              p6: Parsley[t6]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
                                     'p6.asTerm))}
-                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6) => R] =
-                        ${single(Type.of[(t1, t2, t3, t4, t5, t6) => R])} <~ op
+                    def singleton: Parsley[(t1, t2, t3, t4, t5, t6) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6) => R])}
                 }
             }
         }
         case 7 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7]) => '{
-                new bridges.Bridge7[t1, t2, t3, t4, t5, t6, t7, R] {
+                new bridges.Bridge7[t1, t2, t3, t4, t5, t6, t7, R] with bridges.InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
-                              p6: Parsley[t6], p7: Parsley[t7]): Parsley[R] =
+                              p6: Parsley[t6], p7: Parsley[t7]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
                                     'p6.asTerm, 'p7.asTerm))}
-                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7) => R] =
-                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7) => R])} <~ op
+                    def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7) => R])}
                 }
             }
         }
         case 8 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8]) => '{
-                new bridges.Bridge8[t1, t2, t3, t4, t5, t6, t7, t8, R] {
+                new bridges.Bridge8[t1, t2, t3, t4, t5, t6, t7, t8, R] with bridges.InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
-                              p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8]): Parsley[R] =
+                              p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm))}
-                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8) => R] =
-                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8) => R])} <~ op
+                    def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8) => R])}
                 }
             }
         }
         case 9 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9]) => '{
-                new bridges.Bridge9[t1, t2, t3, t4, t5, t6, t7, t8, t9, R] {
+                new bridges.Bridge9[t1, t2, t3, t4, t5, t6, t7, t8, t9, R] with bridges.InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
-                              p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9]): Parsley[R] =
+                              p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm))}
-                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9) => R] =
-                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9) => R])} <~ op
+                    def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9) => R])}
                 }
             }
         }
         case 10 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10]) => '{
-                new bridges.Bridge10[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, R] {
+                new bridges.Bridge10[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, R] with bridges.InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
-                              p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10]): Parsley[R] =
+                              p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm))}
-                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) => R] =
-                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) => R])} <~ op
+                    def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) => R])}
                 }
             }
         }
         case 11 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11]) => '{
-                new bridges.Bridge11[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, R] {
+                new bridges.Bridge11[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, R] with bridges.InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
-                              p11: Parsley[t11]): Parsley[R] =
+                              p11: Parsley[t11]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
                                     'p11.asTerm))}
-                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11) => R] =
-                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11) => R])} <~ op
+                    def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11) => R])}
                 }
             }
         }
         case 12 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12]) => '{
-                new bridges.Bridge12[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, R] {
+                new bridges.Bridge12[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, R] with bridges.InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
-                              p11: Parsley[t11], p12: Parsley[t12]): Parsley[R] =
+                              p11: Parsley[t11], p12: Parsley[t12]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
                                     'p11.asTerm, 'p12.asTerm))}
-                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12) => R] =
-                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12) => R])} <~ op
+                    def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12) => R])}
                 }
             }
         }
         case 13 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13]) => '{
-                new bridges.Bridge13[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, R] {
+                new bridges.Bridge13[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, R] with bridges.InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
-                              p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13]): Parsley[R] =
+                              p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm))}
-                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13) => R] =
-                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13) => R])} <~ op
+                    def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13) => R])}
                 }
             }
         }
         case 14 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13], '[t14]) => '{
-                new bridges.Bridge14[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, R] {
+                new bridges.Bridge14[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, R] with bridges.InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
-                              p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14]): Parsley[R] =
+                              p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm))}
-                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14) => R] =
-                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14) => R])} <~ op
+                    def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14) => R])}
                 }
             }
         }
         case 15 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13], '[t14], '[t15]) => '{
-                new bridges.Bridge15[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, R] {
+                new bridges.Bridge15[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, R] with bridges.InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
-                              p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15]): Parsley[R] =
+                              p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm))}
-                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15) => R] =
-                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15) => R])} <~ op
+                    def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15) => R])}
                 }
             }
         }
         case 16 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13], '[t14], '[t15], '[t16]) => '{
-                new bridges.Bridge16[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, R] {
+                new bridges.Bridge16[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, R] with bridges.InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
-                              p16: Parsley[t16]): Parsley[R] =
+                              p16: Parsley[t16]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
                                     'p16.asTerm))}
-                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16) => R] =
-                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16) => R])} <~ op
+                    def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16) => R])}
                 }
             }
         }
         case 17 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13], '[t14], '[t15], '[t16], '[t17]) => '{
-                new bridges.Bridge17[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, R] {
+                new bridges.Bridge17[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, R] with bridges.InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
-                              p16: Parsley[t16], p17: Parsley[t17]): Parsley[R] =
+                              p16: Parsley[t16], p17: Parsley[t17]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
                                     'p16.asTerm, 'p17.asTerm))}
-                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17) => R] =
-                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17) => R])} <~ op
+                    def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17) => R])}
                 }
             }
         }
         case 18 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13], '[t14], '[t15], '[t16], '[t17], '[t18]) => '{
-                new bridges.Bridge18[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, R] {
+                new bridges.Bridge18[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, R] with bridges.InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
-                              p16: Parsley[t16], p17: Parsley[t17], p18: Parsley[t18]): Parsley[R] =
+                              p16: Parsley[t16], p17: Parsley[t17], p18: Parsley[t18]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
                                     'p16.asTerm, 'p17.asTerm, 'p18.asTerm))}
-                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18) => R] =
-                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18) => R])} <~ op
+                    def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18) => R])}
                 }
             }
         }
         case 19 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13], '[t14], '[t15], '[t16], '[t17], '[t18], '[t19]) => '{
-                new bridges.Bridge19[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, R] {
+                new bridges.Bridge19[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, R] with bridges.InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
-                              p16: Parsley[t16], p17: Parsley[t17], p18: Parsley[t18], p19: Parsley[t19]): Parsley[R] =
+                              p16: Parsley[t16], p17: Parsley[t17], p18: Parsley[t18], p19: Parsley[t19]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
                                     'p16.asTerm, 'p17.asTerm, 'p18.asTerm, 'p19.asTerm))}
-                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19) => R] =
-                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19) => R])} <~ op
+                    def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19) => R])}
                 }
             }
         }
         case 20 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13], '[t14], '[t15], '[t16], '[t17], '[t18], '[t19], '[t20]) => '{
-                new bridges.Bridge20[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, R] {
+                new bridges.Bridge20[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, R] with bridges.InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
-                              p16: Parsley[t16], p17: Parsley[t17], p18: Parsley[t18], p19: Parsley[t19], p20: Parsley[t20]): Parsley[R] =
+                              p16: Parsley[t16], p17: Parsley[t17], p18: Parsley[t18], p19: Parsley[t19], p20: Parsley[t20]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
                                     'p16.asTerm, 'p17.asTerm, 'p18.asTerm, 'p19.asTerm, 'p20.asTerm))}
-                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20) => R] =
-                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20) => R])} <~ op
+                    def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20) => R])}
                 }
             }
         }
         case 21 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13], '[t14], '[t15], '[t16], '[t17], '[t18], '[t19], '[t20], '[t21]) => '{
-                new bridges.Bridge21[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, R] {
+                new bridges.Bridge21[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, R] with bridges.InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
                               p16: Parsley[t16], p17: Parsley[t17], p18: Parsley[t18], p19: Parsley[t19], p20: Parsley[t20],
-                              p21: Parsley[t21]): Parsley[R] =
+                              p21: Parsley[t21]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
                                     'p16.asTerm, 'p17.asTerm, 'p18.asTerm, 'p19.asTerm, 'p20.asTerm,
                                     'p21.asTerm))}
-                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21) => R] =
-                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21) => R])} <~ op
+                    def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21) => R])}
                 }
             }
         }
         case 22 => (argTys: @unchecked) match {
             case List('[t1], '[t2], '[t3], '[t4], '[t5], '[t6], '[t7], '[t8], '[t9], '[t10], '[t11], '[t12], '[t13], '[t14], '[t15], '[t16], '[t17], '[t18], '[t19], '[t20], '[t21], '[t22]) => '{
-                new bridges.Bridge22[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, R] {
+                new bridges.Bridge22[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, R] with bridges.InternalMethodLeak {
                     def apply(p1: Parsley[t1], p2: Parsley[t2], p3: Parsley[t3], p4: Parsley[t4], p5: Parsley[t5],
                               p6: Parsley[t6], p7: Parsley[t7], p8: Parsley[t8], p9: Parsley[t9], p10: Parsley[t10],
                               p11: Parsley[t11], p12: Parsley[t12], p13: Parsley[t13], p14: Parsley[t14], p15: Parsley[t15],
                               p16: Parsley[t16], p17: Parsley[t17], p18: Parsley[t18], p19: Parsley[t19], p20: Parsley[t20],
-                              p21: Parsley[t21], p22: Parsley[t22]): Parsley[R] =
+                              p21: Parsley[t21], p22: Parsley[t22]): Parsley[R] = macroImplLiftedWrap:
                         ${lift(List('p1.asTerm, 'p2.asTerm, 'p3.asTerm, 'p4.asTerm, 'p5.asTerm,
                                     'p6.asTerm, 'p7.asTerm, 'p8.asTerm, 'p9.asTerm, 'p10.asTerm,
                                     'p11.asTerm, 'p12.asTerm, 'p13.asTerm, 'p14.asTerm, 'p15.asTerm,
                                     'p16.asTerm, 'p17.asTerm, 'p18.asTerm, 'p19.asTerm, 'p20.asTerm,
                                     'p21.asTerm, 'p22.asTerm))}
-                    def from(op: Parsley[?]): Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22) => R] =
-                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22) => R])} <~ op
+                    def singleton: Parsley[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22) => R] =
+                        ${single(Type.of[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22) => R])}
                 }
             }
         }

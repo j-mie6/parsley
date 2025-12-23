@@ -8,14 +8,17 @@ package experimental.generic
 
 import generic.ErrorBridge
 
-/*
-Problem space:
-    * How are error bridges incorporated in (annotation?)
-*/
 object bridges {
+    // this is annoying, but needs to be available publically, otherwise macros can't see it
+    transparent trait InternalMethodLeak { this: SingletonBridge[?] =>
+        def macroImplLiftedWrap[A](p: Parsley[A]) = error(p.ut()).uo(name)
+    }
+
     trait SingletonBridge[+A] extends ErrorBridge {
-        infix def from(op: Parsley[?]): Parsley[A]
-        final def <#(op: Parsley[?]): Parsley[A] = this.from(op).uo(s"$this <#")
+        protected def singleton: Parsley[A]
+        protected def name: String = this.toString
+        infix final def from(op: Parsley[?]): Parsley[A] = error((singleton.ut() <~ op).ut()).uo(s"$name.from")
+        final def <#(op: Parsley[?]): Parsley[A] = this.from(op).uo(s"$name <#")
     }
 
     trait Bridge1[T, R] extends SingletonBridge[T => R] {
