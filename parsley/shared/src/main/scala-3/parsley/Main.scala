@@ -30,7 +30,7 @@ case class SinglePos()(@isPosition val p: Pos)
     case Add(x: Baz[A], y: Baz[A])
 }*/
 
-def foo[B] = bridge[Foo[B]]
+def foo[B] = bridge.label("foo")[Foo[B]]
 def bar = bridge[Bar]
 def one = bridge[One]
 def baz = bridge[Baz[Int]]
