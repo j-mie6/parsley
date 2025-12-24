@@ -11,17 +11,6 @@ import scala.collection.mutable
 import scala.quoted.*
 import bridges.ErrorBridge
 
-inline transparent def bridge[T]: ErrorBridge = bridge[T, T]
-inline transparent def bridge[T, S >: T]: ErrorBridge = ${bridgeImpl[T, S]('Nil, 'None)}
-
-// TODO: consider how to incorporate the errors in cleanly, this sucks
-inline transparent def bridgeErr[T](labels: List[String], reason: Option[String]): ErrorBridge = bridgeErr[T, T](labels, reason)
-inline transparent def bridgeErr[T, S >: T](labels: List[String], reason: Option[String]): ErrorBridge = ${bridgeImpl[T, S]('labels, 'reason)}
-
-private def bridgeImpl[T: Type, S >: T: Type](labels: Expr[List[String]], reason: Expr[Option[String]])(using Quotes): Expr[ErrorBridge] = {
-    BridgeImpl().synthesise[T, S](labels, reason)
-}
-
 // this is annoying, but needs to be available publically, otherwise macros can't see it
 transparent trait InternalMethodLeak { this: bridges.SingletonBridge[?] =>
     def macroImplLiftedWrap[A](p: Parsley[A]) = error(p.ut()).uo(name)
