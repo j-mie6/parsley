@@ -222,7 +222,7 @@
         </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="keyword">as</span><span> </span><span class="type-name">Mul</span><span>.</span><span class="identifier">apply</span><span>),
         </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> </span><span class="keyword">as</span><span> </span><span class="type-name">Add</span><span>.</span><span class="identifier">apply</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="keyword">as</span><span> </span><span class="type-name">Sub</span><span>.</span><span class="identifier">apply</span><span>)
     )
-</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@35db14a1
+</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@e14347e
 </span><span>
 </span><span class="identifier">expr</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;x+5*y&quot;</span><span>)
 </span><span class="comment">// res0: Result[String, Expr] = Success(Add(Var(x),Mul(Num(5),Var(y))))</span></code></pre>
@@ -302,7 +302,7 @@
         </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="keyword">as</span><span> </span><span class="type-name">Mul</span><span>.</span><span class="identifier">apply</span><span>) :+
         </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span class="keyword">as</span><span> </span><span class="type-name">Add</span><span>.</span><span class="identifier">apply</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="keyword">as</span><span> </span><span class="type-name">Sub</span><span>.</span><span class="identifier">apply</span><span>)
     }
-</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@b293533
+</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@5285b266
 </span><span>
 </span><span class="identifier">expr</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;x+5*y&quot;</span><span>)
 </span><span class="comment">// res1: Result[String, Expr] = Success(Add(Var(x),Mul(Num(5),Var(y))))</span></code></pre>
