@@ -5,7 +5,7 @@
  */
 package bridge.test
 import parsley.*
-import parsley.experimental.generic.*
+import parsley.generic.experimental.*
 
 case class Pos(line: Int, col: Int, offset: Int)
 object Pos {

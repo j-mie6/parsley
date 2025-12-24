@@ -4,11 +4,17 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 package parsley
-package experimental.generic
+package generic.experimental
 import scala.quoted.*
 
 import bridges.ErrorBridge
 
+// TODO: we want to have .guardAgainst/.filterOut terminal methods too for each
+// TODO: we want some kind of way to denote where exactly the metadata should be parsed after
+
+/**
+  *
+  */
 object bridge {
     inline transparent def apply[T]: ErrorBridge = apply[T, T]
     inline transparent def apply[T, S >: T]: ErrorBridge = MacroImpl.impl[T, S](Nil, None)
@@ -20,7 +26,7 @@ object bridge {
 class Labelled(labels: Seq[String]) {
     inline transparent def apply[T]: ErrorBridge = apply[T, T]
     inline transparent def apply[T, S >: T]: ErrorBridge = MacroImpl.impl[T, S](labels.toList, None)
-    
+
     inline def explain(reason: String) = LabelledAndExplained(labels, reason)
 }
 

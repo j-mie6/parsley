@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 package parsley
-package experimental.generic
+package generic.experimental
 
 import scala.annotation.{switch, tailrec}
 import scala.collection.mutable
@@ -62,10 +62,10 @@ private class BridgeImpl(using Quotes) {
         def parser: Expr[Parsley[T]] = '{$inst.pos}
         def tyRepr = TypeRepr.of[T]
     }
-    private val annotation = TypeRepr.of[parsley.experimental.generic.isPosition].typeSymbol
+    private val annotation = TypeRepr.of[parsley.generic.experimental.isPosition].typeSymbol
     private def isPos(sym: Symbol): Option[PosImpl[?]] = Option.when(sym.hasAnnotation(annotation)) {
         sym.termRef.widen.asType match {
-            case ty@'[t] => Expr.summon[parsley.experimental.generic.PositionLike[t]] match {
+            case ty@'[t] => Expr.summon[parsley.generic.experimental.PositionLike[t]] match {
                 case Some(inst) => PosImpl[t](inst, ty)
                 case None =>
                     val typeName = TypeRepr.of[t].show(using Printer.TypeReprShortCode)

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 package parsley
-package experimental.generic
+package generic.experimental
 
 final class isPosition extends scala.annotation.StaticAnnotation
 
