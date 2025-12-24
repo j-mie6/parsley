@@ -10,21 +10,21 @@ import parsley.generic.experimental.*
 case class Pos(line: Int, col: Int, offset: Int)
 object Pos {
     import parsley.position.{line, col, offset}
-    given PositionLike[Pos] with {
-        val pos = lift.lift3(Pos.apply, line, col, offset)
+    given ParsableMeta[Pos] with {
+        val meta = bridge[Pos](line, col, offset)
     }
 }
 
-case class Foo[A](arg1: A, arg2: Int = 6)(@isPosition val y: Pos)
+case class Foo[A](arg1: A, arg2: Int = 6)(@isMeta val y: Pos)
 case class Bar(arg1: Int, arg2: Int)
-case class Baz[A](arg1: Char, arg2: Int, arg3: String, arg4: A)(@isPosition val pos: Pos)
-case class One(arg: Int)(@isPosition val y: Pos)
+case class Baz[A](arg1: Char, arg2: Int, arg3: String, arg4: A)(@isMeta val pos: Pos)
+case class One(arg: Int)(@isMeta val y: Pos)
 
 case class A22[A](x1: A, x2: A, x3: A, x4: A, x5: A, x6: A, x7: A, x8: A, x9: A, x10: A, x11: A, x12: A, x13: A, x14: A, x15: A, x16: A, x17: A, x18: A, x19: A, x20: A, x21: A, x22: A)
 case class A23[A](x1: A, x2: A, x3: A, x4: A, x5: A, x6: A, x7: A, x8: A, x9: A, x10: A, x11: A, x12: A, x13: A, x14: A, x15: A, x16: A, x17: A, x18: A, x19: A, x20: A, x21: A, x22: A, x23: A)
 
 object Single
-case class SinglePos()(@isPosition val p: Pos)
+case class SinglePos()(@isMeta val p: Pos)
 
 /*enum Baz[A] {
     case Add(x: Baz[A], y: Baz[A])

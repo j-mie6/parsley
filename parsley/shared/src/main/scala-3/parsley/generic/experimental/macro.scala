@@ -21,7 +21,7 @@ transparent trait InternalMethodLeak { this: bridges.SingletonBridge[?] =>
 private class BridgeImpl(using Quotes) {
     import quotes.reflect.*
     private enum BridgeArg {
-        case Pos(impl: PosImpl[?])
+        case Meta(impl: MetaImpl[?])
         case Bridged(sym: Symbol)
         case Default(n: Int, sym: Symbol)
         case Err(name: String, pos: Option[Position])
@@ -38,19 +38,20 @@ private class BridgeImpl(using Quotes) {
                 // Used for the types of the lambda passed to combinator
                 //println(categorisedArgs)
                 val bridgePrimaryArgs = bridgeParams.collect {
-                    case sym if isPos(sym).isEmpty => (sym.name, tyRepr.memberType(sym).substituteTypes(tyParams, tyArgs))
+                    case sym if isMeta(sym).isEmpty => (sym.name, tyRepr.memberType(sym).substituteTypes(tyParams, tyArgs))
                 }
-                val existsUniquePosition = categorisedArgs.flatten.foldLeft(Option.empty[PosImpl[?]]) {
-                    case (None, BridgeArg.Pos(impl)) => Some(impl)
-                    case (Some(_), BridgeArg.Pos(_)) => report.errorAndAbort("When `Pos` appears in a bridged type, it must be unique")
-                    case (pos, _)                    => pos
+                val existsUniqueMeta = categorisedArgs.flatten.foldLeft(Option.empty[MetaImpl[?]]) {
+                    case (None, BridgeArg.Meta(impl)) => Some(impl)
+                    // FIXME: lift this, we need a whole list of them!
+                    case (Some(_), BridgeArg.Meta(_)) => report.errorAndAbort("When `ParsableMeta` appears in a bridged type, it must be unique")
+                    case (meta, _)                    => meta
                 }
-                lazy val con = constructor[T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, existsUniquePosition.map(_.tyRepr))
-                val lift = synthesiseLift[S](existsUniquePosition, bridgePrimaryArgs.map(_._2), con, _)
+                lazy val con = constructor[T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, existsUniqueMeta.map(_.tyRepr))
+                val lift = synthesiseLift[S](existsUniqueMeta, bridgePrimaryArgs.map(_._2), con, _)
                 val from = [Fn] => { (fnTy: Type[Fn]) =>
                     given Type[Fn] = fnTy
-                    val curriedCon = curriedConstructor[Fn, T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, existsUniquePosition.map(_.tyRepr))
-                    synthesiseSingle[Fn](existsUniquePosition, curriedCon)
+                    val curriedCon = curriedConstructor[Fn, T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, existsUniqueMeta.map(_.tyRepr))
+                    synthesiseSingle[Fn](existsUniqueMeta, curriedCon)
                 }
                 // TODO: ensure validation if Err is encountered (report separately, but then abort if failed (Option))
                 synthesiseBridge[S](tyRepr.typeSymbol.name, bridgePrimaryArgs.map(_._2.asType), lift, from, labels, reason)
@@ -58,15 +59,15 @@ private class BridgeImpl(using Quotes) {
         }
     }
 
-    private case class PosImpl[T: Type](inst: Expr[PositionLike[T]], ty: Type[T]) {
-        def parser: Expr[Parsley[T]] = '{$inst.pos}
+    private case class MetaImpl[T: Type](inst: Expr[ParsableMeta[T]], ty: Type[T]) {
+        def parser: Expr[Parsley[T]] = '{$inst.meta}
         def tyRepr = TypeRepr.of[T]
     }
-    private val annotation = TypeRepr.of[parsley.generic.experimental.isPosition].typeSymbol
-    private def isPos(sym: Symbol): Option[PosImpl[?]] = Option.when(sym.hasAnnotation(annotation)) {
+    private val annotation = TypeRepr.of[parsley.generic.experimental.isMeta].typeSymbol
+    private def isMeta(sym: Symbol): Option[MetaImpl[?]] = Option.when(sym.hasAnnotation(annotation)) {
         sym.termRef.widen.asType match {
-            case ty@'[t] => Expr.summon[parsley.generic.experimental.PositionLike[t]] match {
-                case Some(inst) => PosImpl[t](inst, ty)
+            case ty@'[t] => Expr.summon[parsley.generic.experimental.ParsableMeta[t]] match {
+                case Some(inst) => MetaImpl[t](inst, ty)
                 case None =>
                     val typeName = TypeRepr.of[t].show(using Printer.TypeReprShortCode)
                     report.errorAndAbort(s"attribute ${sym.name} can only use @isPosition with a `parsley.generic.PositionLike[$typeName]` instance in scope", sym.pos.get)
@@ -85,8 +86,8 @@ private class BridgeImpl(using Quotes) {
                 case (sym, i) => defaulted(cls, i + n) match {
                     // TODO: if it's primary, you could actually synthesise a default to the lifted constructor
                     case Some(sym) if !primary => BridgeArg.Default(i + n, sym)
-                    case _ => isPos(sym) match {
-                        case Some(impl)       => BridgeArg.Pos(impl)
+                    case _ => isMeta(sym) match {
+                        case Some(impl)       => BridgeArg.Meta(impl)
                         case None if !primary => BridgeArg.Err(sym.name, sym.pos)
                         case None             => BridgeArg.Bridged(sym)
                     }
@@ -126,7 +127,7 @@ private class BridgeImpl(using Quotes) {
       * @param posRepr the position
       * @return a lambda of the form `pos => (lamArgs..) => cls[clsTyArgs](..)(otherArgs)`
       */
-    private def curriedConstructor[Fn: Type, R: Type](cls: Symbol, lamArgs: List[(String, TypeRepr)], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]], posRepr: Option[TypeRepr]): Term = {
+    private def curriedConstructor[Fn: Type, R: Type](cls: Symbol, lamArgs: List[(String, TypeRepr)], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]], metaRepr: Option[TypeRepr]): Term = {
         val (paramNames, lamTys) = lamArgs.unzip
         // grrrrrrrr why has Scala given me Tree and not Term?!
         def inner(owner: Symbol, posParam: Option[Term]): Term = {
@@ -138,15 +139,15 @@ private class BridgeImpl(using Quotes) {
                 appliedCon(cls, lamSym, paramTerms.toVector, clsTyArgs, otherArgs, posParam)
             })
         }
-        posRepr.fold(inner(Symbol.spliceOwner, None)) { posRepr =>
-            Lambda(Symbol.spliceOwner, MethodType(List("pos"))(_ => List(posRepr), _ => TypeRepr.of[Fn]), { (outerLamSym, posParam) =>
+        metaRepr.fold(inner(Symbol.spliceOwner, None)) { metaRepr =>
+            Lambda(Symbol.spliceOwner, MethodType(List("pos"))(_ => List(metaRepr), _ => TypeRepr.of[Fn]), { (outerLamSym, metaParam) =>
                 // grrrrrrrr why has Scala given me Tree and not Term?!
-                inner(outerLamSym, posParam.map(_.asExpr.asTerm).headOption)
+                inner(outerLamSym, metaParam.map(_.asExpr.asTerm).headOption)
             })
         }
     }
 
-    private def appliedCon(cls: Symbol, owner: Symbol, lamParams: IndexedSeq[Term], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]], posParam: Option[Term]): Term = {
+    private def appliedCon(cls: Symbol, owner: Symbol, lamParams: IndexedSeq[Term], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]], metaParam: Option[Term]): Term = {
         val tys: List[TypeTree] = clsTyArgs.map(tyRep => TypeTree.of(using tyRep.asType))
         val objTy = if tys.nonEmpty then New(Applied(TypeTree.ref(cls), tys)) else New(TypeTree.ref(cls))
         val con = objTy.select(cls.primaryConstructor).appliedToTypes(clsTyArgs)
@@ -163,11 +164,11 @@ private class BridgeImpl(using Quotes) {
                 val mySeeds = seeds.toList
                 var i = 0 // FIXME: get rid of this
                 val terms = params.map {
-                    case BridgeArg.Pos(_) => posParam.get
+                    case BridgeArg.Meta(_) => metaParam.get
                     case BridgeArg.Default(n, sym) =>
                         Ident(cls.companionModule.termRef).select(sym).appliedToTypes(clsTyArgs).appliedToArgss(mySeeds)
                     case BridgeArg.Err(name, pos) =>
-                        report.error(s"Argument $name for class ${cls.name} is neither a default or position outside of the primary arguments, a bridge cannot be formed", pos.get)
+                        report.error(s"Argument $name for class ${cls.name} is neither a default or parsable metadata outside of the primary arguments, a bridge cannot be formed", pos.get)
                         kaboom
                     case BridgeArg.Bridged(_) =>
                         val p = lamParams(i)
@@ -184,14 +185,14 @@ private class BridgeImpl(using Quotes) {
         saturated
     }
 
-    private def synthesiseLift[R: Type](existsUniquePosition: Option[PosImpl[?]], argTys: List[TypeRepr], con: Term, args: List[Term]): Expr[Parsley[R]] = {
+    private def synthesiseLift[R: Type](existsUniquePosition: Option[MetaImpl[?]], argTys: List[TypeRepr], con: Term, args: List[Term]): Expr[Parsley[R]] = {
         val tys = argTys :+ TypeRepr.of[R]
         val arity = argTys.size + existsUniquePosition.size
         TypeRepr.of[parsley.lift.type].typeSymbol.methodMember(s"lift$arity").headOption.map('{parsley.lift}.asTerm.select) match {
             case Some(lift) => existsUniquePosition match {
-                case Some(impl@PosImpl(_, given Type[posTy])) =>
-                    val posTyRepr = TypeRepr.of[posTy]
-                    lift.appliedToTypes(posTyRepr :: tys)
+                case Some(impl@MetaImpl(_, given Type[metaTy])) =>
+                    val metaTyRepr = TypeRepr.of[metaTy]
+                    lift.appliedToTypes(metaTyRepr :: tys)
                         .appliedToArgs(con :: impl.parser.asTerm :: args)
                         .asExprOf[Parsley[R]]
                 case None =>
@@ -203,8 +204,8 @@ private class BridgeImpl(using Quotes) {
         }
     }
 
-    private def synthesiseSingle[R: Type](existsUniquePosition: Option[PosImpl[?]], con: Term): Expr[Parsley[R]] = existsUniquePosition match {
-        case Some(impl@PosImpl(_, given Type[posTy])) => '{${impl.parser}.map[R](${con.asExprOf[posTy => R]})}
+    private def synthesiseSingle[R: Type](existsUniquePosition: Option[MetaImpl[?]], con: Term): Expr[Parsley[R]] = existsUniquePosition match {
+        case Some(impl@MetaImpl(_, given Type[metaTy])) => '{${impl.parser}.map[R](${con.asExprOf[metaTy => R]})}
         case None => '{Parsley.pure[R](${con.asExprOf[R]})}
     }
 
