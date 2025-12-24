@@ -39,10 +39,12 @@ private class BridgeImpl(using Quotes) {
     }
 
     def synthesise[T: Type, S >: T: Type](labels: Expr[List[String]], reason: Expr[Option[String]]) = {
-        val tyRepr = TypeRepr.of[T]
+        // dealias here removes any type aliases which could get in the way of proper synthesis
+        val tyRepr = TypeRepr.of[T].dealias
         val tyArgs = tyRepr.typeArgs
         tyRepr match {
-            case Bridgeable(cls, tyParams, bridgeParams, otherParams) =>
+            // there must be the same number of type arguments as type params, or this is a higher-kinded T (oops!)
+            case Bridgeable(cls, tyParams, bridgeParams, otherParams) if tyArgs.lengthCompare(tyParams) == 0 =>
                 val categorisedArgs = categoriseArgs(cls, bridgeParams :: otherParams, 1, primary = true, mutable.ListBuffer.empty)
                 // Used for the types of the lambda passed to combinator
                 //println(categorisedArgs)
@@ -54,7 +56,7 @@ private class BridgeImpl(using Quotes) {
                     case (Some(_), BridgeArg.Pos(_)) => report.errorAndAbort("When `Pos` appears in a bridged type, it must be unique")
                     case (pos, _)                    => pos
                 }
-                val con = constructor[T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, existsUniquePosition.map(_.tyRepr))
+                lazy val con = constructor[T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, existsUniquePosition.map(_.tyRepr))
                 val lift = synthesiseLift[S](existsUniquePosition, bridgePrimaryArgs.map(_._2), con, _)
                 val from = [Fn] => { (fnTy: Type[Fn]) =>
                     given Type[Fn] = fnTy
@@ -138,10 +140,15 @@ private class BridgeImpl(using Quotes) {
     private def curriedConstructor[Fn: Type, R: Type](cls: Symbol, lamArgs: List[(String, TypeRepr)], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]], posRepr: Option[TypeRepr]): Term = {
         val (paramNames, lamTys) = lamArgs.unzip
         // grrrrrrrr why has Scala given me Tree and not Term?!
-        def inner(owner: Symbol, posParam: Option[Term]) = Lambda(owner, MethodType(paramNames)(_ => lamTys, _ => TypeRepr.of[R]), { (lamSym, params) =>
-            val paramTerms = params.map(_.asExpr.asTerm)
-            appliedCon(cls, lamSym, paramTerms.toVector, clsTyArgs, otherArgs, posParam)
-        })
+        def inner(owner: Symbol, posParam: Option[Term]): Term = {
+            // this is a singleton type
+            if (paramNames.isEmpty && posParam.isEmpty) Ident(cls.companionModule.termRef)
+            else if (paramNames.isEmpty) appliedCon(cls, owner, Vector.empty, clsTyArgs, otherArgs, posParam)
+            else Lambda(owner, MethodType(paramNames)(_ => lamTys, _ => TypeRepr.of[R]), { (lamSym, params) =>
+                val paramTerms = params.map(_.asExpr.asTerm)
+                appliedCon(cls, lamSym, paramTerms.toVector, clsTyArgs, otherArgs, posParam)
+            })
+        }
         posRepr.fold(inner(Symbol.spliceOwner, None)) { posRepr =>
             Lambda(Symbol.spliceOwner, MethodType(List("pos"))(_ => List(posRepr), _ => TypeRepr.of[Fn]), { (outerLamSym, posParam) =>
                 // grrrrrrrr why has Scala given me Tree and not Term?!
@@ -213,6 +220,11 @@ private class BridgeImpl(using Quotes) {
     }
 
     private def synthesiseBridge[R: Type](n: String, argTys: List[Type[?]], lift: List[Term] => Expr[Parsley[R]], single: [T] => Type[T] => Expr[Parsley[T]], errLabels: Expr[List[String]], errReason: Expr[Option[String]]): Expr[ErrorBridge] = (argTys.size: @switch) match {
+        case 0 => '{
+            new bridges.SingletonBridge[R] with InternalMethodLeak {
+                def singleton: Parsley[R] = ${single(Type.of[R])}
+            }
+        }
         // TODO: make generation of labels/reason conditional as to not bloat the objects
         case 1 => (argTys: @unchecked) match {
             case List('[t1]) => '{
@@ -625,7 +637,7 @@ private class BridgeImpl(using Quotes) {
             Option.when(!primCon.isNoSymbol) {
                 // some of the arguments lists may be type introductions
                 // we should filter those out and handle separately
-                val (tyParamss, valParamss) = primCon.paramSymss.partition(_.forall(_.isType))
+                val (tyParamss, valParamss) = primCon.paramSymss.partition(_.exists(_.isType))
                 valParamss match {
                     // TODO: this .flatten might not work with curried types; but they don't exist yet?
                     // (might have to be careful with extension methods too, but extension bridges seem... weird)
