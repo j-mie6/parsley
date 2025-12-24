@@ -3,7 +3,6 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package bridge.test
 import parsley.*
 import parsley.generic.experimental.*
 
@@ -35,31 +34,10 @@ def bar = bridge[Bar]
 def one = bridge[One]
 def baz = bridge[Baz[Int]]
 def a22 = bridge[A22[String]]
-// def a23 = bridge[A23[Int]] // error: bridges cannot have more than 22 arguments
+// def a23 = bridge[A23[Int]] // error: bridges cannot have more than 22 arguments TODO: scalatest test for this?
 def single = bridge[Single.type]
 def singlePos = bridge[SinglePos]
 
 type Unital[T[_]] = T[Unit]
 
 val fooUnit = bridge[Unital[Foo]]
-
-//val baz = bridge[Baz.Add[Int]]
-
-@main
-def bridgeTest() = {
-    val b = foo[Int]
-    println((character.char('a') ~> b(Parsley.pure(7), Parsley.pure(4))).parse("a").map(_.arg2))
-
-    println(bar(character.digit.map(_.asDigit), Parsley.pure(2)).parse("4"))
-
-    println((character.string("a ") ~> baz(character.item, character.digit.map(_.asDigit), character.string("d2"), Parsley.pure(0))).parse("a r2d2").map(b => s"$b @ ${b.pos}"))
-}
-
-/*abstract class Bar {
-    type T
-    def x: T
-}
-object Baz extends Bar {
-    type T = Foo[Boolean]
-    def x = Foo(5)()
-}*/
