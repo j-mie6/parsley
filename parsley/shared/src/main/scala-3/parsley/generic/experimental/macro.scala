@@ -41,16 +41,15 @@ private class BridgeImpl(using Quotes) {
                 val bridgePrimaryArgs = bridgeParams.collect {
                     case sym if !hasMeta(sym) => (sym.name, contextualise(tyRepr.memberType(sym)))
                 }
-                val metaImpls = categorisedArgs.flatten.collect {
-                    case BridgeArg.Meta(impl) => impl
-                }
-                val metaReprs = metaImpls.map(_.tyRepr)
+                val (metaTerms, metaReprs) = categorisedArgs.flatten.collect {
+                    case BridgeArg.Meta(impl) => (impl.parser.asTerm, impl.tyRepr)
+                }.unzip
                 lazy val con = constructor[T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, metaReprs)
-                val lift = synthesiseLift[S](metaImpls, bridgePrimaryArgs.map(_._2), con, _)
+                val lift = (terms: List[Term]) => synthesiseLift[S](metaReprs ::: bridgePrimaryArgs.map(_._2), con, metaTerms ::: terms)
                 val from = [Fn] => { (fnTy: Type[Fn]) =>
                     given Type[Fn] = fnTy
                     val curriedCon = curriedConstructor[Fn, T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, metaReprs)
-                    synthesiseSingle[Fn](metaImpls, curriedCon)
+                    synthesiseSingle[Fn](metaReprs, metaTerms, curriedCon)
                 }
                 // TODO: ensure validation if Err is encountered (report separately, but then abort if failed (Option))
                 synthesiseBridge[S](tyRepr.typeSymbol.name, bridgePrimaryArgs.map(_._2.asType), lift, from, labels, reason)
@@ -188,27 +187,21 @@ private class BridgeImpl(using Quotes) {
         saturated
     }
 
-    private def synthesiseLift[R: Type](metaImpls: List[MetaImpl[?]], argTys: List[TypeRepr], con: Term, args: List[Term]): Expr[Parsley[R]] = {
+    private def synthesiseLift[R: Type](argTys: List[TypeRepr], con: Term, args: List[Term]): Expr[Parsley[R]] = {
         val tys = argTys :+ TypeRepr.of[R]
-        val arity = argTys.size + metaImpls.size
+        val arity = argTys.size
         TypeRepr.of[parsley.lift.type].typeSymbol.methodMember(s"lift$arity").headOption.map('{parsley.lift}.asTerm.select) match {
             case Some(lift) =>
-                // TODO: factor this out and merge into argTys and args
-                val (metaTerms, metaReprs) = metaImpls.map(impl => (impl.parser.asTerm, impl.tyRepr)).unzip
-                lift.appliedToTypes(metaReprs ::: tys)
-                    .appliedToArgs(con :: metaTerms ::: args)
+                lift.appliedToTypes(tys)
+                    .appliedToArgs(con :: args)
                     .asExprOf[Parsley[R]]
             case None => report.errorAndAbort(s"No `lift` available for arity $arity")
         }
     }
 
-    private def synthesiseSingle[R: Type](metaImpls: List[MetaImpl[?]], con: Term): Expr[Parsley[R]] = {
-        if (metaImpls.isEmpty) '{Parsley.pure[R](${con.asExprOf[R]})}
-        else {
-            // TODO: factor this out
-            val (metaTerms, metaReprs) = metaImpls.map(impl => (impl.parser.asTerm, impl.tyRepr)).unzip
-            synthesiseLift[R](Nil, metaReprs, con, metaTerms)
-        }
+    private def synthesiseSingle[R: Type](metaReprs: List[TypeRepr], metaTerms: List[Term], con: Term): Expr[Parsley[R]] = {
+        if (metaTerms.isEmpty) '{Parsley.pure[R](${con.asExprOf[R]})}
+        else synthesiseLift[R](metaReprs, con, metaTerms)
     }
 
     private def synthesiseBridge[R: Type](n: String, argTys: List[Type[?]], lift: List[Term] => Expr[Parsley[R]], single: [T] => Type[T] => Expr[Parsley[T]], errLabels: Expr[List[String]], errReason: Expr[Option[String]]): Expr[ErrorBridge] = (argTys.size: @switch) match {
