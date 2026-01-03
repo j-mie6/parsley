@@ -41,18 +41,18 @@ private class BridgeImpl(using Quotes) {
                 val bridgePrimaryArgs = bridgeParams.collect {
                     case sym if !hasMeta(sym) => (sym.name, contextualise(tyRepr.memberType(sym)))
                 }
-                val existsUniqueMeta = categorisedArgs.flatten.foldLeft(Option.empty[MetaImpl[?]]) {
-                    case (None, BridgeArg.Meta(impl)) => Some(impl)
-                    // FIXME: lift this, we need a whole list of them!
-                    case (Some(_), BridgeArg.Meta(_)) => report.errorAndAbort("When `ParsableMeta` appears in a bridged type, it must be unique")
-                    case (meta, _)                    => meta
+                val metaImpls = categorisedArgs.flatten.collect {
+                    case BridgeArg.Meta(impl) => impl
                 }
-                lazy val con = constructor[T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, existsUniqueMeta.map(_.tyRepr))
-                val lift = synthesiseLift[S](existsUniqueMeta, bridgePrimaryArgs.map(_._2), con, _)
+                // FIXME: lift this
+                if (metaImpls.length >= 2) report.errorAndAbort("When `ParsableMeta` appears in a bridged type, it must be unique")
+                val metaReprs = metaImpls.map(_.tyRepr)
+                lazy val con = constructor[T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, metaReprs)
+                val lift = synthesiseLift[S](metaImpls.headOption, bridgePrimaryArgs.map(_._2), con, _)
                 val from = [Fn] => { (fnTy: Type[Fn]) =>
                     given Type[Fn] = fnTy
-                    val curriedCon = curriedConstructor[Fn, T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, existsUniqueMeta.map(_.tyRepr))
-                    synthesiseSingle[Fn](existsUniqueMeta, curriedCon)
+                    val curriedCon = curriedConstructor[Fn, T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, metaReprs)
+                    synthesiseSingle[Fn](metaImpls.headOption, curriedCon)
                 }
                 // TODO: ensure validation if Err is encountered (report separately, but then abort if failed (Option))
                 synthesiseBridge[S](tyRepr.typeSymbol.name, bridgePrimaryArgs.map(_._2.asType), lift, from, labels, reason)
@@ -104,19 +104,16 @@ private class BridgeImpl(using Quotes) {
       * @param lamArgs the arguments for the lambda (without positions or defaulted)
       * @param clsTyArgs the type parameters provided to the constructor
       * @param otherArgs any remaining non-primary arguments
-      * @param posRepr the position
+      * @param metaReprs the position
       * @return a lambda of the form `(lamArgs..) => cls[clsTyArgs](..)(otherArgs)`
       */
-    private def constructor[R: Type](cls: Symbol, lamArgs: List[(String, TypeRepr)], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]], posRepr: Option[TypeRepr]): Term = {
-        val requiresPosition = posRepr.isDefined
-        val (paramNames, lamTys) = (posRepr.map("pos" -> _) ++: lamArgs).unzip
+    private def constructor[R: Type](cls: Symbol, lamArgs: List[(String, TypeRepr)], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]], metaReprs: List[TypeRepr]): Term = {
+        val (paramNames, lamTys) = (metaReprs.zipWithIndex.map((ty, i) => s"meta$i" -> ty) ++: lamArgs).unzip
         // grrrrrrrr why has Scala given me Tree and not Term?!
         Lambda(Symbol.spliceOwner, MethodType(paramNames)(_ => lamTys, _ => TypeRepr.of[R]), { (lamSym, params) =>
-            val paramTerms = params.map(_.asExpr.asTerm)
-            val (posParam, paramTermsWithoutPos) = paramTerms match
-                case posParam :: paramTerms if requiresPosition => (Some(posParam), paramTerms)
-                case paramTerms => (None, paramTerms)
-            appliedCon(cls, lamSym, paramTermsWithoutPos.toVector, clsTyArgs, otherArgs, posParam)
+            val paramTerms = params.map(_.asExpr.asTerm).toVector
+            val (metaParams, paramTermsWithoutPos) = paramTerms.splitAt(metaReprs.length)
+            appliedCon(cls, lamSym, paramTermsWithoutPos, clsTyArgs, otherArgs, metaParams)
         })
     }
 
@@ -129,27 +126,29 @@ private class BridgeImpl(using Quotes) {
       * @param posRepr the position
       * @return a lambda of the form `pos => (lamArgs..) => cls[clsTyArgs](..)(otherArgs)`
       */
-    private def curriedConstructor[Fn: Type, R: Type](cls: Symbol, lamArgs: List[(String, TypeRepr)], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]], metaRepr: Option[TypeRepr]): Term = {
+    private def curriedConstructor[Fn: Type, R: Type](cls: Symbol, lamArgs: List[(String, TypeRepr)], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]], metaReprs: List[TypeRepr]): Term = {
         val (paramNames, lamTys) = lamArgs.unzip
-        // grrrrrrrr why has Scala given me Tree and not Term?!
-        def inner(owner: Symbol, posParam: Option[Term]): Term = {
+        def inner(owner: Symbol, metaParams: Vector[Term]): Term = {
             // this is a singleton type
-            if (paramNames.isEmpty && posParam.isEmpty) Ident(cls.companionModule.termRef)
-            else if (paramNames.isEmpty) appliedCon(cls, owner, Vector.empty, clsTyArgs, otherArgs, posParam)
+            if (paramNames.isEmpty && metaParams.isEmpty) Ident(cls.companionModule.termRef)
+            else if (paramNames.isEmpty) appliedCon(cls, owner, Vector.empty, clsTyArgs, otherArgs, metaParams)
             else Lambda(owner, MethodType(paramNames)(_ => lamTys, _ => TypeRepr.of[R]), { (lamSym, params) =>
-                val paramTerms = params.map(_.asExpr.asTerm)
-                appliedCon(cls, lamSym, paramTerms.toVector, clsTyArgs, otherArgs, posParam)
+                // grrrrrrrr why has Scala given me Tree and not Term?!
+                appliedCon(cls, lamSym, params.map(_.asExpr.asTerm).toVector, clsTyArgs, otherArgs, metaParams)
             })
         }
-        metaRepr.fold(inner(Symbol.spliceOwner, None)) { metaRepr =>
-            Lambda(Symbol.spliceOwner, MethodType(List("pos"))(_ => List(metaRepr), _ => TypeRepr.of[Fn]), { (outerLamSym, metaParam) =>
-                // grrrrrrrr why has Scala given me Tree and not Term?!
-                inner(outerLamSym, metaParam.map(_.asExpr.asTerm).headOption)
-            })
+        metaReprs match {
+            case Nil => inner(Symbol.spliceOwner, Vector.empty)
+            case ms =>
+                val names = List.tabulate(ms.length)(i => s"meta$i")
+                Lambda(Symbol.spliceOwner, MethodType(names)(_ => ms, _ => TypeRepr.of[Fn]), { (outerLamSym, metaParam) =>
+                    // grrrrrrrr why has Scala given me Tree and not Term?!
+                    inner(outerLamSym, metaParam.map(_.asExpr.asTerm).toVector)
+                })
         }
     }
 
-    private def appliedCon(cls: Symbol, owner: Symbol, lamParams: IndexedSeq[Term], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]], metaParam: Option[Term]): Term = {
+    private def appliedCon(cls: Symbol, owner: Symbol, lamParams: IndexedSeq[Term], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]], metaParams: IndexedSeq[Term]): Term = {
         val tys: List[TypeTree] = clsTyArgs.map(tyRep => TypeTree.of(using tyRep.asType))
         val objTy = if tys.nonEmpty then New(Applied(TypeTree.ref(cls), tys)) else New(TypeTree.ref(cls))
         val con = objTy.select(cls.primaryConstructor).appliedToTypes(clsTyArgs)
@@ -165,8 +164,12 @@ private class BridgeImpl(using Quotes) {
             case params :: paramss =>
                 val mySeeds = seeds.toList
                 var i = 0 // FIXME: get rid of this
+                var j = 0 // FIXME: get rid of this
                 val terms = params.map {
-                    case BridgeArg.Meta(_) => metaParam.get
+                    case BridgeArg.Meta(_) =>
+                        val p = metaParams(j)
+                        j += 1
+                        p
                     case BridgeArg.Default(n, sym) =>
                         Ident(cls.companionModule.termRef).select(sym).appliedToTypes(clsTyArgs).appliedToArgss(mySeeds)
                     case BridgeArg.Err(name, pos) =>
@@ -191,6 +194,7 @@ private class BridgeImpl(using Quotes) {
         val tys = argTys :+ TypeRepr.of[R]
         val arity = argTys.size + existsUniquePosition.size
         TypeRepr.of[parsley.lift.type].typeSymbol.methodMember(s"lift$arity").headOption.map('{parsley.lift}.asTerm.select) match {
+            // FIXME: generalise
             case Some(lift) => existsUniquePosition match {
                 case Some(impl@MetaImpl(_, given Type[metaTy])) =>
                     val metaTyRepr = TypeRepr.of[metaTy]
@@ -207,6 +211,7 @@ private class BridgeImpl(using Quotes) {
     }
 
     private def synthesiseSingle[R: Type](existsUniquePosition: Option[MetaImpl[?]], con: Term): Expr[Parsley[R]] = existsUniquePosition match {
+        // FIXME: generalise
         case Some(impl@MetaImpl(_, given Type[metaTy])) => '{${impl.parser}.map[R](${con.asExprOf[metaTy => R]})}
         case None => '{Parsley.pure[R](${con.asExprOf[R]})}
     }
