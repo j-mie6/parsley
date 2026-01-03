@@ -49,7 +49,7 @@ private class BridgeImpl(using Quotes) {
                 val from = [Fn] => { (fnTy: Type[Fn]) =>
                     given Type[Fn] = fnTy
                     val curriedCon = curriedConstructor[Fn, T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, metaReprs)
-                    synthesiseSingle[Fn](metaReprs, metaTerms, curriedCon)
+                    synthesiseLift[Fn](metaReprs, curriedCon, metaTerms)
                 }
                 // TODO: ensure validation if Err is encountered (report separately, but then abort if failed (Option))
                 synthesiseBridge[S](tyRepr.typeSymbol.name, bridgePrimaryArgs.map(_._2.asType), lift, from, labels, reason)
@@ -187,6 +187,7 @@ private class BridgeImpl(using Quotes) {
         saturated
     }
 
+    // note that `lift0 = pure`, so this handles even for pure constructs
     private def synthesiseLift[R: Type](argTys: List[TypeRepr], con: Term, args: List[Term]): Expr[Parsley[R]] = {
         val tys = argTys :+ TypeRepr.of[R]
         val arity = argTys.size
@@ -197,11 +198,6 @@ private class BridgeImpl(using Quotes) {
                     .asExprOf[Parsley[R]]
             case None => report.errorAndAbort(s"No `lift` available for arity $arity")
         }
-    }
-
-    private def synthesiseSingle[R: Type](metaReprs: List[TypeRepr], metaTerms: List[Term], con: Term): Expr[Parsley[R]] = {
-        if (metaTerms.isEmpty) '{Parsley.pure[R](${con.asExprOf[R]})}
-        else synthesiseLift[R](metaReprs, con, metaTerms)
     }
 
     private def synthesiseBridge[R: Type](n: String, argTys: List[Type[?]], lift: List[Term] => Expr[Parsley[R]], single: [T] => Type[T] => Expr[Parsley[T]], errLabels: Expr[List[String]], errReason: Expr[Option[String]]): Expr[ErrorBridge] = (argTys.size: @switch) match {
