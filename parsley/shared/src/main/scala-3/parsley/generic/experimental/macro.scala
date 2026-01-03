@@ -48,7 +48,7 @@ private class BridgeImpl(using Quotes) {
                 if (metaImpls.length >= 2) report.errorAndAbort("When `ParsableMeta` appears in a bridged type, it must be unique")
                 val metaReprs = metaImpls.map(_.tyRepr)
                 lazy val con = constructor[T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, metaReprs)
-                val lift = synthesiseLift[S](metaImpls.headOption, bridgePrimaryArgs.map(_._2), con, _)
+                val lift = synthesiseLift[S](metaImpls, bridgePrimaryArgs.map(_._2), con, _)
                 val from = [Fn] => { (fnTy: Type[Fn]) =>
                     given Type[Fn] = fnTy
                     val curriedCon = curriedConstructor[Fn, T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, metaReprs)
@@ -108,7 +108,7 @@ private class BridgeImpl(using Quotes) {
       * @return a lambda of the form `(lamArgs..) => cls[clsTyArgs](..)(otherArgs)`
       */
     private def constructor[R: Type](cls: Symbol, lamArgs: List[(String, TypeRepr)], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]], metaReprs: List[TypeRepr]): Term = {
-        val (paramNames, lamTys) = (metaReprs.zipWithIndex.map((ty, i) => s"meta$i" -> ty) ++: lamArgs).unzip
+        val (paramNames, lamTys) = (metaReprs.zipWithIndex.map((ty, i) => s"meta$i" -> ty) ::: lamArgs).unzip
         // grrrrrrrr why has Scala given me Tree and not Term?!
         Lambda(Symbol.spliceOwner, MethodType(paramNames)(_ => lamTys, _ => TypeRepr.of[R]), { (lamSym, params) =>
             val paramTerms = params.map(_.asExpr.asTerm).toVector
@@ -190,22 +190,15 @@ private class BridgeImpl(using Quotes) {
         saturated
     }
 
-    private def synthesiseLift[R: Type](existsUniquePosition: Option[MetaImpl[?]], argTys: List[TypeRepr], con: Term, args: List[Term]): Expr[Parsley[R]] = {
+    private def synthesiseLift[R: Type](metaImpls: List[MetaImpl[?]], argTys: List[TypeRepr], con: Term, args: List[Term]): Expr[Parsley[R]] = {
         val tys = argTys :+ TypeRepr.of[R]
-        val arity = argTys.size + existsUniquePosition.size
+        val arity = argTys.size + metaImpls.size
         TypeRepr.of[parsley.lift.type].typeSymbol.methodMember(s"lift$arity").headOption.map('{parsley.lift}.asTerm.select) match {
-            // FIXME: generalise
-            case Some(lift) => existsUniquePosition match {
-                case Some(impl@MetaImpl(_, given Type[metaTy])) =>
-                    val metaTyRepr = TypeRepr.of[metaTy]
-                    lift.appliedToTypes(metaTyRepr :: tys)
-                        .appliedToArgs(con :: impl.parser.asTerm :: args)
-                        .asExprOf[Parsley[R]]
-                case None =>
-                    lift.appliedToTypes(tys)
-                        .appliedToArgs(con :: args)
-                        .asExprOf[Parsley[R]]
-            }
+            case Some(lift) =>
+                val (metaTerms, metaReprs) = metaImpls.map(impl => (impl.parser.asTerm, impl.tyRepr)).unzip
+                lift.appliedToTypes(metaReprs ::: tys)
+                    .appliedToArgs(con :: metaTerms ::: args)
+                    .asExprOf[Parsley[R]]
             case None => report.errorAndAbort(s"No `lift` available for arity $arity")
         }
     }
