@@ -44,15 +44,13 @@ private class BridgeImpl(using Quotes) {
                 val metaImpls = categorisedArgs.flatten.collect {
                     case BridgeArg.Meta(impl) => impl
                 }
-                // FIXME: lift this
-                if (metaImpls.length >= 2) report.errorAndAbort("When `ParsableMeta` appears in a bridged type, it must be unique")
                 val metaReprs = metaImpls.map(_.tyRepr)
                 lazy val con = constructor[T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, metaReprs)
                 val lift = synthesiseLift[S](metaImpls, bridgePrimaryArgs.map(_._2), con, _)
                 val from = [Fn] => { (fnTy: Type[Fn]) =>
                     given Type[Fn] = fnTy
                     val curriedCon = curriedConstructor[Fn, T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, metaReprs)
-                    synthesiseSingle[Fn](metaImpls.headOption, curriedCon)
+                    synthesiseSingle[Fn](metaImpls, curriedCon)
                 }
                 // TODO: ensure validation if Err is encountered (report separately, but then abort if failed (Option))
                 synthesiseBridge[S](tyRepr.typeSymbol.name, bridgePrimaryArgs.map(_._2.asType), lift, from, labels, reason)
@@ -195,6 +193,7 @@ private class BridgeImpl(using Quotes) {
         val arity = argTys.size + metaImpls.size
         TypeRepr.of[parsley.lift.type].typeSymbol.methodMember(s"lift$arity").headOption.map('{parsley.lift}.asTerm.select) match {
             case Some(lift) =>
+                // TODO: factor this out and merge into argTys and args
                 val (metaTerms, metaReprs) = metaImpls.map(impl => (impl.parser.asTerm, impl.tyRepr)).unzip
                 lift.appliedToTypes(metaReprs ::: tys)
                     .appliedToArgs(con :: metaTerms ::: args)
@@ -203,10 +202,13 @@ private class BridgeImpl(using Quotes) {
         }
     }
 
-    private def synthesiseSingle[R: Type](existsUniquePosition: Option[MetaImpl[?]], con: Term): Expr[Parsley[R]] = existsUniquePosition match {
-        // FIXME: generalise
-        case Some(impl@MetaImpl(_, given Type[metaTy])) => '{${impl.parser}.map[R](${con.asExprOf[metaTy => R]})}
-        case None => '{Parsley.pure[R](${con.asExprOf[R]})}
+    private def synthesiseSingle[R: Type](metaImpls: List[MetaImpl[?]], con: Term): Expr[Parsley[R]] = {
+        if (metaImpls.isEmpty) '{Parsley.pure[R](${con.asExprOf[R]})}
+        else {
+            // TODO: factor this out
+            val (metaTerms, metaReprs) = metaImpls.map(impl => (impl.parser.asTerm, impl.tyRepr)).unzip
+            synthesiseLift[R](Nil, metaReprs, con, metaTerms)
+        }
     }
 
     private def synthesiseBridge[R: Type](n: String, argTys: List[Type[?]], lift: List[Term] => Expr[Parsley[R]], single: [T] => Type[T] => Expr[Parsley[T]], errLabels: Expr[List[String]], errReason: Expr[Option[String]]): Expr[ErrorBridge] = (argTys.size: @switch) match {
