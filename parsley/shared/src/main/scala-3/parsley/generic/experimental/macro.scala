@@ -34,11 +34,12 @@ private class BridgeImpl(using Quotes) {
         tyRepr match {
             // there must be the same number of type arguments as type params, or this is a higher-kinded T (oops!)
             case Bridgeable(cls, tyParams, bridgeParams, otherParams) if tyArgs.lengthCompare(tyParams) == 0 =>
-                val categorisedArgs = categoriseArgs(cls, bridgeParams :: otherParams, 1, primary = true, mutable.ListBuffer.empty)
+                def contextualise(ty: TypeRepr) = ty.substituteTypes(tyParams, tyArgs)
+                val categorisedArgs = categoriseArgs(cls, bridgeParams :: otherParams, 1, primary = true, mutable.ListBuffer.empty, contextualise)
                 // Used for the types of the lambda passed to combinator
                 //println(categorisedArgs)
                 val bridgePrimaryArgs = bridgeParams.collect {
-                    case sym if isMeta(sym).isEmpty => (sym.name, tyRepr.memberType(sym).substituteTypes(tyParams, tyArgs))
+                    case sym if !hasMeta(sym) => (sym.name, contextualise(tyRepr.memberType(sym)))
                 }
                 val existsUniqueMeta = categorisedArgs.flatten.foldLeft(Option.empty[MetaImpl[?]]) {
                     case (None, BridgeArg.Meta(impl)) => Some(impl)
@@ -64,13 +65,14 @@ private class BridgeImpl(using Quotes) {
         def tyRepr = TypeRepr.of[T]
     }
     private val annotation = TypeRepr.of[parsley.generic.experimental.isMeta].typeSymbol
-    private def isMeta(sym: Symbol): Option[MetaImpl[?]] = Option.when(sym.hasAnnotation(annotation)) {
-        sym.termRef.widen.asType match {
+    private def hasMeta(sym: Symbol) = sym.hasAnnotation(annotation)
+    private def isMeta(sym: Symbol, contextualise: TypeRepr => TypeRepr): Option[MetaImpl[?]] = Option.when(hasMeta(sym)) {
+        contextualise(sym.termRef.widen).asType match {
             case ty@'[t] => Expr.summon[parsley.generic.experimental.ParsableMeta[t]] match {
                 case Some(inst) => MetaImpl[t](inst, ty)
                 case None =>
                     val typeName = TypeRepr.of[t].show(using Printer.TypeReprShortCode)
-                    report.errorAndAbort(s"attribute ${sym.name} can only use @isPosition with a `parsley.generic.PositionLike[$typeName]` instance in scope", sym.pos.get)
+                    report.errorAndAbort(s"attribute ${sym.name} can only use @isMeta with a `parsley.generic.ParsableMeta[$typeName]` instance in scope", sym.pos.get)
             }
         }
     }
@@ -79,20 +81,20 @@ private class BridgeImpl(using Quotes) {
     private def defaulted(cls: Symbol, n: Int): Option[Symbol] = cls.companionModule.declaredMethod(defaultName(n)).headOption
 
     @tailrec
-    private def categoriseArgs(cls: Symbol, nonPrimaryArgs: List[List[Symbol]], n: Int, primary: Boolean, buf: mutable.ListBuffer[List[BridgeArg]]): List[List[BridgeArg]] = nonPrimaryArgs match {
+    private def categoriseArgs(cls: Symbol, nonPrimaryArgs: List[List[Symbol]], n: Int, primary: Boolean, buf: mutable.ListBuffer[List[BridgeArg]], contextualise: TypeRepr => TypeRepr): List[List[BridgeArg]] = nonPrimaryArgs match {
         case Nil => buf.toList
         case args :: restArgs =>
             categoriseArgs(cls, restArgs, n + args.length, primary = false, buf += args.zipWithIndex.map {
                 case (sym, i) => defaulted(cls, i + n) match {
                     // TODO: if it's primary, you could actually synthesise a default to the lifted constructor
                     case Some(sym) if !primary => BridgeArg.Default(i + n, sym)
-                    case _ => isMeta(sym) match {
+                    case _ => isMeta(sym, contextualise) match {
                         case Some(impl)       => BridgeArg.Meta(impl)
                         case None if !primary => BridgeArg.Err(sym.name, sym.pos)
                         case None             => BridgeArg.Bridged(sym)
                     }
                 }
-            })
+            }, contextualise)
     }
 
     // FIXME: I don't like the duplication here...
