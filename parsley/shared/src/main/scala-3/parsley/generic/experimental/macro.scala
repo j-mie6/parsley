@@ -126,22 +126,26 @@ private class BridgeImpl(using Quotes) {
     private def curriedConstructor[Fn: Type, R: Type](cls: Symbol, lamArgs: List[(String, TypeRepr)], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]], metaReprs: List[TypeRepr]): Term = {
         val (paramNames, lamTys) = lamArgs.unzip
         def inner(owner: Symbol, metaParams: Vector[Term]): Term = {
-            // this is a singleton type
-            if (paramNames.isEmpty && metaParams.isEmpty) Ident(cls.companionModule.termRef)
-            else if (paramNames.isEmpty) appliedCon(cls, owner, Vector.empty, clsTyArgs, otherArgs, metaParams)
-            else Lambda(owner, MethodType(paramNames)(_ => lamTys, _ => TypeRepr.of[R]), { (lamSym, params) =>
+            val innerRepr = TypeRepr.of[R]
+            if (innerRepr.isSingleton) Ident(innerRepr.termSymbol.termRef)
+            // this would be a class X(), with no parameters we need to fill
+            else if (paramNames.isEmpty) {
+                // FIXME: this wouldn't recreate the instance every time...
+                // which we might want to do (i.e. fresh instead of lift0, and if we are introducing the special case, might as well remove lift0)
+                appliedCon(cls, owner, Vector.empty, clsTyArgs, otherArgs, metaParams)
+            }
+            else Lambda(owner, MethodType(paramNames)(_ => lamTys, _ => innerRepr), { (lamSym, params) =>
                 // grrrrrrrr why has Scala given me Tree and not Term?!
                 appliedCon(cls, lamSym, params.map(_.asExpr.asTerm).toVector, clsTyArgs, otherArgs, metaParams)
             })
         }
-        metaReprs match {
-            case Nil => inner(Symbol.spliceOwner, Vector.empty)
-            case ms =>
-                val names = List.tabulate(ms.length)(i => s"meta$i")
-                Lambda(Symbol.spliceOwner, MethodType(names)(_ => ms, _ => TypeRepr.of[Fn]), { (outerLamSym, metaParam) =>
-                    // grrrrrrrr why has Scala given me Tree and not Term?!
-                    inner(outerLamSym, metaParam.map(_.asExpr.asTerm).toVector)
-                })
+        if (metaReprs.isEmpty) inner(Symbol.spliceOwner, Vector.empty)
+        else {
+            val names = List.tabulate(metaReprs.length)(i => s"meta$i")
+            Lambda(Symbol.spliceOwner, MethodType(names)(_ => metaReprs, _ => TypeRepr.of[Fn]), { (outerLamSym, metaParam) =>
+                // grrrrrrrr why has Scala given me Tree and not Term?!
+                inner(outerLamSym, metaParam.map(_.asExpr.asTerm).toVector)
+            })
         }
     }
 
