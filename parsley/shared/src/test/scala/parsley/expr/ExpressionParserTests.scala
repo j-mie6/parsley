@@ -12,7 +12,7 @@ import parsley.token.{descriptions => desc}
 import parsley.character.digit
 import parsley.syntax.character.{charLift, stringLift}
 import parsley.position.*
-import parsley.generic.*
+import parsley.template.*
 
 class ExpressionParserTests extends ParsleyTest {
     "chain.postfix" must "require an initial value" in {

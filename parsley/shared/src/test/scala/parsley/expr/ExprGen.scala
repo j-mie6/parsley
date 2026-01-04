@@ -11,8 +11,8 @@ import org.scalacheck.Gen
 import org.scalacheck.Arbitrary.arbitrary
 import parsley.Parsley
 import parsley.Parsley.atomic
-import parsley.generic.ParserBridge1
-import parsley.generic.ParserBridge2
+import parsley.template.ParserBridge1
+import parsley.template.ParserBridge2
 
 object ExprGen {
     private type UnaryOp = (String, TestExpr => TestExpr)

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 package parsley
-package generic
+package template
 
 import Parsley.transPure
 import lift.*
@@ -12,7 +12,7 @@ import lift.*
 // $COVERAGE-OFF$
 // scalastyle:off parameter.number ensure.single.space.after.token
 // Allows for easier implementation for the singleton = pure case
-private [generic] trait PureSingletonImpl[+A] { this:  bridges.SingletonBridge[A] =>
+private [template] trait PureSingletonImpl[+A] { this:  bridges.SingletonBridge[A] =>
     /** The abstract hook method: what value is the singleton representing?
       * @since 4.0.0
       */

@@ -17,4 +17,4 @@ package parsley
   *
   * @since 5.0.0
   */
-package object generic
+package object template
