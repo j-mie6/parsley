@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 package parsley
-package template
+package templates
 
 import Parsley.transPure
 import lift.*
@@ -12,7 +12,7 @@ import lift.*
 // $COVERAGE-OFF$
 // scalastyle:off parameter.number ensure.single.space.after.token
 // Allows for easier implementation for the singleton = pure case
-private [template] trait PureSingletonImpl[+A] { this:  bridges.SingletonBridge[A] =>
+private [templates] trait PureSingletonImpl[+A] { this:  bridges.SingletonBridge[A] =>
     /** The abstract hook method: what value is the singleton representing?
       * @since 4.0.0
       */
@@ -20,18 +20,18 @@ private [template] trait PureSingletonImpl[+A] { this:  bridges.SingletonBridge[
     final protected def singleton: Parsley[A] = transPure(con)
 }
 
-/** Generic bridge trait for singleton objects that simply return themselves
+/** Template bridge trait for singleton objects that simply return themselves
   * after running the parser provided to `from`.
   *
   * @since 4.0.0
   */
-trait ParserBridge0[+R] extends bridges.SingletonBridge[R] with PureSingletonImpl[R] { this: R =>
+trait PureParserBridge0[+R] extends bridges.SingletonBridge[R] with PureSingletonImpl[R] { this: R =>
     /** @inheritdoc */
     override final def con: R = this
 }
 
-/** Generic bridge trait for types that have constructors of arity 1. */
-trait ParserBridge1[-T1, +R] extends bridges.ParserBridge1[T1, R] with PureSingletonImpl[T1 => R] {
+/** Template bridge trait for types that have constructors of arity 1. */
+trait PureParserBridge1[-T1, +R] extends bridges.ParserBridge1[T1, R] with PureSingletonImpl[T1 => R] {
     /** The abstract hook method: this is the method that should be used
       * to combine the results of the parsers provided to the template method
       * into the result type `R`. */
@@ -43,8 +43,8 @@ trait ParserBridge1[-T1, +R] extends bridges.ParserBridge1[T1, R] with PureSingl
     override final def con: T1 => R = this.apply
 }
 
-/** Generic bridge trait for types that have constructors of arity 2. */
-trait ParserBridge2[-T1, -T2, +R] extends bridges.ParserBridge2[T1, T2, R] with PureSingletonImpl[(T1, T2) => R] {
+/** Template bridge trait for types that have constructors of arity 2. */
+trait PureParserBridge2[-T1, -T2, +R] extends bridges.ParserBridge2[T1, T2, R] with PureSingletonImpl[(T1, T2) => R] {
     /** The abstract hook method: this is the method that should be used
       * to combine the results of the parsers provided to the template method
       * into the result type `R`. */
@@ -56,8 +56,8 @@ trait ParserBridge2[-T1, -T2, +R] extends bridges.ParserBridge2[T1, T2, R] with 
     override final def con: (T1, T2) => R = this.apply(_, _)
 }
 
-/** Generic bridge trait for types that have constructors of arity 3. */
-trait ParserBridge3[-T1, -T2, -T3, +R] extends bridges.ParserBridge3[T1, T2, T3, R] with PureSingletonImpl[(T1, T2, T3) => R] {
+/** Template bridge trait for types that have constructors of arity 3. */
+trait PureParserBridge3[-T1, -T2, -T3, +R] extends bridges.ParserBridge3[T1, T2, T3, R] with PureSingletonImpl[(T1, T2, T3) => R] {
     /** The abstract hook method: this is the method that should be used
       * to combine the results of the parsers provided to the template method
       * into the result type `R`. */
@@ -69,8 +69,8 @@ trait ParserBridge3[-T1, -T2, -T3, +R] extends bridges.ParserBridge3[T1, T2, T3,
     override final def con: (T1, T2, T3) => R = this.apply(_, _, _)
 }
 
-/** Generic bridge trait for types that have constructors of arity 4. */
-trait ParserBridge4[-T1, -T2, -T3, -T4, +R] extends bridges.ParserBridge4[T1, T2, T3, T4, R] with PureSingletonImpl[(T1, T2, T3, T4) => R] {
+/** Template bridge trait for types that have constructors of arity 4. */
+trait PureParserBridge4[-T1, -T2, -T3, -T4, +R] extends bridges.ParserBridge4[T1, T2, T3, T4, R] with PureSingletonImpl[(T1, T2, T3, T4) => R] {
     /** The abstract hook method: this is the method that should be used
       * to combine the results of the parsers provided to the template method
       * into the result type `R`. */
@@ -84,8 +84,8 @@ trait ParserBridge4[-T1, -T2, -T3, -T4, +R] extends bridges.ParserBridge4[T1, T2
     override final def con: (T1, T2, T3, T4) => R = this.apply(_, _, _, _)
 }
 
-/** Generic bridge trait for types that have constructors of arity 5. */
-trait ParserBridge5[-T1, -T2, -T3, -T4, -T5, +R] extends bridges.ParserBridge5[T1, T2, T3, T4, T5, R] with PureSingletonImpl[(T1, T2, T3, T4, T5) => R] {
+/** Template bridge trait for types that have constructors of arity 5. */
+trait PureParserBridge5[-T1, -T2, -T3, -T4, -T5, +R] extends bridges.ParserBridge5[T1, T2, T3, T4, T5, R] with PureSingletonImpl[(T1, T2, T3, T4, T5) => R] {
     /** The abstract hook method: this is the method that should be used
       * to combine the results of the parsers provided to the template method
       * into the result type `R`. */
@@ -99,8 +99,8 @@ trait ParserBridge5[-T1, -T2, -T3, -T4, -T5, +R] extends bridges.ParserBridge5[T
     override final def con: (T1, T2, T3, T4, T5) => R = this.apply(_, _, _, _, _)
 }
 
-/** Generic bridge trait for types that have constructors of arity 6. */
-trait ParserBridge6[-T1, -T2, -T3, -T4, -T5, -T6, +R] extends bridges.ParserBridge6[T1, T2, T3, T4, T5, T6, R] with PureSingletonImpl[(T1, T2, T3, T4, T5, T6) => R] {
+/** Template bridge trait for types that have constructors of arity 6. */
+trait PureParserBridge6[-T1, -T2, -T3, -T4, -T5, -T6, +R] extends bridges.ParserBridge6[T1, T2, T3, T4, T5, T6, R] with PureSingletonImpl[(T1, T2, T3, T4, T5, T6) => R] {
     /** The abstract hook method: this is the method that should be used
       * to combine the results of the parsers provided to the template method
       * into the result type `R`. */
@@ -114,8 +114,8 @@ trait ParserBridge6[-T1, -T2, -T3, -T4, -T5, -T6, +R] extends bridges.ParserBrid
     override final def con: (T1, T2, T3, T4, T5, T6) => R = this.apply(_, _, _, _, _, _)
 }
 
-/** Generic bridge trait for types that have constructors of arity 7. */
-trait ParserBridge7[-T1, -T2, -T3, -T4, -T5, -T6, -T7, +R] extends bridges.ParserBridge7[T1, T2, T3, T4, T5, T6, T7, R] with PureSingletonImpl[(T1, T2, T3, T4, T5, T6, T7) => R] {
+/** Template bridge trait for types that have constructors of arity 7. */
+trait PureParserBridge7[-T1, -T2, -T3, -T4, -T5, -T6, -T7, +R] extends bridges.ParserBridge7[T1, T2, T3, T4, T5, T6, T7, R] with PureSingletonImpl[(T1, T2, T3, T4, T5, T6, T7) => R] {
     /** The abstract hook method: this is the method that should be used
       * to combine the results of the parsers provided to the template method
       * into the result type `R`. */
@@ -130,8 +130,8 @@ trait ParserBridge7[-T1, -T2, -T3, -T4, -T5, -T6, -T7, +R] extends bridges.Parse
     override final def con: (T1, T2, T3, T4, T5, T6, T7) => R = this.apply(_, _, _, _, _, _, _)
 }
 
-/** Generic bridge trait for types that have constructors of arity 8. */
-trait ParserBridge8[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, +R] extends bridges.ParserBridge8[T1, T2, T3, T4, T5, T6, T7, T8, R] with PureSingletonImpl[(T1, T2, T3, T4, T5, T6, T7, T8) => R] {
+/** Template bridge trait for types that have constructors of arity 8. */
+trait PureParserBridge8[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, +R] extends bridges.ParserBridge8[T1, T2, T3, T4, T5, T6, T7, T8, R] with PureSingletonImpl[(T1, T2, T3, T4, T5, T6, T7, T8) => R] {
     /** The abstract hook method: this is the method that should be used
       * to combine the results of the parsers provided to the template method
       * into the result type `R`. */
@@ -146,8 +146,8 @@ trait ParserBridge8[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, +R] extends bridges.
     override final def con: (T1, T2, T3, T4, T5, T6, T7, T8) => R = this.apply(_, _, _, _, _, _, _, _)
 }
 
-/** Generic bridge trait for types that have constructors of arity 9. */
-trait ParserBridge9[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, +R] extends bridges.ParserBridge9[T1, T2, T3, T4, T5, T6, T7, T8, T9, R] with PureSingletonImpl[(T1, T2, T3, T4, T5, T6, T7, T8, T9) => R] {
+/** Template bridge trait for types that have constructors of arity 9. */
+trait PureParserBridge9[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, +R] extends bridges.ParserBridge9[T1, T2, T3, T4, T5, T6, T7, T8, T9, R] with PureSingletonImpl[(T1, T2, T3, T4, T5, T6, T7, T8, T9) => R] {
     /** The abstract hook method: this is the method that should be used
       * to combine the results of the parsers provided to the template method
       * into the result type `R`. */
@@ -162,8 +162,8 @@ trait ParserBridge9[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, +R] extends bri
     override final def con: (T1, T2, T3, T4, T5, T6, T7, T8, T9) => R = this.apply(_, _, _, _, _, _, _, _, _)
 }
 
-/** Generic bridge trait for types that have constructors of arity 10. */
-trait ParserBridge10[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, +R] extends bridges.ParserBridge10[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R] with PureSingletonImpl[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10) => R] {
+/** Template bridge trait for types that have constructors of arity 10. */
+trait PureParserBridge10[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, +R] extends bridges.ParserBridge10[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R] with PureSingletonImpl[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10) => R] {
     /** The abstract hook method: this is the method that should be used
       * to combine the results of the parsers provided to the template method
       * into the result type `R`. */
@@ -178,8 +178,8 @@ trait ParserBridge10[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, +R] exte
     override final def con: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10) => R = this.apply(_, _, _, _, _, _, _, _, _, _)
 }
 
-/** Generic bridge trait for types that have constructors of arity 11. */
-trait ParserBridge11[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, +R]
+/** Template bridge trait for types that have constructors of arity 11. */
+trait PureParserBridge11[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, +R]
     extends bridges.ParserBridge11[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, R]
        with PureSingletonImpl[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11) => R] {
     /** The abstract hook method: this is the method that should be used
@@ -196,8 +196,8 @@ trait ParserBridge11[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, +R
     override final def con: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11) => R = this.apply(_, _, _, _, _, _, _, _, _, _, _)
 }
 
-/** Generic bridge trait for types that have constructors of arity 12. */
-trait ParserBridge12[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, +R]
+/** Template bridge trait for types that have constructors of arity 12. */
+trait PureParserBridge12[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, +R]
     extends bridges.ParserBridge12[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, R]
        with PureSingletonImpl[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12) => R] {
     /** The abstract hook method: this is the method that should be used
@@ -214,8 +214,8 @@ trait ParserBridge12[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T
     override final def con: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12) => R = this.apply(_, _, _, _, _, _, _, _, _, _, _, _)
 }
 
-/** Generic bridge trait for types that have constructors of arity 13. */
-trait ParserBridge13[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, +R]
+/** Template bridge trait for types that have constructors of arity 13. */
+trait PureParserBridge13[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, +R]
     extends bridges.ParserBridge13[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, R]
        with PureSingletonImpl[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13) => R] {
     /** The abstract hook method: this is the method that should be used
@@ -233,8 +233,8 @@ trait ParserBridge13[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T
     override final def con: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13) => R = this.apply(_, _, _, _, _, _, _, _, _, _, _, _, _)
 }
 
-/** Generic bridge trait for types that have constructors of arity 14. */
-trait ParserBridge14[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, +R]
+/** Template bridge trait for types that have constructors of arity 14. */
+trait PureParserBridge14[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, +R]
     extends bridges.ParserBridge14[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, R]
        with PureSingletonImpl[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14) => R] {
     /** The abstract hook method: this is the method that should be used
@@ -252,8 +252,8 @@ trait ParserBridge14[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T
     override final def con: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14) => R = this.apply(_, _, _, _, _, _, _, _, _, _, _, _, _, _)
 }
 
-/** Generic bridge trait for types that have constructors of arity 15. */
-trait ParserBridge15[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, +R]
+/** Template bridge trait for types that have constructors of arity 15. */
+trait PureParserBridge15[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, +R]
     extends bridges.ParserBridge15[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, R]
        with PureSingletonImpl[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15) => R] {
     /** The abstract hook method: this is the method that should be used
@@ -272,8 +272,8 @@ trait ParserBridge15[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T
         this.apply(_, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
 }
 
-/** Generic bridge trait for types that have constructors of arity 16. */
-trait ParserBridge16[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, +R]
+/** Template bridge trait for types that have constructors of arity 16. */
+trait PureParserBridge16[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, +R]
     extends bridges.ParserBridge16[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, R]
        with PureSingletonImpl[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16) => R] {
     /** The abstract hook method: this is the method that should be used
@@ -293,8 +293,8 @@ trait ParserBridge16[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T
         this.apply(_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
 }
 
-/** Generic bridge trait for types that have constructors of arity 17. */
-trait ParserBridge17[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, -T17, +R]
+/** Template bridge trait for types that have constructors of arity 17. */
+trait PureParserBridge17[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, -T17, +R]
     extends bridges.ParserBridge17[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, R]
        with PureSingletonImpl[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17) => R] {
     /** The abstract hook method: this is the method that should be used
@@ -314,8 +314,8 @@ trait ParserBridge17[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T
         this.apply(_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
 }
 
-/** Generic bridge trait for types that have constructors of arity 18. */
-trait ParserBridge18[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, -T17, -T18, +R]
+/** Template bridge trait for types that have constructors of arity 18. */
+trait PureParserBridge18[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, -T17, -T18, +R]
     extends bridges.ParserBridge18[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, R]
        with PureSingletonImpl[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18) => R] {
     /** The abstract hook method: this is the method that should be used
@@ -334,8 +334,8 @@ trait ParserBridge18[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T
         this.apply(_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
 }
 
-/** Generic bridge trait for types that have constructors of arity 19. */
-trait ParserBridge19[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, -T17, -T18, -T19, +R]
+/** Template bridge trait for types that have constructors of arity 19. */
+trait PureParserBridge19[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, -T17, -T18, -T19, +R]
     extends bridges.ParserBridge19[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, R]
        with PureSingletonImpl[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19) => R] {
     /** The abstract hook method: this is the method that should be used
@@ -356,8 +356,8 @@ trait ParserBridge19[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T
         this.apply(_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
 }
 
-/** Generic bridge trait for types that have constructors of arity 20. */
-trait ParserBridge20[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, -T17, -T18, -T19, -T20, +R]
+/** Template bridge trait for types that have constructors of arity 20. */
+trait PureParserBridge20[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, -T17, -T18, -T19, -T20, +R]
     extends bridges.ParserBridge20[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, R]
        with PureSingletonImpl[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20) => R] {
     /** The abstract hook method: this is the method that should be used
@@ -378,8 +378,8 @@ trait ParserBridge20[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T
         this.apply(_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
 }
 
-/** Generic bridge trait for types that have constructors of arity 21. */
-trait ParserBridge21[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, -T17, -T18, -T19, -T20, -T21, +R]
+/** Template bridge trait for types that have constructors of arity 21. */
+trait PureParserBridge21[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, -T17, -T18, -T19, -T20, -T21, +R]
     extends bridges.ParserBridge21[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, R]
        with PureSingletonImpl[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21) => R] {
     /** The abstract hook method: this is the method that should be used
@@ -400,8 +400,8 @@ trait ParserBridge21[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T
         this.apply(_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
 }
 
-/** Generic bridge trait for types that have constructors of arity 22. */
-trait ParserBridge22[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, -T17, -T18, -T19, -T20, -T21, -T22, +R]
+/** Template bridge trait for types that have constructors of arity 22. */
+trait PureParserBridge22[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, -T17, -T18, -T19, -T20, -T21, -T22, +R]
     extends bridges.ParserBridge22[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, R]
        with PureSingletonImpl[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22) => R] {
     /** The abstract hook method: this is the method that should be used
