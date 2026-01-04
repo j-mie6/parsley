@@ -12,7 +12,7 @@ import scala.quoted.*
 import bridges.ErrorBridge
 
 // this is annoying, but needs to be available publically, otherwise macros can't see it
-transparent trait InternalMethodLeak { this: bridges.SingletonBridge[?] =>
+transparent trait InternalMethodLeak { this: bridges.ParserSingletonBridge[?] =>
     def macroImplLiftedWrap[A](p: Parsley[A]) = error(p.ut()).uo(name)
 }
 
@@ -209,7 +209,7 @@ private class BridgeImpl(using Quotes) {
 
     private def synthesiseBridge[R: Type](n: String, argTys: List[Type[?]], lift: List[Term] => Expr[Parsley[R]], single: [T] => Type[T] => Expr[Parsley[T]], errLabels: Expr[List[String]], errReason: Expr[Option[String]]): Expr[ErrorBridge] = (argTys.size: @switch) match {
         case 0 => '{
-            new bridges.SingletonBridge[R] with InternalMethodLeak {
+            new bridges.ParserSingletonBridge[R] with InternalMethodLeak {
                 def singleton: Parsley[R] = ${single(Type.of[R])}
             }
         }

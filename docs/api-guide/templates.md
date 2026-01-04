@@ -1,22 +1,22 @@
 {%
 laika.versioned = true
-laika.title = "`parsley.generic`"
-parsley.tabname = "Generic Bridges (parsley.generic)"
-laika.site.metadata.description = "This page describes how to use generic bridges to factor code."
+laika.title = "`parsley.templates`"
+parsley.tabname = "Template Bridges (parsley.templates)"
+laika.site.metadata.description = "This page describes how to use template bridges to factor code."
 %}
 
 ```scala mdoc:invisible
 import parsley.Parsley, Parsley.*
-import parsley.generic.ParserBridge1
+import parsley.templates.PureParserBridge1
 ```
-# Generic Bridges (`parsley.generic`)
+# Template Bridges (`parsley.templates`)
 
 The *Parser Bridge* pattern is a technique for decoupling semantic actions from the parser itself.
-The `parsley.generic` module contains 23 classes that allow
+The `parsley.templates` package contains 23 classes that allow
 you to get started using the technique straight away if you wish.
 
 @:callout(info)
-*The Scaladoc for this page can be found at [`parsley.generic`](@:api(parsley.generic$)).*
+*The Scaladoc for this page can be found at [`parsley.templates`](@:api(parsley.templates)).*
 @:@
 
 ## What are *Parser Bridges*?
@@ -65,26 +65,26 @@ val q = Foo(px, py)
 In this version, the act of constructing the `Foo` value has been abstracted behind the bridge, `Foo`:
 this means that the underlying implementation can vary without changing the parser.
 
-@:style(paragraph) What are *Generic Bridges*? @:@
-Generic bridges are the templating mechanism that allow for the synthesis of an `apply` method that
+@:style(paragraph) What are *Template Bridges*? @:@
+Template bridges are the templating mechanism that allow for the synthesis of an `apply` method that
 works on values of type `Parsley` from another that does not. While you can define your own bridge
 templates (see [the associated tutorial](../tutorial/parser-bridge-pattern.md) for an explanation),
 `parsley` provides some basic ones to get you started.
 
 ## How to use
-The [`parsley.generic`](@:api(parsley.generic$)) module contains `ParserBridge1` through
-`ParserBridge22` as well as `ParserBridge0`; they all extend `ParserBridgeSingleton`, which provides
-some additional combinators as well as `ErrorBridge`, which allows labels and a reason to be attached
-to a bridge. @:todo(TODO: no longer error bridge, needs a rethink)
+The [`parsley.templates`](@:api(parsley.templates)) package contains `PureParserBridge1` through
+`PureParserBridge22` as well as `PureParserBridge0`; they all extend `bridges.ParserBridgeSingleton`, which provides
+some additional combinators as well as `bridges.ErrorBridge`, which allows labels and a reason to be attached
+to a bridge.
 
-### `ParserBridge1[-T1, +R]` through `ParserBridge22[-T1, .., -T22, +R]`
+### `PureParserBridge1[-T1, +R]` through `PureParserBridge22[-T1, .., -T22, +R]`
 Each of these traits are designed to be implemented ideally by a companion object for a `case class`.
 For example, the `Foo` class above can have its companion object turned into a bridge by extending
-`ParserBridge2` (which is for two argument bridges):
+`PureParserBridge2` (which is for two argument bridges):
 
 ```scala mdoc
-import parsley.generic.ParserBridge2
-object Foo extends ParserBridge2[Int, Int, Foo]
+import parsley.templates.PureParserBridge2
+object Foo extends PureParserBridge2[Int, Int, Foo]
 ```
 
 This defines `def apply(px: Parsley[Int], py: Parsley[Int]): Parsley[Foo]`, implementing it in
@@ -94,11 +94,11 @@ start using the bridge. Of course, it's possible to define standalone bridges as
 you provide an implementation of `apply`, as illustrated by this error:
 
 ```scala mdoc:fail
-object Add extends ParserBridge2[Int, Int, Int]
+object Add extends PureParserBridge2[Int, Int, Int]
 ```
 
 ```scala mdoc:invisible
-object Add extends ParserBridge2[Int, Int, Int] {
+object Add extends PureParserBridge2[Int, Int, Int] {
     def apply(x: Int, y: Int) = x + y
 }
 ```
@@ -108,12 +108,12 @@ Implement that `apply` method and it's good to go! Of course, if the traits are 
 they can also be parametric:
 
 ```scala mdoc:fail
-class Cons[A] extends ParserBridge2[A, List[A], List[A]]
+class Cons[A] extends PureParserBridge2[A, List[A], List[A]]
 ```
 
 ### `ParserSingletonBridge[+T]`
-All the generic bridges extend the `ParserSingletonBridge` trait instantiated to a function type. For
-example, `trait ParserBridge2[-A, -B, +C] extends ParserSingletonBridge[(A, B) => C]`. This means that
+All the template bridges extend the `ParserSingletonBridge` trait instantiated to a function type. For
+example, `trait PureParserBridge2[-A, -B, +C] extends ParserSingletonBridge[(A, B) => C]`. This means that
 every bridge uniformly gets access to a couple of extra combinators in addition to their `apply`:
 
 ```scala
@@ -123,7 +123,7 @@ trait ParserSingletonBridge[+T] {
 }
 ```
 
-The implementation of `from` is not important, it will be handled by the other `ParserBridgeN`s. What these
+The implementation of `from` is not important, it will be handled by the other `PureParserBridgeN`s. What these
 two combinators give you is the ability to write `Foo.from(parser): Parsley[(Int, Int) => Foo]`, for instance.
 This can be useful when you want to use a bridge somewhere where the arguments cannot be directly applied,
 like in [chain](expr/chain.md) or [precedence](expr/precedence.md) combinators:
@@ -137,18 +137,18 @@ val term = chain.left1(px)(Add.from("+")) // or `Add <# "+"`
 
 They are analogous to the `as` and `#>` combinators respectively.
 
-### `ParserBridge0[+T]`
+### `PureParserBridge0[+T]`
 This trait is a special case for objects that should return themselves.
 As an example, here is an object which forms part of a larger AST, say:
 
 ```scala mdoc
-import parsley.generic.ParserBridge0
+import parsley.templates.PureParserBridge0
 trait Expr
 // rest of AST
-case object NullLit extends Expr with ParserBridge0[Expr]
+case object NullLit extends Expr with PureParserBridge0[Expr]
 ```
 
-The `NullLit` object is part of the `Expr` AST, and it has also mixed in `ParserBridge0[Expr]`,
+The `NullLit` object is part of the `Expr` AST, and it has also mixed in `PureParserBridge0[Expr]`,
 giving it access to `from` and `<#` only (no `apply` for this one!). What this means is that
 you can now write the following:
 
@@ -164,10 +164,10 @@ and `nullLit: Parsley[Expr]`.
 Be aware that, on Scala 2, the type passed to the generic parameter cannot be itself:
 
 ```scala
-case object Bad extends ParserBridge0[Bad.type]
+case object Bad extends PureParserBridge0[Bad.type]
 // error: illegal cyclic reference involving object Bad
-// case object Bad extends ParserBridge0[Bad.type]
-//                                       ^^^
+// case object Bad extends PureParserBridge0[Bad.type]
+//                                           ^^^
 ```
 
 Resolving this will require introducing an extra type, like `Expr` in the example with
@@ -194,7 +194,7 @@ therefore allows for error annotation to kept away from the main parser descript
 
 ## Additional Use Cases
 Other than the natural decoupling that the bridges provide, there are some more specialised
-uses that can come out of the generic bridges alone.
+uses that can come out of the template bridges alone.
 
 ### Normalising or Disambiguating Data
 Occasionally, the shape of an AST can change internally even though the syntax of the
@@ -207,7 +207,7 @@ trait Binding
 ```
 ```scala mdoc
 case class Let(bindings: List[Binding], body: Expr)
-object Let extends ParserBridge2[List[Binding], Expr, Let]
+object Let extends PureParserBridge2[List[Binding], Expr, Let]
 ```
 
 The parser, therefore, can be expected to produce lists of bindings to feed in. However,
@@ -217,7 +217,7 @@ parser, so long as the bridge performs the "patching":
 
 ```scala mdoc:nest
 case class Let(bindings: Set[Binding], body: Expr)
-object Let extends ParserBridge2[List[Binding], Expr, Let] {
+object Let extends PureParserBridge2[List[Binding], Expr, Let] {
     def apply(bindings: List[Binding], body: Expr): Let = Let(bindings.toSet, body)
 }
 ```
@@ -249,7 +249,7 @@ import cats.data.NonEmptyList
 
 case class Tuple(exprs: NonEmptyList[Expr]) extends Expr
 
-object TupleOrParens extends ParserBridge1[NonEmptyList[Expr], Expr] {
+object TupleOrParens extends PureParserBridge1[NonEmptyList[Expr], Expr] {
     def apply(exprs: NonEmptyList[Expr]): Expr = exprs match {
         case NonEmptyList(expr, Nil) => expr
         case exprs                   => Tuple(exprs)
@@ -300,14 +300,14 @@ good. @:todo(TODO: add error message?) Instead, we can hook some extra behaviour
 ```scala mdoc:invisible:nest
 // apparently, we need the whole family here...
 trait Expr
-case object NullLit extends Expr with ParserBridge0[Expr]
+case object NullLit extends Expr with PureParserBridge0[Expr]
 val nullLit = NullLit <# "null"
 case class Tuple(exprs: NonEmptyList[Expr]) extends Expr
 ```
 ```scala mdoc
 import parsley.errors.combinator.*
 
-object TupleOrParens extends ParserBridge1[NonEmptyList[Expr], Expr] {
+object TupleOrParens extends PureParserBridge1[NonEmptyList[Expr], Expr] {
     def apply(exprs: NonEmptyList[Expr]): Expr = exprs match {
         case NonEmptyList(expr, Nil) => expr
         case exprs                   => Tuple(exprs)
@@ -342,8 +342,9 @@ While this use of bridges does retain the unsaturated application from `ParserSi
 
 ## When *not* to use
 
-Simply put, generic bridges have one major limitation: they cannot interact with additional metadata
+Simply put, templates bridges have one major limitation: they cannot interact with additional metadata
 that might be required in the parser. One excellent example of this is position information. While
 `parsley` could take a stance on how this should be done, I'd prefer if the users can make that
 decision for themselves. The previously linked tutorial demonstrates how to *make* templating bridges
-from scratch, which you would need to do to support something like position tracking.
+from scratch, which you would need to do to support something like position tracking. Alternatively,
+if you're using Scala 3 you can try the [*macro bridges*](macros.md) instead.

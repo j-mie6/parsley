@@ -11,8 +11,7 @@ import org.scalacheck.Gen
 import org.scalacheck.Arbitrary.arbitrary
 import parsley.Parsley
 import parsley.Parsley.atomic
-import parsley.templates.ParserBridge1
-import parsley.templates.ParserBridge2
+import parsley.templates.{PureParserBridge1, PureParserBridge2}
 
 object ExprGen {
     private type UnaryOp = (String, TestExpr => TestExpr)
@@ -40,11 +39,11 @@ object ExprGen {
 
     object Num extends PureParserBridge1[Int, TestExpr]
 
-    object InfixPlus extends ParserBridge2[TestExpr, TestExpr, TestExpr]
-    object InfixMinus extends ParserBridge2[TestExpr, TestExpr, TestExpr]
-    object InfixMult extends ParserBridge2[TestExpr, TestExpr, TestExpr]
-    object InfixDiv extends ParserBridge2[TestExpr, TestExpr, TestExpr]
-    object InfixEq extends ParserBridge2[TestExpr, TestExpr, TestExpr]
+    object InfixPlus extends PureParserBridge2[TestExpr, TestExpr, TestExpr]
+    object InfixMinus extends PureParserBridge2[TestExpr, TestExpr, TestExpr]
+    object InfixMult extends PureParserBridge2[TestExpr, TestExpr, TestExpr]
+    object InfixDiv extends PureParserBridge2[TestExpr, TestExpr, TestExpr]
+    object InfixEq extends PureParserBridge2[TestExpr, TestExpr, TestExpr]
 
     object PrefixPlus extends PureParserBridge1[TestExpr, TestExpr]
     object PrefixMinus extends PureParserBridge1[TestExpr, TestExpr]

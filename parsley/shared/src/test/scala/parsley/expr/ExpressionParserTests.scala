@@ -98,7 +98,7 @@ class ExpressionParserTests extends ParsleyTest {
         sealed trait Expr
         case class Add(x: Int, y: Expr) extends Expr
         case class Num(x: Int) extends Expr
-        object Add extends ParserBridge2[Int, Expr, Expr]
+        object Add extends PureParserBridge2[Int, Expr, Expr]
         cases(infix.right1("1" #> 1)(Add <# "+")(Num.apply))(
             "1+1+1" -> Some(Add(1, Add(1, Num(1)))),
             "1" -> Some(Num(1)),
@@ -129,7 +129,7 @@ class ExpressionParserTests extends ParsleyTest {
         sealed trait Expr
         case class Add(x: Expr, y: Int) extends Expr
         case class Num(x: Int) extends Expr
-        object Add extends ParserBridge2[Expr, Int, Expr]
+        object Add extends PureParserBridge2[Expr, Int, Expr]
         cases(infix.left1("1" #> 1)(Add <# "+")(Num.apply))("1+1+1" -> Some(Add(Add(Num(1), 1), 1)))
     }
     "chain.left" must "allow for no initial value" in {
@@ -200,9 +200,9 @@ class ExpressionParserTests extends ParsleyTest {
         case class Parens(x: Comp) extends Atom
         case class Num(x: Int) extends Atom
 
-        object Less extends ParserBridge2[Expr, Expr, Comp]
-        object Add extends ParserBridge2[Expr, Term, Expr]
-        object Mul extends ParserBridge2[Factor, Term, Term]
+        object Less extends PureParserBridge2[Expr, Expr, Comp]
+        object Add extends PureParserBridge2[Expr, Term, Expr]
+        object Mul extends PureParserBridge2[Factor, Term, Term]
         object Neg extends PureParserBridge1[Factor, Factor]
         object Parens extends PureParserBridge1[Comp, Atom]
         object Num extends PureParserBridge1[Int, Atom]
@@ -229,9 +229,9 @@ class ExpressionParserTests extends ParsleyTest {
         case class Parens(x: Comp) extends Atom
         case class Num(x: Int) extends Atom
 
-        object Less extends ParserBridge2[Expr, Expr, Comp]
-        object Add extends ParserBridge2[Expr, Term, Expr]
-        object Mul extends ParserBridge2[Atom, Term, Term]
+        object Less extends PureParserBridge2[Expr, Expr, Comp]
+        object Add extends PureParserBridge2[Expr, Term, Expr]
+        object Mul extends PureParserBridge2[Atom, Term, Term]
         object Parens extends PureParserBridge1[Comp, Atom]
         object Num extends PureParserBridge1[Int, Atom]
 
@@ -265,8 +265,8 @@ class ExpressionParserTests extends ParsleyTest {
         case class Parens(x: Expr) extends Atom
         case class Num(x: Int) extends Atom
 
-        object Add extends ParserBridge2[Expr, Term, Expr]
-        object Mul extends ParserBridge2[Term, Atom, Term]
+        object Add extends PureParserBridge2[Expr, Term, Expr]
+        object Mul extends PureParserBridge2[Term, Atom, Term]
         object Parens extends PureParserBridge1[Expr, Atom]
         object Num extends PureParserBridge1[Int, Atom]
 
@@ -287,7 +287,7 @@ class ExpressionParserTests extends ParsleyTest {
         case class Binary(l: Expr, r: Expr) extends Expr
         case class Constant(x: String) extends Expr
 
-        object Binary extends ParserBridge2[Expr, Expr, Expr]
+        object Binary extends PureParserBridge2[Expr, Expr, Expr]
         object Constant extends PureParserBridge1[String, Expr]
 
         object Call extends PureParserBridge1[Expr, Expr => Expr] {
@@ -316,7 +316,7 @@ class ExpressionParserTests extends ParsleyTest {
         case class Unary(c: Expr) extends Expr
         case class Constant(x: Char) extends Expr
 
-        object Binary extends ParserBridge2[Constant, Expr, Expr]
+        object Binary extends PureParserBridge2[Constant, Expr, Expr]
         object Unary extends PureParserBridge1[Expr, Expr]
         object Constant extends PureParserBridge1[Char, Constant]
 
@@ -330,7 +330,7 @@ class ExpressionParserTests extends ParsleyTest {
         case class Unary(c: Expr) extends Expr
         case class Constant(x: Char) extends Expr
 
-        object Binary extends ParserBridge2[Expr, Constant, Expr]
+        object Binary extends PureParserBridge2[Expr, Constant, Expr]
         object Unary extends PureParserBridge1[Expr, Expr]
         object Constant extends PureParserBridge1[Char, Constant]
 

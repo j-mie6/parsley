@@ -12,7 +12,7 @@ import lift.*
 // $COVERAGE-OFF$
 // scalastyle:off parameter.number ensure.single.space.after.token
 // Allows for easier implementation for the singleton = pure case
-private [templates] trait PureSingletonImpl[+A] { this:  bridges.SingletonBridge[A] =>
+private [templates] trait PureSingletonImpl[+A] { this:  bridges.ParserSingletonBridge[A] =>
     /** The abstract hook method: what value is the singleton representing?
       * @since 4.0.0
       */
@@ -25,7 +25,7 @@ private [templates] trait PureSingletonImpl[+A] { this:  bridges.SingletonBridge
   *
   * @since 4.0.0
   */
-trait PureParserBridge0[+R] extends bridges.SingletonBridge[R] with PureSingletonImpl[R] { this: R =>
+trait PureParserBridge0[+R] extends bridges.ParserSingletonBridge[R] with PureSingletonImpl[R] { this: R =>
     /** @inheritdoc */
     override final def con: R = this
 }
