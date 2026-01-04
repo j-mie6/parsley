@@ -48,8 +48,8 @@ private class BridgeImpl(using Quotes) {
                 val lift = (terms: List[Term]) => synthesiseLift[S](metaReprs ::: bridgePrimaryArgs.map(_._2), con, metaTerms ::: terms)
                 val from = [Fn] => { (fnTy: Type[Fn]) =>
                     given Type[Fn] = fnTy
-                    val curriedCon = curriedConstructor[Fn, T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, metaReprs)
-                    synthesiseLift[Fn](metaReprs, curriedCon, metaTerms)
+                    val (curriedCon, useFresh) = curriedConstructor[Fn, T](cls, bridgePrimaryArgs, tyArgs, categorisedArgs, metaReprs)
+                    synthesiseLift[Fn](metaReprs, curriedCon, metaTerms, useFresh)
                 }
                 // TODO: ensure validation if Err is encountered (report separately, but then abort if failed (Option))
                 synthesiseBridge[S](tyRepr.typeSymbol.name, bridgePrimaryArgs.map(_._2.asType), lift, from, labels, reason)
@@ -123,15 +123,13 @@ private class BridgeImpl(using Quotes) {
       * @param posRepr the position
       * @return a lambda of the form `pos => (lamArgs..) => cls[clsTyArgs](..)(otherArgs)`
       */
-    private def curriedConstructor[Fn: Type, R: Type](cls: Symbol, lamArgs: List[(String, TypeRepr)], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]], metaReprs: List[TypeRepr]): Term = {
+    private def curriedConstructor[Fn: Type, R: Type](cls: Symbol, lamArgs: List[(String, TypeRepr)], clsTyArgs: List[TypeRepr], otherArgs: List[List[BridgeArg]], metaReprs: List[TypeRepr]) = {
         val (paramNames, lamTys) = lamArgs.unzip
-        def inner(owner: Symbol, metaParams: Vector[Term]): Term = {
-            val innerRepr = TypeRepr.of[R]
+        val innerRepr = TypeRepr.of[R]
+        def inner(owner: Symbol, metaParams: Vector[Term]) = {
             if (innerRepr.isSingleton) Ident(innerRepr.termSymbol.termRef)
             // this would be a class X(), with no parameters we need to fill
             else if (paramNames.isEmpty) {
-                // FIXME: this wouldn't recreate the instance every time...
-                // which we might want to do (i.e. fresh instead of lift0, and if we are introducing the special case, might as well remove lift0)
                 appliedCon(cls, owner, Vector.empty, clsTyArgs, otherArgs, metaParams)
             }
             else Lambda(owner, MethodType(paramNames)(_ => lamTys, _ => innerRepr), { (lamSym, params) =>
@@ -139,13 +137,16 @@ private class BridgeImpl(using Quotes) {
                 appliedCon(cls, lamSym, params.map(_.asExpr.asTerm).toVector, clsTyArgs, otherArgs, metaParams)
             })
         }
-        if (metaReprs.isEmpty) inner(Symbol.spliceOwner, Vector.empty)
+        // if this is not a singleton object, but is paramless, we don't want to cache the
+        // created object, so feed this back to synthesiseLifted
+        if (metaReprs.isEmpty) (inner(Symbol.spliceOwner, Vector.empty), !innerRepr.isSingleton && paramNames.isEmpty)
         else {
             val names = List.tabulate(metaReprs.length)(i => s"meta$i")
-            Lambda(Symbol.spliceOwner, MethodType(names)(_ => metaReprs, _ => TypeRepr.of[Fn]), { (outerLamSym, metaParam) =>
+            val lambda = Lambda(Symbol.spliceOwner, MethodType(names)(_ => metaReprs, _ => TypeRepr.of[Fn]), { (outerLamSym, metaParam) =>
                 // grrrrrrrr why has Scala given me Tree and not Term?!
                 inner(outerLamSym, metaParam.map(_.asExpr.asTerm).toVector)
             })
+            (lambda, false)
         }
     }
 
@@ -191,11 +192,13 @@ private class BridgeImpl(using Quotes) {
         saturated
     }
 
-    // note that `lift0 = pure`, so this handles even for pure constructs
-    private def synthesiseLift[R: Type](argTys: List[TypeRepr], con: Term, args: List[Term]): Expr[Parsley[R]] = {
+    private def synthesiseLift[R: Type](argTys: List[TypeRepr], con: Term, args: List[Term], noCache: Boolean = false): Expr[Parsley[R]] = {
         val tys = argTys :+ TypeRepr.of[R]
         val arity = argTys.size
-        TypeRepr.of[parsley.lift.type].typeSymbol.methodMember(s"lift$arity").headOption.map('{parsley.lift}.asTerm.select) match {
+        if (arity == 0 && noCache) '{Parsley.fresh[R](${con.asExprOf[R]})}
+        // no point in having lift0 if we have to special case fresh anyway...
+        else if (arity == 0) '{Parsley.pure[R](${con.asExprOf[R]})}
+        else TypeRepr.of[parsley.lift.type].typeSymbol.methodMember(s"lift$arity").headOption.map('{parsley.lift}.asTerm.select) match {
             case Some(lift) =>
                 lift.appliedToTypes(tys)
                     .appliedToArgs(con :: args)

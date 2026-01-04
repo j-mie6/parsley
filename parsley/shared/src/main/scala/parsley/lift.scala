@@ -45,12 +45,6 @@ import parsley.internal.deepembedding.frontend
 object lift extends lift
 private [parsley] trait lift {
     // scalastyle:off parameter.number ensure.single.space.after.token
-    /** Effectively alias for `pure`, to be consistent with the other `lift` variants.
-      *
-      * @param x the value to return
-      * @return a parser that returns `x`.
-      */
-    final def lift0[R](x: R): Parsley[R] = pure(x).uo("lift0")
     /** This combinator allows the result of a given parser to be changed using a given function.
       *
       * Effectively alias for `map`, to be consistent with the other `lift` variants.
