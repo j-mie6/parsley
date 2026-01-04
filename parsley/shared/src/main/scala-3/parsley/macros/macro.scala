@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 package parsley
-package generic.experimental
+package macros
 
 import scala.annotation.{switch, tailrec}
 import scala.collection.mutable
@@ -57,19 +57,19 @@ private class BridgeImpl(using Quotes) {
         }
     }
 
-    private case class MetaImpl[T: Type](inst: Expr[ParsableMeta[T]], ty: Type[T]) {
+    private case class MetaImpl[T: Type](inst: Expr[ParsableMetadata[T]], ty: Type[T]) {
         def parser: Expr[Parsley[T]] = '{$inst.meta}
         def tyRepr = TypeRepr.of[T]
     }
-    private val annotation = TypeRepr.of[parsley.generic.experimental.isMeta].typeSymbol
+    private val annotation = TypeRepr.of[isMeta].typeSymbol
     private def hasMeta(sym: Symbol) = sym.hasAnnotation(annotation)
     private def isMeta(sym: Symbol, contextualise: TypeRepr => TypeRepr): Option[MetaImpl[?]] = Option.when(hasMeta(sym)) {
         contextualise(sym.termRef.widen).asType match {
-            case ty@'[t] => Expr.summon[parsley.generic.experimental.ParsableMeta[t]] match {
+            case ty@'[t] => Expr.summon[ParsableMetadata[t]] match {
                 case Some(inst) => MetaImpl[t](inst, ty)
                 case None =>
                     val typeName = TypeRepr.of[t].show(using Printer.TypeReprShortCode)
-                    report.errorAndAbort(s"attribute ${sym.name} can only use @isMeta with a `parsley.generic.ParsableMeta[$typeName]` instance in scope", sym.pos.get)
+                    report.errorAndAbort(s"attribute ${sym.name} can only use @isMeta with a `parsley.macros.ParsableMetadata[$typeName]` instance in scope", sym.pos.get)
             }
         }
     }

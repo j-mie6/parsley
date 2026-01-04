@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 import parsley.*
-import parsley.generic.experimental.*
+import parsley.macros.*
 
 case class Pos(line: Int, col: Int, offset: Int)
 object Pos {
     import parsley.position.{line, col, offset}
-    given ParsableMeta[Pos] with {
+    given ParsableMetadata[Pos] with {
         val meta = bridge[Pos](line, col, offset)
     }
 }
@@ -39,7 +39,7 @@ def a22 = bridge[A22[String]]
 def single = bridge[Single.type]
 def singlePos = bridge[DoubleMeta]
 val abs = bridge[Abs[Pos]]
-def abs[A: ParsableMeta] = bridge[Abs[A]]
+def abs[A: ParsableMetadata] = bridge[Abs[A]]
 
 type Unital[T[_]] = T[Unit]
 

@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 package parsley
-package generic.experimental
+package macros
+
 import scala.quoted.*
 
 import bridges.ErrorBridge
