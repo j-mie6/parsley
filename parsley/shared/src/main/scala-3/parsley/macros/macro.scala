@@ -211,6 +211,9 @@ private class BridgeImpl(using Quotes) {
         case 0 => '{
             new bridges.ParserSingletonBridge[R] with InternalMethodLeak {
                 def singleton: Parsley[R] = ${single(Type.of[R])}
+                override def labels: List[String] = $errLabels
+                override def reason: Option[String] = $errReason
+                override protected def name = ${Expr(n)}
             }
         }
         // TODO: make generation of labels/reason conditional as to not bloat the objects
