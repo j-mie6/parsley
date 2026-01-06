@@ -96,7 +96,8 @@
     <li class="level2 nav-leaf"><a href="../Parsley.html"><code>parsley.Parsley</code></a></li>
     <li class="level2 nav-leaf"><a href="../character.html"><code>parsley.character</code></a></li>
     <li class="level2 nav-leaf"><a href="../combinator.html"><code>parsley.combinator</code></a></li>
-    <li class="level2 nav-leaf"><a href="../generic.html"><code>parsley.generic</code></a></li>
+    <li class="level2 nav-leaf"><a href="../templates.html"><code>parsley.templates</code></a></li>
+    <li class="level2 nav-leaf"><a href="../macros.html"><code>parsley.macros</code></a></li>
     <li class="level2 nav-leaf"><a href="../syntax.html"><code>parsley.syntax</code></a></li>
     <li class="level2 nav-leaf"><a href="../position.html"><code>parsley.position</code></a></li>
     <li class="level2 nav-leaf"><a href="../state.html"><code>parsley.state</code></a></li>
@@ -222,7 +223,7 @@
         </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="keyword">as</span><span> </span><span class="type-name">Mul</span><span>.</span><span class="identifier">apply</span><span>),
         </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> </span><span class="keyword">as</span><span> </span><span class="type-name">Add</span><span>.</span><span class="identifier">apply</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="keyword">as</span><span> </span><span class="type-name">Sub</span><span>.</span><span class="identifier">apply</span><span>)
     )
-</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@76ffbc57
+</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@37cadfac
 </span><span>
 </span><span class="identifier">expr</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;x+5*y&quot;</span><span>)
 </span><span class="comment">// res0: Result[String, Expr] = Success(Add(Var(x),Mul(Num(5),Var(y))))</span></code></pre>
@@ -302,7 +303,7 @@
         </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> </span><span class="keyword">as</span><span> </span><span class="type-name">Mul</span><span>.</span><span class="identifier">apply</span><span>) :+
         </span><span class="type-name">SOps</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span class="keyword">as</span><span> </span><span class="type-name">Add</span><span>.</span><span class="identifier">apply</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> </span><span class="keyword">as</span><span> </span><span class="type-name">Sub</span><span>.</span><span class="identifier">apply</span><span>)
     }
-</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@162c2bc
+</span><span class="comment">// expr: Parsley[Expr] = parsley.Parsley@60cef0c
 </span><span>
 </span><span class="identifier">expr</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;x+5*y&quot;</span><span>)
 </span><span class="comment">// res1: Result[String, Expr] = Success(Add(Var(x),Mul(Num(5),Var(y))))</span></code></pre>

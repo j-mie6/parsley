@@ -96,7 +96,8 @@
     <li class="level2 nav-leaf"><a href="../Parsley.html"><code>parsley.Parsley</code></a></li>
     <li class="level2 nav-leaf"><a href="../character.html"><code>parsley.character</code></a></li>
     <li class="level2 nav-leaf"><a href="../combinator.html"><code>parsley.combinator</code></a></li>
-    <li class="level2 nav-leaf"><a href="../generic.html"><code>parsley.generic</code></a></li>
+    <li class="level2 nav-leaf"><a href="../templates.html"><code>parsley.templates</code></a></li>
+    <li class="level2 nav-leaf"><a href="../macros.html"><code>parsley.macros</code></a></li>
     <li class="level2 nav-leaf"><a href="../syntax.html"><code>parsley.syntax</code></a></li>
     <li class="level2 nav-leaf"><a href="../position.html"><code>parsley.position</code></a></li>
     <li class="level2 nav-leaf"><a href="../state.html"><code>parsley.state</code></a></li>
@@ -190,10 +191,10 @@
 
 </span><span class="comment">// assume that a `lexer` is available
 </span><span class="keyword">val</span><span> </span><span class="identifier">float</span><span> = </span><span class="identifier">lexer</span><span>.</span><span class="identifier">nonlexeme</span><span>.</span><span class="identifier">floating</span><span>.</span><span class="identifier">decimal</span><span>
-</span><span class="comment">// float: Parsley[BigDecimal] = parsley.Parsley@530678ce
+</span><span class="comment">// float: Parsley[BigDecimal] = parsley.Parsley@3509c8f5
 </span><span class="keyword">val</span><span> </span><span class="identifier">_noFloat</span><span> =
     </span><span class="identifier">float</span><span>.</span><span class="identifier">verifiedExplain</span><span>(</span><span class="string-literal">&quot;floating-point values may not be used as array indices&quot;</span><span>)
-</span><span class="comment">// _noFloat: Parsley[Nothing] = parsley.Parsley@1a658d4e
+</span><span class="comment">// _noFloat: Parsley[Nothing] = parsley.Parsley@7fefd84a
 </span><span>
 </span><span class="identifier">_noFloat</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;hello&quot;</span><span>)
 </span><span class="comment">// res0: Result[String, Nothing] = Failure((line 1, column 1):
@@ -208,11 +209,11 @@
 //    ^^^^^)
 </span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">int</span><span> = </span><span class="identifier">lexer</span><span>.</span><span class="identifier">nonlexeme</span><span>.</span><span class="identifier">unsigned</span><span>.</span><span class="identifier">decimal</span><span>
-</span><span class="comment">// int: Parsley[BigInt] = parsley.Parsley@1caa2d38
+</span><span class="comment">// int: Parsley[BigInt] = parsley.Parsley@1334cef0
 </span><span class="keyword">val</span><span> </span><span class="identifier">_noPlus</span><span> = (</span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;+&#39;</span><span>) ~&gt; </span><span class="identifier">int</span><span>).</span><span class="identifier">verifiedFail</span><span> { </span><span class="identifier">n</span><span> =&gt;
     </span><span class="type-name">Seq</span><span>(</span><span class="string-literal">s&quot;the number </span><span class="substitution">$n</span><span class="string-literal"> may not be preceeded by </span><span class="escape-sequence">\&quot;</span><span class="string-literal">+</span><span class="escape-sequence">\&quot;</span><span class="string-literal">&quot;</span><span>)
 }
-</span><span class="comment">// _noPlus: Parsley[Nothing] = parsley.Parsley@1f45d9a6
+</span><span class="comment">// _noPlus: Parsley[Nothing] = parsley.Parsley@77cdf0f4
 </span><span class="identifier">_noPlus</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;+10&quot;</span><span>)
 </span><span class="comment">// res2: Result[String, Nothing] = Failure((line 1, column 1):
 //   the number 10 may not be preceeded by &quot;+&quot;
@@ -231,7 +232,7 @@
         </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">adjustWidth</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">BigInt</span><span>, </span><span class="identifier">width</span><span>: </span><span class="type-name">Int</span><span>) = </span><span class="number-literal">1</span><span>
     }
 }
-</span><span class="comment">// _noPlus: Parsley[Nothing] = parsley.Parsley@c0783d8
+</span><span class="comment">// _noPlus: Parsley[Nothing] = parsley.Parsley@176ee77e
 </span><span class="identifier">_noPlus</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;+10&quot;</span><span>)
 </span><span class="comment">// res3: Result[String, Nothing] = Failure((line 1, column 1):
 //   a number may not be preceeded by &quot;+&quot;
@@ -250,7 +251,7 @@
         }
     }
 }
-</span><span class="comment">// _noFloat: Parsley[Nothing] = parsley.Parsley@37908ac3
+</span><span class="comment">// _noFloat: Parsley[Nothing] = parsley.Parsley@67c6928c
 </span><span>
 </span><span class="identifier">_noFloat</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;3.142&quot;</span><span>)
 </span><span class="comment">// res4: Result[String, Nothing] = Failure((line 1, column 1):
@@ -282,11 +283,11 @@
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">patterns</span><span>.</span><span class="type-name">PreventativeErrors</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">ident</span><span> = </span><span class="identifier">lexer</span><span>.</span><span class="identifier">nonlexeme</span><span>.</span><span class="identifier">names</span><span>.</span><span class="identifier">identifier</span><span>
-</span><span class="comment">// ident: Parsley[String] = parsley.Parsley@237055e3
+</span><span class="comment">// ident: Parsley[String] = parsley.Parsley@46e594ec
 </span><span class="keyword">val</span><span> </span><span class="identifier">_noDot</span><span> = (</span><span class="identifier">char</span><span>(</span><span class="char-literal">&#39;.&#39;</span><span>) ~&gt; </span><span class="identifier">ident</span><span>).</span><span class="identifier">preventativeFail</span><span> { </span><span class="identifier">v</span><span> =&gt;
     </span><span class="type-name">Seq</span><span>(</span><span class="string-literal">s&quot;accessing field </span><span class="substitution">$v</span><span class="string-literal"> is not permitted here&quot;</span><span>)
 }
-</span><span class="comment">// _noDot: Parsley[Unit] = parsley.Parsley@453a5fef
+</span><span class="comment">// _noDot: Parsley[Unit] = parsley.Parsley@ef75306
 </span><span class="identifier">_noDot</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;hi&quot;</span><span>)
 </span><span class="comment">// res5: Result[String, Unit] = Success(())
 </span><span class="identifier">_noDot</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;.foo&quot;</span><span>)

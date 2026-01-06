@@ -96,7 +96,8 @@
     <li class="level2 nav-leaf"><a href="../api-guide/Parsley.html"><code>parsley.Parsley</code></a></li>
     <li class="level2 nav-leaf"><a href="../api-guide/character.html"><code>parsley.character</code></a></li>
     <li class="level2 nav-leaf"><a href="../api-guide/combinator.html"><code>parsley.combinator</code></a></li>
-    <li class="level2 nav-leaf"><a href="../api-guide/generic.html"><code>parsley.generic</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/templates.html"><code>parsley.templates</code></a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/macros.html"><code>parsley.macros</code></a></li>
     <li class="level2 nav-leaf"><a href="../api-guide/syntax.html"><code>parsley.syntax</code></a></li>
     <li class="level2 nav-leaf"><a href="../api-guide/position.html"><code>parsley.position</code></a></li>
     <li class="level2 nav-leaf"><a href="../api-guide/state.html"><code>parsley.state</code></a></li>
@@ -213,7 +214,7 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">expr</span><span>.{</span><span class="identifier">precedence</span><span>, </span><span class="type-name">Ops</span><span>, </span><span class="type-name">InfixL</span><span>}
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">number</span><span> = </span><span class="identifier">token</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">foldLeft1</span><span>[</span><span class="type-name">BigInt</span><span>](</span><span class="number-literal">0</span><span>)((</span><span class="identifier">n</span><span>, </span><span class="identifier">d</span><span>) =&gt; </span><span class="identifier">n</span><span> * </span><span class="number-literal">10</span><span> + </span><span class="identifier">d</span><span>.</span><span class="identifier">asDigit</span><span>))
-</span><span class="comment">// number: Parsley[BigInt] = parsley.Parsley@7c44d071
+</span><span class="comment">// number: Parsley[BigInt] = parsley.Parsley@66f08216
 </span><span>
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">atom</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">BigInt</span><span>] = </span><span class="string-literal">&quot;(&quot;</span><span> ~&gt; </span><span class="identifier">expr</span><span> &lt;~ </span><span class="string-literal">&quot;)&quot;</span><span> | </span><span class="identifier">number</span><span>
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span> = </span><span class="identifier">precedence</span><span>[</span><span class="type-name">BigInt</span><span>](</span><span class="identifier">atom</span><span>)(
