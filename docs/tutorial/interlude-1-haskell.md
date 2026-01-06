@@ -139,13 +139,13 @@ ensure it consumes whitespace! The reason I have picked the shouty-case names is
 Now it's time to build the AST for our Haskell Parser to return. Since we'll be using the
 _Parser Bridge_ pattern anyway, I get a choice about whether or not I want position tracking for each
 node in the tree. Just to keep the AST looking simple, I'll not track anything. Of course, if I
-did change my mind, I could do it here by changing which generic bridge trait is used. More
+did change my mind, I could do it here by changing which template bridge trait is used. More
 interesting will be what bridge constructor shapes I pick for each of the AST nodes. Let's start by
 just outlining the datatypes themselves and why they are how they are:
 
 ```scala mdoc
 object ast {
-    import parsley.generic.*
+    import parsley.templates.*
 
     case class HaskellProgram(lines: List[ProgramUnit])
     sealed trait ProgramUnit
@@ -161,28 +161,28 @@ object ast {
     sealed trait PatParen extends Pat
     case class PatApp(con: PatCon, args: List[PatNaked]) extends PatParen
     sealed trait PatNaked extends PatParen
-    case object NilCon extends PatNaked with ParserBridge0[PatNaked]
-    case object Wild extends PatNaked with ParserBridge0[PatNaked]
+    case object NilCon extends PatNaked with PureParserBridge0[PatNaked]
+    case object Wild extends PatNaked with PureParserBridge0[PatNaked]
     case class NestedPat(pat: Pat) extends PatNaked
     case class PatTuple(xs: List[Pat]) extends PatNaked
     case class PatList(xs: List[Pat]) extends PatNaked
     sealed trait PatCon extends PatNaked
-    case object ConsCon extends PatCon with ParserBridge0[PatCon]
+    case object ConsCon extends PatCon with PureParserBridge0[PatCon]
 
     sealed trait Type
     case class FunTy(argTy: Type_, resTy: Type) extends Type
     sealed trait Type_ extends Type
     case class TyApp(tyF: Type_, tyX: TyAtom) extends Type_
     sealed trait TyAtom extends Type_
-    case object UnitTy extends TyAtom with ParserBridge0[TyAtom]
+    case object UnitTy extends TyAtom with PureParserBridge0[TyAtom]
     case class ListTy(ty: Type) extends TyAtom
     case class TupleTy(tys: List[Type]) extends TyAtom
     // This is needed if we want to maximise the well-typedness of the parser
     // For a parser as big as this one, it's definitely desirable: we can always
     // weaken the types later if we want to!
     case class ParenTy(ty: Type) extends TyAtom
-    case object ListConTy extends TyAtom with ParserBridge0[TyAtom]
-    case object FunConTy extends TyAtom with ParserBridge0[TyAtom]
+    case object ListConTy extends TyAtom with PureParserBridge0[TyAtom]
+    case object FunConTy extends TyAtom with PureParserBridge0[TyAtom]
     case class TupleConTy(arity: Int) extends TyAtom
 
     // We'll model this layer by layer, to maximise the flexiblity whilst maintaining
@@ -230,7 +230,7 @@ object ast {
     sealed trait Term extends Expr10_
     case class ConId(v: String) extends Term, PatCon, TyAtom
     case class VarId(v: String) extends Term, PatNaked, TyAtom
-    case object UnitCon extends Term, PatNaked, ParserBridge0[Term & PatNaked]
+    case object UnitCon extends Term, PatNaked, PureParserBridge0[Term & PatNaked]
     case class TupleCon(arity: Int) extends Term, PatCon
     case class ParensVal(x: Expr) extends Term
     case class TupleLit(xs: List[Expr]) extends Term
@@ -242,53 +242,53 @@ object ast {
     case class HsChar(c: Int) extends Literal
     case class HsDouble(x: BigDecimal) extends Literal
 
-    object WeakApp extends ParserBridge2[Expr, Expr1, Expr]
-    object Or extends ParserBridge2[Expr2, Expr1, Expr1]
-    object And extends ParserBridge2[Expr3, Expr2, Expr2]
-    object Less extends ParserBridge2[Expr4, Expr4, Expr3]
-    object LessEqual extends ParserBridge2[Expr4, Expr4, Expr3]
-    object Greater extends ParserBridge2[Expr4, Expr4, Expr3]
-    object GreaterEqual extends ParserBridge2[Expr4, Expr4, Expr3]
-    object Equal extends ParserBridge2[Expr4, Expr4, Expr3]
-    object NotEqual extends ParserBridge2[Expr4, Expr4, Expr3]
-    object Cons extends ParserBridge2[Expr5, Expr4, Expr4]
-    object Append extends ParserBridge2[Expr5, Expr4, Expr4]
-    object Add extends ParserBridge2[Expr5, Expr6, Expr5]
-    object Sub extends ParserBridge2[Expr5, Expr6, Expr5]
-    object Negate extends ParserBridge1[Expr6, Expr6]
-    object Mul extends ParserBridge2[Expr7, Expr8, Expr7]
-    object Div extends ParserBridge2[Expr7, Expr8, Expr7]
-    object Exp extends ParserBridge2[Expr9, Expr8, Expr8]
-    object Comp extends ParserBridge2[Expr10, Expr9, Expr9]
-    object FunTy extends ParserBridge2[Type_, Type, Type]
-    object Lam extends ParserBridge2[List[Pat], Expr, Lam]
-    object Let extends ParserBridge2[Clause, Expr, Let]
-    object If extends ParserBridge3[Expr, Expr, Expr, If]
-    object Case extends ParserBridge2[Expr, List[Alt], Case]
-    object Alt extends ParserBridge2[Pat, Expr, Alt]
-    object ConId extends ParserBridge1[String, ConId]
-    object VarId extends ParserBridge1[String, VarId]
-    object TupleCon extends ParserBridge1[Int, TupleCon]
-    object ParensVal extends ParserBridge1[Expr, ParensVal]
-    object TupleLit extends ParserBridge1[List[Expr], TupleLit]
-    object ListLit extends ParserBridge1[List[Expr], ListLit]
-    object HsInt extends ParserBridge1[BigInt, HsInt]
-    object HsString extends ParserBridge1[String, HsString]
-    object HsChar extends ParserBridge1[Int, HsChar]
-    object HsDouble extends ParserBridge1[BigDecimal, HsDouble]
-    object Data extends ParserBridge3[ConId, List[VarId], List[Con], Data]
-    object Con extends ParserBridge2[ConId, List[TyAtom], Con]
-    object Decl extends ParserBridge2[VarId, Type, Decl]
-    object Clause extends ParserBridge4[VarId, List[PatNaked], Option[Expr], Expr, Clause]
-    object PatCons extends ParserBridge2[PatParen, Pat, Pat]
-    object PatApp extends ParserBridge2[PatCon, List[PatNaked], PatApp]
-    object NestedPat extends ParserBridge1[Pat, NestedPat]
-    object PatTuple extends ParserBridge1[List[Pat], PatTuple]
-    object PatList extends ParserBridge1[List[Pat], PatList]
-    object TupleConTy extends ParserBridge1[Int, TupleConTy]
-    object ParenTy extends ParserBridge1[Type, ParenTy]
-    object TupleTy extends ParserBridge1[List[Type], TupleTy]
-    object ListTy extends ParserBridge1[Type, ListTy]
+    object WeakApp extends PureParserBridge2[Expr, Expr1, Expr]
+    object Or extends PureParserBridge2[Expr2, Expr1, Expr1]
+    object And extends PureParserBridge2[Expr3, Expr2, Expr2]
+    object Less extends PureParserBridge2[Expr4, Expr4, Expr3]
+    object LessEqual extends PureParserBridge2[Expr4, Expr4, Expr3]
+    object Greater extends PureParserBridge2[Expr4, Expr4, Expr3]
+    object GreaterEqual extends PureParserBridge2[Expr4, Expr4, Expr3]
+    object Equal extends PureParserBridge2[Expr4, Expr4, Expr3]
+    object NotEqual extends PureParserBridge2[Expr4, Expr4, Expr3]
+    object Cons extends PureParserBridge2[Expr5, Expr4, Expr4]
+    object Append extends PureParserBridge2[Expr5, Expr4, Expr4]
+    object Add extends PureParserBridge2[Expr5, Expr6, Expr5]
+    object Sub extends PureParserBridge2[Expr5, Expr6, Expr5]
+    object Negate extends PureParserBridge1[Expr6, Expr6]
+    object Mul extends PureParserBridge2[Expr7, Expr8, Expr7]
+    object Div extends PureParserBridge2[Expr7, Expr8, Expr7]
+    object Exp extends PureParserBridge2[Expr9, Expr8, Expr8]
+    object Comp extends PureParserBridge2[Expr10, Expr9, Expr9]
+    object FunTy extends PureParserBridge2[Type_, Type, Type]
+    object Lam extends PureParserBridge2[List[Pat], Expr, Lam]
+    object Let extends PureParserBridge2[Clause, Expr, Let]
+    object If extends PureParserBridge3[Expr, Expr, Expr, If]
+    object Case extends PureParserBridge2[Expr, List[Alt], Case]
+    object Alt extends PureParserBridge2[Pat, Expr, Alt]
+    object ConId extends PureParserBridge1[String, ConId]
+    object VarId extends PureParserBridge1[String, VarId]
+    object TupleCon extends PureParserBridge1[Int, TupleCon]
+    object ParensVal extends PureParserBridge1[Expr, ParensVal]
+    object TupleLit extends PureParserBridge1[List[Expr], TupleLit]
+    object ListLit extends PureParserBridge1[List[Expr], ListLit]
+    object HsInt extends PureParserBridge1[BigInt, HsInt]
+    object HsString extends PureParserBridge1[String, HsString]
+    object HsChar extends PureParserBridge1[Int, HsChar]
+    object HsDouble extends PureParserBridge1[BigDecimal, HsDouble]
+    object Data extends PureParserBridge3[ConId, List[VarId], List[Con], Data]
+    object Con extends PureParserBridge2[ConId, List[TyAtom], Con]
+    object Decl extends PureParserBridge2[VarId, Type, Decl]
+    object Clause extends PureParserBridge4[VarId, List[PatNaked], Option[Expr], Expr, Clause]
+    object PatCons extends PureParserBridge2[PatParen, Pat, Pat]
+    object PatApp extends PureParserBridge2[PatCon, List[PatNaked], PatApp]
+    object NestedPat extends PureParserBridge1[Pat, NestedPat]
+    object PatTuple extends PureParserBridge1[List[Pat], PatTuple]
+    object PatList extends PureParserBridge1[List[Pat], PatList]
+    object TupleConTy extends PureParserBridge1[Int, TupleConTy]
+    object ParenTy extends PureParserBridge1[Type, ParenTy]
+    object TupleTy extends PureParserBridge1[List[Type], TupleTy]
+    object ListTy extends PureParserBridge1[Type, ListTy]
 }
 ```
 
@@ -304,7 +304,7 @@ consequence, as we'll see later, is we will be forced to use `SOps` instead of `
 precedence tables.
 
 The bridges have all also been defined above as well, including those marked
-with `ParserBridge0`, which is done on the object itself.
+with `PureParserBridge0`, which is done on the object itself.
 
 Notably though, there are two AST nodes I'm _not_ going to give bridge constructors to: `StrongApp`, `TyApp`. If you look at
 the grammar, you'll see that the two relevant rules are both just `many`-like. Another option for
@@ -687,24 +687,24 @@ _inside_ the factored parentheses. The problem is that they use different bridge
 new ***disambiguator bridge***! Let's take a look at them:
 
 ```scala mdoc:invisible
-import parsley.generic.*
+import parsley.templates.*
 ```
 ```scala mdoc
-object NestedPatOrPatTuple extends ParserBridge1[List[Pat], PatNaked] {
+object NestedPatOrPatTuple extends PureParserBridge1[List[Pat], PatNaked] {
     def apply(ps: List[Pat]): PatNaked = ps match {
         case List(p) => NestedPat(p)
         case ps => PatTuple(ps)
     }
 }
 
-object ParenTyOrTupleTy extends ParserBridge1[List[Type], TyAtom] {
+object ParenTyOrTupleTy extends PureParserBridge1[List[Type], TyAtom] {
     def apply(tys: List[Type]): TyAtom = tys match {
         case List(ty) => ParenTy(ty)
         case tys => TupleTy(tys)
     }
 }
 
-object TupleLitOrParensVal extends ParserBridge1[List[Expr], Term] {
+object TupleLitOrParensVal extends PureParserBridge1[List[Expr], Term] {
     def apply(xs: List[Expr]): Term = xs match {
         case List(x) => ParensVal(x)
         case xs => TupleLit(xs)
@@ -758,7 +758,7 @@ we defined the `lexer`, I mentioned that it supports a `INT_OR_FLOAT` token. Now
 use of it to remove this `atomic`. Our first thought might be to make a disambiguator bridge that can accommodate either of them, and that would be a fine idea:
 
 ```scala mdoc:nest:silent
-object HsIntOrDouble extends ParserBridge1[Either[BigInt, BigDecimal], Literal] {
+object HsIntOrDouble extends PureParserBridge1[Either[BigInt, BigDecimal], Literal] {
     def apply(x: Either[BigInt, BigDecimal]): Literal = x.fold(HsInt(_), HsDouble(_))
 }
 
@@ -941,7 +941,7 @@ Now, the aim here is to smash those `<pat-con>`s together! We can introduce a ne
 handle this, and switch `some` for `many`:
 
 ```scala mdoc
-object PatAppIfNonEmpty extends ParserBridge2[PatCon, List[PatNaked], PatParen] {
+object PatAppIfNonEmpty extends PureParserBridge2[PatCon, List[PatNaked], PatParen] {
     def apply(con: PatCon, args: List[PatNaked]): PatParen = args match {
         case Nil => con
         case args => PatApp(con, args)
@@ -1010,7 +1010,7 @@ tuple.
 ```scala mdoc:nest
 // These make use of `ast.Clause` because they are defined outside of `ast` (in this .md file)
 type PartialClause = (List[PatNaked], Option[Expr], Expr)
-object DeclOrClause extends ParserBridge2[VarId, Either[Type, PartialClause], ProgramUnit] {
+object DeclOrClause extends PureParserBridge2[VarId, Either[Type, PartialClause], ProgramUnit] {
     def apply(id: VarId, declOrClause: Either[Type, PartialClause]): ProgramUnit =
         declOrClause match {
             case Left(ty) => Decl(id, ty)
@@ -1018,7 +1018,7 @@ object DeclOrClause extends ParserBridge2[VarId, Either[Type, PartialClause], Pr
         }
 }
 
-object Clause extends ParserBridge2[VarId, PartialClause, Clause] {
+object Clause extends PureParserBridge2[VarId, PartialClause, Clause] {
     def apply(id: VarId, partialClause: PartialClause): Clause = {
         val (args, guard, body) = partialClause
         ast.Clause(id, args, guard, body)
@@ -1051,10 +1051,10 @@ the two original bridge constructors, but won't introduce a third:
 
 ```scala mdoc:nest
 // These make use of `ast.Clause` because they are defined outside of `ast` (in this .md file)
-object Decl extends ParserBridge1[Type, VarId => ast.Decl] {
+object Decl extends PureParserBridge1[Type, VarId => ast.Decl] {
     def apply(ty: Type): VarId => ast.Decl = ast.Decl(_, ty)
 }
-object Clause extends ParserBridge3[List[PatNaked], Option[Expr], Expr, VarId => ast.Clause] {
+object Clause extends PureParserBridge3[List[PatNaked], Option[Expr], Expr, VarId => ast.Clause] {
     def apply(pats: List[PatNaked], guard: Option[Expr], rhs: Expr): VarId => ast.Clause =
         ast.Clause(_, pats, guard, rhs)
 }
@@ -1089,10 +1089,10 @@ case class Clause(id: VarId, pats: List[PatNaked], guard: Option[Expr], rhs: Exp
 ```
 
 ```scala mdoc
-object Decl extends ParserBridge1[Type, VarId => Decl] {
+object Decl extends PureParserBridge1[Type, VarId => Decl] {
     def apply(ty: Type): VarId => Decl = v => Decl(v, ty)(v.pos)
 }
-object Clause extends ParserBridge3[List[PatNaked], Option[Expr], Expr, VarId => Clause] {
+object Clause extends PureParserBridge3[List[PatNaked], Option[Expr], Expr, VarId => Clause] {
     def apply(pats: List[PatNaked], guard: Option[Expr], rhs: Expr): VarId => Clause =
         v => Clause(v, pats, guard, rhs)(v.pos)
 }
@@ -1102,11 +1102,11 @@ This is really brittle: it is relying on the `VarId` type having _and exposing_ 
 information. In contrast, here's how our other bridge factory would be transformed:
 
 ```scala mdoc:invisible
-trait ParserBridgePos2[A, B, C]
+trait PosParserBridge2[A, B, C]
 ```
 ```scala mdoc
 object DeclOrClause
-    extends ParserBridgePos2[VarId, Either[Type, PartialClause], ProgramUnit] {
+    extends PosParserBridge2[VarId, Either[Type, PartialClause], ProgramUnit] {
     def apply(id: VarId, declOrClause: Either[Type, PartialClause])
              (pos: (Int, Int)): ProgramUnit = declOrClause match {
         case Left(ty) => Decl(id, ty)(pos)

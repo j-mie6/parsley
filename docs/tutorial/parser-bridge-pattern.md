@@ -36,9 +36,9 @@ object lexer {
 @:callout(info)
 The first part of this page helps to motivate the *Parser Bridge* pattern, and
 the second part shows how to implement it from scratch. This is useful to know,
-but the API Guide [Generic Bridges](../api-guide/generic.md) page can get you
+but the API Guide [Template Bridges](../api-guide/templates.md) or [Macro Bridges](../api-guide/macros.md) pages can get you
 started with the technique faster. The latter parts of this page can be helpful
-when the generic bridges no longer suffice.
+when the template and macro bridges no longer suffice.
 @:@
 
 By this point, we've seen how to effectively build expression parsers, lexers, and how to handle
@@ -433,32 +433,32 @@ import parsley.syntax.zipped.*
 import parsley.position.pos
 ```
 ```scala mdoc
-trait ParserBridgePos1[-A, +B] {
+trait PosParserBridge1[-A, +B] {
     // this is called the "hook": it's the hole in the template that must be implemented
     def apply(x: A)(pos: (Int, Int)): B
     // this is the template method, in this case the template for the bridge constructor
     def apply(x: Parsley[A]): Parsley[B] = pos <**> x.map(this.apply)
 }
 
-trait ParserBridgePos2[-A, -B, +C] {
+trait PosParserBridge2[-A, -B, +C] {
     def apply(x: A, y: B)(pos: (Int, Int)): C
     def apply(x: Parsley[A], y: Parsley[B]): Parsley[C] =
         pos <**> (x, y).zipped(this.apply)
 }
 ```
 
-These are the two generic bridge traits that provide the implementations of our bridge constructors.
+These are the two template bridge traits that provide the implementations of our bridge constructors.
 Obviously, there are many many more possible such traits. At the very least, it is also useful to
-have "plain" versions that do not interact with positions at all also (these are provided by `parsley`
-within `parsley.generic`):
+have "pure" versions that do not interact with positions at all also (these are provided by `parsley`
+within `parsley.templates`):
 
 ```scala mdoc
-trait ParserBridge1[-A, +B] {
+trait PureParserBridge1[-A, +B] {
     def apply(x: A): B
     def apply(x: Parsley[A]): Parsley[B] = x.map(this.apply)
 }
 
-trait ParserBridge2[-A, -B, +C] {
+trait PureParserBridge2[-A, -B, +C] {
     def apply(x: A, y: B): C
     def apply(x: Parsley[A], y: Parsley[B]): Parsley[C] =
         (x, y).zipped(this.apply)
@@ -469,14 +469,14 @@ So, how are these used to help remove the boilerplate? Well, the companion objec
 AST nodes will simply extend one of the generic bridge traits as appropriate:
 
 ```scala
-object Let extends ParserBridgePos2[List[Binding], Expr, LetExpr]
-object Binding extends ParserBridgePos2[String, LetExpr, Binding]
-object Num extends ParserBridgePos1[BigInt, Num]
-object Var extends ParserBridgePos1[String, Var]
+object Let extends PosParserBridge2[List[Binding], Expr, LetExpr]
+object Binding extends PosParserBridge2[String, LetExpr, Binding]
+object Num extends PosParserBridge1[BigInt, Num]
+object Var extends PosParserBridge1[String, Var]
 ```
 
 Ahhhhh, much better! If position information was removed from say `Num`, then it would just have
-to extend `ParserBridge1` instead, and no more changes need to be made!
+to extend `PureParserBridge1` instead, and no more changes need to be made!
 
 ## _Singleton Bridge_ for Precedence Ops
 With the basics of bridge constructors (as well as generic bridge traits) under our belt, let's
@@ -508,7 +508,7 @@ object Mul {
 }
 
 // or, alternatively, we can explicitly provide a new hook for our generic bridge trait:
-object Mul extends ParserBridgePos1[Unit, (Expr, Expr) => Mul] {
+object Mul extends PosParserBridge1[Unit, (Expr, Expr) => Mul] {
     def apply(x: Unit)(pos: (Int, Int)): (Expr, Expr) => Mul = Mul(_, _)(pos)
 }
 ```
@@ -530,7 +530,7 @@ import parsley.position.pos
 ```scala mdoc
 import parsley.ap.*
 
-trait ParserBridgePos1[-A, +B] {
+trait PosParserBridge1[-A, +B] {
     def apply(x: A)(pos: (Int, Int)): B
     private def con(pos: (Int, Int)): A => B = this.apply(_)(pos)
 
@@ -540,7 +540,7 @@ trait ParserBridgePos1[-A, +B] {
 
 }
 
-trait ParserBridgePos2[-A, -B, +C] {
+trait PosParserBridge2[-A, -B, +C] {
     def apply(x: A, y: B)(pos: (Int, Int)): C
     private def con(pos: (Int, Int)): (A, B) => C = this.apply(_, _)(pos)
 
@@ -570,9 +570,9 @@ case class Add(x: Expr, y: Expr)(val pos: (Int, Int)) extends Expr
 case class Sub(x: Expr, y: Expr)(val pos: (Int, Int)) extends Expr
 case class Neg(x: Expr)(val pos: (Int, Int)) extends Expr
 
-object Add extends ParserBridgePos2[Expr, Expr, Add]
-object Sub extends ParserBridgePos2[Expr, Expr, Sub]
-object Neg extends ParserBridgePos1[Expr, Neg]
+object Add extends PosParserBridge2[Expr, Expr, Add]
+object Sub extends PosParserBridge2[Expr, Expr, Sub]
+object Neg extends PosParserBridge1[Expr, Neg]
 ```
 
 To make it clear, this automatically gives us the option to use `Add(p, q)` _or_ `Add from "+"`, and
@@ -614,7 +614,7 @@ import parsley.Parsley
 import parsley.position.pos
 ```
 ```scala mdoc
-trait ParserBridgePos1[-A, +B] {
+trait PosParserBridge1[-A, +B] {
     def apply(x: A)(pos: (Int, Int)): B
     private def con(pos: (Int, Int)): A => B = this.apply(_)(pos)
 
@@ -622,7 +622,7 @@ trait ParserBridgePos1[-A, +B] {
     final def <#(op: Parsley[?]): Parsley[A => B] = this from op
 }
 
-trait ParserBridgePos2[-A, -B, +C] {
+trait PosParserBridge2[-A, -B, +C] {
     def apply(x: A, y: B)(pos: (Int, Int)): C
     private def con(pos: (Int, Int)): (A, B) => C = this.apply(_, _)(pos)
 
@@ -642,20 +642,20 @@ import parsley.position.pos
 import parsley.ap.*
 ```
 ```scala mdoc
-trait ParserSingletonBridgePos[+A] {
+trait PosParserSingletonBridge[+A] {
     protected def con(pos: (Int, Int)): A
     def from(op: Parsley[?]): Parsley[A] = pos.map(this.con) <* op
     final def <#(op: Parsley[?]): Parsley[A] = this from op
 }
 
-trait ParserBridgePos1[-A, +B] extends ParserSingletonBridgePos[A => B] {
+trait PosParserBridge1[-A, +B] extends PosParserSingletonBridge[A => B] {
     def apply(x: A)(pos: (Int, Int)): B
     def apply(x: Parsley[A]): Parsley[B] = ap1(pos.map(con), x)
 
     override final def con(pos: (Int, Int)): A => B = this.apply(_)(pos)
 }
 
-trait ParserBridgePos2[-A, -B, +C] extends ParserSingletonBridgePos[(A, B) => C] {
+trait PosParserBridge2[-A, -B, +C] extends PosParserSingletonBridge[(A, B) => C] {
     def apply(x: A, y: B)(pos: (Int, Int)): C
     def apply(x: Parsley[A], y: =>Parsley[B]): Parsley[C] = ap2(pos.map(con), x, y)
 
@@ -666,12 +666,12 @@ trait ParserBridgePos2[-A, -B, +C] extends ParserSingletonBridgePos[(A, B) => C]
 This provides a _modest_ improvement over the original versions.
 
 ### Adding Errors
-The generic bridges found in `parsley.generic` offer one additional component that is absent from the
-descriptions above: they all extend `bridges.SingletonBridge`, which in turn extends
+The template bridges found in `parsley.templates` offer one additional component that is absent from the
+descriptions above: they all extend `bridges.ParserSingletonBridge`, which in turn extends
 `bridges.ErrorBridge`. This trait exposes hook methods for `labels` and `reason`, which allow for
 error messages to be associated with the bridge, and in exchange provides the template `error` combinator:
 this is supposed to be called within the bridge to annotate a parser with the provided error messages.
-Our definitions of `ParserBridgePos1` and `ParserBridgePos2` can also benefit from this:
+Our definitions of `PosParserBridge1` and `PosParserBridge2` can also benefit from this:
 
 ```scala mdoc:invisible:reset
 import parsley.Parsley
@@ -679,21 +679,21 @@ import parsley.position.pos
 import parsley.ap.*
 ```
 ```scala mdoc
-import parsley.bridges
+import parsley.bridges.*
 
-trait ParserSingletonBridgePos[+A] extends bridges.SingletonBridge[A] {
+trait PosParserSingletonBridge[+A] extends ParserSingletonBridge[A] {
     protected def con(pos: (Int, Int)): A
     protected final def singleton = pos.map(con)
 }
 
-trait ParserBridgePos1[-A, +B] extends bridges.Bridge1[A, B] with ParserSingletonBridgePos[A => B] {
+trait PosParserBridge1[-A, +B] extends ParserBridge1[A, B] with PosParserSingletonBridge[A => B] {
     def apply(x: A)(pos: (Int, Int)): B
     def apply(x: Parsley[A]): Parsley[B] = error(ap1(pos.map(con), x))
 
     override final def con(pos: (Int, Int)): A => B = this.apply(_)(pos)
 }
 
-trait ParserBridgePos2[-A, -B, +C] extends bridges.Bridge2[A, B, C] with ParserSingletonBridgePos[(A, B) => C] {
+trait PosParserBridge2[-A, -B, +C] extends ParserBridge2[A, B, C] with PosParserSingletonBridge[(A, B) => C] {
     def apply(x: A, y: B)(pos: (Int, Int)): C
     def apply(x: Parsley[A], y: =>Parsley[B]): Parsley[C] = error(ap2(pos.map(con), x, y))
 
@@ -752,14 +752,14 @@ object ast {
     case class Num(x: BigInt)(val pos: (Int, Int)) extends Expr
     case class Var(x: String)(val pos: (Int, Int)) extends Expr
 
-    object Let extends ParserBridgePos2[List[Binding], Expr, LetExpr]
-    object Binding extends ParserBridgePos2[String, LetExpr, Binding]
-    object Add extends ParserBridgePos2[Expr, Expr, Add]
-    object Mul extends ParserBridgePos2[Expr, Expr, Mul]
-    object Sub extends ParserBridgePos2[Expr, Expr, Sub]
-    object Neg extends ParserBridgePos1[Expr, Neg]
-    object Num extends ParserBridgePos1[BigInt, Num]
-    object Var extends ParserBridgePos1[String, Var]
+    object Let extends PosParserBridge2[List[Binding], Expr, LetExpr]
+    object Binding extends PosParserBridge2[String, LetExpr, Binding]
+    object Add extends PosParserBridge2[Expr, Expr, Add]
+    object Mul extends PosParserBridge2[Expr, Expr, Mul]
+    object Sub extends PosParserBridge2[Expr, Expr, Sub]
+    object Neg extends PosParserBridge1[Expr, Neg]
+    object Num extends PosParserBridge1[BigInt, Num]
+    object Var extends PosParserBridge1[String, Var]
 }
 
 object expressions {

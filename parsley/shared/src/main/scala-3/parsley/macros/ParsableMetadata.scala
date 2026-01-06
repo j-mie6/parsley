@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 package parsley
-package generic.experimental
+package macros
 
 final class isMeta extends scala.annotation.StaticAnnotation
 
-abstract class ParsableMeta[T] {
+abstract class ParsableMetadata[T] {
     def meta: Parsley[T]
 }
-object ParsableMeta {
-    given ParsableMeta[(Int, Int)] with {
+object ParsableMetadata {
+    given ParsableMetadata[(Int, Int)] with {
         inline def meta = position.pos
     }
 }

@@ -12,7 +12,7 @@ import parsley.token.{descriptions => desc}
 import parsley.character.digit
 import parsley.syntax.character.{charLift, stringLift}
 import parsley.position.*
-import parsley.generic.*
+import parsley.templates.*
 
 class ExpressionParserTests extends ParsleyTest {
     "chain.postfix" must "require an initial value" in {
@@ -98,7 +98,7 @@ class ExpressionParserTests extends ParsleyTest {
         sealed trait Expr
         case class Add(x: Int, y: Expr) extends Expr
         case class Num(x: Int) extends Expr
-        object Add extends ParserBridge2[Int, Expr, Expr]
+        object Add extends PureParserBridge2[Int, Expr, Expr]
         cases(infix.right1("1" #> 1)(Add <# "+")(Num.apply))(
             "1+1+1" -> Some(Add(1, Add(1, Num(1)))),
             "1" -> Some(Num(1)),
@@ -129,7 +129,7 @@ class ExpressionParserTests extends ParsleyTest {
         sealed trait Expr
         case class Add(x: Expr, y: Int) extends Expr
         case class Num(x: Int) extends Expr
-        object Add extends ParserBridge2[Expr, Int, Expr]
+        object Add extends PureParserBridge2[Expr, Int, Expr]
         cases(infix.left1("1" #> 1)(Add <# "+")(Num.apply))("1+1+1" -> Some(Add(Add(Num(1), 1), 1)))
     }
     "chain.left" must "allow for no initial value" in {
@@ -200,12 +200,12 @@ class ExpressionParserTests extends ParsleyTest {
         case class Parens(x: Comp) extends Atom
         case class Num(x: Int) extends Atom
 
-        object Less extends ParserBridge2[Expr, Expr, Comp]
-        object Add extends ParserBridge2[Expr, Term, Expr]
-        object Mul extends ParserBridge2[Factor, Term, Term]
-        object Neg extends ParserBridge1[Factor, Factor]
-        object Parens extends ParserBridge1[Comp, Atom]
-        object Num extends ParserBridge1[Int, Atom]
+        object Less extends PureParserBridge2[Expr, Expr, Comp]
+        object Add extends PureParserBridge2[Expr, Term, Expr]
+        object Mul extends PureParserBridge2[Factor, Term, Term]
+        object Neg extends PureParserBridge1[Factor, Factor]
+        object Parens extends PureParserBridge1[Comp, Atom]
+        object Num extends PureParserBridge1[Int, Atom]
 
         lazy val expr: Parsley[Comp] = precedence(
             SOps(InfixN)(Less <# '<') +:
@@ -229,11 +229,11 @@ class ExpressionParserTests extends ParsleyTest {
         case class Parens(x: Comp) extends Atom
         case class Num(x: Int) extends Atom
 
-        object Less extends ParserBridge2[Expr, Expr, Comp]
-        object Add extends ParserBridge2[Expr, Term, Expr]
-        object Mul extends ParserBridge2[Atom, Term, Term]
-        object Parens extends ParserBridge1[Comp, Atom]
-        object Num extends ParserBridge1[Int, Atom]
+        object Less extends PureParserBridge2[Expr, Expr, Comp]
+        object Add extends PureParserBridge2[Expr, Term, Expr]
+        object Mul extends PureParserBridge2[Atom, Term, Term]
+        object Parens extends PureParserBridge1[Comp, Atom]
+        object Num extends PureParserBridge1[Int, Atom]
 
         lazy val expr: Parsley[Comp] = precedence(
             // The type ascriptions are unneeded for Scala 3
@@ -265,10 +265,10 @@ class ExpressionParserTests extends ParsleyTest {
         case class Parens(x: Expr) extends Atom
         case class Num(x: Int) extends Atom
 
-        object Add extends ParserBridge2[Expr, Term, Expr]
-        object Mul extends ParserBridge2[Term, Atom, Term]
-        object Parens extends ParserBridge1[Expr, Atom]
-        object Num extends ParserBridge1[Int, Atom]
+        object Add extends PureParserBridge2[Expr, Term, Expr]
+        object Mul extends PureParserBridge2[Term, Atom, Term]
+        object Parens extends PureParserBridge1[Expr, Atom]
+        object Num extends PureParserBridge1[Int, Atom]
 
         lazy val expr: Parsley[Expr] = precedence(
             Atoms(Num(digit.map(_.asDigit)), Parens('(' *> expr <* ')')) :+
@@ -287,10 +287,10 @@ class ExpressionParserTests extends ParsleyTest {
         case class Binary(l: Expr, r: Expr) extends Expr
         case class Constant(x: String) extends Expr
 
-        object Binary extends ParserBridge2[Expr, Expr, Expr]
-        object Constant extends ParserBridge1[String, Expr]
+        object Binary extends PureParserBridge2[Expr, Expr, Expr]
+        object Constant extends PureParserBridge1[String, Expr]
 
-        object Call extends ParserBridge1[Expr, Expr => Expr] {
+        object Call extends PureParserBridge1[Expr, Expr => Expr] {
             def apply(x1: Expr): Expr => Expr = Binary(_, x1)
         }
 
@@ -316,9 +316,9 @@ class ExpressionParserTests extends ParsleyTest {
         case class Unary(c: Expr) extends Expr
         case class Constant(x: Char) extends Expr
 
-        object Binary extends ParserBridge2[Constant, Expr, Expr]
-        object Unary extends ParserBridge1[Expr, Expr]
-        object Constant extends ParserBridge1[Char, Constant]
+        object Binary extends PureParserBridge2[Constant, Expr, Expr]
+        object Unary extends PureParserBridge1[Expr, Expr]
+        object Constant extends PureParserBridge1[Char, Constant]
 
         val p = mixed.right1(Constant(digit), Unary <# '-', Binary <# '+')
         p.parse("-1+-2+-3") shouldBe Success(Unary(Binary(Constant('1'), Unary(Binary(Constant('2'), Unary(Constant('3')))))))
@@ -330,9 +330,9 @@ class ExpressionParserTests extends ParsleyTest {
         case class Unary(c: Expr) extends Expr
         case class Constant(x: Char) extends Expr
 
-        object Binary extends ParserBridge2[Expr, Constant, Expr]
-        object Unary extends ParserBridge1[Expr, Expr]
-        object Constant extends ParserBridge1[Char, Constant]
+        object Binary extends PureParserBridge2[Expr, Constant, Expr]
+        object Unary extends PureParserBridge1[Expr, Expr]
+        object Constant extends PureParserBridge1[Char, Constant]
 
         val p = mixed.left1(Constant(digit), Unary <# '?', Binary <# '+')
         p.parse("1?+2?+3?") shouldBe Success(Unary(Binary(Unary(Binary(Unary(Constant('1')), Constant('2'))), Constant('3'))))

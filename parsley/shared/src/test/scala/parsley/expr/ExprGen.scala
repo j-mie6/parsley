@@ -11,8 +11,7 @@ import org.scalacheck.Gen
 import org.scalacheck.Arbitrary.arbitrary
 import parsley.Parsley
 import parsley.Parsley.atomic
-import parsley.generic.ParserBridge1
-import parsley.generic.ParserBridge2
+import parsley.templates.{PureParserBridge1, PureParserBridge2}
 
 object ExprGen {
     private type UnaryOp = (String, TestExpr => TestExpr)
@@ -38,19 +37,19 @@ object ExprGen {
     case class PostfixFactorial(x: TestExpr) extends TestExpr
     case class PostfixIncrement(x: TestExpr) extends TestExpr
 
-    object Num extends ParserBridge1[Int, TestExpr]
+    object Num extends PureParserBridge1[Int, TestExpr]
 
-    object InfixPlus extends ParserBridge2[TestExpr, TestExpr, TestExpr]
-    object InfixMinus extends ParserBridge2[TestExpr, TestExpr, TestExpr]
-    object InfixMult extends ParserBridge2[TestExpr, TestExpr, TestExpr]
-    object InfixDiv extends ParserBridge2[TestExpr, TestExpr, TestExpr]
-    object InfixEq extends ParserBridge2[TestExpr, TestExpr, TestExpr]
+    object InfixPlus extends PureParserBridge2[TestExpr, TestExpr, TestExpr]
+    object InfixMinus extends PureParserBridge2[TestExpr, TestExpr, TestExpr]
+    object InfixMult extends PureParserBridge2[TestExpr, TestExpr, TestExpr]
+    object InfixDiv extends PureParserBridge2[TestExpr, TestExpr, TestExpr]
+    object InfixEq extends PureParserBridge2[TestExpr, TestExpr, TestExpr]
 
-    object PrefixPlus extends ParserBridge1[TestExpr, TestExpr]
-    object PrefixMinus extends ParserBridge1[TestExpr, TestExpr]
+    object PrefixPlus extends PureParserBridge1[TestExpr, TestExpr]
+    object PrefixMinus extends PureParserBridge1[TestExpr, TestExpr]
 
-    object PostfixFactorial extends ParserBridge1[TestExpr, TestExpr]
-    object PostfixIncrement extends ParserBridge1[TestExpr, TestExpr]
+    object PostfixFactorial extends PureParserBridge1[TestExpr, TestExpr]
+    object PostfixIncrement extends PureParserBridge1[TestExpr, TestExpr]
 
     private val infixOps: Set[BinaryOp] = Set(
         ("+", InfixPlus(_, _)),

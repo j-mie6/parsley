@@ -5,7 +5,7 @@
  */
 package parsley
 
-/** This package contains the definition of 23 basic ''generic parser bridge traits'', which
+/** This package contains the definition of 23 basic ''template parser bridge traits'', which
   * are used to implement the ''Parser Bridge'' pattern for types that do not require metadata.
   *
   * The traits within are designed to be extended by the companion object of some case class that
@@ -17,4 +17,4 @@ package parsley
   *
   * @since 5.0.0
   */
-package object generic
+package object templates
