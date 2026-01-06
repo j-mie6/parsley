@@ -231,7 +231,39 @@ val polyMetaPos = bridge[PolyMeta[Pos]]
 ```
 
 ### Error Messages
-TODO
+The parser bridge traits all extend an `ErrorBridge`, which allows for the integration of
+labels and reasons into bridges. The template bridge traits inherit these, so the extender of the
+trait can override `labels` and `reason` and get the right behaviours while keeping them out of the
+parser. This is nice, and the macro supports it under a slightly different mechanism.
+
+The `bridge` we've seen so far is actually not a function, but an object with an `apply[T]` and
+`apply[T, S]`: let's call this a *bridge synthesiser*. It also has two other methods: `label` and `explain`,
+which themselves return a new bridge synthesiser that can incorporate those components.
+If you use `label`, the synthesiser it returns does not itself have a `label` method, but does have
+an `explain` (and vice-versa), so you can build these up "Builder Pattern"-style. As an example:
+
+```scala mdoc:silent
+import parsley.character.digit
+case class Num(n: Int)
+
+val num = bridge.label("number").explain("numbers are made of 1 or more digits")[Num]
+```
+```scala mdoc:to-string
+num(digit.foldLeft1(0)((n, d) => n * 10 + d.asDigit)).parse("a")
+```
 
 ## Limitations
-TODO
+Unfortunately, the bridge macro is not perfect. There are still some areas where
+the template bridge traits manage to allow slightly more flexibility. The key is that
+the bridge macro *forces* a specific shape of bridge using all the provided arguments
+to the given types primary constructor as-is. Any modifications you might want to make to these,
+perhaps to adapt to another type, will not be picked up.
+
+For example, *disambiguation bridges* (as described in other pages) involve processing data into
+potentially different sibling types. The bridge macro can't figure this out, so that's a use-case
+that is ruled out.
+
+As another example, *validation bridges* need to inject filtering logic into the bridge, which is
+not currently supported. However, this is something that I believe can be made to work (unlike
+the disambiguation bridges above), so this may be supported by some more synthesisers at a later
+point.
