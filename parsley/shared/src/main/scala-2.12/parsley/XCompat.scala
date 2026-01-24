@@ -16,12 +16,12 @@ private [parsley] object XCompat {
     }
 
     private implicit class SubtitutionEq[A, B](val ev: A =:= B) extends AnyVal {
-        def substituteCo[F[_]](fa: F[A]): F[B] = fa.asInstanceOf[F[B]]
+        def substituteCo[F[+_]](fa: F[A]): F[B] = fa.asInstanceOf[F[B]]
         def substituteParsley(p: Parsley[A]): Parsley[B] = substituteCo(p)
     }
 
     implicit class SubtitutionSub[A, B](val ev: A <:< B) extends AnyVal {
-        def substituteCo[F[_]](fa: F[A]): F[B] = fa.asInstanceOf[F[B]]
+        def substituteCo[F[+_]](fa: F[A]): F[B] = fa.asInstanceOf[F[B]]
         def substituteParsley(p: Parsley[A]): Parsley[B] = substituteCo(p)
     }
 
