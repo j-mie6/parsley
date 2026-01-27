@@ -33,7 +33,10 @@ private class BridgeImpl(using Quotes) {
         val tyArgs = tyRepr.typeArgs
         tyRepr match {
             // there must be the same number of type arguments as type params, or this is a higher-kinded T (oops!)
-            case Bridgeable(cls, tyParams, bridgeParams, otherParams) if tyArgs.lengthCompare(tyParams) == 0 =>
+            // NOTE: this was changed from == 0 to <= 0, as covariant enums with a Nothing-based case will have fewer arguments
+            // compared to their type (as singletons are encoded to vals not object). If HKTs become an issue, then
+            // we'll have to find a different way to rule them out (it may be that these would result in > 0, I can't remember the exact case)
+            case Bridgeable(cls, tyParams, bridgeParams, otherParams) if tyArgs.lengthCompare(tyParams) <= 0 =>
                 def contextualise(ty: TypeRepr) = ty.substituteTypes(tyParams, tyArgs)
                 val categorisedArgs = categoriseArgs(cls, bridgeParams :: otherParams, 1, primary = true, mutable.ListBuffer.empty, contextualise)
                 // Used for the types of the lambda passed to combinator
