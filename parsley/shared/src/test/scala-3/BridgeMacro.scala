@@ -45,6 +45,9 @@ type Unital[T[_]] = T[Unit]
 
 val fooUnit = bridge[Unital[Foo]]
 
+class UnitalC[T[_]](val x: T[Int])
+val fooUnitC = bridge[UnitalC[List]]
+
 case class Empty()
 val empty = bridge[Empty]
 
@@ -60,3 +63,8 @@ val zero = bridge[Nat.Zero.type]
 
 case class EmptyT[T]()
 val emptyInt = bridge[EmptyT[Int]]
+
+enum Co[+A] {
+    case Single
+}
+val CoSingle = bridge[Co.Single.type]
