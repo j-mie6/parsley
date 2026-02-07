@@ -61,7 +61,7 @@
 
   <div class="row links">
     
-    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_3/5.0.0-M17/">API</a>
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_3/5.0.0-M18/">API</a>
     
     <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
   <g class="svg-shape">
@@ -77,7 +77,7 @@
 
   <div class="row">
     
-    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_3/5.0.0-M17/">API</a>
+    <a class="text-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_3/5.0.0-M18/">API</a>
     
     <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
   <g class="svg-shape">
@@ -236,17 +236,17 @@
 </span><span class="comment">// res1: Result[String, Expr] = Success(Add(Var(x),Var(y)))
 </span><span>
 </span><span class="identifier">expressions</span><span>.</span><span class="identifier">parser</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;negate + z&quot;</span><span>)
-</span><span class="comment">// res2: Result[String, Expr] = Success(Add(Var(negate),Var(z)))
-</span><span>
-</span><span class="identifier">expressions</span><span>.</span><span class="identifier">parser</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;negate x + z&quot;</span><span>)
-</span><span class="comment">// res3: Result[String, Expr] = Failure((line 1, column 8):
-//   unexpected &quot;x&quot;
-//   expected &quot;*&quot;, &quot;+&quot;, &quot;-&quot;, or end of input
-//   &gt;negate x + z
+</span><span class="comment">// res2: Result[String, Expr] = Failure((line 1, column 8):
+//   unexpected &quot;+&quot;
+//   expected &quot;(&quot;, &quot;negate&quot;, digit, or letter
+//   &gt;negate + z
 //           ^)
 </span><span>
+</span><span class="identifier">expressions</span><span>.</span><span class="identifier">parser</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;negate x + z&quot;</span><span>)
+</span><span class="comment">// res3: Result[String, Expr] = Success(Add(Neg(Var(x)),Var(z)))
+</span><span>
 </span><span class="identifier">expressions</span><span>.</span><span class="identifier">parser</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;negatex + z&quot;</span><span>)
-</span><span class="comment">// res4: Result[String, Expr] = Success(Add(Var(negatex),Var(z)))</span></code></pre>
+</span><span class="comment">// res4: Result[String, Expr] = Success(Add(Neg(Var(x)),Var(z)))</span></code></pre>
         <p>So, looking at these examples, the first one seems to work fine. The second one also works
         fine, but given that we&#39;ve said that identifiers are just alpha-numeric characters, you might
         assume it was legal (indeed, it really <em>shouldn&#39;t</em> be legal in most languages that don&#39;t have
