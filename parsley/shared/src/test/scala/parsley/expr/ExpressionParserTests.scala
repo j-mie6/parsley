@@ -276,6 +276,21 @@ class ExpressionParserTests extends ParsleyTest {
             GOps[Term, Expr](InfixL)(Add <# '+')(ExprOf.apply))
         expr.parse("1*(2+3)") shouldBe a [Success[?]]
     }
+    they should "parse the right order for prefix and atoms" in {
+        sealed trait Expr
+        case class Neg(x: Expr) extends Expr
+        case class Num(n: Int) extends Expr
+        case class Add(x: Expr, y: Expr) extends Expr
+        object Neg extends PureParserBridge1[Expr, Expr]
+        object Num extends PureParserBridge1[Int, Expr]
+        object Add extends PureParserBridge2[Expr, Expr, Expr]
+        lazy val expr: Parsley[Expr] = precedence(
+            Atoms(Num(Parsley.atomic(('-'.as((n: Int) => -n) | Parsley.pure(identity[Int])) <*> digit.map(_.asDigit)))) :+
+            Ops(Prefix)(Neg from '-') :+
+            Ops(InfixL)(Add from '+')
+        )
+        expr.parse("--7") shouldBe Success(Neg(Neg(Num(7))))
+    }
 
     "mixed expressions" should "also be parsable" in {
         val lang = desc.LexicalDesc.plain.copy(

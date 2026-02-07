@@ -560,7 +560,7 @@ class ErrorTests extends ParsleyTest {
     it should "not drop later errors for things that do backtrack" in {
         // when branch was hit and we take a sub parser and it fails to default, we need to carry all other branches with us
         val lexer = new parsley.token.Lexer(parsley.token.descriptions.LexicalDesc.plain)
-        val p = (lexer.nonlexeme.symbol.softKeyword("aa") | atomic("b") | atomic("c").impure | digit)
+        val p = (lexer.nonlexeme.symbol.softKeyword("aa").void | atomic("b").void | atomic("c").void.impure | digit.void)
         inside(p.parse("a")) {
             case Failure(TestError(_, VanillaError(_, expected, _, _))) =>
                 expected should contain.allOf(Named("aa"), Raw("b"), Raw("c"))
