@@ -51,7 +51,7 @@ private [deepembedding] object Precedence {
         val maxLevel = wraps.length
         val atoms = unwrapChoices(vatoms).map(a => <*>(new Pure(r => new Atom(r, maxLevel)), a).optimise)
         val (prefixes, postfixInfixes) = vops.partition(_.fixity == Prefix)
-        val prefixAtomChoice = buildChoiceNode(atoms ::: prefixes.map(buildOpChoice))
+        val prefixAtomChoice = buildChoiceNode(prefixes.map(buildOpChoice) ::: atoms)
         val postfixInfixChoice = buildChoiceNode(postfixInfixes.map(buildOpChoice))
         new Precedence(prefixAtomChoice, postfixInfixChoice, buildPrecomputedWraps(wraps))
     }
