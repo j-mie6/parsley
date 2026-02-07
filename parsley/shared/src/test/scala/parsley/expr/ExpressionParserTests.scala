@@ -285,7 +285,7 @@ class ExpressionParserTests extends ParsleyTest {
         object Num extends PureParserBridge1[Int, Expr]
         object Add extends PureParserBridge2[Expr, Expr, Expr]
         lazy val expr: Parsley[Expr] = precedence(
-            Atoms(Num(Parsley.atomic(('-'.as((n: Int) => -n) | Parsley.pure(identity[Int])) <*> digit.map(_.asDigit)))) :+
+            Atoms(Num(Parsley.atomic(('-'.as((n: Int) => -n) | Parsley.pure(identity[Int](_))) <*> digit.map(_.asDigit)))) :+
             Ops(Prefix)(Neg from '-') :+
             Ops(InfixL)(Add from '+')
         )
