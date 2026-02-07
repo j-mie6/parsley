@@ -8,7 +8,7 @@ package parsley
 import parsley.combinator.optional
 import parsley.Parsley.*
 import parsley.syntax.character.{charLift, stringLift}
-import parsley.character.digit
+import parsley.character.{digit, item}
 import parsley.errors.combinator.{fail => pfail, unexpected, amend, partialAmend, entrench, dislodge, amendThenDislodge, /*partialAmendThenDislodge,*/ ErrorMethods}
 import parsley.errors.patterns.*
 
@@ -545,6 +545,25 @@ class ErrorTests extends ParsleyTest {
         inside(qarser.parse("aa")) {
             case Failure(TestError(_, VanillaError(_, expected, _, 1))) =>
                 expected should contain.allOf(Named("foo"), Named("b"))
+        }
+    }
+
+    // Post-tabilification rework regression
+    "tablification" should "add incorrect labels in presence of amend" in {
+        val p = (amend(atomic("a" ~> digit))) | 'b' | amend(item ~> 'c')
+        inside(p.parse("a")) {
+            case Failure(TestError(_, VanillaError(_, expected, _, _))) =>
+                expected should contain.allOf(Named("digit"), Raw("c"), Raw("b"))
+        }
+    }
+
+    it should "not drop later errors for things that do backtrack" in {
+        // when branch was hit and we take a sub parser and it fails to default, we need to carry all other branches with us
+        val lexer = new parsley.token.Lexer(parsley.token.descriptions.LexicalDesc.plain)
+        val p = (lexer.nonlexeme.symbol.softKeyword("aa") | atomic("b") | atomic("c").impure | digit)
+        inside(p.parse("a")) {
+            case Failure(TestError(_, VanillaError(_, expected, _, _))) =>
+                expected should contain.allOf(Named("aa"), Raw("b"), Raw("c"))
         }
     }
 }

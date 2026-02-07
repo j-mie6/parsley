@@ -104,7 +104,7 @@ private [backend] object ErrorExplain {
 
 private [backend] object TablableErrors {
     def unapply[A](self: StrictParsley[A]): Option[StrictParsley[A]] = self match {
-        case self: ErrorAmend[?] => Some(self.p)
+        //case self: ErrorAmend[?] => Some(self.p) // absolutely not
         case self: ErrorLexical[?] => Some(self.p) // is this correct?
         case _ => None
     }

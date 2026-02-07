@@ -280,8 +280,8 @@ private [backend] object Choice {
         //case op@MaxOp(o)                         => Some((o.head, Some(Desc(o)), o.size, backtracks))
         //case _: StringLiteral | RawStringLiteral => Some(('"', Some(Desc("string")), 1, backtracks))
         // TODO: This can be done for case insensitive things too, but with duplicated branching
-        case t@token.SoftKeyword(s) if t.caseSensitive => Some(TablableCharDesc(s.head, t.expected.asExpectDescs(s), s.codePointCount(0, s.length), backtracks))
-        case t@token.SoftOperator(s)             => Some(TablableCharDesc(s.head, t.expected.asExpectDescs(s), s.codePointCount(0, s.length), backtracks))
+        case t@token.SoftKeyword(s) if t.caseSensitive => Some(TablableCharDesc(s.head, t.expected.asExpectDescs(s), s.codePointCount(0, s.length), backtracks = true))
+        case t@token.SoftOperator(s)             => Some(TablableCharDesc(s.head, t.expected.asExpectDescs(s), s.codePointCount(0, s.length), backtracks = true))
         case s@Satisfy(pred)                     => Some(TablablePredDesc(pred, s.expected.asExpectDescs, 1, backtracks))
         case Atomic(t)                           => tablable(t, backtracks = true)
         case ErrorLabel(t, label, labels)        => tablable(t, backtracks).map {
