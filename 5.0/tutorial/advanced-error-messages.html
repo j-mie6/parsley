@@ -456,7 +456,7 @@
 </span><span class="identifier">interpret</span><span>(</span><span class="string-literal">&quot;x = not true&quot;</span><span>)(</span><span class="type-name">Map</span><span>.</span><span class="identifier">empty</span><span>)
 </span><span class="comment">// res16: Either[String, Map[String, Int]] = Left((line 1, column 5):
 //   unexpected keyword not
-//   expected identifier, negate, or number
+//   expected &quot;(&quot;, identifier, negate, or number
 //   &gt;x = not true
 //        ^^^)</span></code></pre>
         <p>Now, there is a cheap way of dealing with this and an expensive one. Let&#39;s start cheap and see what
@@ -493,7 +493,7 @@
 </span><span class="identifier">interpret</span><span>(</span><span class="string-literal">&quot;x = not true&quot;</span><span>)(</span><span class="type-name">Map</span><span>.</span><span class="identifier">empty</span><span>)
 </span><span class="comment">// res19: Either[String, Map[String, Int]] = Left((line 1, column 5):
 //   unexpected keyword not
-//   expected identifier, negate, or number
+//   expected &quot;(&quot;, identifier, negate, or number
 //   booleans cannot be assigned to variables
 //   &gt;x = not true
 //        ^^^)</span></code></pre>
