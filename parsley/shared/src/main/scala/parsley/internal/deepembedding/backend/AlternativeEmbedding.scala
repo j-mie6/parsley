@@ -64,7 +64,7 @@ private [deepembedding] final class Choice[A] private (private [backend] val alt
 
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = codeGenTablified(this.tablify, producesResults)
 
-    private def tablify: List[Either[StrictParsley[?], List[JumpTableGroup]]] =
+    private def tablify(implicit state: CodeGenState): List[Either[StrictParsley[?], List[JumpTableGroup]]] =
         tablify((alt1::alt2::alts).iterator, mutable.ListBuffer.empty, mutable.ListBuffer.empty, mutable.ListBuffer.empty, mutable.Set.empty, None)
 
     @tailrec private def tablify(
@@ -74,7 +74,7 @@ private [deepembedding] final class Choice[A] private (private [backend] val alt
         groupAcc: mutable.ListBuffer[TablableChar],
         seen: mutable.Set[Char],
         lastSeen: Option[Char],
-    ): List[Either[StrictParsley[?], List[JumpTableGroup]]] = if (it.hasNext) {
+    )(implicit state: CodeGenState): List[Either[StrictParsley[?], List[JumpTableGroup]]] = if (it.hasNext) {
         val u = it.next()
         tablable(u, backtracks = false) match {
             // Character, if we've not seen it before that's ok
@@ -271,8 +271,7 @@ private [backend] object Choice {
             case Nil => (rootsAcc.toList, propagateExpecteds(tableAcc.toList, allExpecteds, mutable.ListBuffer.empty), size, allExpecteds)
         }
 
-    // TODO: `line.zip(col)` will not be caught!!!!
-    private def tablable(p: StrictParsley[?], backtracks: Boolean): Option[TablableDesc] = p match {
+    private def tablable(p: StrictParsley[?], backtracks: Boolean)(implicit state: CodeGenState): Option[TablableDesc] = p match {
         // CODO: Numeric parsers by leading digit (This one would require changing the foldTablified function a bit)
         case ct@CharTok(c, _)                    => Some(TablableCharDesc(c, ct.expected.asExpectItems(c), 1, backtracks))
         case ct@SupplementaryCharTok(c, _)       => Some(TablableCharDesc(Character.highSurrogate(c), ct.expected.asExpectItems(Character.toChars(c).mkString), 1, backtracks))
@@ -294,22 +293,23 @@ private [backend] object Choice {
         }
         case Profile(t)                          => tablable(t, backtracks)
         case TablableErrors(t)                   => tablable(t, backtracks)
-        case (_: Pure[?] | _: Get[?]) <*> t      => tablable(t, backtracks)
-        case Lift2(_, Line | Col | Offset | _: Get[?], t)    => tablable(t, backtracks)
-        case Lift3(_, Line | Col | Offset | _: Get[?], t, _) => tablable(t, backtracks)
+        case NonConsuming() <*> t                => tablable(t, backtracks)
+        case Lift2(_, NonConsuming(), t)         => tablable(t, backtracks)
+        case Lift3(_, NonConsuming(), t, _)      => tablable(t, backtracks)
         case Lift2(_, t, _)                      => tablable(t, backtracks)
         case Lift3(_, t, _, _)                   => tablable(t, backtracks)
         case t <*> _                             => tablable(t, backtracks)
         case Seq(before, r, _)                   => tablable(before.headOption.getOrElse(r), backtracks)
-        case Chainl(_: Pure[?], p, _)            => tablable(p, backtracks)
+        case Chainl(NonConsuming(), p, _)        => tablable(p, backtracks)
         case Chainl(init, _, _)                  => tablable(init, backtracks)
         case Chainr(p, _)                        => tablable(p, backtracks)
         case ChainPost(p, _)                     => tablable(p, backtracks)
-        case Many(_: Pure[?], p)                 => tablable(p, backtracks)
+        case Many(NonConsuming(), p)             => tablable(p, backtracks)
         case Many(init, _)                       => tablable(init, backtracks)
         case ManyUntil(init, _)                  => tablable(init, backtracks)
         case SepEndBy1(p, _, _)                  => tablable(p, backtracks)
         case Branch(p, _, _)                     => tablable(p, backtracks)
+        case sub: Let[?]                         => tablable(state.getBody(sub), backtracks)
         case _                                   => None
     }
 
@@ -334,6 +334,16 @@ private [backend] object Choice {
                     instrs += new instructions.Label(end)
                 }
             }
+        }
+    }
+
+    private object NonConsuming {
+        def unapply(p: StrictParsley[?])(implicit state: CodeGenState): Boolean = p match {
+            case Line | Col | Offset | _: Get[?] | _: Pure[?] => true
+            case sub: Let[?] => NonConsuming.unapply(state.getBody(sub))
+            case Lift2(_, NonConsuming(), NonConsuming()) => true
+            case Lift3(_, NonConsuming(), NonConsuming(), NonConsuming()) => true
+            case _ => false
         }
     }
 }
