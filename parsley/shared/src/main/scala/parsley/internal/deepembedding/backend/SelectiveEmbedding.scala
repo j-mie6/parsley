@@ -6,6 +6,7 @@
 package parsley.internal.deepembedding.backend
 
 import parsley.internal.deepembedding.ContOps, ContOps.{suspend, ContAdapter}
+import parsley.internal.deepembedding.frontend.LetMap
 import parsley.internal.deepembedding.singletons.*
 import parsley.internal.machine.instructions
 
@@ -47,7 +48,7 @@ private [backend] sealed abstract class BranchLike[A, B, C, D](finaliser: Option
 private [deepembedding] final class Branch[A, B, C](val b: StrictParsley[Either[A, B]], val p: StrictParsley[A => C], val q: StrictParsley[B => C])
     extends BranchLike[Either[A, B], A => C, B => C, C](Some(FlipApp)) {
     override def instr(label: Int): instructions.Instr = new instructions.Case(label)
-    override def optimise: StrictParsley[C] = b match {
+    override def optimise(implicit lets: LetMap): StrictParsley[C] = b match {
         case Pure(Left(x)) => <*>(p, new Pure(x)).optimise
         case Pure(Right(y)) => <*>(q, new Pure(y)).optimise
         case _ => (p, q) match {
@@ -63,7 +64,7 @@ private [deepembedding] final class Branch[A, B, C](val b: StrictParsley[Either[
 private [deepembedding] final class If[A](val b: StrictParsley[Boolean], val p: StrictParsley[A], val q: StrictParsley[A])
     extends BranchLike[Boolean, A, A, A](None) {
     override def instr(label: Int): instructions.Instr = new instructions.If(label)
-    override def optimise: StrictParsley[A] = b match {
+    override def optimise(implicit lets: LetMap): StrictParsley[A] = b match {
         case Pure(true) => p
         case Pure(false) => q
         case _ => this

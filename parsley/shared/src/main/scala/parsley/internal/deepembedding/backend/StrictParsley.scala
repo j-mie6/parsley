@@ -18,6 +18,7 @@ import parsley.internal.deepembedding.frontend.LetMap
 import parsley.internal.machine.instructions, instructions.{Instr, Label}
 
 import StrictParsley.*
+import org.typelevel.scalaccompat.annotation.unused
 
 /** This is the root type of the parsley "backend": it represents a combinator tree
   * where the join-points in the tree (recursive or otherwise) have been factored into
@@ -76,7 +77,7 @@ private [deepembedding] trait StrictParsley[+A] {
       *
       * By default, this method just returns this parser unchanged.
       */
-    protected [deepembedding] def optimise: StrictParsley[A] = this
+    protected [deepembedding] def optimise(implicit @unused lets: LetMap): StrictParsley[A] = this
 
     /** Should this parser be inlined if it is shared?
       *
@@ -273,7 +274,7 @@ private [deepembedding] class CodeGenState(val numRefs: Int)(implicit letMap: Le
         label
     })
 
-    def getBody[A](sub: Let[A]): StrictParsley[A] = letMap.bodies(sub).asInstanceOf[StrictParsley[A]]
+    def getBody[A](sub: Let[A]): StrictParsley[A] = letMap.findBody(sub).get.asInstanceOf[StrictParsley[A]]
 
     /** Returns the next shared-parser that has been refered during code generation */
     def nextLet(): (Let[?], Boolean, Int) = queue.remove(0)

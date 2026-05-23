@@ -9,7 +9,7 @@ import parsley.state.Ref
 import parsley.token.errors.LabelConfig
 
 import parsley.internal.deepembedding.backend.StrictParsley, StrictParsley.InstrBuffer
-import parsley.internal.deepembedding.frontend.{LazyParsleyIVisitor, UsesRef}
+import parsley.internal.deepembedding.frontend.{LazyParsleyIVisitor, LetMap, UsesRef}
 import parsley.internal.machine.instructions
 
 private [parsley] final class CharTok[A](private val c: Char, private val x: A, val expected: LabelConfig) extends Singleton[A] {
@@ -53,7 +53,7 @@ private [parsley] final class StringTok[A](private val s: String, private val x:
         if (producesResults) instrs += new instructions.Push(x)
     }
 
-    override protected[deepembedding] def optimise: StrictParsley[A] = if (s.length == 1) new CharTok(s.head, x, expected) else this
+    override protected[deepembedding] def optimise(implicit lets: LetMap): StrictParsley[A] = if (s.length == 1) new CharTok(s.head, x, expected) else this
 
     // $COVERAGE-OFF$
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(s, x, expected)

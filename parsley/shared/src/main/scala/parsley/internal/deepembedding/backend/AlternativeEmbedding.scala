@@ -12,6 +12,7 @@ import parsley.XAssert.*
 
 import parsley.internal.collection.mutable.SinglyLinkedList, SinglyLinkedList.LinkedListIterator
 import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
+import parsley.internal.deepembedding.frontend.LetMap
 import parsley.internal.deepembedding.singletons.*
 import parsley.internal.errors.{ExpectDesc, ExpectItem}
 import parsley.internal.machine.instructions
@@ -21,7 +22,6 @@ import Choice.*
 import StrictParsley.InstrBuffer
 // scalastyle:on underscore.import
 
-// TODO: can we tabilify across a Let?
 // FIXME: It's annoying this doesn't work if the first thing is not tablable: let's make it more fine-grained to create groupings?
 private [deepembedding] final class Choice[A] private (private [backend] val alt1: StrictParsley[A],
                                                        private [backend] var alt2: StrictParsley[A],
@@ -29,7 +29,7 @@ private [deepembedding] final class Choice[A] private (private [backend] val alt
     def this(lalt: StrictParsley[A], ralt: StrictParsley[A]) = this(lalt, ralt, SinglyLinkedList.empty)
     def inlinable: Boolean = false
 
-    override def optimise: StrictParsley[A] = {
+    override def optimise(implicit lets: LetMap): StrictParsley[A] = {
         // We make the assumption that nodes here are not reoptimised: as such, we can safely
         // assume that it is always in <|> form, with no alts on a choice (as this is the only public constructor)
         if (alts.nonEmpty) throw new IllegalStateException("<|> assumed, but full Choice given") // scalastyle:ignore throw
@@ -37,8 +37,8 @@ private [deepembedding] final class Choice[A] private (private [backend] val alt
         else alt1 match {
             case (u: Pure[?]) => u
             case Empty.Zero => alt2
-            case ret@Choice(_, _, lalts: SinglyLinkedList[StrictParsley[A]] @unchecked) => alt2 match {
-                case Choice(ralt1, ralt2, ralts: SinglyLinkedList[StrictParsley[A]] @unchecked) =>
+            case FindChoice(ret@Choice(_, _, lalts: SinglyLinkedList[StrictParsley[A]] @unchecked)) => alt2 match {
+                case FindChoice(Choice(ralt1, ralt2, ralts: SinglyLinkedList[StrictParsley[A]] @unchecked)) =>
                     assume(!lalts.exists(_.isInstanceOf[Choice[?]]), "ralts can never contain a choice")
                     assume(!ralts.exists(_.isInstanceOf[Choice[?]]), "lalts can never contain a choice")
                     lalts.addOne(ralt1)
@@ -51,7 +51,7 @@ private [deepembedding] final class Choice[A] private (private [backend] val alt
                     ret
             }
             case _ => alt2 match {
-                case Choice(ralt1, ralt2, ralts: SinglyLinkedList[StrictParsley[A]] @unchecked) =>
+                case FindChoice(Choice(ralt1, ralt2, ralts: SinglyLinkedList[StrictParsley[A]] @unchecked)) =>
                     assume(!ralts.exists(_.isInstanceOf[Choice[?]]), "ralts can never contain a choice")
                     this.alt2 = ralt1
                     this.alts = ralts
@@ -344,6 +344,28 @@ private [backend] object Choice {
             case Lift2(_, NonConsuming(), NonConsuming()) => true
             case Lift3(_, NonConsuming(), NonConsuming(), NonConsuming()) => true
             case _ => false
+        }
+    }
+
+    private object FindChoice {
+        def unapply[A](p: StrictParsley[A])(implicit lets: LetMap): Option[Choice[A]] = {
+            @tailrec
+            def go(p: StrictParsley[A], requiresCopy: Boolean = false): Option[Choice[A]] =
+                p match {
+                    case Choice(alt1, alt2, alts: SinglyLinkedList[StrictParsley[A]] @unchecked) =>
+                        Some(new Choice(alt1, alt2, if (requiresCopy) alts.copy else alts))
+                    case sub: Let[?] =>
+                        val body = lets.findBody(sub)
+                        if (body.isDefined) {
+                            go(body.get.asInstanceOf[StrictParsley[A]], requiresCopy = true)
+                        } else {
+                            // Recursion point
+                            None
+                        }
+                    case _ => None
+                }
+
+            go(p)
         }
     }
 }

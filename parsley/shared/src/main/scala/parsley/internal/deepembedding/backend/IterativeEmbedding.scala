@@ -10,13 +10,14 @@ import scala.collection.{mutable, Factory}
 import parsley.exceptions.NonProductiveIterationException
 
 import parsley.internal.deepembedding.ContOps, ContOps.{ContAdapter, suspend}
+import parsley.internal.deepembedding.frontend.LetMap
 import parsley.internal.deepembedding.singletons.*
 import parsley.internal.machine.instructions
 
 import StrictParsley.InstrBuffer
 
 private [deepembedding] final class Many[A, C](val init: StrictParsley[mutable.Builder[A, C]], val p: StrictParsley[A]) extends Unary[A, C] {
-    final override def optimise: StrictParsley[C] = p match {
+    final override def optimise(implicit lets: LetMap): StrictParsley[C] = p match {
         case _: Pure[?] => throw new NonProductiveIterationException("many") // scalastyle:ignore throw
         case _          => this
     }
@@ -44,7 +45,7 @@ private [backend] object Many {
 
 private [backend] sealed abstract class ChainLike[A](p: StrictParsley[A], op: StrictParsley[A => A]) extends StrictParsley[A] {
     def inlinable: Boolean = false
-    override def optimise: StrictParsley[A] = op match {
+    override def optimise(implicit lets: LetMap): StrictParsley[A] = op match {
         case _: Pure[?] => throw new NonProductiveIterationException("chain") // scalastyle:ignore throw
         case _: MZero   => p
         case _          => this

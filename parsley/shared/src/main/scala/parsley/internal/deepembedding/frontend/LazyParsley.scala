@@ -281,6 +281,8 @@ private [deepembedding] final class LetMap private (letGen: Map[LazyParsley[?], 
             }
     }
 
+    def findBody(let: backend.Let[?]): Option[StrictParsley[?]] = bodyMap.get(let)
+
     def bodies: Map[backend.Let[?], StrictParsley[?]] = bodyMap.toMap
 
     // $COVERAGE-OFF$
