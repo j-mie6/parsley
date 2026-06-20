@@ -7,6 +7,7 @@ package parsley.internal.deepembedding.backend
 
 import parsley.token.errors.Label
 
+import parsley.internal.deepembedding.frontend.LetMap
 import parsley.internal.deepembedding.singletons.*
 import parsley.internal.machine.instructions
 
@@ -17,7 +18,7 @@ private [deepembedding] final class ErrorLabel[A](val p: StrictParsley[A], priva
     override def instrNeedsLabel: Boolean = false
     override def handlerLabel(state: CodeGenState): Int = state.getLabelForRelabelError(label +: labels)
     // don't need to be limited to not hidden when the thing can never internally generate hints
-    final override def optimise: StrictParsley[A] = p match {
+    final override def optimise(implicit lets: LetMap): StrictParsley[A] = p match {
         case CharTok(c, x) => new CharTok(c, x, Label(label, labels*)).asInstanceOf[StrictParsley[A]]
         case SupplementaryCharTok(c, x) => new SupplementaryCharTok(c, x, Label(label, labels*)).asInstanceOf[StrictParsley[A]]
         case StringTok(s, x) => new StringTok(s, x, Label(label, labels*)).asInstanceOf[StrictParsley[A]]

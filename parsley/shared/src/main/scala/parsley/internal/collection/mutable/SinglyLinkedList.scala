@@ -70,6 +70,8 @@ private [internal] class SinglyLinkedList[A] private
         var current = start
         override val end = SinglyLinkedList.this.end
     }
+
+    def copy: SinglyLinkedList[A] = { val r = new SinglyLinkedList[A]; r.addAll(this); r }
 }
 
 private [internal] object SinglyLinkedList {

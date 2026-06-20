@@ -12,6 +12,7 @@ import parsley.XAssert.*
 
 import parsley.internal.collection.mutable.SinglyLinkedList, SinglyLinkedList.LinkedListIterator
 import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
+import parsley.internal.deepembedding.frontend.LetMap
 import parsley.internal.deepembedding.singletons.*
 import parsley.internal.errors.{ExpectDesc, ExpectItem}
 import parsley.internal.machine.instructions
@@ -21,7 +22,6 @@ import Choice.*
 import StrictParsley.InstrBuffer
 // scalastyle:on underscore.import
 
-// TODO: can we tabilify across a Let?
 // FIXME: It's annoying this doesn't work if the first thing is not tablable: let's make it more fine-grained to create groupings?
 private [deepembedding] final class Choice[A] private (private [backend] val alt1: StrictParsley[A],
                                                        private [backend] var alt2: StrictParsley[A],
@@ -29,7 +29,7 @@ private [deepembedding] final class Choice[A] private (private [backend] val alt
     def this(lalt: StrictParsley[A], ralt: StrictParsley[A]) = this(lalt, ralt, SinglyLinkedList.empty)
     def inlinable: Boolean = false
 
-    override def optimise: StrictParsley[A] = {
+    override def optimise(implicit lets: LetMap): StrictParsley[A] = {
         // We make the assumption that nodes here are not reoptimised: as such, we can safely
         // assume that it is always in <|> form, with no alts on a choice (as this is the only public constructor)
         if (alts.nonEmpty) throw new IllegalStateException("<|> assumed, but full Choice given") // scalastyle:ignore throw
@@ -37,8 +37,8 @@ private [deepembedding] final class Choice[A] private (private [backend] val alt
         else alt1 match {
             case (u: Pure[?]) => u
             case Empty.Zero => alt2
-            case ret@Choice(_, _, lalts: SinglyLinkedList[StrictParsley[A]] @unchecked) => alt2 match {
-                case Choice(ralt1, ralt2, ralts: SinglyLinkedList[StrictParsley[A]] @unchecked) =>
+            case FindChoice(ret@Choice(_, _, lalts: SinglyLinkedList[StrictParsley[A]] @unchecked)) => alt2 match {
+                case FindChoice(Choice(ralt1, ralt2, ralts: SinglyLinkedList[StrictParsley[A]] @unchecked)) =>
                     assume(!lalts.exists(_.isInstanceOf[Choice[?]]), "ralts can never contain a choice")
                     assume(!ralts.exists(_.isInstanceOf[Choice[?]]), "lalts can never contain a choice")
                     lalts.addOne(ralt1)
@@ -51,7 +51,7 @@ private [deepembedding] final class Choice[A] private (private [backend] val alt
                     ret
             }
             case _ => alt2 match {
-                case Choice(ralt1, ralt2, ralts: SinglyLinkedList[StrictParsley[A]] @unchecked) =>
+                case FindChoice(Choice(ralt1, ralt2, ralts: SinglyLinkedList[StrictParsley[A]] @unchecked)) =>
                     assume(!ralts.exists(_.isInstanceOf[Choice[?]]), "ralts can never contain a choice")
                     this.alt2 = ralt1
                     this.alts = ralts
@@ -64,7 +64,7 @@ private [deepembedding] final class Choice[A] private (private [backend] val alt
 
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = codeGenTablified(this.tablify, producesResults)
 
-    private def tablify: List[Either[StrictParsley[?], List[JumpTableGroup]]] =
+    private def tablify(implicit state: CodeGenState): List[Either[StrictParsley[?], List[JumpTableGroup]]] =
         tablify((alt1::alt2::alts).iterator, mutable.ListBuffer.empty, mutable.ListBuffer.empty, mutable.ListBuffer.empty, mutable.Set.empty, None)
 
     @tailrec private def tablify(
@@ -74,7 +74,7 @@ private [deepembedding] final class Choice[A] private (private [backend] val alt
         groupAcc: mutable.ListBuffer[TablableChar],
         seen: mutable.Set[Char],
         lastSeen: Option[Char],
-    ): List[Either[StrictParsley[?], List[JumpTableGroup]]] = if (it.hasNext) {
+    )(implicit state: CodeGenState): List[Either[StrictParsley[?], List[JumpTableGroup]]] = if (it.hasNext) {
         val u = it.next()
         tablable(u, backtracks = false) match {
             // Character, if we've not seen it before that's ok
@@ -271,8 +271,7 @@ private [backend] object Choice {
             case Nil => (rootsAcc.toList, propagateExpecteds(tableAcc.toList, allExpecteds, mutable.ListBuffer.empty), size, allExpecteds)
         }
 
-    // TODO: `line.zip(col)` will not be caught!!!!
-    private def tablable(p: StrictParsley[?], backtracks: Boolean): Option[TablableDesc] = p match {
+    private def tablable(p: StrictParsley[?], backtracks: Boolean)(implicit state: CodeGenState): Option[TablableDesc] = p match {
         // CODO: Numeric parsers by leading digit (This one would require changing the foldTablified function a bit)
         case ct@CharTok(c, _)                    => Some(TablableCharDesc(c, ct.expected.asExpectItems(c), 1, backtracks))
         case ct@SupplementaryCharTok(c, _)       => Some(TablableCharDesc(Character.highSurrogate(c), ct.expected.asExpectItems(Character.toChars(c).mkString), 1, backtracks))
@@ -294,22 +293,23 @@ private [backend] object Choice {
         }
         case Profile(t)                          => tablable(t, backtracks)
         case TablableErrors(t)                   => tablable(t, backtracks)
-        case (_: Pure[?] | _: Get[?]) <*> t      => tablable(t, backtracks)
-        case Lift2(_, Line | Col | Offset | _: Get[?], t)    => tablable(t, backtracks)
-        case Lift3(_, Line | Col | Offset | _: Get[?], t, _) => tablable(t, backtracks)
+        case NonConsuming() <*> t                => tablable(t, backtracks)
+        case Lift2(_, NonConsuming(), t)         => tablable(t, backtracks)
+        case Lift3(_, NonConsuming(), t, _)      => tablable(t, backtracks)
         case Lift2(_, t, _)                      => tablable(t, backtracks)
         case Lift3(_, t, _, _)                   => tablable(t, backtracks)
         case t <*> _                             => tablable(t, backtracks)
         case Seq(before, r, _)                   => tablable(before.headOption.getOrElse(r), backtracks)
-        case Chainl(_: Pure[?], p, _)            => tablable(p, backtracks)
+        case Chainl(NonConsuming(), p, _)        => tablable(p, backtracks)
         case Chainl(init, _, _)                  => tablable(init, backtracks)
         case Chainr(p, _)                        => tablable(p, backtracks)
         case ChainPost(p, _)                     => tablable(p, backtracks)
-        case Many(_: Pure[?], p)                 => tablable(p, backtracks)
+        case Many(NonConsuming(), p)             => tablable(p, backtracks)
         case Many(init, _)                       => tablable(init, backtracks)
         case ManyUntil(init, _)                  => tablable(init, backtracks)
         case SepEndBy1(p, _, _)                  => tablable(p, backtracks)
         case Branch(p, _, _)                     => tablable(p, backtracks)
+        case sub: Let[?]                         => tablable(state.getBody(sub), backtracks)
         case _                                   => None
     }
 
@@ -334,6 +334,38 @@ private [backend] object Choice {
                     instrs += new instructions.Label(end)
                 }
             }
+        }
+    }
+
+    private object NonConsuming {
+        def unapply(p: StrictParsley[?])(implicit state: CodeGenState): Boolean = p match {
+            case Line | Col | Offset | _: Get[?] | _: Pure[?] => true
+            case sub: Let[?] => NonConsuming.unapply(state.getBody(sub))
+            case Lift2(_, NonConsuming(), NonConsuming()) => true
+            case Lift3(_, NonConsuming(), NonConsuming(), NonConsuming()) => true
+            case _ => false
+        }
+    }
+
+    private object FindChoice {
+        def unapply[A](p: StrictParsley[A])(implicit lets: LetMap): Option[Choice[A]] = {
+            @tailrec
+            def go(p: StrictParsley[A], requiresCopy: Boolean = false): Option[Choice[A]] =
+                p match {
+                    case Choice(alt1, alt2, alts: SinglyLinkedList[StrictParsley[A]] @unchecked) =>
+                        Some(new Choice(alt1, alt2, if (requiresCopy) alts.copy else alts))
+                    case sub: Let[?] =>
+                        val body = lets.findBody(sub)
+                        if (body.isDefined) {
+                            go(body.get.asInstanceOf[StrictParsley[A]], requiresCopy = true)
+                        } else {
+                            // Recursion point
+                            None
+                        }
+                    case _ => None
+                }
+
+            go(p)
         }
     }
 }

@@ -10,6 +10,7 @@ import parsley.errors.ErrorBuilder
 import parsley.state.Ref
 
 import parsley.internal.deepembedding.ContOps, ContOps.{ContAdapter, result, suspend}
+import parsley.internal.deepembedding.frontend.LetMap
 import parsley.internal.deepembedding.singletons.*
 import parsley.internal.machine.instructions
 
@@ -20,7 +21,7 @@ private [deepembedding] final class Atomic[A](val p: StrictParsley[A]) extends S
     override val instr: instructions.Instr = instructions.PopHandlerAndState
     override def instrNeedsLabel: Boolean = false
     override def handlerLabel(state: CodeGenState): Int  = state.getLabel(instructions.RestoreAndFail)
-    override def optimise: StrictParsley[A] = p match {
+    override def optimise(implicit lets: LetMap): StrictParsley[A] = p match {
         case p: CharTok[?] => p
         case p: Atomic[?] => p
         //case StringTok(s, _) if s.size == 1 => p
